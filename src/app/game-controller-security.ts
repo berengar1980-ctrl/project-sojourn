@@ -1,4 +1,9 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import {
+  detectedSecurityPirate,
+  interceptSecurityPirate,
+  securityPirateApproach,
+} from './game-controller-drone-pirate-response';
 import type { DroneContact } from '../systems/operations/asteroid-security-drone';
 import type { AsteroidFieldRuntime } from '../systems/operations/asteroid-field-world';
 import { dispatchPatrolToReport } from './game-controller-law-enforcement';
@@ -209,7 +214,15 @@ export function tickFieldSecurity(
     runtime,
     active?.instance.ship.position ?? null
   );
-  drone.tick(seconds, runtime.instance.asteroids, contacts, nearbyShips);
+  const pirate = detectedSecurityPirate(context, runtime);
+  drone.tick(
+    seconds,
+    runtime.instance.asteroids,
+    contacts,
+    nearbyShips,
+    pirate ? securityPirateApproach(drone.position, pirate.position) : undefined
+  );
+  if (pirate) interceptSecurityPirate(context, runtime, pirate);
   reportVisibleDroneContacts(context, runtime, contacts);
 }
 
