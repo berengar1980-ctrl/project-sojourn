@@ -24,7 +24,7 @@ const physicsByField = new WeakMap<SalvageField, WorldPhysics>();
 
 function isDynamicWreck(wreck: SalvageWreck): boolean {
   return Boolean(
-    (wreck.containerVariant || wreck.debrisVariant || wreck.sectionVariant) &&
+    (wreck.containerVariant || wreck.debrisVariant || wreck.sectionVariant || wreck.combatWreckVariant) &&
     wreck.driftVelocity &&
     wreck.rotation3d &&
     wreck.spin3d
@@ -40,7 +40,9 @@ function ownersForField(field: SalvageField): SalvageBody[] {
 function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
   const velocity = owner.driftVelocity ?? { x: 0, y: 0 };
   const angularVelocity = owner.spin3d?.z ?? 0;
-  const isHeavy = 'sectionVariant' in owner && Boolean(owner.sectionVariant);
+  const isHeavy =
+    ('sectionVariant' in owner && Boolean(owner.sectionVariant)) ||
+    ('combatWreckVariant' in owner && Boolean(owner.combatWreckVariant));
   const kind = isHeavy
     ? 'section'
     : 'containerVariant' in owner && owner.containerVariant
@@ -54,7 +56,7 @@ function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
     kind: isHeavy ? 'resource' : 'debris',
     // Small floating debris may be hit, pushed and thrown but must NOT
     // trigger detours. Only large room-scale ship sections block routes.
-    routeBlocking: 'sectionVariant' in owner && Boolean(owner.sectionVariant),
+    routeBlocking: isHeavy,
     position: { ...owner.position },
     radius: physicalRadius,
     rotation: owner.rotation3d?.z ?? ('rotation' in owner ? owner.rotation : 0),
