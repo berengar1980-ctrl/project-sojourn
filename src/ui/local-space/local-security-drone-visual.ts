@@ -29,7 +29,6 @@ export function drawDroneShield(
   ctx.restore();
 }
 
-
 function securityDroneSprite(): HTMLImageElement {
   if (!droneSprite) {
     droneSprite = new Image();

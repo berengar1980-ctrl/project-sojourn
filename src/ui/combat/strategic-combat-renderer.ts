@@ -140,9 +140,7 @@ export class StrategicCombatRenderer {
     if (cached) return cached;
     const image = new Image();
     image.onload = () => this.draw();
-    image.src = securityDrone
-      ? '/drones/security-drone-gc87r8.webp'
-      : definition!.sprite.assetUrl;
+    image.src = securityDrone ? '/drones/security-drone-gc87r8.webp' : definition!.sprite.assetUrl;
     this.images.set(key, image);
     return image;
   }
@@ -186,10 +184,7 @@ export class StrategicCombatRenderer {
       this.model.arena.width,
       this.model.arena.height
     );
-    const shipWidth =
-      isDrone
-        ? DRONE_DIAMETER_PX * this.camera.zoom
-        : nominalLength * canvasScale;
+    const shipWidth = isDrone ? DRONE_DIAMETER_PX * this.camera.zoom : nominalLength * canvasScale;
     const aspect =
       combatant.shipId === '24m-security-drone'
         ? 1

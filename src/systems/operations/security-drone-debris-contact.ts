@@ -27,8 +27,8 @@ export function resolveSecurityDroneDebrisContacts(
       x: rock.position.x + nx * penetration,
       y: rock.position.y + ny * penetration,
     };
-    const relative = (velocity.x - rock.physics.velocity.x) * nx +
-      (velocity.y - rock.physics.velocity.y) * ny;
+    const relative =
+      (velocity.x - rock.physics.velocity.x) * nx + (velocity.y - rock.physics.velocity.y) * ny;
     const kick = Math.max(5, relative * 1.15);
     rock.physics.velocity = {
       x: rock.physics.velocity.x + nx * kick,

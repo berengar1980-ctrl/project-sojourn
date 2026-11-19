@@ -9,12 +9,8 @@ const { resolveSecurityDroneDebrisContacts, DRONE_SHIELD_RADIUS_METERS } = load(
 );
 const { AsteroidSecurityDrone } = load('src/systems/operations/asteroid-security-drone.ts');
 const { equipSecurityDroneMk3 } = load('src/app/game-controller-security-drone-loadout.ts');
-const {
-  getShipDefinition,
-  getShipComponent,
-  fitsWeaponHardpoint,
-  isShipCombatWeaponSlotActive,
-} = load('src/systems/ships/index.ts');
+const { getShipDefinition, getShipComponent, fitsWeaponHardpoint, isShipCombatWeaponSlotActive } =
+  load('src/systems/ships/index.ts');
 const rock = {
   id: 'small-debris',
   kind: 'debris',
@@ -25,11 +21,7 @@ const rock = {
   rotation: 0,
   physics: { velocity: { x: 0, y: 0 }, angularVelocity: 0 },
 };
-const count = resolveSecurityDroneDebrisContacts(
-  { x: 100, y: 100 },
-  { x: 90, y: 0 },
-  [rock]
-);
+const count = resolveSecurityDroneDebrisContacts({ x: 100, y: 100 }, { x: 90, y: 0 }, [rock]);
 assert.equal(count, 1, 'Tiny nonblocking rock must collide with a drone shield');
 assert(
   Math.hypot(rock.position.x - 100, rock.position.y - 100) >=

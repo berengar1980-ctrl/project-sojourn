@@ -13,13 +13,15 @@ const first = {
   attacker: { id: 'corsair' },
   defender: { id: 'security-drone:field' },
   elapsedSeconds: 10,
-  recentImpacts: [{
-    serial: 1,
-    position: { x: 320, y: 180 },
-    layer: 'shield',
-    target: 'defender',
-    damage: 4,
-  }],
+  recentImpacts: [
+    {
+      serial: 1,
+      position: { x: 320, y: 180 },
+      layer: 'shield',
+      target: 'defender',
+      damage: 4,
+    },
+  ],
   lastImpact: null,
 };
 assert.equal(timeline.visible(first).length, 1);
@@ -36,7 +38,12 @@ assert.equal(
   'Hit marks disappear after their actual lifetime'
 );
 assert.equal(
-  timeline.visible({ ...first, elapsedSeconds: 11.3, recentImpacts: [], lastImpact: first.recentImpacts[0] }).length,
+  timeline.visible({
+    ...first,
+    elapsedSeconds: 11.3,
+    recentImpacts: [],
+    lastImpact: first.recentImpacts[0],
+  }).length,
   0,
   'Persistent lastImpact must not reappear as a new hit'
 );

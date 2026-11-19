@@ -17,14 +17,16 @@ export function equipSecurityDroneMk3(npc: SectorNpcState): void {
   const current = npc.installedComponents ?? defaultInstalledShipComponents(ship);
   const weapons = [...(current.weapon ?? [])];
   const mounts = ship.sprite.hardpoints.weaponMounts ?? [];
-  const slots = mounts.length ? Math.max(...mounts.map((mount) => mount.slotIndex)) + 1 : weapons.length;
+  const slots = mounts.length
+    ? Math.max(...mounts.map((mount) => mount.slotIndex)) + 1
+    : weapons.length;
   const compatible = getCompatibleShipComponents('weapon', 3).filter(
     (part) => part.tier === 3 && part.weapon
   );
   for (let index = 0; index < slots; index += 1) {
     if (!isShipCombatWeaponSlotActive(ship, index)) continue;
-    const part = compatible.find((candidate) =>
-      candidate.weapon && fitsWeaponHardpoint(ship, index, candidate.weapon)
+    const part = compatible.find(
+      (candidate) => candidate.weapon && fitsWeaponHardpoint(ship, index, candidate.weapon)
     );
     if (part) weapons[index] = part.id;
   }
