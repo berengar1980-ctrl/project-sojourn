@@ -2,6 +2,7 @@ import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import {
   DRONE_DIAMETER_PX,
   DRONE_ROTATION_PERIOD_SECONDS,
+  drawDroneShield,
 } from '../local-space/local-security-drone-visual';
 import { CombatAsteroidBackdrop } from './combat-asteroid-backdrop';
 import type {
@@ -131,18 +132,18 @@ export class StrategicCombatRenderer {
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
     this.draw();
   }
-  private image(shipId: string): HTMLImageElement | null {
+  private image(shipId: string, securityDrone = false): HTMLImageElement | null {
     const definition = getShipDefinition(shipId);
-    if (!definition) return null;
-    const cached = this.images.get(shipId);
+    if (!definition && !securityDrone) return null;
+    const key = securityDrone ? 'security-drone-sprite' : shipId;
+    const cached = this.images.get(key);
     if (cached) return cached;
     const image = new Image();
     image.onload = () => this.draw();
-    image.src =
-      shipId === '24m-security-drone'
-        ? '/drones/security-drone-gc87r8.webp'
-        : definition.sprite.assetUrl;
-    this.images.set(shipId, image);
+    image.src = securityDrone
+      ? '/drones/security-drone-gc87r8.webp'
+      : definition!.sprite.assetUrl;
+    this.images.set(key, image);
     return image;
   }
   cameraPose(): CombatCameraPose {
@@ -175,7 +176,8 @@ export class StrategicCombatRenderer {
     width: number,
     height: number
   ): ShipScreenGeometry {
-    const image = this.image(combatant.shipId);
+    const isDrone = combatant.id.startsWith('security-drone:');
+    const image = this.image(combatant.shipId, isDrone);
     const definition = getShipDefinition(combatant.shipId);
     const nominalLength = definition?.nominalLengthMeters ?? 60;
     const canvasScale = this.camera.scale(
@@ -185,7 +187,7 @@ export class StrategicCombatRenderer {
       this.model.arena.height
     );
     const shipWidth =
-      combatant.shipId === '24m-security-drone'
+      isDrone
         ? DRONE_DIAMETER_PX * this.camera.zoom
         : nominalLength * canvasScale;
     const aspect =
@@ -391,7 +393,7 @@ export class StrategicCombatRenderer {
     visualElapsed: number
   ): void {
     const definition = getShipDefinition(combatant.shipId);
-    const isDrone = combatant.shipId === '24m-security-drone';
+    const isDrone = combatant.id.startsWith('security-drone:');
     const geometry = {
       ...this.shipGeometry(combatant, width, height),
       ...(isDrone ? { angle: (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS } : {}),
@@ -430,10 +432,20 @@ export class StrategicCombatRenderer {
       this.context,
       geometry,
       hullRatio,
-      this.image(combatant.shipId),
+      this.image(combatant.shipId, isDrone),
       hardpoints,
       this.lighting
     );
+    if (isDrone) {
+      drawDroneShield(
+        this.context,
+        geometry.center.x,
+        geometry.center.y,
+        geometry.width * 0.62,
+        combatant.shieldHp / Math.max(1, combatant.shieldMaxHp),
+        combatant.shieldImpacts.length > 0 ? 0.85 : 0
+      );
+    }
     if (combatant.pirateMark) {
       drawPirateInsignia(this.context, combatant.pirateMark, geometry);
     }
