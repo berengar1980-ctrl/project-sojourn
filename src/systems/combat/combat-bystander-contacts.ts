@@ -1,5 +1,6 @@
 import { shipContact } from './combat-ship-contact-geometry';
-import type { MutableCombatant, StrategicCombatBystander } from './strategic-combat-types';
+import type { MutableCombatant } from './strategic-combat-types';
+import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 
 /** A third-party NPC is a physical ship, even though PvP weapons only target
  * the two actual duel participants. Never move the civilian through this solver.
