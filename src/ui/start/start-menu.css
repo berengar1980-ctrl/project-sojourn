@@ -419,3 +419,16 @@
   border-color: #d8bc52;
   color: #efd66b;
 }
+
+/* The FleetCombat test lab is separate from the unchanged 1vs1 canvas. */
+.harrow-combat-tabs { display: flex; gap: 10px; padding: 10px 18px; background: #0a131b; border-bottom: 1px solid #6b6555; }
+.harrow-combat-tabs button { cursor: pointer; padding: 10px 18px; background: #16222b; color: #b9c9d1; border: 1px solid #4a5662; font: inherit; }
+.harrow-combat-tabs button[aria-current="page"] { color: #efd66b; border-color: #c5a94f; background: #303027; }
+.harrow-combat-tabs__content > .harrow-duel { height: calc(100vh - 63px); }
+.harrow-fleet__options { display: flex; flex-wrap: wrap; gap: 16px; margin: 18px 0; }
+.harrow-fleet__options label { display: grid; gap: 6px; min-width: 170px; color: #c5d0d6; }
+.harrow-fleet__capabilities { max-width: 1100px !important; }
+.harrow-fleet__roster { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; margin-top: 18px; }
+.harrow-fleet__roster p { overflow-wrap: anywhere; font-size: 12px; line-height: 1.6; color: #c1cbd0; }
+.harrow-fleet button:disabled { opacity: .45; cursor: not-allowed; }
+@media (max-width: 760px) { .harrow-fleet__roster { grid-template-columns: 1fr; } }
