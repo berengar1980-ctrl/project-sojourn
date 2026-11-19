@@ -1,5 +1,10 @@
 import type { WorldPoint } from '../../core/world-types';
-import type { FieldRouteObstacle } from './field-ship-routing';
+/** Structural obstacle contract prevents a route-planner module cycle. */
+export interface PatrolRouteObstacle {
+  readonly id: string;
+  readonly position: WorldPoint;
+  readonly radius: number;
+}
 
 function gapToSegment(point: WorldPoint, a: WorldPoint, b: WorldPoint): number {
   const dx = b.x - a.x;
@@ -15,7 +20,7 @@ function gapToSegment(point: WorldPoint, a: WorldPoint, b: WorldPoint): number {
 function clearPath(
   start: WorldPoint,
   end: WorldPoint,
-  obstacles: readonly FieldRouteObstacle[],
+  obstacles: readonly PatrolRouteObstacle[],
   clearance: number
 ): boolean {
   return obstacles.every((obstacle) => {
@@ -34,7 +39,7 @@ function recoverPatrolRoute(
   start: WorldPoint,
   nodes: readonly WorldPoint[],
   parents: readonly number[],
-  obstacles: readonly FieldRouteObstacle[],
+  obstacles: readonly PatrolRouteObstacle[],
   clearance: number
 ): readonly WorldPoint[] {
   const route: WorldPoint[] = [];
@@ -59,7 +64,7 @@ function recoverPatrolRoute(
 export function planFieldPatrolRoute(
   start: WorldPoint,
   destination: WorldPoint,
-  obstacles: readonly FieldRouteObstacle[],
+  obstacles: readonly PatrolRouteObstacle[],
   clearance: number
 ): readonly WorldPoint[] {
   if (clearPath(start, destination, obstacles, clearance)) return [destination];
