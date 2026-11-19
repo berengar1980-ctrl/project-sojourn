@@ -56,8 +56,8 @@ try {
   };
   const drone = { operational: true, position: { x: 400, y: 200 }, scanRadius: 460 };
   drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 0);
-  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 1.5);
-  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 3);
+  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 4);
+  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 8);
   assert.equal(calls.draws.length, 3, 'Sprite is drawn each frame');
   assert.deepEqual(
     calls.draws.map(({ x, y, width, height }) => [x, y, width, height]),
@@ -69,7 +69,7 @@ try {
   );
   assert.equal(calls.draws[0].image.url, '/drones/security-drone-gc87r8.webp');
   relativeZoom = 2;
-  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 3.5);
+  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 9);
   assert.deepEqual(
     [calls.draws[3].x, calls.draws[3].y, calls.draws[3].width, calls.draws[3].height],
     [-26, -26, 52, 52],
@@ -88,4 +88,4 @@ try {
 } finally {
   global.Image = originalImage;
 }
-console.log('PASS shared security drone sprite, 26px diameter and 3-second rotation');
+console.log('PASS shared security drone sprite, 26px diameter and 8-second rotation');
