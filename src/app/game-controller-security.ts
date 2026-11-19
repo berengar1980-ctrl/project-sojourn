@@ -172,7 +172,7 @@ export function tickFieldSecurity(
       position: ship.position,
       radius: 35,
     })),
-    ...runtime.pirates.snapshot(economy.sectorNpcs.npcs).map((ship) => ({
+    ...(runtime.pirates?.snapshot(economy.sectorNpcs.npcs) ?? []).map((ship) => ({
       id: ship.npcId,
       position: ship.position,
       radius: 35,
