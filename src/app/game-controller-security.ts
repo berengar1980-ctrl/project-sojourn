@@ -14,6 +14,21 @@ function canLocalPiratesTargetPlayer(context: ControllerRuntimeContext): boolean
   );
 }
 
+function pirateMiningContacts(
+  context: ControllerRuntimeContext,
+  field: AsteroidFieldRuntime
+) {
+  const npcs = context.economy.sectorNpcs.npcs;
+  return field.miners.ships.map((ship) => {
+    const npc = npcs.find((entry) => entry.id === ship.npcId);
+    return {
+      npcId: ship.npcId,
+      position: ship.position,
+      inCombat: Boolean(npc?.combatMovement || npc?.combatRecoverySeconds),
+    };
+  });
+}
+
 export function tickFieldPirates(
   context: ControllerRuntimeContext,
   seconds: number,
@@ -37,14 +52,7 @@ export function tickFieldPirates(
     canLocalPiratesTargetPlayer(context)
       ? (space?.getSnapshot().instance.ship.position ?? null)
       : null,
-    field.miners.ships.map((ship) => {
-      const miner = economy.sectorNpcs.npcs.find((npc) => npc.id === ship.npcId);
-      return {
-        npcId: ship.npcId,
-        position: ship.position,
-        inCombat: Boolean(miner?.combatMovement || miner?.combatRecoverySeconds),
-      };
-    }),
+    pirateMiningContacts(context, field),
     field.instance.asteroids,
     (pirateId, targetId, piratePosition) => {
       const pirate = economy.sectorNpcs.npcs.find((npc) => npc.id === pirateId);
