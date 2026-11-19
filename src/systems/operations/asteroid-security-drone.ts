@@ -1,4 +1,8 @@
-import { moveFieldShip, type FieldRouteObstacle, type FieldRouteState } from '../navigation/field-ship-routing';
+import {
+  moveFieldShip,
+  type FieldRouteObstacle,
+  type FieldRouteState,
+} from '../navigation/field-ship-routing';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
@@ -130,19 +134,37 @@ export class AsteroidSecurityDrone {
       const dx = waypoint.x - this.position.x;
       const dy = waypoint.y - this.position.y;
       const lengthSquared = dx * dx + dy * dy;
-      if (lengthSquared > 0 && obstacles.some((obstacle) => {
-        const t = Math.max(0, Math.min(1, (
-          (obstacle.position.x - this.position.x) * dx +
-          (obstacle.position.y - this.position.y) * dy
-        ) / lengthSquared));
-        // Ignore an obstacle already enclosing the start; the planner must
-        // be allowed to navigate away from an overlapping spawn.
-        if (Math.hypot(obstacle.position.x - this.position.x, obstacle.position.y - this.position.y) < obstacle.radius + 40) return false;
-        return Math.hypot(
-          this.position.x + dx * t - obstacle.position.x,
-          this.position.y + dy * t - obstacle.position.y
-        ) < obstacle.radius + 40;
-      })) delete this.routeState;
+      if (
+        lengthSquared > 0 &&
+        obstacles.some((obstacle) => {
+          const t = Math.max(
+            0,
+            Math.min(
+              1,
+              ((obstacle.position.x - this.position.x) * dx +
+                (obstacle.position.y - this.position.y) * dy) /
+                lengthSquared
+            )
+          );
+          // Ignore an obstacle already enclosing the start; the planner must
+          // be allowed to navigate away from an overlapping spawn.
+          if (
+            Math.hypot(
+              obstacle.position.x - this.position.x,
+              obstacle.position.y - this.position.y
+            ) < obstacle.radius + 40
+          )
+            return false;
+          return (
+            Math.hypot(
+              this.position.x + dx * t - obstacle.position.x,
+              this.position.y + dy * t - obstacle.position.y
+            ) <
+            obstacle.radius + 40
+          );
+        })
+      )
+        delete this.routeState;
     }
     const arrived = moveFieldShip(
       this,
