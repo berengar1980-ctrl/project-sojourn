@@ -32,6 +32,14 @@ function validShip(value: unknown, options: NpcLocalMiningOptions): boolean {
   }
   if (!finite(value.scanProgress) || value.scanProgress > 1) return false;
   if (!finite(value.miningAccumulator) || typeof value.laserActive !== 'boolean') return false;
+  if (value.oreCollection !== undefined) {
+    if (!record(value.oreCollection)) return false;
+    const collection = value.oreCollection;
+    if (typeof collection.resourceId !== 'string' || !collection.resourceId) return false;
+    if (!finite(collection.durationSeconds, 0.01) || collection.durationSeconds > 10) return false;
+    if (!finite(collection.remainingSeconds) || collection.remainingSeconds > collection.durationSeconds)
+      return false;
+  }
   if (value.targetAsteroidId === null) {
     return ['entering', 'approaching', 'exiting'].includes(value.phase as string);
   }
