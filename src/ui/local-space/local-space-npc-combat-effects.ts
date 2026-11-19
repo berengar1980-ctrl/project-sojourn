@@ -38,7 +38,8 @@ export function drawLocalNpcCombatEffects(
     for (const ship of [duel.attacker, duel.defender]) {
       active.add(ship.id);
       const fraction = ship.hullHp / Math.max(1, ship.hullMaxHp);
-      if (fraction > 0.85) continue;
+      // Some minimal combat snapshots omit hull data; they cannot emit damage FX.
+      if (!Number.isFinite(fraction) || fraction > 0.85) continue;
       let effect = damageParticles.get(ship.id);
       if (!effect) {
         effect = new DistressDamageParticles();
