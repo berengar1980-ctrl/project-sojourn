@@ -3,7 +3,8 @@ import { patrolVariantShips } from './patrol-variant-ships';
 
 /**
  * Every pirate class uses a patrol-hull silhouette and its matching hardpoints.
- * Higher classes are physically enlarged patrol hulls until dedicated pirate art exists.
+ * Pirate tiers differ in stats, but they retain their source patrol hull's real 60 m scale.
+ * Never enlarge a 60 m sprite to 80/120 m just to express difficulty.
  */
 export const pirateClassShips: readonly ShipDefinition[] = [
   {
@@ -16,9 +17,8 @@ export const pirateClassShips: readonly ShipDefinition[] = [
   },
   {
     ...patrolVariantShips[2]!,
-    nominalLengthMeters: 80,
     id: 'pirate-reaver-80m',
-    name: 'Korsaren-Reaver (80 m)',
+    name: 'Korsaren-Reaver (Patrouillenrumpf)',
     role: 'patrol',
     cargoCapacityTons: 145,
     navigation: { cruiseSpeed: 219 },
@@ -26,9 +26,8 @@ export const pirateClassShips: readonly ShipDefinition[] = [
   },
   {
     ...patrolVariantShips[3]!,
-    nominalLengthMeters: 120,
     id: 'pirate-marauder-120m',
-    name: 'Korsaren-Marauder (120 m)',
+    name: 'Korsaren-Marauder (Patrouillenrumpf)',
     role: 'patrol',
     cargoCapacityTons: 205,
     navigation: { cruiseSpeed: 190 },

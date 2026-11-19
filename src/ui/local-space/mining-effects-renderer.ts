@@ -1,11 +1,29 @@
 import { drawMiningLaserBeam, drawMiningTractorBeam } from './mining-beam-visuals';
 import type { ShipEffectLayer } from '../../core/ship-types';
-import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
+import type {
+  LocalAsteroidView,
+  LocalNpcShipView,
+  LocalSpaceViewModel,
+} from '../../features/local-space/local-space-view-model';
 import type { MapCamera, ScreenPoint } from '../map/map-camera';
 import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
+import { hashId } from './local-space-visual-hash';
 
 function fractional(value: number): number {
   return value - Math.floor(value);
+}
+
+export function drawMiningChunkVisual(
+  context: CanvasRenderingContext2D,
+  point: ScreenPoint,
+  id: string
+): void {
+  const variation = (hashId(id) % 100) / 100;
+  const radius = 1.5 + variation * 2.2;
+  context.fillStyle = '#a88f73';
+  context.beginPath();
+  context.arc(point.x, point.y, radius, 0, Math.PI * 2);
+  context.fill();
 }
 
 function normalized(point: ScreenPoint): ScreenPoint {
@@ -18,6 +36,82 @@ export class MiningEffectsRenderer {
     private readonly context: CanvasRenderingContext2D,
     private readonly camera: MapCamera
   ) {}
+
+  /** NPC work runs through the exact same player laser, impact and ore-tractor
+   * drawing routines. Only the input ship/target/ore state differs.
+   */
+  drawNpcMining(
+    model: LocalSpaceViewModel,
+    npc: LocalNpcShipView,
+    asteroid: LocalAsteroidView,
+    geometry: ShipScreenGeometry,
+    width: number,
+    height: number,
+    timeSeconds: number
+  ): void {
+    const dx = npc.position.x - asteroid.position.x;
+    const dy = npc.position.y - asteroid.position.y;
+    const length = Math.max(1, Math.hypot(dx, dy));
+    const normal = { x: dx / length, y: dy / length };
+    const impact = {
+      point: {
+        x: asteroid.position.x + normal.x * asteroid.radius,
+        y: asteroid.position.y + normal.y * asteroid.radius,
+      },
+      normal,
+    };
+    const tractorPort = npc.hardpoints.tractorBeams?.[0];
+    const relative = tractorPort
+      ? {
+          x: (tractorPort.x - npc.hardpoints.pivot.x) / npc.hardpoints.sourceWidth,
+          y: (tractorPort.y - npc.hardpoints.pivot.y) / npc.hardpoints.sourceHeight,
+        }
+      : { x: 0, y: 0 };
+    const cos = Math.cos(npc.headingRadians);
+    const sin = Math.sin(npc.headingRadians);
+    const destination = {
+      x: npc.position.x + (relative.x * cos - relative.y * sin) * npc.nominalLengthMeters,
+      y: npc.position.y + (relative.x * sin + relative.y * cos) * npc.nominalLengthMeters,
+    };
+    // The small ore chunks physically travel toward the tractor hardpoint on
+    // screen; the actual economic extraction stays with the NPC mining service.
+    const chunks = Array.from({ length: 4 }, (_, index) => {
+      const phase = fractional(timeSeconds * 0.46 + index * 0.25 + (hashId(npc.id) % 31) / 31);
+      return {
+        id: npc.id + ':work:' + index,
+        amount: 1,
+        position: {
+          x: impact.point.x + (destination.x - impact.point.x) * phase,
+          y: impact.point.y + (destination.y - impact.point.y) * phase,
+        },
+        tractorActive: true,
+      };
+    });
+    const workModel: LocalSpaceViewModel = {
+      ...model,
+      combat: null,
+      laserActive: true,
+      miningImpact: impact,
+      ship: {
+        ...model.ship,
+        position: npc.position,
+        headingRadians: npc.headingRadians,
+        nominalLengthMeters: npc.nominalLengthMeters,
+        spriteUrl: npc.spriteUrl,
+        spriteAspectRatio: npc.spriteAspectRatio,
+        hardpoints: npc.hardpoints,
+      },
+      chunks,
+    };
+    this.drawTractorFields(workModel, geometry, width, height, timeSeconds, 'below');
+    this.drawMining(workModel, geometry, width, height, timeSeconds, 'below');
+    this.drawMining(workModel, geometry, width, height, timeSeconds, 'above');
+    this.drawTractorFields(workModel, geometry, width, height, timeSeconds, 'above');
+    for (const chunk of chunks) {
+      const point = this.camera.worldToScreen(chunk.position, width, height);
+      drawMiningChunkVisual(this.context, point, chunk.id);
+    }
+  }
 
   drawMining(
     model: LocalSpaceViewModel,

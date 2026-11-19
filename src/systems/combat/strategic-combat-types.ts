@@ -1,3 +1,4 @@
+import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import type { ShipArmorProtection, ShipWeaponFamily } from '../../core/ship-types';
 import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
@@ -326,6 +327,7 @@ export interface StrategicCombatService {
   getSnapshot(): StrategicCombatSnapshot;
   getCombatLog(): readonly CombatLogEntry[];
   tick(deltaSeconds: number): StrategicCombatSnapshot;
+  setBystanders(ships: readonly StrategicCombatBystander[]): void;
   setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
   surrender(side: StrategicCombatSide): void;
   fireGrapple(side: StrategicCombatSide): boolean;

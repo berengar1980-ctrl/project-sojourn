@@ -1,6 +1,9 @@
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
-import { AsteroidFieldWorld } from '../systems/operations/asteroid-field-world';
+import {
+  AsteroidFieldWorld,
+  type AsteroidFieldRuntime,
+} from '../systems/operations/asteroid-field-world';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import {
   registerNpcAsteroidClaim,
@@ -68,6 +71,28 @@ export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldW
   return fields;
 }
 
+/** NPC versus NPC duels have one PvP movement authority; mirror those poses
+ * into the local world so civilians never freeze at the combat start point.
+ */
+function syncNpcDuelFieldPoses(
+  context: ControllerRuntimeContext,
+  field: AsteroidFieldRuntime
+): void {
+  for (const duel of context.engagements.activeNpcCombatSnapshots?.() ?? []) {
+    for (const combatant of [duel.attacker, duel.defender]) {
+      const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === combatant.id);
+      if (npc?.locationId !== field.locationId) continue;
+      field.miners.syncCombatPose(
+        combatant.id,
+        combatant.position,
+        combatant.headingRadians,
+        combatant.speed
+      );
+      field.pirates.syncCombatPose(combatant.id, combatant.position, combatant.headingRadians);
+    }
+  }
+}
+
 /** All field operations advance on the campaign clock, not only during local rendering. */
 export function advanceControllerFieldWorld(
   context: ControllerRuntimeContext,
@@ -83,6 +108,24 @@ export function advanceControllerFieldWorld(
   fieldWorldFor(context).tick(deltaSeconds, localId, (field, seconds) => {
     const activeCombat = field.locationId === localId ? combat : null;
     if (activeCombat) {
+      // NPC miners and passing pirates are solid ship bodies inside embedded
+      // combat, but they are not combat targets or alternate PvP combatants.
+      const fighters = new Set([activeCombat.attacker.id, activeCombat.defender.id]);
+      const bystanders = [
+        ...field.miners.ships.map((ship) => ({
+          id: ship.npcId,
+          shipId: ship.shipId,
+          position: { ...ship.position },
+          headingRadians: ship.headingRadians,
+        })),
+        ...field.pirates.snapshot(context.economy.sectorNpcs.npcs).map((ship) => ({
+          id: ship.npcId,
+          shipId: ship.shipId,
+          position: ship.position,
+          headingRadians: ship.headingRadians,
+        })),
+      ].filter((ship) => !fighters.has(ship.id));
+      context.engagements.activePlayerCombat()?.setBystanders(bystanders);
       // The duel advances physical asteroids; copy their authoritative poses
       // instead of integrating the same bodies a second time.
       const combatAsteroids = activeCombat.arena.asteroids ?? [];
@@ -106,6 +149,7 @@ export function advanceControllerFieldWorld(
         activeCombat.attacker.speed
       );
     }
+    syncNpcDuelFieldPoses(context, field);
     field.miners.tick(seconds, activeCombat?.defender.id);
     if (activeCombat?.defender.id.startsWith('security-drone:')) {
       field.drone.restore(activeCombat.defender.position, activeCombat.defender.hullHp > 0);

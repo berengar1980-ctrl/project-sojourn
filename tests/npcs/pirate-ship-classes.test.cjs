@@ -41,8 +41,8 @@ const stats = ['raider', 'reaver', 'marauder'].map((cls) => {
 });
 assert.deepEqual(
   stats.map((entry) => entry.length),
-  [60, 80, 120]
+  [60, 60, 60]
 );
 assert(stats[0].hull < stats[1].hull && stats[1].hull < stats[2].hull);
 assert(stats[0].weapons < stats[1].weapons && stats[1].weapons < stats[2].weapons);
-console.log('PASS 60/80/120m pirate hulls and actual tiered combat equipment');
+console.log('PASS native 60m patrol hull scale with distinct pirate tiered combat equipment');

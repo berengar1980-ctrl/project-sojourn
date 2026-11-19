@@ -1,4 +1,4 @@
-import { drawMiningLaserBeam, drawMiningTractorBeam } from './mining-beam-visuals';
+import { drawMiningChunkVisual, type MiningEffectsRenderer } from './mining-effects-renderer';
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import type {
@@ -8,11 +8,7 @@ import type {
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
-import {
-  projectHardpoint,
-  spriteDrawOffset,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { type ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 export interface AsteroidHitArea {
   readonly id: string;
@@ -24,20 +20,14 @@ export interface NpcHitArea {
   readonly point: ScreenPoint;
   readonly radius: number;
 }
-export function hashId(id: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < id.length; index += 1) {
-    hash ^= id.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { hashId } from './local-space-visual-hash';
 export abstract class LocalSpaceSceneLayers {
   protected abstract context: CanvasRenderingContext2D;
   protected abstract model: LocalSpaceViewModel;
   protected abstract camera: MapCamera;
   protected abstract ensureNpcImage(url: string): HTMLImageElement;
   protected abstract engineEffects: ShipEngineEffectsRenderer;
+  protected abstract miningEffects: MiningEffectsRenderer;
   protected abstract shipLighting: ShipLightingRenderer;
   protected abstract shieldImpacts: ShieldImpactRenderer;
   protected abstract shipGeometry(width: number, height: number): ShipScreenGeometry;
@@ -184,14 +174,14 @@ export abstract class LocalSpaceSceneLayers {
         timeSeconds
       );
     } else if (npc.laserActive) {
-      this.drawNpcMiningBeam(
-        point,
-        target.position,
+      this.miningEffects.drawNpcMining(
+        this.model,
+        npc,
+        target,
+        geometry,
         width,
         height,
-        timeSeconds,
-        geometry,
-        npc.hardpoints
+        timeSeconds
       );
     }
   }
@@ -217,43 +207,11 @@ export abstract class LocalSpaceSceneLayers {
     this.context.stroke();
     this.context.restore();
   }
-  protected drawNpcMiningBeam(
-    shipPoint: ScreenPoint,
-    targetWorld: { readonly x: number; readonly y: number },
-    width: number,
-    height: number,
-    timeSeconds: number,
-    geometry: ShipScreenGeometry,
-    hardpoints: LocalSpaceViewModel['npcShips'][number]['hardpoints']
-  ): void {
-    const target = this.camera.worldToScreen(targetWorld, width, height);
-    const tractor = hardpoints.tractorBeams?.[0];
-    const towOrigin = tractor ? projectHardpoint(tractor, hardpoints, geometry) : shipPoint;
-    const towPulse = 0.58 + Math.sin(timeSeconds * 8.5) * 0.28;
-    // Ore flows from the deposit toward the tractor port, as on the player ship.
-    drawMiningTractorBeam(this.context, target, towOrigin, towPulse);
-
-    const laserPoints = hardpoints.miningLasers;
-    const pulse = 0.72 + Math.sin(timeSeconds * 13) * 0.22;
-    for (const laser of laserPoints) {
-      const start = projectHardpoint(laser, hardpoints, geometry);
-      const beamWidth = Math.max(
-        1.1,
-        (laser.width / hardpoints.sourceWidth) * geometry.width * 0.72
-      );
-      drawMiningLaserBeam(this.context, start, target, beamWidth, 1, pulse);
-    }
-  }
   protected drawChunks(width: number, height: number): void {
     for (const chunk of this.model.chunks) {
       const point = this.camera.worldToScreen(chunk.position, width, height);
       if (point.x < -8 || point.y < -8 || point.x > width + 8 || point.y > height + 8) continue;
-      const variation = (hashId(chunk.id) % 100) / 100;
-      const radius = 1.5 + variation * 2.2;
-      this.context.fillStyle = '#a88f73';
-      this.context.beginPath();
-      this.context.arc(point.x, point.y, radius, 0, Math.PI * 2);
-      this.context.fill();
+      drawMiningChunkVisual(this.context, point, chunk.id);
     }
   }
 }

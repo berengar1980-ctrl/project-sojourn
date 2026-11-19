@@ -1,6 +1,14 @@
 {
   "version": 1,
   "modules": {
+    "src/systems/combat/strategic-combat-bystander-types.ts": {
+      "mode": "derived",
+      "reason": "Types only: transient field collision inputs to the PvP simulation; no independent saved state."
+    },
+    "src/systems/combat/combat-bystander-contacts.ts": {
+      "mode": "derived",
+      "reason": "Pure physical hull contact solver for transient civilian ships passed into native PvP; stores no checkpoint state."
+    },
     "src/systems/navigation/field-ship-routing.ts": {
       "mode": "transient",
       "reason": "Shared non-persistent NPC and drone field-route waypoints live in a WeakMap and are reconstructed from checkpointed positions and obstacles after loading."

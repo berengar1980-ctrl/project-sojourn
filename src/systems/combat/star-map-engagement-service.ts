@@ -463,6 +463,8 @@ export function createStarMapEngagementService(
     syncPlayerPursuitTarget: () => syncPlayerPursuitTarget(runtime),
     tick: (deltaSeconds) => tickEngagements(runtime, deltaSeconds),
     activePlayerCombat: () => runtime.playerCombat,
+    activeNpcCombatSnapshots: () =>
+      [...runtime.backgroundCombats.values()].map((entry) => entry.combat.getSnapshot()),
     activePlayerEnemy: () => runtime.playerEnemy,
     restorePlayerCareerCombat(combat, enemyId) {
       if (runtime.playerCombat || runtime.playerEnemy) {

@@ -724,3 +724,15 @@ unverändert vom PvP-Kampfkern bewegt und beim Ende in die lokale Pose
 zurückgeführt. Zusätzliche zivile Schiffe werden während des Kampfs nur als
 Darstellungsebene über dem nativen PvP-Renderer gezeigt, ohne eine eigene
 Simulation zu starten. Alte Minerschiff-Checkpoints bleiben weiterhin lesbar.
+
+### Gemeinsame NPC-Arbeit, Duellpositionen und Kollisionen (2026-11-19)
+
+Keine neue Save-Version. NPC-gegen-NPC-Kämpfe melden die Positionen ihrer
+Kampfteilnehmer während des Gefechts an das vorhandene lokale Feld. Der
+Kampfkern bleibt die einzige Bewegungsautorität; die lokalen Schiffsobjekte
+werden anhand seiner Snapshots aktualisiert. Dritte Schiffe werden dem aktiven
+PvP-Kampfkern lediglich als **flüchtige** physische Kontakte übergeben, ohne
+zusätzliche Combatants oder neue Checkpoint-Felder. Die bestehenden Schiff-IDs,
+Economy- und NPC-Mining-Zustände bleiben unverändert. Visuelle Erzbrocken der
+NPC-Miner sind ausschließlich Darstellung und verändern keine wirtschaftlichen
+Abbau- oder Cargo-Werte.
