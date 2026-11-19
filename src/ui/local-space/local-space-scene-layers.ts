@@ -20,14 +20,7 @@ export interface NpcHitArea {
   readonly point: ScreenPoint;
   readonly radius: number;
 }
-export function hashId(id: string): number {
-  let hash = 2166136261;
-  for (let index = 0; index < id.length; index += 1) {
-    hash ^= id.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { hashId } from './local-space-visual-hash';
 export abstract class LocalSpaceSceneLayers {
   protected abstract context: CanvasRenderingContext2D;
   protected abstract model: LocalSpaceViewModel;
