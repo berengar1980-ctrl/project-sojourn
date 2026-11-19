@@ -13,7 +13,7 @@ const { detectedSecurityPirate, securityPirateApproach } = load(
 
 const offenses = [];
 const registry = {
-  claim: (_fieldId, _wreckId, _day) => ({ ownerId: 'salvager-9' }),
+  claim: () => ({ ownerId: 'salvager-9' }),
 };
 const context = {
   economy: {
