@@ -1,3 +1,4 @@
+import type { SecurityDroneSnapshot } from '../../systems/operations/asteroid-security-drone';
 import type { DistressRammingState } from '../../systems/salvage/distress-ramming-physics';
 import type { DistressTowState } from '../../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
@@ -116,6 +117,7 @@ export interface SalvageSpaceViewModel {
   readonly ship: SalvageShipView;
   readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly npcShips: readonly SalvageNpcShipView[];
+  readonly securityDrone?: SecurityDroneSnapshot;
   readonly wrecks: readonly SalvageWreckView[];
   readonly debris: readonly SalvageDebris[];
   readonly sections: readonly SalvageSection[];
