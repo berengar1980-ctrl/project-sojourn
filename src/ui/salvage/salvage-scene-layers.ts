@@ -1,7 +1,10 @@
 import { drawSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
-import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
+import type {
+  SalvageNpcShipView,
+  SalvageSpaceViewModel,
+} from '../../features/salvage/salvage-space-view-model';
 import { type MapCamera, type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -142,25 +145,7 @@ export abstract class SalvageSceneLayers {
       });
       if (npc.isSelected) this.drawNpcSelection(point, geometry);
 
-      const wreck = npc.targetWreckId
-        ? this.model.wrecks.find((entry) => entry.id === npc.targetWreckId)
-        : null;
-      if (wreck && npc.phase === 'scanning') {
-        this.drawNpcScan(point, wreck.position, width, height, npc.scanProgress, timeSeconds);
-      } else if (wreck && npc.salvageActive && !combatDefender) {
-        drawSalvageWorkEffect(
-          this.context,
-          this.camera,
-          geometry,
-          npc.hardpoints,
-          wreck.position,
-          false,
-          0,
-          width,
-          height,
-          timeSeconds
-        );
-      }
+      this.drawNpcWork(npc, point, geometry, width, height, timeSeconds);
 
       if (this.camera.getRelativeZoom() >= 1.55) {
         this.context.fillStyle = 'rgba(215, 202, 168, 0.8)';
@@ -170,6 +155,36 @@ export abstract class SalvageSceneLayers {
       }
     }
     return hits;
+  }
+  private drawNpcWork(
+    npc: SalvageNpcShipView,
+    point: ScreenPoint,
+    geometry: ShipScreenGeometry,
+    width: number,
+    height: number,
+    timeSeconds: number
+  ): void {
+    if (this.model.combat?.defender.id === npc.id) return;
+    const wreck = npc.targetWreckId
+      ? this.model.wrecks.find((entry) => entry.id === npc.targetWreckId)
+      : null;
+    if (!wreck) return;
+    if (npc.phase === 'scanning') {
+      this.drawNpcScan(point, wreck.position, width, height, npc.scanProgress, timeSeconds);
+    } else if (npc.salvageActive) {
+      drawSalvageWorkEffect(
+        this.context,
+        this.camera,
+        geometry,
+        npc.hardpoints,
+        wreck.position,
+        false,
+        0,
+        width,
+        height,
+        timeSeconds
+      );
+    }
   }
   protected drawNpcScan(
     shipPoint: ScreenPoint,
