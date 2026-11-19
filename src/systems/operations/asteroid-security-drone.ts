@@ -120,7 +120,15 @@ export class AsteroidSecurityDrone {
     pursuitTarget?: WorldPoint
   ): string[] {
     if (!this.operational) return [];
-    const destination = pursuitTarget ?? this.patrol[this.nextWaypoint]!;
+    const previousTarget = this.routeState?.target;
+    const keepPursuitRoute = Boolean(
+      pursuitTarget &&
+      previousTarget &&
+      Math.hypot(pursuitTarget.x - previousTarget.x, pursuitTarget.y - previousTarget.y) < 70
+    );
+    const destination = keepPursuitRoute
+      ? previousTarget!
+      : (pursuitTarget ?? this.patrol[this.nextWaypoint]!);
     const obstacles: FieldRouteObstacle[] = [
       ...asteroids
         .filter((rock) => rock.routeBlocking)
