@@ -1574,3 +1574,16 @@ Schildring mit einem kurzen Kontaktimpuls wird auf der lokalen Karte
 und in nativen Kämpfen angezeigt. Die Eigenrotation beträgt acht Sekunden.
 NPC-Treffer-VFX werden pro Trefferkennung nur einmal erfasst und nach
 ihrer Anzeigezeit entfernt, statt auf jeder Render-Iteration neu zu starten.
+
+## Review-Log (2026-11-19): Sicherheitsdrohne kleiner und Schildtreffer sichtbar
+
+**Keine Statusänderung** historischer Voidbound-Feature-IDs. Die Drohne wird
+jetzt mit 18 statt 26 Pixeln bei Normalzoom dargestellt; in der nativen
+Kampfansicht verwendet sie unabhängig vom zugrunde liegenden Schiffstyp
+das quadratische Seitenverhältnis des GC-87-R8-Sprites. Die Eigenrotation
+beträgt 16 Sekunden je Umdrehung. Aktive Schildtreffer werden als kurzlebige,
+ausrichtungsunabhängige Energie-Arcs unmittelbar auf dem Drohnenschild
+gezeichnet, sowohl während NPC-Kämpfen als auch in direktem PvP. Abgeschlossene
+Kämpfe zeichnen keine im eingefrorenen Kampfsnapshot verbliebenen Laser,
+Projektile, Traktorwürfe oder Greifhakenstrahlen mehr. An realer Kampfphysik,
+Ausrüstung, Schadensberechnung und Patrouillenlogik ändert sich nichts.
