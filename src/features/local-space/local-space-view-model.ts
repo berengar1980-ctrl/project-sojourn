@@ -95,6 +95,7 @@ export interface LocalSpaceViewModel {
     readonly position: WorldPoint;
     readonly scanRadius: number;
     readonly operational: boolean;
+    readonly shieldContactSeconds?: number;
   } | null;
   readonly title: string;
   readonly backgroundSeed: number;
