@@ -106,6 +106,25 @@ export function advanceControllerFieldWorld(
         activeCombat.attacker.speed
       );
     }
+    // Background NPC battles use the same PvP movement simulation. Synchronize
+    // both participants into the field instead of leaving their sprites frozen.
+    for (const duel of context.engagements.activeNpcCombatSnapshots()) {
+      for (const combatant of [duel.attacker, duel.defender]) {
+        const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === combatant.id);
+        if (npc?.locationId !== field.locationId) continue;
+        field.miners.syncCombatPose(
+          combatant.id,
+          combatant.position,
+          combatant.headingRadians,
+          combatant.speed
+        );
+        field.pirates.syncCombatPose(
+          combatant.id,
+          combatant.position,
+          combatant.headingRadians
+        );
+      }
+    }
     field.miners.tick(seconds, activeCombat?.defender.id);
     if (activeCombat?.defender.id.startsWith('security-drone:')) {
       field.drone.restore(activeCombat.defender.position, activeCombat.defender.hullHp > 0);
