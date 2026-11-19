@@ -57,6 +57,8 @@ equipSecurityDroneMk3(npc);
 assert.deepEqual(npc.installedComponents.hull, ['hull3']);
 assert.deepEqual(npc.installedComponents.shield, ['shield3']);
 assert(npc.hullMaxHp > 0 && npc.hullHp > 0);
+const energy = calculateShipModeEnergy(npc.installedComponents);
+assert(energy.output >= energy.combat, 'All Mk III weapons and shield must have sufficient power');
 const mounts = ship.sprite.hardpoints.weaponMounts ?? [];
 for (const mount of mounts) {
   if (!isShipCombatWeaponSlotActive(ship, mount.slotIndex)) continue;
