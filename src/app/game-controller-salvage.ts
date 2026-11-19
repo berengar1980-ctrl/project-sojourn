@@ -49,7 +49,7 @@ import {
   syncSalvageCombatField,
 } from './game-controller-salvage-combat-return';
 import { returnToStarMapFromSalvage } from './game-controller-salvage-exit';
-import { createWreckClaimActions } from './game-controller-salvage-claims';
+import { createWreckClaimActions, wreckClaimOwners } from './game-controller-salvage-claims';
 import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
 import {
   requestDistressDiagnosis,
@@ -160,16 +160,7 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
   return {
     ...model,
     securityDrone: context.drone.snapshot(),
-    wreckClaimOwners: Object.fromEntries(
-      context.field.wrecks.flatMap((wreck) => {
-        const claim = options.wreckClaims.claim(
-          context.field.id,
-          wreck.id,
-          options.getCurrentDay()
-        );
-        return claim ? [[wreck.id, claim.ownerId]] : [];
-      })
-    ),
+    wreckClaimOwners: wreckClaimOwners(context.field, options.wreckClaims, options.getCurrentDay()),
   };
 }
 
