@@ -22,12 +22,16 @@ export function detectedSecurityPirate(
     return (
       npc?.pirate &&
       npc.hullHp > 0 &&
-      !npc.combatMovement &&
-      !(npc.combatRecoverySeconds && npc.combatRecoverySeconds > 0) &&
       field.drone.detect(ship.position, field.instance.asteroids)
     );
   });
   available.sort((a, b) => {
+    const combatStatus = (id: string): number => {
+      const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === id);
+      return npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0 ? 1 : 0;
+    };
+    const status = combatStatus(a.npcId) - combatStatus(b.npcId);
+    if (status !== 0) return status;
     const drone = field.drone.snapshot().position;
     return (
       Math.hypot(a.position.x - drone.x, a.position.y - drone.y) -
