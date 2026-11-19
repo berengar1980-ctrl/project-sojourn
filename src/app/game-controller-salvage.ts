@@ -324,7 +324,12 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
   tickSalvageSecurityDrone(context.drone, context.field, deltaSeconds, nearbyShips);
   if (combat) {
     options.onCombatBystanders?.(
-      salvageDroneBystanders(combat, npcSalvage.ships, context.drone, context.field.sourceLocationId)
+      salvageDroneBystanders(
+        combat,
+        npcSalvage.ships,
+        context.drone,
+        context.field.sourceLocationId
+      )
     );
     // The existing duel owns its two combatants and all moving wreck bodies.
     // Reconcile those positions into the visible local scene every frame.
