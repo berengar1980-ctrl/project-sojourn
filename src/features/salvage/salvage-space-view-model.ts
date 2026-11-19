@@ -220,7 +220,7 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       ...(wreck.containerVariant ? { containerVariant: wreck.containerVariant } : {}),
       ...(wreck.debrisVariant ? { debrisVariant: wreck.debrisVariant } : {}),
       ...(wreck.sectionVariant ? { sectionVariant: wreck.sectionVariant } : {}),
-      ...(wreck.combatWreckVariant ? { combatWreckVariant: wreck.combatWreckVariant } : {}),
+      combatWreckVariant: wreck.combatWreckVariant,
       ...(wreck.effectSeed !== undefined ? { effectSeed: wreck.effectSeed } : {}),
       ...(wreck.rotation3d ? { rotation3d: wreck.rotation3d } : {}),
       integrity: wreck.integrity,
