@@ -1,3 +1,4 @@
+import { drawSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
@@ -146,8 +147,19 @@ export abstract class SalvageSceneLayers {
         : null;
       if (wreck && npc.phase === 'scanning') {
         this.drawNpcScan(point, wreck.position, width, height, npc.scanProgress, timeSeconds);
-      } else if (wreck && npc.salvageActive) {
-        this.drawNpcSalvageTether(point, wreck.position, width, height, timeSeconds);
+      } else if (wreck && npc.salvageActive && !combatDefender) {
+        drawSalvageWorkEffect(
+          this.context,
+          this.camera,
+          geometry,
+          npc.hardpoints,
+          wreck.position,
+          false,
+          0,
+          width,
+          height,
+          timeSeconds
+        );
       }
 
       if (this.camera.getRelativeZoom() >= 1.55) {
@@ -176,32 +188,6 @@ export abstract class SalvageSceneLayers {
     this.context.arc(target.x, target.y, radius, 0, Math.PI * 2);
     this.context.stroke();
     this.context.setLineDash([4, 5]);
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-    this.context.restore();
-  }
-  protected drawNpcSalvageTether(
-    shipPoint: ScreenPoint,
-    targetWorld: { readonly x: number; readonly y: number },
-    width: number,
-    height: number,
-    timeSeconds: number
-  ): void {
-    const target = this.camera.worldToScreen(targetWorld, width, height);
-    const pulse = 0.62 + Math.sin(timeSeconds * 8) * 0.18;
-    this.context.save();
-    this.context.strokeStyle = `rgba(228, 181, 93, ${pulse})`;
-    this.context.lineWidth = 1.4;
-    this.context.setLineDash([5, 4]);
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-    this.context.strokeStyle = `rgba(245, 214, 147, ${pulse * 0.26})`;
-    this.context.lineWidth = 7;
-    this.context.setLineDash([]);
     this.context.beginPath();
     this.context.moveTo(shipPoint.x, shipPoint.y);
     this.context.lineTo(target.x, target.y);
