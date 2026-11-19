@@ -166,7 +166,24 @@ export function tickFieldSecurity(
     }
   }
 
-  drone.tick(seconds, runtime.instance.asteroids, contacts);
+  const nearbyShips = [
+    ...runtime.miners.ships.map((ship) => ({
+      id: ship.npcId,
+      position: ship.position,
+      radius: Math.max(18, ship.nominalLengthMeters * 0.35),
+    })),
+    ...runtime.pirates.snapshot(economy.sectorNpcs.npcs).map((ship) => ({
+      id: ship.npcId,
+      position: ship.position,
+      radius: 35,
+    })),
+    ...(active ? [{
+      id: 'player',
+      position: active.instance.ship.position,
+      radius: Math.max(18, context.state.activeShip.nominalLengthMeters * 0.35),
+    }] : []),
+  ];
+  drone.tick(seconds, runtime.instance.asteroids, contacts, nearbyShips);
   for (const contact of contacts) {
     if (!drone.detect(contact.position, runtime.instance.asteroids)) continue;
     processDroneContact(context, runtime, JSON.stringify([contact.shipId, contact.asteroidId]));
