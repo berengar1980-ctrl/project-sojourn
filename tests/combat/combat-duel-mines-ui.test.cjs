@@ -11,11 +11,8 @@ const panel = read('src/ui/combat/strategic-combat-panel.ts');
 const mines = read('src/systems/combat/strategic-combat-mines.ts');
 assert(lobby.includes('mineSelectors(draft, rerender)'), 'mine selector exists for players');
 assert(setup.includes('mines: draft.mines.flatMap'), 'mine loadout reaches combat setup');
-assert(
-  lobby.includes('drafts[index]!.mines = [];'),
-  'analysis encounters do not auto-equip lethal mines'
-);
+assert(!lobby.includes('DUEL_ENCOUNTERS'), 'curated encounter setup removed from lobby');
 assert(panel.includes('combatant.mineCount'), 'HUD shows real mine supply');
 assert(panel.includes('Keine Minen ausgerüstet'), 'empty mine loadout is explained');
 assert(mines.includes('tacticalMine'), 'equipped combat AI can deploy opportunistically');
-console.log('PASS selectable mines, Alpha loadout and actual ammo visibility');
+console.log('PASS selectable mines, free duel and actual ammo visibility');
