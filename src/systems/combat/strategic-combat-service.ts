@@ -5,6 +5,7 @@ import {
   type CareerStrategicCombatCheckpoint,
 } from './career-strategic-combat-checkpoint';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
+import { resolveCombatBystanderContacts } from './combat-bystander-contacts';
 import { applyCombatRamImpact } from './combat-ram-impact';
 import { advanceCombatPower } from './combat-power-service';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
@@ -18,6 +19,7 @@ import { advanceCombatGrappleTether, canDockGrappledShips } from './combat-grapp
 import { advanceShieldImpacts } from '../shields/shield-service';
 import type {
   StrategicCombatArenaOptions,
+  StrategicCombatBystander,
   StrategicCombatRuntime,
   StrategicCombatSnapshot,
   StrategicCombatantSetup,
@@ -222,7 +224,8 @@ function advanceRuntimeGrapple(runtime: StrategicCombatRuntime, dt: number): boo
 }
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
-  deltaSeconds: number
+  deltaSeconds: number,
+  bystanders: readonly StrategicCombatBystander[]
 ): StrategicCombatSnapshot {
   if (runtime.winner || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) {
     return runtimeSnapshot(runtime);
@@ -258,6 +261,8 @@ function tickStrategicCombat(
   applyCombatRamImpact(runtime);
   reviewShipContact(runtime, (ship, enemy, side) => reviewAndExecute(runtime, ship, enemy, side));
   resolveCombatantCollision(runtime.attacker, runtime.defender);
+  resolveCombatBystanderContacts(runtime.attacker, bystanders);
+  resolveCombatBystanderContacts(runtime.defender, bystanders);
   resolveArenaObstacles(runtime.attacker, runtime.arena);
   resolveArenaObstacles(runtime.defender, runtime.arena);
   updateCombatAsteroidThrows(runtime, dt);
@@ -422,6 +427,7 @@ export function createStrategicCombatService(
     Object.assign(runtime.defender, storedDefender);
   }
   if (!saved) initializeStrategicCombatLog(runtime, attackerSetup, defenderSetup, seed);
+  let bystanders: readonly StrategicCombatBystander[] = [];
   return {
     exportCareerState: () => captureCareerStrategicCombat(runtime),
     getSnapshot: () => runtimeSnapshot(runtime),
@@ -475,6 +481,9 @@ export function createStrategicCombatService(
       runtime.lastEvent = combatant.setup.name + ' gibt das Gefecht auf';
       recordCombatLog(runtime, side, 'result', 'KAPITULATION · Hülle bleibt unverändert');
     },
-    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds),
+    setBystanders: (ships) => {
+      bystanders = ships;
+    },
+    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds, bystanders),
   };
 }
