@@ -180,9 +180,12 @@ export class LocalPirateTraffic {
       // NPC-versus-NPC combat and recovery retain their field contact; normal
       // pirate traffic must not move or re-engage the active combatant.
       if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
+      const busy = new Set(
+        npcs.filter((entry) => entry.combatMovement || entry.combatRecoverySeconds).map((entry) => entry.id)
+      );
       const targets = [
         ...miners
-          .filter((miner) => miner.npcId !== pirate.npcId)
+          .filter((miner) => miner.npcId !== pirate.npcId && !busy.has(miner.npcId))
           .map((miner) => ({
             id: miner.npcId,
             position: miner.position,
