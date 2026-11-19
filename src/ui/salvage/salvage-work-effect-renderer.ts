@@ -15,15 +15,39 @@ export function drawPlayerSalvageWorkEffect(
   if (model.phase !== 'stripping' && model.phase !== 'extracting-component') return;
   const wreck = model.wrecks.find((entry) => entry.isWorkTarget);
   if (!wreck) return;
-  const wreckPoint = camera.worldToScreen(wreck.position, width, height);
-  const hardpoints = model.ship.hardpoints.tractorBeams ?? [];
+  drawSalvageWorkEffect(
+    context,
+    camera,
+    geometry,
+    model.ship.hardpoints,
+    wreck.position,
+    model.phase === 'extracting-component',
+    model.operationProgress ?? 0,
+    width,
+    height,
+    timeSeconds
+  );
+}
+
+export function drawSalvageWorkEffect(
+  context: CanvasRenderingContext2D,
+  camera: MapCamera,
+  geometry: ShipScreenGeometry,
+  shipHardpoints: SalvageSpaceViewModel['ship']['hardpoints'],
+  wreckPosition: { readonly x: number; readonly y: number },
+  component: boolean,
+  progress: number,
+  width: number,
+  height: number,
+  timeSeconds: number
+): void {
+  const wreckPoint = camera.worldToScreen(wreckPosition, width, height);
+  const hardpoints = shipHardpoints.tractorBeams ?? [];
   const emitters =
     hardpoints.length > 0
-      ? hardpoints.map((hardpoint) => projectHardpoint(hardpoint, model.ship.hardpoints, geometry))
+      ? hardpoints.map((hardpoint) => projectHardpoint(hardpoint, shipHardpoints, geometry))
       : [geometry.center];
-  const progress = model.operationProgress ?? 0;
   const pulse = 0.68 + Math.sin(timeSeconds * 7.5) * 0.2;
-  const component = model.phase === 'extracting-component';
   context.save();
   context.lineCap = 'round';
   for (const emitter of emitters) {
