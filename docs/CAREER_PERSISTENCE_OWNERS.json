@@ -154,6 +154,10 @@
     "src/systems/combat/combat-field-spawns.ts": {
       "mode": "derived",
       "reason": "Pure deterministic selection of safe initial PvP positions among existing bodies; no persistent gameplay state."
+    },
+    "src/systems/navigation/field-patrol-route.ts": {
+      "mode": "derived",
+      "reason": "Pure bounded obstacle-visibility path calculation; the resulting patrol waypoint is checkpointed by the drone authority, while geometry is reconstructed from the current field."
     }
   }
 }
