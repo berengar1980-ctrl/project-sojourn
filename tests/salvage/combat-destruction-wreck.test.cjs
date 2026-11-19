@@ -4,6 +4,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
+const load = (name) => loadStandaloneTypeScriptModule(root, name);
 const { addDestroyedShipWreck } = load('src/systems/salvage/combat-destruction-wreck.ts');
 const { combatWreckVariantFor } = load('src/core/combat-wreck-variant.ts');
 const { salvageFieldCombatArena } = load('src/systems/combat/field-combat-arena.ts');
@@ -30,7 +31,7 @@ for (let i = 0; i < 3; i++) {
   );
   assert.equal(field.wrecks.length, 1);
   assert.equal(
-    addDestroyedShipWreck(field, ship, 'battle-1', () => 0.5),
+    addDestroyedShipWreck(field, ship, 'battle-1', 19 + i, () => 0.5),
     wreck,
     'combat completion must be idempotent'
   );
@@ -48,7 +49,8 @@ assert.equal(
   addDestroyedShipWreck(
     intact,
     { id: 'survivor', position: { x: 100, y: 100 }, hullHp: 10 },
-    'battle-1'
+    'battle-1',
+    12
   ),
   null
 );
