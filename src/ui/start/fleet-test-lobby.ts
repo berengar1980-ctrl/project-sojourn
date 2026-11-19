@@ -78,7 +78,10 @@ function teamCount(label: string, initial: number) {
   return result;
 }
 
-export function createFleetTestLobby(root: HTMLElement): { destroy(): void } {
+export function createFleetTestLobby(
+  root: HTMLElement,
+  onBack: () => void
+): { destroy(): void } {
   const shell = document.createElement('section');
   shell.className = 'harrow-duel harrow-fleet';
   const heading = document.createElement('h1');
@@ -108,7 +111,11 @@ export function createFleetTestLobby(root: HTMLElement): { destroy(): void } {
   start.textContent = 'FleetCombat starten (noch nicht verfügbar)';
   start.disabled = true;
   start.title = 'Wird aktiviert, sobald die Mehrschiff-Simulation implementiert ist';
-  actions.append(shuffle, start);
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.textContent = 'Zurück zum Hauptmenü';
+  back.addEventListener('click', onBack);
+  actions.append(back, shuffle, start);
   shell.append(heading, description, options, capabilities, actions, roster);
   root.replaceChildren(shell);
 
