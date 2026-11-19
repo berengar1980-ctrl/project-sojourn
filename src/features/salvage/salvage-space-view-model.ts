@@ -12,6 +12,7 @@ import type {
   SalvageDebrisVariant,
   SalvageSection,
   SalvageSectionVariant,
+  CombatWreckVariant,
   SalvageWreckKind,
   SectorSalvageEvent,
 } from '../../core/salvage-types';
@@ -47,6 +48,7 @@ export interface SalvageWreckView {
   readonly containerVariant?: SalvageContainerVariant;
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
+  readonly combatWreckVariant?: CombatWreckVariant;
   readonly effectSeed?: number;
   readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly integrity: number;
@@ -216,6 +218,7 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       ...(wreck.containerVariant ? { containerVariant: wreck.containerVariant } : {}),
       ...(wreck.debrisVariant ? { debrisVariant: wreck.debrisVariant } : {}),
       ...(wreck.sectionVariant ? { sectionVariant: wreck.sectionVariant } : {}),
+      ...(wreck.combatWreckVariant ? { combatWreckVariant: wreck.combatWreckVariant } : {}),
       ...(wreck.effectSeed !== undefined ? { effectSeed: wreck.effectSeed } : {}),
       ...(wreck.rotation3d ? { rotation3d: wreck.rotation3d } : {}),
       integrity: wreck.integrity,
