@@ -831,3 +831,13 @@ Rechtliche Meldungen bei erkannten Versuchen unbefugter Bergung gehen über
 `SectorLegalRegistry.reportOffense` und deren vorhandene Idempotenzkennung.
 Die normale Sperre fremder Wrackansprüche bleibt bestehen. Piratenduelle
 benutzen die bestehende strategische Kampfsimulation.
+
+## Sicherheitsdrohne: Kampfpose und Darstellung (2026-11-19)
+
+In aktiven PvP-/NPC-Kämpfen ist die Position aus dem autoritativen
+`StrategicCombatSnapshot` maßgeblich. Der lokale Drohnenzustand übernimmt
+Position und Ausrichtung dieses Kampfteilnehmers, statt die Patrouillenroute
+parallel zu simulieren. Das Checkpointformat der Sicherheitsdrohne bleibt
+Version 1. Die zoomabhängige Darstellung des GC-87-R8-Sprites, dessen
+Dauerrotation und die Unterdrückung doppelter Kampf-Overlays sind rein visuell
+und benötigen keine zusätzlichen Spielstanddaten.
