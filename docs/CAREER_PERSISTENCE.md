@@ -785,3 +785,18 @@ Der bestehende Checkpoint-Roundtrip wird durch
 Wrackgebietsdrohne ist in diesem PR noch nicht als eigenständige Autorität
 integriert; deren Persistenzvertrag ist vor einer Implementierung separat zu
 prüfen.
+
+## Salvage security drone checkpoint (2026-11-19)
+
+The salvage/wreck security patrol now uses the shared `AsteroidSecurityDrone`
+route authority with stable, deterministic patrol markers independent of
+lootable wrecks. Its current position, active route, next waypoint and
+operational state are persisted inside the existing version-1
+`WreckClaimRegistry.fields[].drone` optional field. The value is verified by
+`stageSecurityDroneCheckpoint` during Career restore; earlier saved fields
+without a drone remain loadable. Local ship positions and moving wreck
+obstacles are derived anew from their existing field authorities and are
+not duplicated into this checkpoint. The scene writes the drone checkpoint
+when unmounted; career saving only occurs in port or orbital mode, after
+that unmount. The regression test covers navigation and a detached
+registry roundtrip.
