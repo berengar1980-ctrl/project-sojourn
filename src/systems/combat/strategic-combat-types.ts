@@ -4,6 +4,7 @@ import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
   SalvageDebrisVariant,
   SalvageSectionVariant,
+  CombatWreckVariant,
   SalvageContainerVariant,
 } from '../../core/salvage-types';
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
@@ -240,6 +241,7 @@ export interface CombatImpactSnapshot {
 export interface ThrownAsteroidSnapshot {
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
+  readonly combatWreckVariant?: CombatWreckVariant;
   readonly containerVariant?: SalvageContainerVariant;
   readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly effectSeed?: number;
@@ -285,6 +287,7 @@ export interface StrategicCombatSnapshot {
 export interface CombatVisualAsteroid {
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
+  readonly combatWreckVariant?: CombatWreckVariant;
   readonly containerVariant?: SalvageContainerVariant;
   rotation3d?: { x: number; y: number; z: number };
   readonly spin3d?: Readonly<{ x: number; y: number; z: number }>;
@@ -452,6 +455,7 @@ export type { ShieldSegmentHit } from './combat-shield-segment-types';
 export interface MutableThrownAsteroid {
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
+  readonly combatWreckVariant?: CombatWreckVariant;
   readonly containerVariant?: SalvageContainerVariant;
   readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly effectSeed?: number;
