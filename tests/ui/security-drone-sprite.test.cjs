@@ -55,16 +55,23 @@ try {
   drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 1.5);
   drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 3);
   assert.equal(calls.draws.length, 3, 'Sprite is drawn each frame');
-  assert.deepEqual(calls.draws.map(({ x, y, width, height }) => [x, y, width, height]), [
-    [-13, -13, 26, 26],
-    [-13, -13, 26, 26],
-    [-13, -13, 26, 26],
-  ]);
+  assert.deepEqual(
+    calls.draws.map(({ x, y, width, height }) => [x, y, width, height]),
+    [
+      [-13, -13, 26, 26],
+      [-13, -13, 26, 26],
+      [-13, -13, 26, 26],
+    ]
+  );
   assert.equal(calls.draws[0].image.url, '/drones/security-drone-gc87r8.webp');
   assert(Math.abs(calls.angles[0]) < 1e-9);
   assert(Math.abs(calls.angles[1] - Math.PI) < 1e-9);
   assert(Math.abs(calls.angles[2] - Math.PI * 2) < 1e-9);
-  assert.deepEqual(calls.translations, [[120, 80], [120, 80], [120, 80]]);
+  assert.deepEqual(calls.translations, [
+    [120, 80],
+    [120, 80],
+    [120, 80],
+  ]);
   drawLocalSecurityDrone(ctx, camera, { ...drone, operational: false }, 900, 650, 4);
   assert.equal(calls.draws.length, 3, 'Destroyed drone is not rendered');
 } finally {
