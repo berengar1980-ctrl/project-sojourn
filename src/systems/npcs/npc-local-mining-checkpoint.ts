@@ -25,10 +25,7 @@ function validOreCollection(value: unknown): boolean {
   return finite(remaining) && remaining <= duration;
 }
 
-function validMiningTarget(
-  ship: Record<string, unknown>,
-  options: NpcLocalMiningOptions
-): boolean {
+function validTarget(ship: Record<string, unknown>, options: NpcLocalMiningOptions): boolean {
   if (ship.targetAsteroidId === null) {
     return ['entering', 'approaching', 'exiting'].includes(ship.phase as string);
   }
@@ -55,7 +52,7 @@ function validShip(value: unknown, options: NpcLocalMiningOptions): boolean {
   if (!finite(value.scanProgress) || value.scanProgress > 1) return false;
   if (!finite(value.miningAccumulator) || typeof value.laserActive !== 'boolean') return false;
   if (value.oreCollection !== undefined && !validOreCollection(value.oreCollection)) return false;
-  return validMiningTarget(value, options);
+  return validTarget(value, options);
 }
 
 function validCombatReturns(
