@@ -36,6 +36,7 @@ import { drawCombatBeamVisual } from './combat-beam-visual';
 import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
+import { drawShipDestruction } from './ship-destruction-visual';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
@@ -56,6 +57,7 @@ export class StrategicCombatRenderer {
   private readonly camera = new CombatCamera();
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
+  private destructionStartedAt: number | null = null;
   private readonly engineEffects = new ShipEngineEffectsRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly lighting = new ShipLightingRenderer();
@@ -84,6 +86,8 @@ export class StrategicCombatRenderer {
     this.resize();
   }
   update(model: StrategicCombatSnapshot): void {
+    if (model.winner !== null && this.model.winner === null) this.destructionStartedAt = performance.now() / 1000;
+    if (model.winner === null) this.destructionStartedAt = null;
     this.effectClock.update(model.elapsedSeconds, model.winner !== null, performance.now() / 1000);
     for (const projectile of model.projectiles) {
       if (projectile.kind !== 'autocannon' || this.autocannonBursts.has(projectile.id)) continue;
@@ -265,6 +269,16 @@ export class StrategicCombatRenderer {
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
+    if (this.model.winner !== null) {
+      if (this.destructionStartedAt === null) this.destructionStartedAt = timeSeconds;
+      const loser = this.model.winner === 'attacker' ? this.model.defender : this.model.attacker;
+      if (loser.hullHp <= 0) {
+        const geometry = this.shipGeometry(loser, width, height);
+        drawShipDestruction(this.context, geometry.center.x, geometry.center.y,
+          Math.max(geometry.width, geometry.height) * 0.6,
+          timeSeconds - this.destructionStartedAt);
+      }
+    }
     // Career-only ships are a scene layer, not a competing combat renderer.
     // Native PvP leaves this callback unset.
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
