@@ -1,6 +1,6 @@
-import type { SalvageField, SalvageSectionVariant, SalvageWreck } from '../../core/salvage-types';
+import type { CombatWreckVariant, SalvageField, SalvageWreck } from '../../core/salvage-types';
 
-const COMBAT_WRECK_MODELS = ['engine-room', 'cargo-bay', 'bridge'] as const satisfies readonly SalvageSectionVariant[];
+const COMBAT_WRECK_MODELS = ['miner', 'freighter', 'patrol'] as const satisfies readonly CombatWreckVariant[];
 
 /** One random recoverable wreck per destroyed ship; unrelated to the destroyed ship's class. */
 export function addDestroyedShipWreck(
@@ -15,7 +15,7 @@ export function addDestroyedShipWreck(
   if (existing) return existing;
   const roll = Math.min(0.999999, Math.max(0, random()));
   const index = Math.floor(roll * COMBAT_WRECK_MODELS.length);
-  const sectionVariant = COMBAT_WRECK_MODELS[index]!;
+  const combatWreckVariant = COMBAT_WRECK_MODELS[index]!;
   const names = ['Aufgerissene Maschinenrumpfsektion', 'Zerborstene Frachthülle', 'Abgerissener Kommandorumpf'] as const;
   const seed = Math.floor(random() * 0x7fffffff);
   const angle = random() * Math.PI * 2;
@@ -27,7 +27,7 @@ export function addDestroyedShipWreck(
     // Salvage kind describes the recoverable hull, not the victim's ship role.
     kind: 'salvager',
     quality,
-    sectionVariant,
+    combatWreckVariant,
     effectSeed: seed,
     position: {
       x: Math.max(45, Math.min(field.width - 45, ship.position.x)),
