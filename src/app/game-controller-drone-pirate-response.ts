@@ -20,9 +20,7 @@ export function detectedSecurityPirate(
   const available = ships.filter((ship) => {
     const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === ship.npcId);
     return (
-      npc?.pirate &&
-      npc.hullHp > 0 &&
-      field.drone.detect(ship.position, field.instance.asteroids)
+      npc?.pirate && npc.hullHp > 0 && field.drone.detect(ship.position, field.instance.asteroids)
     );
   });
   available.sort((a, b) => {

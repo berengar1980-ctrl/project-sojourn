@@ -1,8 +1,5 @@
 import { measurePerformance } from '../core/performance-diagnostics';
-import {
-  attackSalvageNpc,
-  type SalvageNpcAttackArena,
-} from './game-controller-salvage-attack';
+import { attackSalvageNpc, type SalvageNpcAttackArena } from './game-controller-salvage-attack';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
 import { completeSalvageSectorEvent } from './game-controller-salvage-event-progress';
