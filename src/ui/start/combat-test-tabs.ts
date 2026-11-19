@@ -21,7 +21,8 @@ export function createCombatTestTabs(root: HTMLElement, onBack: () => void): { d
     current?.destroy();
     duelTab.setAttribute('aria-current', mode === 'duel' ? 'page' : 'false');
     fleetTab.setAttribute('aria-current', mode === 'fleet' ? 'page' : 'false');
-    current = mode === 'duel' ? createDuelLobby(content, onBack) : createFleetTestLobby(content, onBack);
+    current =
+      mode === 'duel' ? createDuelLobby(content, onBack) : createFleetTestLobby(content, onBack);
   };
   duelTab.addEventListener('click', () => show('duel'));
   fleetTab.addEventListener('click', () => show('fleet'));
