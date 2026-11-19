@@ -272,7 +272,9 @@ export class StrategicCombatRenderer {
     this.context.restore();
   }
   private drawBeams(width: number, height: number, above: boolean): void {
+    if (this.model.winner !== null) return;
     for (const beam of this.model.beams) {
+      if (beam.ttlSeconds <= 0) continue;
       if (Boolean(beam.missed && missedShotAbove(beam.id)) !== above) continue;
       this.drawBeam(beam, width, height);
     }
@@ -285,6 +287,7 @@ export class StrategicCombatRenderer {
     drawCombatBeamVisual(this.context, beam, start, end);
   }
   private drawProjectiles(width: number, height: number, above: boolean): void {
+    if (this.model.winner !== null) return;
     for (const projectile of this.model.projectiles) {
       if (projectile.kind === 'autocannon') continue;
       if (Boolean(projectile.missed && missedShotAbove(projectile.id)) !== above) continue;
@@ -294,6 +297,7 @@ export class StrategicCombatRenderer {
     }
   }
   private drawAutocannonBursts(width: number, height: number): void {
+    if (this.model.winner !== null) return;
     for (const burst of this.autocannonBursts.values()) {
       drawVisionAutocannon(
         this.context,
