@@ -1,3 +1,4 @@
+import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import type { ShipArmorProtection, ShipWeaponFamily } from '../../core/ship-types';
 import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
@@ -18,6 +19,7 @@ export type {
   CareerStrategicCombatCheckpoint,
   CombatSubsystemHealth,
 } from './strategic-combat-checkpoint-types';
+export type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
@@ -319,16 +321,6 @@ export interface StrategicCombatArenaOptions {
   readonly asteroids?: readonly CombatVisualAsteroid[];
   readonly exitPoint?: CombatPoint;
   readonly backdropSeed?: number;
-}
-
-/** Civilian field contacts use the same world coordinates and hull contact solver
- * as the PvP duel. They are transient scene input, not checkpoint state.
- */
-export interface StrategicCombatBystander {
-  readonly id: string;
-  readonly shipId: string;
-  readonly position: CombatPoint;
-  readonly headingRadians: number;
 }
 
 export interface StrategicCombatService {
