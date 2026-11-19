@@ -1494,3 +1494,17 @@ Sammelbrocken, der vom bestehenden Spieler-Traktorrenderer aufgenommen wird;
 die wirtschaftliche Erzbuchung findet weiterhin im NPC-Mining-Service statt.
 Der neue FleetCombat-Test-Tab ändert keine historischen Feature-IDs und keine
 Kampagnenlogik; feste PvP-Testpresets entfallen, freie Duelle bleiben erhalten.
+
+## Review-Log (2026-11-19): Sicherheitsdrohnen-Routing in Asteroidenfeldern
+
+**Keine Statusänderung** an den historischen Voidbound-Feature-IDs.
+Die bestehende Sicherheitsdrohne plant Patrouillenrouten zusätzlich um
+andere Schiffe und überprüft blockierte Wegpunkte erneut. Während eines
+eingebetteten Kampfes wird ihre physische Position als ziviler Collider
+bereitgestellt, sofern sie nicht selbst der Kampfteilnehmer ist.
+Der Konzessionssensor und die Registrierung illegalen Abbaus bleiben
+unverändert. Dies erweitert keine Mining- oder Bergungsarbeiten der Drohne.
+
+Wichtig: Die separate, dauerhafte Drohnenintegration in Bergungs- und
+Wrackgebieten und deren Darstellung während des Kampfes ist noch offen;
+dieser PR deckt nur das bestehende Asteroidenfeld-Objekt ab.
