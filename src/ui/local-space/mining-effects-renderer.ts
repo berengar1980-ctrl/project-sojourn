@@ -73,20 +73,20 @@ export class MiningEffectsRenderer {
       x: npc.position.x + (relative.x * cos - relative.y * sin) * npc.nominalLengthMeters,
       y: npc.position.y + (relative.x * sin + relative.y * cos) * npc.nominalLengthMeters,
     };
-    // The small ore chunks physically travel toward the tractor hardpoint on
-    // screen; the actual economic extraction stays with the NPC mining service.
-    const chunks = Array.from({ length: 4 }, (_, index) => {
-      const phase = fractional(timeSeconds * 0.46 + index * 0.25 + (hashId(npc.id) % 31) / 31);
-      return {
-        id: npc.id + ':work:' + index,
-        amount: 1,
-        position: {
-          x: impact.point.x + (destination.x - impact.point.x) * phase,
-          y: impact.point.y + (destination.y - impact.point.y) * phase,
-        },
-        tractorActive: true,
-      };
-    });
+    // Exactly one ore fragment is collected at a time, rather than four
+    // permanent tractor rays. Use the player's actual chunk/tractor painter.
+    const cycle = Math.floor(timeSeconds * 0.55 + (hashId(npc.id) % 31) / 31);
+    const phase = fractional(timeSeconds * 0.55 + (hashId(npc.id) % 31) / 31);
+    const travel = Math.max(0, (phase - 0.2) / 0.7);
+    const chunks = phase < 0.2 || phase > 0.9 ? [] : [{
+      id: npc.id + ':ore:' + cycle,
+      amount: 1,
+      position: {
+        x: impact.point.x + (destination.x - impact.point.x) * travel,
+        y: impact.point.y + (destination.y - impact.point.y) * travel,
+      },
+      tractorActive: true,
+    }];
     const workModel: LocalSpaceViewModel = {
       ...model,
       combat: null,
