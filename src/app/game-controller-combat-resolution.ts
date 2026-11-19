@@ -65,6 +65,20 @@ function synchronizeLocalDefender(
     defender.speed
   );
 }
+function registerDestroyedWrecks(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot
+): void {
+  const field = context.state.salvageScene?.getField();
+  if (!field) return;
+  const encounterId = `${field.seed}-${field.wrecks.length}-${Math.round(snapshot.elapsedSeconds * 1000)}`;
+  for (const ship of [snapshot.attacker, snapshot.defender]) {
+    if (ship.hullHp > 0 || ship.id.startsWith('security-drone:')) continue;
+    const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
+    if (wreck) context.systemLog.write(`BERGUNG > NEUES WRACK: ${wreck.name}`);
+  }
+}
+
 export function resolveControllerCombat(
   context: ControllerRuntimeContext,
   scenes: CombatReturnScenes
@@ -113,17 +127,7 @@ export function resolveControllerCombat(
     synchronizeLocalDefender(context, snapshot.defender);
   } else {
     state.salvageScene?.finishCombat(snapshot);
-    if (state.embeddedCombat === 'salvage-space') {
-      const field = state.salvageScene?.getField();
-      if (field) {
-        const encounterId = `${field.seed}-${field.wrecks.length}-${Math.round(snapshot.elapsedSeconds * 1000)}`;
-        for (const ship of [snapshot.attacker, snapshot.defender]) {
-          if (ship.hullHp > 0 || ship.id.startsWith('security-drone:')) continue;
-          const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
-          if (wreck) context.systemLog.write(`BERGUNG > NEUES WRACK: ${wreck.name}`);
-        }
-      }
-    }
+    if (state.embeddedCombat === 'salvage-space') registerDestroyedWrecks(context, snapshot);
   }
   emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
