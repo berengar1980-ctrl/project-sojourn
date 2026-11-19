@@ -87,14 +87,18 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
             if (!battle) return;
             const active = new Set([battle.attacker.id, battle.defender.id]);
             this.drawNpcShips(width, height, timeSeconds, active);
-            drawLocalSecurityDrone(
-              this.context,
-              this.camera,
-              this.model.securityDrone,
-              width,
-              height,
-              timeSeconds
-            );
+            // Native combat renders the drone at its authoritative hitbox.
+            // Never paint a second, potentially stale drone over that fighter.
+            if (![...active].some((id) => id.startsWith('security-drone:'))) {
+              drawLocalSecurityDrone(
+                this.context,
+                this.camera,
+                this.model.securityDrone,
+                width,
+                height,
+                timeSeconds
+              );
+            }
             drawLocalNpcCombatEffects(
               this.context,
               this.camera,
