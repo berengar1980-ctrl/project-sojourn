@@ -83,6 +83,23 @@ export function advanceControllerFieldWorld(
   fieldWorldFor(context).tick(deltaSeconds, localId, (field, seconds) => {
     const activeCombat = field.locationId === localId ? combat : null;
     if (activeCombat) {
+      // NPC miners and passing pirates are solid ship bodies inside embedded
+      // combat, but they are not combat targets or alternate PvP combatants.
+      const bystanders = [
+        ...field.miners.ships.map((ship) => ({
+          id: ship.npcId,
+          shipId: ship.shipId,
+          position: { ...ship.position },
+          headingRadians: ship.headingRadians,
+        })),
+        ...field.pirates.snapshot(context.economy.sectorNpcs.npcs).map((ship) => ({
+          id: ship.npcId,
+          shipId: ship.shipId,
+          position: ship.position,
+          headingRadians: ship.headingRadians,
+        })),
+      ].filter((ship) => ship.id !== activeCombat.attacker.id && ship.id !== activeCombat.defender.id);
+      context.engagements.activePlayerCombat()?.setBystanders(bystanders);
       // The duel advances physical asteroids; copy their authoritative poses
       // instead of integrating the same bodies a second time.
       const combatAsteroids = activeCombat.arena.asteroids ?? [];
