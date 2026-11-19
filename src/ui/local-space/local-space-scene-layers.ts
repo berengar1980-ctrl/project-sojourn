@@ -78,7 +78,11 @@ export abstract class LocalSpaceSceneLayers {
       };
       const image = this.ensureNpcImage(npc.spriteUrl);
       const combatDefender =
-        this.model.combat?.defender.id === npc.id ? this.model.combat.defender : null;
+        this.model.combat?.defender.id === npc.id
+          ? this.model.combat.defender
+          : (this.model.npcCombats
+              ?.flatMap((duel) => [duel.attacker, duel.defender])
+              .find((combatant) => combatant.id === npc.id) ?? null);
       drawFieldNpcThrusters(
         this.context,
         npc.hardpoints,
@@ -161,7 +165,10 @@ export abstract class LocalSpaceSceneLayers {
     timeSeconds: number
   ): void {
     // Combatants never retain a mining beam during PvP.
-    if (!npc.targetAsteroidId || this.model.combat?.defender.id === npc.id) return;
+    const fighting = this.model.npcCombats?.some(
+      (duel) => duel.attacker.id === npc.id || duel.defender.id === npc.id
+    );
+    if (!npc.targetAsteroidId || this.model.combat?.defender.id === npc.id || fighting) return;
     const target = this.model.asteroids.find((rock) => rock.id === npc.targetAsteroidId);
     if (!target) return;
     if (npc.phase === 'scanning') {
