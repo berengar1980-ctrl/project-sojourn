@@ -2,6 +2,7 @@ import { drawMiningLaserBeam, drawMiningTractorBeam } from './mining-beam-visual
 import type { ShipEffectLayer } from '../../core/ship-types';
 import type {
   LocalAsteroidView,
+  LocalChunkView,
   LocalNpcShipView,
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
@@ -79,17 +80,18 @@ export class MiningEffectsRenderer {
     const travel = extraction
       ? Math.max(0, Math.min(1, 1 - extraction.remainingSeconds / extraction.durationSeconds))
       : 0;
-    const chunks = extraction
-      ? [{
-          id: npc.id + ':ore:' + extraction.resourceId,
-          amount: 1,
-          position: {
-            x: impact.point.x + (destination.x - impact.point.x) * travel,
-            y: impact.point.y + (destination.y - impact.point.y) * travel,
-          },
-          tractorActive: true,
-        }]
-      : [];
+    const chunks: LocalChunkView[] = [];
+    if (extraction) {
+      chunks.push({
+        id: npc.id + ':ore:' + extraction.resourceId,
+        amount: 1,
+        position: {
+          x: impact.point.x + (destination.x - impact.point.x) * travel,
+          y: impact.point.y + (destination.y - impact.point.y) * travel,
+        },
+        tractorActive: true,
+      });
+    }
     const workModel: LocalSpaceViewModel = {
       ...model,
       combat: null,
