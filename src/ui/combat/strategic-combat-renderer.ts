@@ -266,8 +266,10 @@ export class StrategicCombatRenderer {
       const mount = points?.grapplingHooks?.[0];
       return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
     });
-    this.drawShip(this.model.attacker, width, height, timeSeconds, visualElapsed);
-    this.drawShip(this.model.defender, width, height, timeSeconds, visualElapsed);
+    if (this.model.winner === null || this.model.attacker.hullHp > 0)
+      this.drawShip(this.model.attacker, width, height, timeSeconds, visualElapsed);
+    if (this.model.winner === null || this.model.defender.hullHp > 0)
+      this.drawShip(this.model.defender, width, height, timeSeconds, visualElapsed);
     drawCombatDamagePair(
       this.context,
       [this.model.attacker, this.model.defender],
@@ -280,6 +282,13 @@ export class StrategicCombatRenderer {
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
+    this.drawDestruction(width, height, timeSeconds);
+    // Career-only ships are a scene layer, not a competing combat renderer.
+    // Native PvP leaves this callback unset.
+    this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
+    this.context.restore();
+  }
+  private drawDestruction(width: number, height: number, timeSeconds: number): void {
     if (this.model.winner !== null) {
       if (this.destructionStartedAt === null) this.destructionStartedAt = timeSeconds;
       const loser = this.model.winner === 'attacker' ? this.model.defender : this.model.attacker;
@@ -312,10 +321,6 @@ export class StrategicCombatRenderer {
         );
       }
     }
-    // Career-only ships are a scene layer, not a competing combat renderer.
-    // Native PvP leaves this callback unset.
-    this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
-    this.context.restore();
   }
   private drawBeams(width: number, height: number, above: boolean): void {
     if (this.model.winner !== null) return;
@@ -408,7 +413,6 @@ export class StrategicCombatRenderer {
     timeSeconds: number,
     visualElapsed: number
   ): void {
-    if (this.model.winner !== null && combatant.hullHp <= 0) return;
     const definition = getShipDefinition(combatant.shipId);
     const isDrone = combatant.id.startsWith('security-drone:');
     const geometry = {
