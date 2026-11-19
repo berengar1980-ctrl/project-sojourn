@@ -2,8 +2,8 @@ import type { LocalSpaceViewModel } from '../../features/local-space/local-space
 import type { MapCamera } from '../map/map-camera';
 
 const DRONE_SPRITE_URL = '/drones/security-drone-gc87r8.webp';
-const DRONE_DIAMETER_PX = 26;
-const DRONE_ROTATION_PERIOD_SECONDS = 3;
+export const DRONE_DIAMETER_PX = 26;
+export const DRONE_ROTATION_PERIOD_SECONDS = 3;
 let droneSprite: HTMLImageElement | null = null;
 
 function securityDroneSprite(): HTMLImageElement {
@@ -21,7 +21,8 @@ export function drawLocalSecurityDrone(
   drone: LocalSpaceViewModel['securityDrone'],
   width: number,
   height: number,
-  timeSeconds: number
+  timeSeconds: number,
+  hideBody = false
 ): void {
   if (!drone?.operational) return;
   const point = camera.worldToScreen(drone.position, width, height);
@@ -34,17 +35,22 @@ export function drawLocalSecurityDrone(
   ctx.stroke();
   ctx.setLineDash([]);
 
+  if (hideBody) {
+    ctx.restore();
+    return;
+  }
   ctx.translate(point.x, point.y);
   ctx.rotate((timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS);
   const image = securityDroneSprite();
   if (image.complete && image.naturalWidth > 0) {
-    const radius = DRONE_DIAMETER_PX / 2;
-    ctx.drawImage(image, -radius, -radius, DRONE_DIAMETER_PX, DRONE_DIAMETER_PX);
+    const diameter = DRONE_DIAMETER_PX * camera.getRelativeZoom();
+    const radius = diameter / 2;
+    ctx.drawImage(image, -radius, -radius, diameter, diameter);
   } else {
     // Preserve a visible contact marker until the small transparent asset loads.
     ctx.fillStyle = '#455b66';
     ctx.beginPath();
-    ctx.arc(0, 0, DRONE_DIAMETER_PX / 2, 0, Math.PI * 2);
+    ctx.arc(0, 0, (DRONE_DIAMETER_PX * camera.getRelativeZoom()) / 2, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
