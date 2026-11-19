@@ -1,4 +1,4 @@
-import { drawLocalSecurityDrone } from './local-security-drone-visual';
+import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-drone-visual';
 import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
 import { drawLocalNavigationRoute } from './local-space-navigation-route';
 import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
@@ -96,7 +96,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
                 this.model.securityDrone,
                 width,
                 height,
-                timeSeconds
+                timeSeconds,
+                localDroneShieldHits(this.model.npcCombats)
               );
             }
             drawLocalNpcCombatEffects(
@@ -243,7 +244,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       this.model.securityDrone,
       width,
       height,
-      timeSeconds
+      timeSeconds,
+      localDroneShieldHits(this.model.npcCombats)
     );
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
