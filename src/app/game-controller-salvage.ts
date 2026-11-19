@@ -1,4 +1,5 @@
 import { measurePerformance } from '../core/performance-diagnostics';
+import { completeSalvageSectorEvent } from './game-controller-salvage-event-progress';
 import type { StrategicCombatBystander } from '../systems/combat/strategic-combat-bystander-types';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import {
@@ -294,26 +295,6 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   });
 }
 
-function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
-  const { options, service, state } = context;
-  if (
-    !state.activeSectorEvent ||
-    state.sectorEventResolved ||
-    (state.activeSectorEvent.type !== 'special-wreck' && !state.activeSectorEvent.salvageRights)
-  ) {
-    return;
-  }
-  const snapshot = service.getSnapshot();
-  const complete = snapshot.field.wrecks.every(
-    (wreck) =>
-      wreck.resources.every((resource) => resource.remainingAmount <= 0) &&
-      wreck.componentStatus !== 'available'
-  );
-  if (!complete) return;
-  state.sectorEventResolved = true;
-  options.onSectorEventResolved?.(state.activeSectorEvent.id);
-}
-
 const lastSalvagePresentation = new WeakMap<SalvageSceneRuntime, number>();
 const SALVAGE_PRESENTATION_INTERVAL_MS = 1000 / 24;
 
@@ -384,7 +365,12 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
       performance.now() / 1000
     );
     npcSalvage.tick(deltaSeconds);
-    resolveCompletedSectorEvent(context);
+    context.state.sectorEventResolved = completeSalvageSectorEvent(
+      context.state.activeSectorEvent,
+      context.state.sectorEventResolved,
+      service.getSnapshot(),
+      options.onSectorEventResolved
+    );
   }
   const now = performance.now();
   if (
