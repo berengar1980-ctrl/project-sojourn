@@ -15,6 +15,13 @@ import type { MiningEventCheckpoint } from '../local-space/mining-event-checkpoi
 
 export type LocalNpcMiningPhase = 'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
 
+/** Real NPC ore extraction event; the player tractor renderer visualizes collection. */
+export interface NpcOreCollection {
+  readonly resourceId: string;
+  remainingSeconds: number;
+  readonly durationSeconds: number;
+}
+
 export interface LocalNpcMinerState {
   readonly npcId: string;
   readonly name: string;
@@ -30,6 +37,7 @@ export interface LocalNpcMinerState {
   readonly entryPoint: WorldPoint;
   exitPoint: WorldPoint;
   miningAccumulator: number;
+  oreCollection?: NpcOreCollection;
 }
 
 export interface LocalMinerCheckpoint {
