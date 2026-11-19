@@ -736,3 +736,15 @@ zusätzliche Combatants oder neue Checkpoint-Felder. Die bestehenden Schiff-IDs,
 Economy- und NPC-Mining-Zustände bleiben unverändert. Visuelle Erzbrocken der
 NPC-Miner sind ausschließlich Darstellung und verändern keine wirtschaftlichen
 Abbau- oder Cargo-Werte.
+
+### Lokale Korsaren-A*-Routen und echte NPC-Erzaufnahme (2026-11-19)
+
+Die vorhandenen Version-1-Spielstände bleiben lesbar. Die aktiven A*-Wegpunkte
+der Korsaren werden in einem optionalen `routeState` am Piratenschiff
+checkpointiert; ältere Spielstände ohne diesen Eintrag berechnen den Weg neu.
+Eine Erzaufnahme-Anzeige existiert nur nach **tatsächlich akzeptiertem**
+NPC-Abbau: `oreCollection` enthält Ressource und Restlaufzeit. Auch dieses
+Feld ist optional und rückwärtskompatibel. Es gibt keine künstlichen vier
+Traktorzielobjekte mehr. Laufende NPC-gegen-NPC-Gefechte sind schon zuvor im
+strategischen Kampfzustand vorhanden; ihre Snapshot-FX sind abgeleitete
+Darstellung und erzeugen keine weitere Welt-/Kampfautorität.
