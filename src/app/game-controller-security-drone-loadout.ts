@@ -22,9 +22,9 @@ export function equipSecurityDroneMk3(npc: SectorNpcState): void {
   const slots = mounts.length
     ? Math.max(...mounts.map((mount) => mount.slotIndex)) + 1
     : weapons.length;
-  const compatible = getCompatibleShipComponents('weapon', 3).filter(
-    (part) => part.tier === 3 && part.weapon
-  );
+  const compatible = getCompatibleShipComponents('weapon', 3)
+    .filter((part) => part.tier === 3 && part.weapon)
+    .sort((a, b) => a.power - b.power || a.cost - b.cost);
   for (let index = 0; index < slots; index += 1) {
     if (!isShipCombatWeaponSlotActive(ship, index)) continue;
     const part = compatible.find(
