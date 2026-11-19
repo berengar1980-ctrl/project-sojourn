@@ -1,4 +1,5 @@
 import { measurePerformance } from '../core/performance-diagnostics';
+import { attackSalvageNpc } from './game-controller-salvage-attack';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
 import { completeSalvageSectorEvent } from './game-controller-salvage-event-progress';
@@ -23,7 +24,6 @@ import {
   type DistressTowState,
 } from '../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
-import { salvageFieldCombatArena } from '../systems/combat/field-combat-arena';
 import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
 import type { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
@@ -71,7 +71,7 @@ export interface SalvageSceneController {
   destroy(): void;
 }
 
-interface SalvageSceneOptions {
+export interface SalvageSceneOptions {
   readonly root: HTMLElement;
   readonly ship: ShipDefinition;
   readonly seed: number;
@@ -190,30 +190,6 @@ function refreshSalvageScene(context: SalvageSceneRuntime): void {
   context.state.panel?.update(salvageSceneModel(context));
 }
 
-function attackSalvageNpc(context: SalvageSceneRuntime, id: string): void {
-  const { options, service, npcSalvage, field } = context;
-  const target =
-    npcSalvage.ships.find((entry) => entry.npcId === id) ??
-    context.pirates.snapshot(options.sectorNpcs).find((entry) => entry.npcId === id);
-  if (!target) return;
-  const playerShip = service.getSnapshot().ship;
-  options.onAttackNpc?.(id, {
-    ...salvageFieldCombatArena(field),
-    attackerPosition: { ...playerShip.position },
-    defenderPosition: { ...target.position },
-    attackerHeadingRadians: playerShip.headingRadians,
-    defenderHeadingRadians: target.headingRadians,
-    defenderVelocity: {
-      x: Math.cos(target.headingRadians) * target.speed,
-      y: Math.sin(target.headingRadians) * target.speed,
-    },
-    attackerVelocity: {
-      x: Math.cos(playerShip.headingRadians) * playerShip.speed,
-      y: Math.sin(playerShip.headingRadians) * playerShip.speed,
-    },
-  });
-}
-
 function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   const { options, service, state } = context;
   const refresh = (): void => refreshSalvageScene(context);
@@ -244,7 +220,7 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
       refresh();
     },
     onAttackNpc(id) {
-      attackSalvageNpc(context, id);
+      attackSalvageNpc(options, context.field, service, context.npcSalvage, context.pirates, id);
     },
     onCombatGrapple() {
       options.onCombatGrapple?.();
