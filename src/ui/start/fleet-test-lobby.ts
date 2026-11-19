@@ -31,9 +31,7 @@ export function createFleetTestRoster(countA: number, countB: number): FleetTest
     for (let index = 0; index < count; index += 1) {
       const ship = pick(ships);
       const weaponIds = (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
-        const valid = weapons.filter((item) =>
-          fitsWeaponHardpoint(ship, mount.slotIndex, item.weapon)
-        );
+        const valid = weapons.filter((item) => fitsWeaponHardpoint(ship, mount.slotIndex, item.weapon));
         return valid.length ? pick(valid).id : '';
       });
       const draft: DuelDraft = {
@@ -133,9 +131,15 @@ export function createFleetTestLobby(root: HTMLElement): { destroy(): void } {
           .map((id) => (SHIP_COMPONENT_CATALOG.weapon ?? []).find((item) => item.id === id)?.name)
           .filter(Boolean);
         const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft.mines[0]);
-        line.textContent = ship.id.toUpperCase() + ' · ' + ship.name +
-          ' | ' + (equipped.join(', ') || 'Keine kompatiblen Waffenplätze') +
-          ' | ' + (mine?.name ?? 'Keine Mine') + ' | Reaktor Mk IV';
+        line.textContent =
+          ship.id.toUpperCase() +
+          ' · ' +
+          ship.name +
+          ' | ' +
+          (equipped.join(', ') || 'Keine kompatiblen Waffenplätze') +
+          ' | ' +
+          (mine?.name ?? 'Keine Mine') +
+          ' | Reaktor Mk IV';
         section.append(line);
       }
       roster.append(section);
