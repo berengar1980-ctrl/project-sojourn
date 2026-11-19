@@ -39,9 +39,17 @@ export function drawLocalNpcCombatEffects(
         effect = new DistressDamageParticles();
         damageParticles.set(ship.id, effect);
       }
-      effect.update(performance.now() / 1000, ship.position, ship.headingRadians,
+      effect.update(
+        performance.now() / 1000,
+        ship.position,
+        ship.headingRadians,
         getShipDefinition(ship.shipId)?.nominalLengthMeters ?? 20,
-        camera, context, width, height, fraction);
+        camera,
+        context,
+        width,
+        height,
+        fraction
+      );
     }
     if (duel.winner !== null) {
       const now = performance.now() / 1000;
@@ -49,9 +57,15 @@ export function drawLocalNpcCombatEffects(
       const loser = duel.winner === 'attacker' ? duel.defender : duel.attacker;
       if (loser.hullHp <= 0) {
         const point = screen(loser.position);
-        const radius = camera.scale(getShipDefinition(loser.shipId)?.nominalLengthMeters ?? 20) * 0.55;
-        drawShipDestruction(context, point.x, point.y, radius,
-          now - destructionStarts.get(duelKey)!);
+        const radius =
+          camera.scale(getShipDefinition(loser.shipId)?.nominalLengthMeters ?? 20) * 0.55;
+        drawShipDestruction(
+          context,
+          point.x,
+          point.y,
+          radius,
+          now - destructionStarts.get(duelKey)!
+        );
       }
     }
 
@@ -93,5 +107,6 @@ export function drawLocalNpcCombatEffects(
     );
   }
   for (const key of damageParticles.keys()) if (!active.has(key)) damageParticles.delete(key);
-  for (const key of destructionStarts.keys()) if (!active.has(key)) destructionStarts.delete(key);
+  for (const key of destructionStarts.keys())
+    if (!active.has(key)) destructionStarts.delete(key);
 }
