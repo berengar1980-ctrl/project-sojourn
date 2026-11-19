@@ -170,7 +170,7 @@ export function tickFieldSecurity(
     ...runtime.miners.ships.map((ship) => ({
       id: ship.npcId,
       position: ship.position,
-      radius: Math.max(18, ship.nominalLengthMeters * 0.35),
+      radius: 35,
     })),
     ...runtime.pirates.snapshot(economy.sectorNpcs.npcs).map((ship) => ({
       id: ship.npcId,
