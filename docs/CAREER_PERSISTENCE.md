@@ -767,3 +767,21 @@ dynamische Gefechtsbeitritte und Zustandsübergänge werden hier ausdrücklich
 noch nicht eingeführt; der FleetCombat-Start bleibt deaktiviert. Die
 Persistenzentscheidung für den späteren FleetCombat-Service erfolgt
 gesondert, bevor dieser mit der Kampagne verbunden wird.
+
+## Sicherheitsdrohne: Kollisions- und Patrouillenrouting (PR #366)
+
+Die bestehende `AsteroidSecurityDrone` verwendet weiterhin den versionierten
+`SecurityDroneCheckpoint` (Version 1). Die neuen dynamischen Hindernisse
+(Miner, Piraten und Spielerschiff) sind ausschließlich aus den bereits
+persistierten Schiffswelten abgeleitet und werden bei jedem Simulationsschritt
+neu übergeben. Ihre Kontaktpositionen werden **nicht** im Drohnen-Checkpoint
+gespeichert: **keine Speicheränderung**. Der gespeicherte Wegpunkt und die
+Routenpunkte bleiben beim Restore erhalten; bei neuen Hindernissen wird eine
+blockierte Teilroute neu geplant. Die physische Bystander-Liste während eines
+Kampfs ist ebenfalls ein abgeleiteter Laufzeitzustand, keine neue Autorität.
+
+Der bestehende Checkpoint-Roundtrip wird durch
+`tests/operations/asteroid-security-drone.test.cjs` geprüft. Die Bergungs- und
+Wrackgebietsdrohne ist in diesem PR noch nicht als eigenständige Autorität
+integriert; deren Persistenzvertrag ist vor einer Implementierung separat zu
+prüfen.
