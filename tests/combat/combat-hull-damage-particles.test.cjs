@@ -50,6 +50,12 @@ const render = fs.readFileSync(
   path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
   'utf8'
 );
-assert(render.includes('this.drawCombatDamage(this.model.attacker'));
-assert(render.includes('this.drawCombatDamage(this.model.defender'));
+assert(render.includes('drawCombatDamagePair('), 'combat renderer must use the shared damage helper');
+assert(
+  render.includes('[this.model.attacker, this.model.defender]'),
+  'player and NPC combatants must both receive hull damage effects'
+);
+const helper = fs.readFileSync(path.join(root, 'src/ui/combat/combat-damage-visual.ts'), 'utf8');
+assert(helper.includes('for (const combatant of combatants)'), 'both sides must render damage');
+assert(helper.includes('particles.update('), 'damage helper must advance real particles');
 console.log('PASS staged hull damage smoke at 85/65/25%, flames at 45%, player and NPC rendering');
