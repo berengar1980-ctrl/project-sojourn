@@ -5,14 +5,25 @@ import type {
 import { drawSalvageContainer3d } from '../salvage/salvage-container-mesh';
 import { drawSalvageDebris3d } from '../salvage/salvage-debris-mesh';
 import { drawSalvageSection3d } from '../salvage/salvage-section-mesh';
+import { drawCombatWreck3d } from '../salvage/combat-wreck-mesh';
 
 type WreckModel = Pick<
   CombatVisualAsteroid,
-  'debrisVariant' | 'sectionVariant' | 'containerVariant' | 'rotation3d' | 'effectSeed'
+  | 'debrisVariant'
+  | 'sectionVariant'
+  | 'combatWreckVariant'
+  | 'containerVariant'
+  | 'rotation3d'
+  | 'effectSeed'
 > & { readonly rotation?: number };
 
 export function isCombatScrap(model: WreckModel): boolean {
-  return Boolean(model.debrisVariant || model.sectionVariant || model.containerVariant);
+  return Boolean(
+    model.debrisVariant ||
+      model.sectionVariant ||
+      model.combatWreckVariant ||
+      model.containerVariant
+  );
 }
 
 /** Render the very same cached procedural 3D models used in the salvage map.
@@ -45,7 +56,9 @@ export function drawCombatScrap(
         }
       : actualRotation;
   const part = { rotation3d: rotation, effectSeed: model.effectSeed ?? 0 };
-  if (model.debrisVariant) {
+  if (model.combatWreckVariant) {
+    drawCombatWreck3d(context, model.combatWreckVariant, radius, rotation);
+  } else if (model.debrisVariant) {
     drawSalvageDebris3d(context, { ...part, variant: model.debrisVariant }, radius, timeSeconds);
   } else if (model.sectionVariant) {
     drawSalvageSection3d(context, { ...part, variant: model.sectionVariant }, radius, timeSeconds);
