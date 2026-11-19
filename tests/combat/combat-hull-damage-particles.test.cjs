@@ -50,7 +50,10 @@ const render = fs.readFileSync(
   path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
   'utf8'
 );
-assert(render.includes('drawCombatDamagePair('), 'combat renderer must use the shared damage helper');
+assert(
+  render.includes('drawCombatDamagePair('),
+  'combat renderer must use the shared damage helper'
+);
 assert(
   render.includes('[this.model.attacker, this.model.defender]'),
   'player and NPC combatants must both receive hull damage effects'
