@@ -38,6 +38,8 @@ import { drawCombatBackground } from './combat-background-renderer';
 import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatDamagePair } from './combat-damage-visual';
 import { drawShipDestruction } from './ship-destruction-visual';
+import { drawCombatWreck3d } from '../salvage/combat-wreck-mesh';
+import { combatWreckVariantFor } from '../../core/combat-wreck-variant';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
@@ -283,12 +285,30 @@ export class StrategicCombatRenderer {
       const loser = this.model.winner === 'attacker' ? this.model.defender : this.model.attacker;
       if (loser.hullHp <= 0) {
         const geometry = this.shipGeometry(loser, width, height);
+        const age = timeSeconds - this.destructionStartedAt;
+        if (age >= 0.28 && !loser.id.startsWith('security-drone:')) {
+          const variant = combatWreckVariantFor(
+            this.model.arena.backdropSeed ?? 0,
+            loser.id,
+            this.model.elapsedSeconds
+          );
+          this.context.save();
+          this.context.translate(geometry.center.x, geometry.center.y);
+          this.context.globalAlpha = Math.min(1, (age - 0.28) * 3);
+          drawCombatWreck3d(
+            this.context,
+            variant,
+            Math.max(geometry.width, geometry.height) * 0.65,
+            { x: 0.19, y: 0.16, z: loser.headingRadians }
+          );
+          this.context.restore();
+        }
         drawShipDestruction(
           this.context,
           geometry.center.x,
           geometry.center.y,
           Math.max(geometry.width, geometry.height) * 0.6,
-          timeSeconds - this.destructionStartedAt
+          age
         );
       }
     }
@@ -388,6 +408,7 @@ export class StrategicCombatRenderer {
     timeSeconds: number,
     visualElapsed: number
   ): void {
+    if (this.model.winner !== null && combatant.hullHp <= 0) return;
     const definition = getShipDefinition(combatant.shipId);
     const isDrone = combatant.id.startsWith('security-drone:');
     const geometry = {
