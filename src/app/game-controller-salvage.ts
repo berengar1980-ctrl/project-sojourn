@@ -161,6 +161,7 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
   return {
     ...model,
     securityDrone: context.drone.snapshot(),
+    npcCombats: options.getNpcCombats?.() ?? [],
     wreckClaimOwners: wreckClaimOwners(context.field, options.wreckClaims, options.getCurrentDay()),
   };
 }
