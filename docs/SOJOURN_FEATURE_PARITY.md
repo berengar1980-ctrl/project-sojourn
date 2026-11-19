@@ -1493,19 +1493,16 @@ Mining-Szene. Tatsächliche NPC-Abbauzyklen erzeugen maximal einen sichtbaren
 Sammelbrocken, der vom bestehenden Spieler-Traktorrenderer aufgenommen wird;
 die wirtschaftliche Erzbuchung findet weiterhin im NPC-Mining-Service statt.
 
-## Review (2026-11-19): FleetCombat-Testoberfläche und freie Duelle
 
-**Keine Änderung der 241 historischen Feature-IDs oder ihres Status.**
+## Review (2026-11-19): FleetCombat-Testlabor
 
-Der PvP-Testmodus entfernt die neun festgelegten Testgefechte sowie die
-zugehörigen festen Preset-Seeds und Analyse-Auswahl. Freie 1vs1-Duelle
-nutzen weiterhin denselben `StrategicCombatService`, denselben
-Kampfrenderer, unveränderte manuelle Ausrüstung, die fünf vorhandenen
-Arenatypen und zufällige Arenagenerierung. Ein neuer separater
-FleetCombat-Tab stellt lediglich eine konfigurierbare Vorschau für zwei
-Fraktionen mit 1–10 Schiffen pro Seite bereit; Schiffstypen und kompatible
-Mk-I-Waffen/Minen werden zufällig bestückt, mit Reaktor Mk IV.
-Rammen, Asteroidenwurf und dynamische Beitritte sind geplante Funktionen
-des noch nicht implementierten FleetCombat-Kerns. Der Start bleibt
-deaktiviert; Kampagne, NPC-Wirtschaft und Speicherstände sind unverändert.
+Keine Änderungen an historischen Feature-IDs oder Statuswerten.
 
+Die neun festen PvP-Presets sowie ihre Seeds und Analyse-UI entfallen.
+Das freie 1vs1 nutzt weiterhin den unveränderten StrategicCombatService,
+den bisherigen Renderer und alle fünf Kampfarenen mit zufälligen Seeds.
+Der FleetCombat-Tab zeigt nur eine neue Testkonfiguration mit zwei Fraktionen,
+1 bis 10 Schiffen je Fraktion, zufälligen Mk-I-Waffen und Mk-I-Minen sowie
+Mk-IV-Reaktoren. Der Mehrschiffkampf selbst ist noch nicht implementiert.
+Rammen, Asteroidenwurf und Verstärkungen sind nur für die spätere Umsetzung
+vorgemerkt. Es gibt keine Auswirkungen auf Karriere-Saves und NPC-Wirtschaft.
