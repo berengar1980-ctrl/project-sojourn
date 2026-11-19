@@ -363,8 +363,9 @@ function resolveMinerCollisions(runtime: MinerRuntime, combatantId?: string): vo
   const playerState = runtime.options.getPlayerShipState?.();
   const bodies: LocalShieldShipBody[] = runtime.ships.flatMap((local) => {
     const npc = runtime.byId.get(local.npcId);
-    const inCombat = local.npcId === combatantId || Boolean(npc?.combatMovement);
-    if (inCombat || (npc?.combatRecoverySeconds ?? 0) > 0) return [];
+    // Duel motion is owned by the PvP engine, but the ship still has a solid
+    // shield body in the mining field. Include it for player contact response.
+    if (local.npcId === combatantId || (npc?.hullHp ?? 0) <= 0) return [];
     const definition = getShipDefinition(local.shipId);
     return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
   });
