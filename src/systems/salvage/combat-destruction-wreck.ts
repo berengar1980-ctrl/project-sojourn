@@ -1,4 +1,5 @@
 import type { CombatWreckVariant, SalvageField, SalvageWreck } from '../../core/salvage-types';
+import { combatWreckVariantFor } from '../../core/combat-wreck-variant';
 
 const COMBAT_WRECK_MODELS = [
   'miner',
@@ -15,15 +16,15 @@ export function addDestroyedShipWreck(
     readonly hullHp: number;
   },
   encounterId: string,
+  elapsedSeconds: number,
   random: () => number = Math.random
 ): SalvageWreck | null {
   if (ship.hullHp > 0) return null;
   const id = `combat-wreck-${encounterId}-${ship.id}`;
   const existing = field.wrecks.find((wreck) => wreck.id === id);
   if (existing) return existing;
-  const roll = Math.min(0.999999, Math.max(0, random()));
-  const index = Math.floor(roll * COMBAT_WRECK_MODELS.length);
-  const combatWreckVariant = COMBAT_WRECK_MODELS[index]!;
+  const combatWreckVariant = combatWreckVariantFor(field.seed, ship.id, elapsedSeconds);
+  const index = COMBAT_WRECK_MODELS.indexOf(combatWreckVariant);
   const names = [
     'Aufgerissene Maschinenrumpfsektion',
     'Zerborstene Frachthülle',
