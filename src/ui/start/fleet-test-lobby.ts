@@ -31,7 +31,9 @@ export function createFleetTestRoster(countA: number, countB: number): FleetTest
     for (let index = 0; index < count; index += 1) {
       const ship = pick(ships);
       const weaponIds = (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
-        const valid = weapons.filter((item) => fitsWeaponHardpoint(ship, mount.slotIndex, item.weapon));
+        const valid = weapons.filter((item) =>
+          fitsWeaponHardpoint(ship, mount.slotIndex, item.weapon)
+        );
         return valid.length ? pick(valid).id : '';
       });
       const draft: DuelDraft = {
