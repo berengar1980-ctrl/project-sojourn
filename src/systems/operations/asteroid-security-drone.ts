@@ -116,10 +116,11 @@ export class AsteroidSecurityDrone {
     dt: number,
     asteroids: readonly LocalAsteroid[],
     contacts: readonly DroneContact[],
-    nearbyShips: readonly FieldRouteObstacle[] = []
+    nearbyShips: readonly FieldRouteObstacle[] = [],
+    pursuitTarget?: WorldPoint
   ): string[] {
     if (!this.operational) return [];
-    const destination = this.patrol[this.nextWaypoint]!;
+    const destination = pursuitTarget ?? this.patrol[this.nextWaypoint]!;
     const obstacles: FieldRouteObstacle[] = [
       ...asteroids
         .filter((rock) => rock.routeBlocking)
@@ -145,11 +146,11 @@ export class AsteroidSecurityDrone {
         40,
         'patrol'
       );
-      if (arrived) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
+      if (arrived && !pursuitTarget) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
       else if (!this.routeState) {
         // Do not perform a full route search every animation frame when the
         // target is obstructed or the field currently has no safe corridor.
-        this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
+        if (!pursuitTarget) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
         this.retryAfterSeconds = 1.5;
       }
     }
