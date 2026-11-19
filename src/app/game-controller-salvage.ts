@@ -1,5 +1,8 @@
 import { measurePerformance } from '../core/performance-diagnostics';
-import { attackSalvageNpc } from './game-controller-salvage-attack';
+import {
+  attackSalvageNpc,
+  type SalvageNpcAttackArena,
+} from './game-controller-salvage-attack';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
 import { completeSalvageSectorEvent } from './game-controller-salvage-event-progress';
@@ -22,7 +25,6 @@ import {
   type DistressTowState,
 } from '../systems/salvage/distress-tow-physics';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
-import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
 import type { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { PlayerEconomyState } from '../core/economy-types';
@@ -87,25 +89,7 @@ export interface SalvageSceneOptions {
   readonly onReturnToStarMap: () => void;
   readonly selectedNpcId?: string | null;
   readonly onSelectNpc?: (id: string | null) => void;
-  readonly onAttackNpc?: (
-    id: string,
-    arena: {
-      readonly width: number;
-      readonly height: number;
-      readonly attackerPosition: { readonly x: number; readonly y: number };
-      readonly defenderPosition: { readonly x: number; readonly y: number };
-      readonly defenderHeadingRadians?: number;
-      readonly defenderVelocity?: { readonly x: number; readonly y: number };
-      readonly attackerVelocity?: { readonly x: number; readonly y: number };
-      readonly attackerHeadingRadians?: number;
-      readonly asteroids?: readonly CombatVisualAsteroid[];
-      readonly obstacles?: readonly {
-        readonly id: string;
-        readonly position: { readonly x: number; readonly y: number };
-        readonly radius: number;
-      }[];
-    }
-  ) => void;
+  readonly onAttackNpc?: (id: string, arena: SalvageNpcAttackArena) => void;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
   readonly resolveDrone?: (field: SalvageField) => AsteroidSecurityDrone;
   readonly onUnauthorizedSalvage?: (field: SalvageField, wreckId: string) => void;
