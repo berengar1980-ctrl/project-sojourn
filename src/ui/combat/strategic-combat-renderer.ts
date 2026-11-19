@@ -36,6 +36,7 @@ import { drawCombatBeamVisual } from './combat-beam-visual';
 import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
+import { drawCombatDamageParticles } from './combat-damage-visual';
 import { drawShipDestruction } from './ship-destruction-visual';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
@@ -264,9 +265,13 @@ export class StrategicCombatRenderer {
       return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
     });
     this.drawShip(this.model.attacker, width, height, timeSeconds, visualElapsed);
-    this.drawCombatDamage(this.model.attacker, width, height, timeSeconds);
+    drawCombatDamageParticles(this.context, this.model.attacker,
+      this.shipGeometry(this.model.attacker, width, height), this.damageParticles,
+      timeSeconds, width, height);
     this.drawShip(this.model.defender, width, height, timeSeconds, visualElapsed);
-    this.drawCombatDamage(this.model.defender, width, height, timeSeconds);
+    drawCombatDamageParticles(this.context, this.model.defender,
+      this.shipGeometry(this.model.defender, width, height), this.damageParticles,
+      timeSeconds, width, height);
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
@@ -372,36 +377,6 @@ export class StrategicCombatRenderer {
       const point = this.screen(mine.position, width, height);
       drawCombatMineMarker(this.context, mine, point);
     }
-  }
-  private drawCombatDamage(
-    combatant: StrategicCombatSnapshot['attacker'],
-    width: number,
-    height: number,
-    now: number
-  ): void {
-    const fraction = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
-    if (fraction > 0.85 && !this.damageParticles.has(combatant.id)) return;
-    let particles = this.damageParticles.get(combatant.id);
-    if (!particles) {
-      particles = new DistressDamageParticles();
-      this.damageParticles.set(combatant.id, particles);
-    }
-    const geometry = this.shipGeometry(combatant, width, height);
-    const camera = {
-      worldToScreen: (point: Point) => point,
-      scale: (meters: number) => meters,
-    };
-    particles.update(
-      now,
-      geometry.center,
-      geometry.angle,
-      geometry.width,
-      camera,
-      this.context,
-      width,
-      height,
-      fraction
-    );
   }
   private drawShip(
     combatant: StrategicCombatSnapshot['attacker'],
