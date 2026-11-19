@@ -1,0 +1,30 @@
+name: Temporary drone combat formatting
+on:
+  push:
+    branches:
+      - fix/security-drone-combat-pose-zoom
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/security-drone-combat-pose-zoom
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write src/ui/combat/strategic-combat-renderer.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/ui/combat/strategic-combat-renderer.ts
+          if ! git diff --cached --quiet; then
+            git commit -m "Format native combat drone render changes"
+            git push origin HEAD:fix/security-drone-combat-pose-zoom
+          fi
