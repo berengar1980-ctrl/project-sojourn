@@ -26,7 +26,8 @@ export interface SalvagePirateResponseOptions {
   readonly onPirateAttack?: (
     pirateId: string,
     targetId: string,
-    piratePosition: WorldPoint
+    piratePosition: WorldPoint,
+    targetPosition: WorldPoint
   ) => boolean;
   readonly onDroneAttack?: (pirateId: string, piratePosition: WorldPoint) => boolean;
 }
@@ -115,8 +116,14 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
       inCombat: combatants.has(ship.npcId),
     })),
     salvageDroneObstacleAsteroids(field),
-    (pirateId, targetId, position) =>
-      options.onPirateAttack?.(pirateId, targetId, position) ?? false,
+    (pirateId, targetId, position) => {
+      const targetPosition = targetId === 'player'
+        ? options.playerPosition
+        : salvagers.find((ship) => ship.npcId === targetId)?.position;
+      return targetPosition
+        ? options.onPirateAttack?.(pirateId, targetId, position, targetPosition) ?? false
+        : false;
+    },
     options.playerCombat?.defender.id
   );
 }
