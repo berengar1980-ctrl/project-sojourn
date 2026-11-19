@@ -3,6 +3,7 @@ import type { StrategicCombatBystander } from '../systems/combat/strategic-comba
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import {
   createSalvageSecurityDrone,
+  salvageDroneBystanders,
   salvageDroneShipObstacles,
   tickSalvageSecurityDrone,
 } from './game-controller-salvage-drone';
@@ -331,23 +332,9 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
   );
   tickSalvageSecurityDrone(context.drone, context.field, deltaSeconds, nearbyShips);
   if (combat) {
-    const excluded = new Set([combat.attacker.id, combat.defender.id]);
-    options.onCombatBystanders?.([
-      ...npcSalvage.ships
-        .filter((ship) => !excluded.has(ship.npcId))
-        .map((ship) => ({
-          id: ship.npcId,
-          shipId: ship.shipId,
-          position: { ...ship.position },
-          headingRadians: ship.headingRadians,
-        })),
-      {
-        id: 'security-drone:' + context.field.sourceLocationId,
-        shipId: '24m-security-drone',
-        position: context.drone.snapshot().position,
-        headingRadians: context.drone.headingRadians,
-      },
-    ]);
+    options.onCombatBystanders?.(
+      salvageDroneBystanders(combat, npcSalvage.ships, context.drone, context.field.sourceLocationId)
+    );
     // The existing duel owns its two combatants and all moving wreck bodies.
     // Reconcile those positions into the visible local scene every frame.
     syncSalvageCombatField(context.field, combat);
