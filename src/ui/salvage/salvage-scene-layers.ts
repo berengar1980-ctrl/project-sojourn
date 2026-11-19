@@ -156,14 +156,17 @@ export abstract class SalvageSceneLayers {
         this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
       }
     }
-    drawLocalSecurityDrone(
-      this.context,
-      this.camera,
-      this.model.securityDrone,
-      width,
-      height,
-      timeSeconds
-    );
+    // In a player duel the native combat renderer owns the drone body.
+    if (!this.model.combat?.defender.id.startsWith('security-drone:')) {
+      drawLocalSecurityDrone(
+        this.context,
+        this.camera,
+        this.model.securityDrone,
+        width,
+        height,
+        timeSeconds
+      );
+    }
     return hits;
   }
   private drawNpcWork(
