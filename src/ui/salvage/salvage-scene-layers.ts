@@ -1,3 +1,4 @@
+import { drawTargetDetailScan } from '../local-operations/scan-effects';
 import { drawSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
@@ -170,7 +171,7 @@ export abstract class SalvageSceneLayers {
       : null;
     if (!wreck) return;
     if (npc.phase === 'scanning') {
-      this.drawNpcScan(point, wreck.position, width, height, npc.scanProgress, timeSeconds);
+      this.drawNpcScan(point, wreck.position, wreck.radius, width, height, npc.scanProgress, timeSeconds);
     } else if (npc.salvageActive) {
       drawSalvageWorkEffect(
         this.context,
@@ -187,26 +188,20 @@ export abstract class SalvageSceneLayers {
     }
   }
   protected drawNpcScan(
-    shipPoint: ScreenPoint,
+    _shipPoint: ScreenPoint,
     targetWorld: { readonly x: number; readonly y: number },
+    radius: number,
     width: number,
     height: number,
     progress: number,
     timeSeconds: number
   ): void {
-    const target = this.camera.worldToScreen(targetWorld, width, height);
-    const radius = 12 + progress * 24;
-    this.context.save();
-    this.context.strokeStyle = `rgba(119, 226, 240, ${0.5 + Math.sin(timeSeconds * 10) * 0.18})`;
-    this.context.lineWidth = 1.2;
-    this.context.beginPath();
-    this.context.arc(target.x, target.y, radius, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.setLineDash([4, 5]);
-    this.context.beginPath();
-    this.context.moveTo(shipPoint.x, shipPoint.y);
-    this.context.lineTo(target.x, target.y);
-    this.context.stroke();
-    this.context.restore();
+    drawTargetDetailScan(
+      this.context,
+      this.camera.worldToScreen(targetWorld, width, height),
+      Math.max(14, this.camera.scale(radius) + 9),
+      progress,
+      timeSeconds
+    );
   }
 }
