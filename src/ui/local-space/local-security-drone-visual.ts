@@ -36,7 +36,7 @@ export function localDroneShieldHits(
   combats: readonly StrategicCombatSnapshot[] = []
 ): readonly ShieldImpactEffect[] {
   for (const duel of combats) {
-    if (duel.winner !== null) continue;
+    if (duel.winner) continue;
     const drone = [duel.attacker, duel.defender].find((ship) =>
       ship.id.startsWith('security-drone:')
     );
