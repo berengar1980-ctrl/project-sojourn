@@ -1,0 +1,30 @@
+name: Temporary salvage drone format
+on:
+  push:
+    branches:
+      - feat/persistent-salvage-security-drone
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/persistent-salvage-security-drone
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write src/app/game-controller.ts src/app/game-controller-salvage.ts src/app/game-controller-salvage-claims.ts src/app/game-controller-salvage-drone.ts src/ui/salvage/salvage-scene-layers.ts src/ui/salvage/salvage-space-renderer.ts
+      - name: Commit formatting if needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/game-controller.ts src/app/game-controller-salvage.ts src/app/game-controller-salvage-claims.ts src/app/game-controller-salvage-drone.ts src/ui/salvage/salvage-scene-layers.ts src/ui/salvage/salvage-space-renderer.ts
+          if ! git diff --cached --quiet; then
+            git commit -m "Format salvage drone module refactor"
+            git push origin HEAD:feat/persistent-salvage-security-drone
+          fi
