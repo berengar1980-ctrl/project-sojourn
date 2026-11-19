@@ -26,7 +26,7 @@ function salvagePatrolMarkers(field: SalvageField): readonly LocalAsteroid[] {
 }
 
 /** Adapt genuine physical wreck geometry to the shared local-route planner. */
-function wreckObstacles(field: SalvageField): readonly LocalAsteroid[] {
+export function salvageDroneObstacleAsteroids(field: SalvageField): readonly LocalAsteroid[] {
   const solids = [
     ...field.wrecks.map((wreck) => ({
       id: wreck.id,
@@ -62,9 +62,10 @@ export function tickSalvageSecurityDrone(
   drone: AsteroidSecurityDrone,
   field: SalvageField,
   seconds: number,
-  ships: readonly FieldRouteObstacle[]
+  ships: readonly FieldRouteObstacle[],
+  pursuitTarget?: WorldPoint
 ): void {
-  drone.tick(seconds, wreckObstacles(field), [], ships);
+  drone.tick(seconds, salvageDroneObstacleAsteroids(field), [], ships, pursuitTarget);
 }
 
 /** The same solid wrecks that constrain routing also occlude a drone scan. */
@@ -73,7 +74,7 @@ export function salvageDroneCanSee(
   field: SalvageField,
   position: WorldPoint
 ): boolean {
-  return drone.detect(position, wreckObstacles(field));
+  return drone.detect(position, salvageDroneObstacleAsteroids(field));
 }
 
 export function salvageDroneShipObstacles(
