@@ -69,6 +69,7 @@ function registerDestroyedWrecks(
   context: ControllerRuntimeContext,
   snapshot: StrategicCombatSnapshot
 ): void {
+  if (context.state.embeddedCombat !== 'salvage-space') return;
   const field = context.state.salvageScene?.getField();
   if (!field) return;
   const encounterId = `${field.seed}-${field.wrecks.length}-${Math.round(snapshot.elapsedSeconds * 1000)}`;
@@ -127,7 +128,7 @@ export function resolveControllerCombat(
     synchronizeLocalDefender(context, snapshot.defender);
   } else {
     state.salvageScene?.finishCombat(snapshot);
-    if (state.embeddedCombat === 'salvage-space') registerDestroyedWrecks(context, snapshot);
+    registerDestroyedWrecks(context, snapshot);
   }
   emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
