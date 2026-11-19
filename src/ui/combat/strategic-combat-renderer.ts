@@ -229,7 +229,7 @@ export class StrategicCombatRenderer {
     );
     drawTractorThrows(
       this.context,
-      this.model.thrownAsteroids,
+      this.model.winner === null ? this.model.thrownAsteroids : [],
       this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       (point) => this.screen(point, width, height),
       (context, rock, radius) =>
