@@ -841,3 +841,20 @@ parallel zu simulieren. Das Checkpointformat der Sicherheitsdrohne bleibt
 Version 1. Die zoomabhängige Darstellung des GC-87-R8-Sprites, dessen
 Dauerrotation und die Unterdrückung doppelter Kampf-Overlays sind rein visuell
 und benötigen keine zusätzlichen Spielstanddaten.
+
+## Sicherheitsdrohne: Mk-III-Ausrüstung und Trümmerkontakt (2026-11-19)
+
+Sicherheitsdrohnen übernehmen beim Start neuer Karrieren und beim Laden
+bestehender Karrieren ein kompatibles Mk-III-Waffen-Loadout (alle aktiven
+Hardpoints) sowie Hülle Mk III und Schild Mk III. Bei der Migration
+bestehender NPC-Zustände bleibt das bisherige Verhältnis von Hüllen-HP
+zu maximalen HP erhalten; der Schiffszustand verwendet weiterhin die
+bestehende Sektoren-NPC-Persistenz. Die Aktualisierung ändert kein
+Checkpointformat.
+
+Kleine, nicht routenblockierende Trümmer lösen nun echte lokale
+Kollisionskontakte aus und erhalten eine kurzzeitige Abstoßgeschwindigkeit.
+Die sichtbare Schildkontakt-Animation (`shieldContactSeconds`) wird nur
+zur Laufzeit berechnet und nicht gespeichert. Die Drohnenrotation dauert
+acht Sekunden und ist ebenfalls rein visuell. Die Hintergrundkampf-
+Trefferhistorie ist ein temporärer Renderer-Cache, kein Spielstandzustand.

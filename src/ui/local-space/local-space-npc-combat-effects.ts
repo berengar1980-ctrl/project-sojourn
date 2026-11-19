@@ -4,6 +4,9 @@ import type { MapCamera } from '../map/map-camera';
 import { drawCombatBeamVisual } from '../combat/combat-beam-visual';
 import { drawCombatImpactBatch } from '../combat/combat-impact-visual-batch';
 import { drawVisionProjectile } from '../combat/combat-weapon-vision-renderer';
+import { LocalNpcImpactTimeline } from './local-npc-impact-timeline';
+
+const impactTimeline = new LocalNpcImpactTimeline();
 
 /** A background NPC duel is rendered in the existing mining scene, without
  * replacing the player's mining controls or invoking another combat renderer.
@@ -18,6 +21,7 @@ export function drawLocalNpcCombatEffects(
 ): void {
   const screen = (position: { readonly x: number; readonly y: number }) =>
     camera.worldToScreen(position, width, height);
+  impactTimeline.retain(combats);
   for (const duel of combats) {
     for (const beam of duel.beams) {
       drawCombatBeamVisual(context, beam, screen(beam.origin), screen(beam.end));
@@ -41,14 +45,9 @@ export function drawLocalNpcCombatEffects(
         context.restore();
       }
     }
-    const impacts = duel.recentImpacts.length
-      ? duel.recentImpacts
-      : duel.lastImpact
-        ? [duel.lastImpact]
-        : [];
     drawCombatImpactBatch(
       context,
-      impacts.map((impact) => ({ impact, startedAt: duel.elapsedSeconds - 0.12 })),
+      impactTimeline.visible(duel),
       duel.elapsedSeconds,
       screen,
       (side) => {

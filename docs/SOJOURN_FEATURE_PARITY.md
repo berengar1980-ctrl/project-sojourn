@@ -1562,3 +1562,15 @@ Kampf unterdrückt; der native Kampf-Renderer verwendet das GC-87-R8-Bild.
 Spritegröße und Rotation werden mit dem gemeinsamen Kampfkamerazoom
 berechnet. Keine Änderung an Trefferlogik, Kampfberechnung oder
 Konzessionsregeln.
+
+## Review-Log (2026-11-19): Drohnenrüstung, Trümmerkollision, Treffer-VFX
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Sicherheitsdrohnen erhalten an allen aktiven Waffen-Hardpoints Mk III,
+Schild Mk III und Hülle Mk III. Kleine lose Trümmer stoßen physisch mit
+dem Drohnenschild zusammen und werden abgelenkt; das bisherige Routing
+um größere Asteroiden bleibt unverändert. Ein sichtbarer bläulicher
+Schildring mit einem kurzen Kontaktimpuls wird auf der lokalen Karte
+und in nativen Kämpfen angezeigt. Die Eigenrotation beträgt acht Sekunden.
+NPC-Treffer-VFX werden pro Trefferkennung nur einmal erfasst und nach
+ihrer Anzeigezeit entfernt, statt auf jeder Render-Iteration neu zu starten.

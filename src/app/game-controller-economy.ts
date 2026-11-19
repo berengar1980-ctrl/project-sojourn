@@ -4,6 +4,7 @@ import { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import { AsteroidClaimRegistry } from '../systems/operations/asteroid-claim-registry';
 import { SectorLegalRegistry } from '../systems/operations/sector-legal-registry';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
+import { equipSecurityDroneMk3 } from './game-controller-security-drone-loadout';
 import type { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import { PatrolCareerService } from '../systems/operations/patrol-career-service';
 import { economyResources } from '../data/economy/economy-resources';
@@ -167,7 +168,11 @@ export function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): vo
     for (const location of narrowsSector.locations.filter(
       (entry) => entry.activities.mine || entry.activities.salvage
     )) {
-      if (npcStates.some((npc) => npc.id === 'security-drone:' + location.id)) continue;
+      const existing = npcStates.find((npc) => npc.id === 'security-drone:' + location.id);
+      if (existing) {
+        equipSecurityDroneMk3(existing);
+        continue;
+      }
       const drone: SectorNpcState = {
         ...patrolTemplate,
         id: 'security-drone:' + location.id,
@@ -186,6 +191,7 @@ export function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): vo
       delete drone.travel;
       delete drone.combatMovement;
       delete drone.orbit;
+      equipSecurityDroneMk3(drone);
       npcStates.push(drone);
     }
   }
