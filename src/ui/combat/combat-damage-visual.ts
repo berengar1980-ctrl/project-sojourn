@@ -38,10 +38,7 @@ export function drawCombatDamageParticles(
 /** Paint damage for both sides without growing the primary combat renderer. */
 export function drawCombatDamagePair(
   context: CanvasRenderingContext2D,
-  combatants: readonly [
-    StrategicCombatSnapshot['attacker'],
-    StrategicCombatSnapshot['defender'],
-  ],
+  combatants: readonly [StrategicCombatSnapshot['attacker'], StrategicCombatSnapshot['defender']],
   geometryFor: (combatant: StrategicCombatSnapshot['attacker']) => ShipScreenGeometry,
   particlesById: Map<string, DistressDamageParticles>,
   now: number,
