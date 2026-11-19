@@ -3,11 +3,35 @@ import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-s
 import type { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import type { SalvageLocalSpaceService } from '../systems/salvage/salvage-local-space-service';
 import { salvageFieldCombatArena } from '../systems/combat/field-combat-arena';
-import type { SalvageSceneOptions } from './game-controller-salvage';
+import type { SectorNpcState } from '../core/npc-types';
+import type { WorldPoint } from '../core/world-types';
+import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
+
+export interface SalvageNpcAttackArena {
+  readonly width: number;
+  readonly height: number;
+  readonly attackerPosition: WorldPoint;
+  readonly defenderPosition: WorldPoint;
+  readonly defenderHeadingRadians?: number;
+  readonly defenderVelocity?: WorldPoint;
+  readonly attackerVelocity?: WorldPoint;
+  readonly attackerHeadingRadians?: number;
+  readonly asteroids?: readonly CombatVisualAsteroid[];
+  readonly obstacles?: readonly {
+    readonly id: string;
+    readonly position: WorldPoint;
+    readonly radius: number;
+  }[];
+}
+
+interface SalvageNpcAttackOptions {
+  readonly sectorNpcs: readonly SectorNpcState[];
+  readonly onAttackNpc?: (id: string, arena: SalvageNpcAttackArena) => void;
+}
 
 /** Reuse the native PvP arena for player attacks on salvagers and pirates. */
 export function attackSalvageNpc(
-  options: SalvageSceneOptions,
+  options: SalvageNpcAttackOptions,
   field: SalvageField,
   service: SalvageLocalSpaceService,
   salvage: NpcLocalSalvageService,
