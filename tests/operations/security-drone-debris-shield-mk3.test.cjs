@@ -53,7 +53,7 @@ const touching = {
 patrol.tick(0.08, [touching], [], []);
 assert(patrol.snapshot().shieldContactSeconds > 0, 'Collision makes the shield briefly flash');
 
-const ship = getShipDefinition('patrol-60m');
+const ship = getShipDefinition('patrol-60m-variant-01');
 assert(ship, 'Patrol combat chassis should exist');
 const npc = {
   id: 'security-drone:field-1',
