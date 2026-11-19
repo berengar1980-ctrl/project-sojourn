@@ -86,7 +86,8 @@ export class StrategicCombatRenderer {
     this.resize();
   }
   update(model: StrategicCombatSnapshot): void {
-    if (model.winner !== null && this.model.winner === null) this.destructionStartedAt = performance.now() / 1000;
+    if (model.winner !== null && this.model.winner === null)
+      this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
     this.effectClock.update(model.elapsedSeconds, model.winner !== null, performance.now() / 1000);
     for (const projectile of model.projectiles) {
@@ -274,9 +275,13 @@ export class StrategicCombatRenderer {
       const loser = this.model.winner === 'attacker' ? this.model.defender : this.model.attacker;
       if (loser.hullHp <= 0) {
         const geometry = this.shipGeometry(loser, width, height);
-        drawShipDestruction(this.context, geometry.center.x, geometry.center.y,
+        drawShipDestruction(
+          this.context,
+          geometry.center.x,
+          geometry.center.y,
           Math.max(geometry.width, geometry.height) * 0.6,
-          timeSeconds - this.destructionStartedAt);
+          timeSeconds - this.destructionStartedAt
+        );
       }
     }
     // Career-only ships are a scene layer, not a competing combat renderer.
