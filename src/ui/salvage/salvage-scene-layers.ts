@@ -1,4 +1,5 @@
 import { drawTargetDetailScan } from '../local-operations/scan-effects';
+import { drawLocalSecurityDrone } from '../local-space/local-security-drone-visual';
 import { drawSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
@@ -155,6 +156,14 @@ export abstract class SalvageSceneLayers {
         this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
       }
     }
+    drawLocalSecurityDrone(
+      this.context,
+      this.camera,
+      this.model.securityDrone,
+      width,
+      height,
+      timeSeconds
+    );
     return hits;
   }
   private drawNpcWork(
