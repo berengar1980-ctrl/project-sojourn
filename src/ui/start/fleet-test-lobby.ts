@@ -19,7 +19,9 @@ export interface FleetTestConfiguration {
   readonly tractorAsteroidThrowEnabled: true;
 }
 
-const pick = <T>(items: readonly T[]): T => items[Math.floor(Math.random() * items.length)]!;
+function pick<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)]!;
+}
 
 /** Preview-only loadouts. The FleetCombat runtime must consume these later, not the 1vs1 service. */
 export function createFleetTestRoster(countA: number, countB: number): FleetTestShip[] {
@@ -27,7 +29,8 @@ export function createFleetTestRoster(countA: number, countB: number): FleetTest
   const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? []).filter((item) => item.tier === 1);
   const mines = SHIP_MINE_CATALOG.filter((item) => item.tier === 1);
   const roster: FleetTestShip[] = [];
-  for (const [team, count] of [['a', countA], ['b', countB]] as const) {
+  for (const team of ['a', 'b'] as const) {
+    const count = team === 'a' ? countA : countB;
     for (let index = 0; index < count; index += 1) {
       const ship = pick(ships);
       const weaponIds = (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
@@ -133,19 +136,17 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
       section.append(title);
       for (const ship of config.ships.filter((entry) => entry.team === team)) {
         const line = document.createElement('p');
+        const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
         const equipped = ship.draft.weapons
-          .map((id) => (SHIP_COMPONENT_CATALOG.weapon ?? []).find((item) => item.id === id)?.name)
+          .map((id) => weaponCatalog.find((item) => item.id === id)?.name)
           .filter(Boolean);
         const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft.mines[0]);
-        line.textContent =
-          ship.id.toUpperCase() +
-          ' · ' +
-          ship.name +
-          ' | ' +
-          (equipped.join(', ') || 'Keine kompatiblen Waffenplätze') +
-          ' | ' +
-          (mine?.name ?? 'Keine Mine') +
-          ' | Reaktor Mk IV';
+        line.textContent = [
+          ship.id.toUpperCase() + ' · ' + ship.name,
+          equipped.join(', ') || 'Keine kompatiblen Waffenplätze',
+          mine?.name ?? 'Keine Mine',
+          'Reaktor Mk IV',
+        ].join(' | ');
         section.append(line);
       }
       roster.append(section);
