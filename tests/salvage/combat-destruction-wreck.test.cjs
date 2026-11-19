@@ -5,6 +5,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { addDestroyedShipWreck } = load('src/systems/salvage/combat-destruction-wreck.ts');
+const { combatWreckVariantFor } = load('src/core/combat-wreck-variant.ts');
 const { salvageFieldCombatArena } = load('src/systems/combat/field-combat-arena.ts');
 
 const variants = ['miner', 'freighter', 'patrol'];
@@ -18,12 +19,12 @@ const emptyField = () => ({
 });
 for (let i = 0; i < 3; i++) {
   const field = emptyField();
-  const ship = { id: 'pirate-ship', position: { x: 650, y: 700 }, hullHp: 0 };
+  const ship = { id: 'pirate-ship-' + i, position: { x: 650, y: 700 }, hullHp: 0 };
   const sequence = [i / 3 + 0.001, 0.47, 0.12, 0.6, 0.4, 0.3, 0.9];
   const random = () => sequence.shift() ?? 0.5;
-  const wreck = addDestroyedShipWreck(field, ship, 'battle-1', random);
+  const wreck = addDestroyedShipWreck(field, ship, 'battle-1', 19 + i, random);
   assert(wreck, 'destroyed ships must leave an object');
-  assert.equal(wreck.combatWreckVariant, variants[i], 'three distinct 3D wreck silhouettes');
+  assert.equal(wreck.combatWreckVariant, combatWreckVariantFor(field.seed, ship.id, 19 + i));
   assert(
     wreck.resources.some((deposit) => deposit.remainingAmount > 0),
     'wreck must contain recoverable salvage'
@@ -53,4 +54,5 @@ assert.equal(
   null
 );
 assert.equal(intact.wrecks.length, 0);
+assert.equal(new Set(Array.from({ length: 60 }, (_, i) => combatWreckVariantFor(450, 'ship-' + i, 12))).size, 3, 'all three variants must be selectable');
 console.log('PASS destroyed ship creates one random recoverable physical wreck');
