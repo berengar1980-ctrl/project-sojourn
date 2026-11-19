@@ -200,8 +200,8 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     log: options.log,
     refresh,
     onUnauthorizedAttempt: (wreckId) => {
-      if (salvageDroneCanSee(context.drone, field, service.getSnapshot().ship.position))
-        options.onUnauthorizedSalvage?.(field, wreckId);
+      if (salvageDroneCanSee(context.drone, context.field, service.getSnapshot().ship.position))
+        options.onUnauthorizedSalvage?.(context.field, wreckId);
     },
   });
   return createSalvageSpacePanel({
@@ -305,7 +305,7 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     playerRadius: Math.max(18, options.ship.nominalLengthMeters * 0.35),
     dt: deltaSeconds,
     playerCombat: combat,
-    npcCombats: options.getNpcCombats?.(),
+    npcCombats: options.getNpcCombats?.() ?? [],
     onPirateAttack: (pirateId, targetId, piratePosition, targetPosition) =>
       options.onPirateAttack?.(context.field, pirateId, targetId, piratePosition, targetPosition) ??
       false,
