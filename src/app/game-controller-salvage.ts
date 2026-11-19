@@ -393,8 +393,7 @@ function announceSalvageScene(
   runtime: ReturnType<typeof resolveShipRuntimeSetup>
 ): void {
   options.log.write('SALVAGE OPS > ' + options.location.name.toUpperCase());
-  if (!runtime.salvage.available)
-    options.log.write('BERGUNG > KEIN EINSATZFÄHIGES BERGUNGSSYSTEM');
+  if (!runtime.salvage.available) options.log.write('BERGUNG > KEIN EINSATZFÄHIGES BERGUNGSSYSTEM');
 }
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {

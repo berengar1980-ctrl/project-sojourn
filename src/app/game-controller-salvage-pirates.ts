@@ -63,9 +63,7 @@ function closestVisiblePirate(
   const dronePosition = options.drone.position;
   return (
     pirateShips
-      .filter((pirate) =>
-        salvageDroneCanSee(options.drone, options.field, pirate.position)
-      )
+      .filter((pirate) => salvageDroneCanSee(options.drone, options.field, pirate.position))
       .sort(
         (a, b) =>
           Math.hypot(a.position.x - dronePosition.x, a.position.y - dronePosition.y) -
@@ -106,9 +104,7 @@ function advanceDroneInterception(
   if (!target || !defender || defender.hullHp <= 0 || busy) return;
   const npc = sectorNpcs.find((entry) => entry.id === target.npcId);
   if (!npc || npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) return;
-  if (
-    Math.hypot(drone.position.x - target.position.x, drone.position.y - target.position.y) <= 145
-  )
+  if (Math.hypot(drone.position.x - target.position.x, drone.position.y - target.position.y) <= 145)
     options.onDroneAttack?.(npc.id, target.position);
 }
 
