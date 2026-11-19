@@ -12,6 +12,11 @@ const impactTimeline = new LocalNpcImpactTimeline();
 const damageParticles = new Map<string, DistressDamageParticles>();
 const destructionStarts = new Map<string, number>();
 
+function retainActiveEffects(active: ReadonlySet<string>): void {
+  for (const key of damageParticles.keys()) if (!active.has(key)) damageParticles.delete(key);
+  for (const key of destructionStarts.keys()) if (!active.has(key)) destructionStarts.delete(key);
+}
+
 /** A background NPC duel is rendered in the existing mining scene, without
  * replacing the player's mining controls or invoking another combat renderer.
  * Weapon beams, projectile bodies and shield/hull hits reuse native PvP FX.
@@ -106,6 +111,5 @@ export function drawLocalNpcCombatEffects(
       }
     );
   }
-  for (const key of damageParticles.keys()) if (!active.has(key)) damageParticles.delete(key);
-  for (const key of destructionStarts.keys()) if (!active.has(key)) destructionStarts.delete(key);
+  retainActiveEffects(active);
 }
