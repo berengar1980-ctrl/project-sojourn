@@ -451,6 +451,10 @@ export function createStarMapEngagementService(
         !defender ||
         attacker.hullHp <= 0 ||
         defender.hullHp <= 0 ||
+        attacker.combatMovement ||
+        defender.combatMovement ||
+        (attacker.combatRecoverySeconds ?? 0) > 0 ||
+        (defender.combatRecoverySeconds ?? 0) > 0 ||
         runtime.backgroundCombats.has(pairKey(attackerId, defenderId)) ||
         runtime.options.sectorNpcs.isTravelling(attacker) ||
         runtime.options.sectorNpcs.isTravelling(defender)
