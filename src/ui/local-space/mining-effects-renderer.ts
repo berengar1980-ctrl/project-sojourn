@@ -7,7 +7,7 @@ import type {
 } from '../../features/local-space/local-space-view-model';
 import type { MapCamera, ScreenPoint } from '../map/map-camera';
 import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
-import { hashId } from './local-space-scene-layers';
+import { hashId } from './local-space-visual-hash';
 
 function fractional(value: number): number {
   return value - Math.floor(value);
