@@ -119,7 +119,7 @@ export function resolveControllerCombat(
         const encounterId = `${field.seed}-${field.wrecks.length}-${Math.round(snapshot.elapsedSeconds * 1000)}`;
         for (const ship of [snapshot.attacker, snapshot.defender]) {
           if (ship.hullHp > 0 || ship.id.startsWith('security-drone:')) continue;
-          const wreck = addDestroyedShipWreck(field, ship, encounterId);
+          const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
           if (wreck) context.systemLog.write(`BERGUNG > NEUES WRACK: ${wreck.name}`);
         }
       }
