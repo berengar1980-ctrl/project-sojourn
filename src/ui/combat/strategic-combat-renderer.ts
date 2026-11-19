@@ -35,7 +35,7 @@ import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
 import { drawCombatBeamVisual } from './combat-beam-visual';
 import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
-import { DistressDamageParticles } from '../salvage/distress-damage-particles';
+import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatDamagePair } from './combat-damage-visual';
 import { drawShipDestruction } from './ship-destruction-visual';
 import { drawCombatGrapple } from './combat-grapple-renderer';
