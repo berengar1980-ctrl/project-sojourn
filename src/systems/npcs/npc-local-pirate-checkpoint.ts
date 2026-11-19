@@ -1,3 +1,4 @@
+import type { FieldRouteState } from '../navigation/field-ship-routing';
 import type { WorldPoint } from '../../core/world-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import { cloneCareerJson } from '../persistence/career-save-contract';
@@ -8,6 +9,7 @@ export interface LocalPirateCheckpointShip {
   readonly headingRadians: number;
   readonly speed: number;
   readonly awaitingCombat: boolean;
+  readonly routeState?: FieldRouteState;
 }
 
 export interface LocalPirateCheckpoint {
@@ -33,12 +35,22 @@ function validPosition(value: unknown, width: number, height: number): boolean {
   return value.x <= width && value.y <= height;
 }
 
+function validRoute(value: unknown, width: number, height: number): boolean {
+  if (!record(value) || !validPosition(value.target, width, height)) return false;
+  if (!Array.isArray(value.points) || value.points.length === 0) return false;
+  if (value.points.length > 500) return false;
+  if (!Number.isInteger(value.index) || !finite(value.index, 0)) return false;
+  if (value.index >= value.points.length) return false;
+  return value.points.every((point: unknown) => validPosition(point, width, height));
+}
+
 function validShip(value: unknown, width: number, height: number): boolean {
   if (!record(value)) return false;
   if (typeof value.npcId !== 'string' || !value.npcId) return false;
   if (!validPosition(value.position, width, height)) return false;
   if (!finite(value.headingRadians) || !finite(value.speed, 0)) return false;
-  return typeof value.awaitingCombat === 'boolean';
+  if (typeof value.awaitingCombat !== 'boolean') return false;
+  return value.routeState === undefined || validRoute(value.routeState, width, height);
 }
 
 function validEntries(snapshot: LocalPirateCheckpoint, npcs: readonly SectorNpcState[]): boolean {
