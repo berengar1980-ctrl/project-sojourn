@@ -120,11 +120,13 @@ export class AsteroidSecurityDrone {
     if (!this.operational) return [];
     const destination = this.patrol[this.nextWaypoint]!;
     const obstacles: FieldRouteObstacle[] = [
-      ...asteroids.filter((rock) => rock.routeBlocking).map((rock) => ({
-        id: rock.id,
-        position: rock.position,
-        radius: rock.collisionRadius ?? rock.radius,
-      })),
+      ...asteroids
+        .filter((rock) => rock.routeBlocking)
+        .map((rock) => ({
+          id: rock.id,
+          position: rock.position,
+          radius: rock.collisionRadius ?? rock.radius,
+        })),
       ...nearbyShips,
     ];
     // Ships move independently: invalidate a stale waypoint when its next leg
