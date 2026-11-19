@@ -177,11 +177,15 @@ export function tickFieldSecurity(
       position: ship.position,
       radius: 35,
     })),
-    ...(active ? [{
-      id: 'player',
-      position: active.instance.ship.position,
-      radius: Math.max(18, context.state.activeShip.nominalLengthMeters * 0.35),
-    }] : []),
+    ...(active
+      ? [
+          {
+            id: 'player',
+            position: active.instance.ship.position,
+            radius: Math.max(18, context.state.activeShip.nominalLengthMeters * 0.35),
+          },
+        ]
+      : []),
   ];
   drone.tick(seconds, runtime.instance.asteroids, contacts, nearbyShips);
   for (const contact of contacts) {
