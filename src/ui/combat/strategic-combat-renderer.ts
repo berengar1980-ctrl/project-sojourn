@@ -388,11 +388,13 @@ export class StrategicCombatRenderer {
     visualElapsed: number
   ): void {
     const definition = getShipDefinition(combatant.shipId);
-    const geometry = this.shipGeometry(combatant, width, height);
     const isDrone = combatant.shipId === '24m-security-drone';
-    if (isDrone) {
-      geometry.angle = (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS;
-    }
+    const geometry = {
+      ...this.shipGeometry(combatant, width, height),
+      ...(isDrone
+        ? { angle: (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS }
+        : {}),
+    };
     const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
     // Rotating drone hull has no ship-style directional exhaust hardpoints.
     const hardpoints = isDrone ? undefined : definition?.sprite.hardpoints;
