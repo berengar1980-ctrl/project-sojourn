@@ -187,7 +187,6 @@ export class AsteroidSecurityDrone {
         this.retryAfterSeconds = 1.5;
       }
     }
-
   }
 
   private routeBlocked(waypoint: WorldPoint, obstacles: readonly FieldRouteObstacle[]): boolean {
