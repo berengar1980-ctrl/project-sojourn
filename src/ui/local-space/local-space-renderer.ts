@@ -1,3 +1,4 @@
+import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
 import { drawLocalNavigationRoute } from './local-space-navigation-route';
 import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { measurePerformance } from '../../core/performance-diagnostics';
@@ -208,6 +209,13 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
 
     this.npcHitAreas = measurePerformance('canvas.local.npc-ships', () =>
       this.drawNpcShips(width, height, timeSeconds)
+    );
+    drawLocalNpcCombatEffects(
+      this.context,
+      this.camera,
+      this.model.npcCombats ?? [],
+      width,
+      height
     );
     this.drawSecurityDrone(width, height, timeSeconds);
     this.drawChunks(width, height);
