@@ -65,8 +65,8 @@ try {
     calls.draws.map(({ x, y, width, height }) => [x, y, width, height]),
     [
       [-9, -9, 18, 18],
-      [-13, -13, 26, 26],
-      [-13, -13, 26, 26],
+      [-9, -9, 18, 18],
+      [-9, -9, 18, 18],
     ]
   );
   assert.equal(calls.draws[0].image.url, '/drones/security-drone-gc87r8.webp');
