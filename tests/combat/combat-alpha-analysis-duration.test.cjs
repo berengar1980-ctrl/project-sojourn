@@ -12,14 +12,14 @@ const routing = fs.readFileSync(
 
 assert(
   lobby.includes('setups[0]!') && lobby.includes('setups[1]!'),
-  'Alpha passes the regular unmodified combat setups to the duel service'
+  'free duel passes unmodified combat setups to the duel service'
 );
 assert(
   !lobby.includes('damageMultiplier: setup.damageMultiplier *'),
-  'Alpha damage uses normal value'
+  'free duel damage uses normal value'
 );
-assert(!lobby.includes('shieldHp: setup.shieldHp *'), 'Alpha shields use normal value');
-assert(lobby.includes('drafts[index]!.mines = []'), 'Alpha does not open with lethal mines');
+assert(!lobby.includes('shieldHp: setup.shieldHp *'), 'free duel shields use normal value');
+assert(!lobby.includes('DUEL_ENCOUNTERS'), 'free duel has no curated encounter setup');
 assert(
   routing.includes('const immediateThreat = pathBlocked('),
   'predict collision ahead of velocity'
@@ -28,4 +28,4 @@ assert(
   routing.includes('ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS'),
   'blocked paths respect a bounded route refresh interval'
 );
-console.log('PASS Alpha-specific analysis tuning and predictive waypoint replanning');
+console.log('PASS unmodified free duel setup and predictive waypoint replanning');
