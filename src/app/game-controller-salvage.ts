@@ -105,6 +105,7 @@ interface SalvageSceneOptions {
     }
   ) => void;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
+  readonly resolveDrone?: (field: SalvageField) => AsteroidSecurityDrone;
   readonly onCombatBystanders?: (bystanders: readonly StrategicCombatBystander[]) => void;
   readonly field?: SalvageField;
   readonly sectorEvent?: SectorSalvageEvent | null;
@@ -429,7 +430,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     field,
     service,
     npcSalvage: createNpcSalvageRuntime(options, field, service),
-    drone: createSalvageSecurityDrone(field, options.wreckClaims),
+    drone: options.resolveDrone?.(field) ?? createSalvageSecurityDrone(field, options.wreckClaims),
     state: {
       selectedNpcId: options.selectedNpcId ?? null,
       sectorEventResolved: false,
