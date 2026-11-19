@@ -338,6 +338,9 @@ function mountControllerSalvage(
         ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
         : null,
     isCombatActive: () => state.embeddedCombat === 'salvage-space',
+    onCombatBystanders: (bystanders) => {
+      context.engagements.activePlayerCombat()?.setBystanders(bystanders);
+    },
     onCombatGrapple: () => {
       context.engagements.activePlayerCombat()?.fireGrapple('attacker');
     },
