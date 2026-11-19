@@ -30,8 +30,11 @@ export function equipSecurityDroneMk3(npc: SectorNpcState): void {
     );
     if (part) weapons[index] = part.id;
   }
+  const mutable = Object.fromEntries(
+    Object.entries(current).map(([type, ids]) => [type, [...(ids ?? [])]])
+  ) as NpcInstalledComponents;
   const installed: NpcInstalledComponents = {
-    ...current,
+    ...mutable,
     weapon: weapons,
     hull: ['hull3'],
     shield: ['shield3'],
