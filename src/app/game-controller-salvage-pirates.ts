@@ -2,7 +2,10 @@ import type { SectorNpcState } from '../core/npc-types';
 import type { SalvageField } from '../core/salvage-types';
 import type { WorldPoint } from '../core/world-types';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
-import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
+import type {
+  LocalPirateTraffic,
+  LocalPirateContact,
+} from '../systems/npcs/npc-local-pirate-service';
 import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import {
@@ -32,15 +35,8 @@ export interface SalvagePirateResponseOptions {
   readonly onDroneAttack?: (pirateId: string, piratePosition: WorldPoint) => boolean;
 }
 
-/** Only duel owners advance live combatants. Mirror their positions into the
- * salvage layer and let the drone attack independent free pirates.
- */
-export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptions): void {
-  const { field, drone, pirates, sectorNpcs, salvagers } = options;
-  const livePirates = sectorNpcs.filter(
-    (npc) => npc.pirate && npc.locationId === field.sourceLocationId && npc.hullHp > 0
-  );
-  pirates.reconcile(livePirates);
+function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> {
+  const { field, drone, pirates, salvagers, sectorNpcs } = options;
   const combatants = new Set<string>();
   for (const duel of options.npcCombats ?? []) {
     for (const ship of [duel.attacker, duel.defender]) {
@@ -48,32 +44,48 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
       if (npc?.locationId !== field.sourceLocationId) continue;
       combatants.add(npc.id);
       pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians);
-      salvagers.forEach((salvager) => {
+      for (const salvager of salvagers) {
         if (salvager.npcId === npc.id) salvager.position = { ...ship.position };
-      });
+      }
       if (npc.id === 'security-drone:' + field.sourceLocationId) {
         drone.restore(ship.position, ship.hullHp > 0);
         drone.headingRadians = ship.headingRadians;
       }
     }
   }
+  return combatants;
+}
+
+function closestVisiblePirate(
+  options: SalvagePirateResponseOptions,
+  pirateShips: readonly LocalPirateContact[]
+): LocalPirateContact | null {
+  const dronePosition = options.drone.position;
+  return (
+    pirateShips
+      .filter((pirate) =>
+        salvageDroneCanSee(options.drone, options.field, pirate.position)
+      )
+      .sort(
+        (a, b) =>
+          Math.hypot(a.position.x - dronePosition.x, a.position.y - dronePosition.y) -
+          Math.hypot(b.position.x - dronePosition.x, b.position.y - dronePosition.y)
+      )[0] ?? null
+  );
+}
+
+function advanceDroneInterception(
+  options: SalvagePirateResponseOptions,
+  pirateShips: readonly LocalPirateContact[],
+  combatants: ReadonlySet<string>
+): void {
+  const { drone, field, sectorNpcs, salvagers } = options;
   const defender = sectorNpcs.find((npc) => npc.id === 'security-drone:' + field.sourceLocationId);
   if (defender && defender.hullHp <= 0) drone.destroy();
-
-  const pirateShips = pirates.snapshot(sectorNpcs);
-  const free = pirateShips
-    .filter((pirate) => salvageDroneCanSee(drone, field, pirate.position))
-    .sort((a, b) => {
-      const pos = drone.position;
-      return (
-        Math.hypot(pos.x - a.position.x, pos.y - a.position.y) -
-        Math.hypot(pos.x - b.position.x, pos.y - b.position.y)
-      );
-    });
-  const target = free[0];
-  const defenderBusy = Boolean(defender?.combatMovement || combatants.has(defender?.id ?? ''));
+  const target = closestVisiblePirate(options, pirateShips);
+  const busy = Boolean(defender?.combatMovement || combatants.has(defender?.id ?? ''));
   let pursuit: WorldPoint | undefined;
-  if (target && !defenderBusy) {
+  if (target && !busy) {
     const dx = drone.position.x - target.position.x;
     const dy = drone.position.y - target.position.y;
     const length = Math.max(1, Math.hypot(dx, dy));
@@ -90,19 +102,22 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
     options.playerPosition,
     options.playerRadius
   );
-  if (!defenderBusy) tickSalvageSecurityDrone(drone, field, options.dt, obstacles, pursuit);
+  if (!busy) tickSalvageSecurityDrone(drone, field, options.dt, obstacles, pursuit);
+  if (!target || !defender || defender.hullHp <= 0 || busy) return;
+  const npc = sectorNpcs.find((entry) => entry.id === target.npcId);
+  if (!npc || npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) return;
+  if (
+    Math.hypot(drone.position.x - target.position.x, drone.position.y - target.position.y) <= 145
+  )
+    options.onDroneAttack?.(npc.id, target.position);
+}
 
-  if (target && defender && defender.hullHp > 0 && !defenderBusy) {
-    const npc = sectorNpcs.find((entry) => entry.id === target.npcId);
-    if (
-      npc &&
-      !npc.combatMovement &&
-      !(npc.combatRecoverySeconds && npc.combatRecoverySeconds > 0) &&
-      Math.hypot(drone.position.x - target.position.x, drone.position.y - target.position.y) <= 145
-    )
-      options.onDroneAttack?.(npc.id, target.position);
-  }
-
+function advancePirateTraffic(
+  options: SalvagePirateResponseOptions,
+  livePirates: readonly SectorNpcState[],
+  combatants: ReadonlySet<string>
+): void {
+  const { pirates, salvagers } = options;
   pirates.tick(
     options.dt,
     livePirates,
@@ -112,7 +127,7 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
       position: ship.position,
       inCombat: combatants.has(ship.npcId),
     })),
-    salvageDroneObstacleAsteroids(field),
+    salvageDroneObstacleAsteroids(options.field),
     (pirateId, targetId, position) => {
       const targetPosition =
         targetId === 'player'
@@ -124,4 +139,16 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
     },
     options.playerCombat?.defender.id
   );
+}
+
+/** Combat owns fighting ship poses; regular traffic owns everyone else. */
+export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptions): void {
+  const livePirates = options.sectorNpcs.filter(
+    (npc) => npc.pirate && npc.locationId === options.field.sourceLocationId && npc.hullHp > 0
+  );
+  options.pirates.reconcile(livePirates);
+  const combatants = mirrorSalvageDuels(options);
+  const ships = options.pirates.snapshot(options.sectorNpcs);
+  advanceDroneInterception(options, ships, combatants);
+  advancePirateTraffic(options, livePirates, combatants);
 }
