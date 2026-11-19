@@ -309,9 +309,11 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     playerCombat: combat,
     npcCombats: options.getNpcCombats?.(),
     onPirateAttack: (pirateId, targetId, piratePosition, targetPosition) =>
-      options.onPirateAttack?.(context.field, pirateId, targetId, piratePosition, targetPosition) ?? false,
+      options.onPirateAttack?.(context.field, pirateId, targetId, piratePosition, targetPosition) ??
+      false,
     onDroneAttack: (pirateId, piratePosition) =>
-      options.onDroneAttack?.(context.field, pirateId, piratePosition, context.drone.position) ?? false,
+      options.onDroneAttack?.(context.field, pirateId, piratePosition, context.drone.position) ??
+      false,
   });
   if (combat) {
     options.onCombatBystanders?.(
@@ -425,7 +427,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     service,
     npcSalvage: createNpcSalvageRuntime(options, field, service),
     pirates:
-      options.resolvePirateTraffic?.(field) ?? new LocalPirateTraffic(field.width, field.height, field.seed),
+      options.resolvePirateTraffic?.(field) ??
+      new LocalPirateTraffic(field.width, field.height, field.seed),
     drone: options.resolveDrone?.(field) ?? createSalvageSecurityDrone(field, options.wreckClaims),
     state: {
       selectedNpcId: options.selectedNpcId ?? null,

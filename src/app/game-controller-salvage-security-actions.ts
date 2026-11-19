@@ -1,7 +1,10 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { careerSalvageDrone, careerSalvagePirates } from './game-controller-salvage-drone-world';
 import { reportUnauthorizedWreckSalvage } from './game-controller-salvage-legal-response';
-import { engageSalvagePirate, engageSalvageDronePirate } from './game-controller-salvage-pirate-combat';
+import {
+  engageSalvagePirate,
+  engageSalvageDronePirate,
+} from './game-controller-salvage-pirate-combat';
 
 /** Wire local salvage traffic to existing authoritative career services. */
 export function salvageSecurityActions(context: ControllerRuntimeContext) {
@@ -11,8 +14,10 @@ export function salvageSecurityActions(context: ControllerRuntimeContext) {
     resolvePirateTraffic: (field: Parameters<typeof careerSalvagePirates>[1]) =>
       careerSalvagePirates(context, field),
     getNpcCombats: () => context.engagements.activeNpcCombatSnapshots?.() ?? [],
-    onUnauthorizedSalvage: (field: Parameters<typeof reportUnauthorizedWreckSalvage>[1], wreckId: string) =>
-      reportUnauthorizedWreckSalvage(context, field, wreckId),
+    onUnauthorizedSalvage: (
+      field: Parameters<typeof reportUnauthorizedWreckSalvage>[1],
+      wreckId: string
+    ) => reportUnauthorizedWreckSalvage(context, field, wreckId),
     onPirateAttack: (
       field: Parameters<typeof engageSalvagePirate>[1],
       pirateId: string,

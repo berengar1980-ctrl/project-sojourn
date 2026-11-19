@@ -164,7 +164,9 @@ export function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): vo
   // The local drone service remains the authority for field sensor movement.
   const patrolTemplate = npcStates.find((npc) => npc.job === 'patrol' && !npc.pirate);
   if (patrolTemplate) {
-    for (const location of narrowsSector.locations.filter((entry) => entry.activities.mine || entry.activities.salvage)) {
+    for (const location of narrowsSector.locations.filter(
+      (entry) => entry.activities.mine || entry.activities.salvage
+    )) {
       if (npcStates.some((npc) => npc.id === 'security-drone:' + location.id)) continue;
       const drone: SectorNpcState = {
         ...patrolTemplate,

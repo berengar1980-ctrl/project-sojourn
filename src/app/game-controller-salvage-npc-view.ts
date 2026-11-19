@@ -28,27 +28,26 @@ export function salvageNpcShips(npcSalvage: NpcLocalSalvageService) {
 }
 
 /** Pirates in wreck fields use the same ship sprites and native local layer as salvagers. */
-export function salvagePirateShips(
-  traffic: LocalPirateTraffic,
-  npcs: readonly SectorNpcState[]
-) {
+export function salvagePirateShips(traffic: LocalPirateTraffic, npcs: readonly SectorNpcState[]) {
   return traffic.snapshot(npcs).flatMap((pirate) => {
     const definition = getShipDefinition(pirate.shipId);
     if (!definition) return [];
-    return [{
-      id: pirate.npcId,
-      name: pirate.name,
-      position: pirate.position,
-      headingRadians: pirate.headingRadians,
-      speed: pirate.speed,
-      phase: 'approaching' as const,
-      targetWreckId: null,
-      salvageActive: false,
-      scanProgress: 0,
-      nominalLengthMeters: definition.nominalLengthMeters,
-      spriteUrl: definition.sprite.assetUrl,
-      spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
-      hardpoints: definition.sprite.hardpoints,
-    }];
+    return [
+      {
+        id: pirate.npcId,
+        name: pirate.name,
+        position: pirate.position,
+        headingRadians: pirate.headingRadians,
+        speed: pirate.speed,
+        phase: 'approaching' as const,
+        targetWreckId: null,
+        salvageActive: false,
+        scanProgress: 0,
+        nominalLengthMeters: definition.nominalLengthMeters,
+        spriteUrl: definition.sprite.assetUrl,
+        spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
+        hardpoints: definition.sprite.hardpoints,
+      },
+    ];
   });
 }

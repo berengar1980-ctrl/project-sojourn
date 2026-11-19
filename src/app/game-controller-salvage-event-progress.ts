@@ -7,11 +7,7 @@ export function completeSalvageSectorEvent(
   snapshot: SalvageLocalSpaceSnapshot,
   onComplete?: (eventId: string) => void
 ): boolean {
-  if (
-    !event ||
-    alreadyResolved ||
-    (event.type !== 'special-wreck' && !event.salvageRights)
-  )
+  if (!event || alreadyResolved || (event.type !== 'special-wreck' && !event.salvageRights))
     return alreadyResolved;
   const complete = snapshot.field.wrecks.every(
     (wreck) =>

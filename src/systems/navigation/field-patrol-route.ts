@@ -22,15 +22,9 @@ function clearPath(
     const radius = obstacle.radius + clearance;
     // A pre-existing overlap may be escaped; do not strand a ship that
     // loaded next to a solid object.
-    const atStart = Math.hypot(
-      start.x - obstacle.position.x,
-      start.y - obstacle.position.y
-    );
+    const atStart = Math.hypot(start.x - obstacle.position.x, start.y - obstacle.position.y);
     if (atStart < radius) {
-      return Math.hypot(
-        end.x - obstacle.position.x,
-        end.y - obstacle.position.y
-      ) > atStart + 1;
+      return Math.hypot(end.x - obstacle.position.x, end.y - obstacle.position.y) > atStart + 1;
     }
     return gapToSegment(obstacle.position, start, end) >= radius;
   });
@@ -57,10 +51,7 @@ export function planFieldPatrolRoute(
     return [];
 
   const nearby = obstacles
-    .filter(
-      (o) =>
-        gapToSegment(o.position, start, destination) < o.radius + clearance + 180
-    )
+    .filter((o) => gapToSegment(o.position, start, destination) < o.radius + clearance + 180)
     .sort(
       (a, b) =>
         Math.hypot(a.position.x - start.x, a.position.y - start.y) -

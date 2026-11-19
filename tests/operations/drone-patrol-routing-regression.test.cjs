@@ -29,8 +29,7 @@ for (const point of route) {
           0,
           Math.min(
             1,
-            ((obstacle.position.x - previous.x) * dx +
-              (obstacle.position.y - previous.y) * dy) /
+            ((obstacle.position.x - previous.x) * dx + (obstacle.position.y - previous.y) * dy) /
               denom
           )
         );
@@ -92,7 +91,6 @@ const rocks = [
   { id: 'b', kind: 'resource', position: { x: 850, y: 150 }, radius: 10, routeBlocking: false },
 ];
 const patrol = new AsteroidSecurityDrone(1000, 500, rocks);
-for (let index = 0; index < 20; index++)
-  patrol.tick(0.08, rocks, [], [], { x: 600, y: 400 });
+for (let index = 0; index < 20; index++) patrol.tick(0.08, rocks, [], [], { x: 600, y: 400 });
 assert(patrol.position.y > 150, 'Pirate pursuit replaces routine patrol destination');
 console.log('PASS bounded drone navigation, offscreen world, career checkpoint and pursuit');

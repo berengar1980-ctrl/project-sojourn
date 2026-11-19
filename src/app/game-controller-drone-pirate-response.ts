@@ -53,19 +53,15 @@ export function interceptSecurityPirate(
   if (!defender || defender.hullHp <= 0 || defender.combatMovement) return false;
   const pirateNpc = context.economy.sectorNpcs.npcs.find((npc) => npc.id === pirate.id);
   if (!pirateNpc || pirateNpc.combatMovement) return false;
-  const started = context.engagements.engageNpcsInArena(
-    pirate.id,
-    defender.id,
-    {
-      ...localMiningCombatArena(field.instance, { x: 0, y: 0 }),
-      attackerPosition: { ...pirate.position },
-      attackerHeadingRadians: 0,
-      attackerVelocity: { x: 0, y: 0 },
-      defenderPosition: { ...position },
-      defenderHeadingRadians: drone.headingRadians,
-      defenderVelocity: { x: 0, y: 0 },
-    }
-  );
+  const started = context.engagements.engageNpcsInArena(pirate.id, defender.id, {
+    ...localMiningCombatArena(field.instance, { x: 0, y: 0 }),
+    attackerPosition: { ...pirate.position },
+    attackerHeadingRadians: 0,
+    attackerVelocity: { x: 0, y: 0 },
+    defenderPosition: { ...position },
+    defenderHeadingRadians: drone.headingRadians,
+    defenderVelocity: { x: 0, y: 0 },
+  });
   if (started) {
     context.systemLog.write(
       'SEC-01 > PIRAT ERKANNT: ' + pirateNpc.name.toUpperCase() + ' · ABGEFANGEN'

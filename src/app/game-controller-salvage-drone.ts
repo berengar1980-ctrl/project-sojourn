@@ -111,12 +111,14 @@ export function salvageDroneBystanders(
         position: { ...ship.position },
         headingRadians: ship.headingRadians,
       })),
-    ...pirates.filter((ship) => !excluded.has(ship.npcId)).map((ship) => ({
-      id: ship.npcId,
-      shipId: ship.shipId,
-      position: { ...ship.position },
-      headingRadians: ship.headingRadians,
-    })),
+    ...pirates
+      .filter((ship) => !excluded.has(ship.npcId))
+      .map((ship) => ({
+        id: ship.npcId,
+        shipId: ship.shipId,
+        position: { ...ship.position },
+        headingRadians: ship.headingRadians,
+      })),
     {
       id: 'security-drone:' + locationId,
       shipId: '24m-security-drone',

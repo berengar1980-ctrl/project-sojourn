@@ -342,7 +342,8 @@ function mountControllerSalvage(
     onCombatBystanders: (bystanders) =>
       context.engagements.activePlayerCombat()?.setBystanders(bystanders),
     onCombatGrapple: () => context.engagements.activePlayerCombat()?.fireGrapple('attacker'),
-    onCombatTactic: (tactic) => context.engagements.activePlayerCombat()?.setTactic('attacker', tactic),
+    onCombatTactic: (tactic) =>
+      context.engagements.activePlayerCombat()?.setTactic('attacker', tactic),
     ...controllerSalvageEventCallbacks(context, {
       mountStarMap: () => mountControllerStarMap(context),
       mountSalvage: (field) => mountControllerSalvage(context, true, field),

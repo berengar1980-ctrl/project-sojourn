@@ -49,8 +49,7 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
       combatants.add(npc.id);
       pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians);
       salvagers.forEach((salvager) => {
-        if (salvager.npcId === npc.id)
-          salvager.position = { ...ship.position };
+        if (salvager.npcId === npc.id) salvager.position = { ...ship.position };
       });
       if (npc.id === 'security-drone:' + field.sourceLocationId) {
         drone.restore(ship.position, ship.hullHp > 0);
@@ -58,9 +57,7 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
       }
     }
   }
-  const defender = sectorNpcs.find(
-    (npc) => npc.id === 'security-drone:' + field.sourceLocationId
-  );
+  const defender = sectorNpcs.find((npc) => npc.id === 'security-drone:' + field.sourceLocationId);
   if (defender && defender.hullHp <= 0) drone.destroy();
 
   const pirateShips = pirates.snapshot(sectorNpcs);
@@ -117,11 +114,12 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
     })),
     salvageDroneObstacleAsteroids(field),
     (pirateId, targetId, position) => {
-      const targetPosition = targetId === 'player'
-        ? options.playerPosition
-        : salvagers.find((ship) => ship.npcId === targetId)?.position;
+      const targetPosition =
+        targetId === 'player'
+          ? options.playerPosition
+          : salvagers.find((ship) => ship.npcId === targetId)?.position;
       return targetPosition
-        ? options.onPirateAttack?.(pirateId, targetId, position, targetPosition) ?? false
+        ? (options.onPirateAttack?.(pirateId, targetId, position, targetPosition) ?? false)
         : false;
     },
     options.playerCombat?.defender.id

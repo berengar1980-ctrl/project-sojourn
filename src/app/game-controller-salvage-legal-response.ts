@@ -26,9 +26,7 @@ export function reportUnauthorizedWreckSalvage(
     incident
   );
   if (!charge) return;
-  context.systemLog.write(
-    'SEC-01 > UNBEFUGTE BERGUNG ERKANNT: WRACK ' + wreckId.toUpperCase()
-  );
+  context.systemLog.write('SEC-01 > UNBEFUGTE BERGUNG ERKANNT: WRACK ' + wreckId.toUpperCase());
   const report = legal.reportSighting(shipId, field.sourceLocationId, day, 'distress');
   if (report) dispatchPatrolToReport(context, field.sourceLocationId, null);
 }

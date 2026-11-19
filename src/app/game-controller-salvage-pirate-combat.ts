@@ -68,7 +68,6 @@ export function engageSalvageDronePirate(
     attackerVelocity: { x: 0, y: 0 },
     defenderVelocity: { x: 0, y: 0 },
   });
-  if (started)
-    context.systemLog.write('SEC-01 > PIRAT IM WRACKFELD ERKANNT · DIREKTER ANGRIFF');
+  if (started) context.systemLog.write('SEC-01 > PIRAT IM WRACKFELD ERKANNT · DIREKTER ANGRIFF');
   return started;
 }
