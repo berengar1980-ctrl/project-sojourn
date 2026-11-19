@@ -2,7 +2,7 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { edgePoint, hashId } from './npc-mining-targets';
-import { pirateRouteDestination, type PirateDetour } from './npc-local-pirate-routing';
+import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
 import {
   stageLocalPirateCheckpoint,
   type LocalPirateCheckpoint,
@@ -22,7 +22,7 @@ interface PirateRuntime {
   headingRadians: number;
   speed: number;
   awaitingCombat: boolean;
-  detour?: PirateDetour | null;
+  routeState?: FieldRouteState;
 }
 
 /**
@@ -91,6 +91,7 @@ export class LocalPirateTraffic {
         headingRadians: ship.headingRadians,
         speed: ship.speed,
         awaitingCombat: ship.awaitingCombat,
+        ...(ship.routeState ? { routeState: structuredClone(ship.routeState) } : {}),
       })),
       combatReturns: [...this.combatReturnPositions].map(
         ([id, position]) => [id, { ...position }] as const
@@ -112,6 +113,7 @@ export class LocalPirateTraffic {
       instance.ships.set(ship.npcId, {
         ...ship,
         position: { ...ship.position },
+        ...(ship.routeState ? { routeState: structuredClone(ship.routeState) } : {}),
       });
     }
     for (const [id, position] of saved.combatReturns) {
@@ -208,38 +210,23 @@ export class LocalPirateTraffic {
       );
       const target = targets[0];
       if (!target) continue;
-      const route = pirateRouteDestination(
-        pirate.position,
-        target.position,
-        pirate.detour ?? null,
-        asteroids,
-        this.width,
-        this.height
+      const distance = Math.hypot(
+        target.position.x - pirate.position.x,
+        target.position.y - pirate.position.y
       );
-      pirate.detour = route.detour;
-      const destination = route.destination;
-      const dx = destination.x - pirate.position.x;
-      const dy = destination.y - pirate.position.y;
-      const distance = Math.hypot(dx, dy);
-      pirate.headingRadians = Math.atan2(dy, dx);
       if (distance < 210) {
         pirate.speed = 0;
         pirate.awaitingCombat = onIntercept(pirate.npcId, target.id, pirate.position);
         continue;
       }
       const speed = 128 + (hashId(pirate.npcId) % 24);
-      const step = Math.min(distance, speed * dt);
-      if (distance > 0) {
-        pirate.position = {
-          x: pirate.position.x + (dx / distance) * step,
-          y: pirate.position.y + (dy / distance) * step,
-        };
-      }
-      pirate.position = resolvePirateCollisions(
-        pirate.position,
-        asteroids,
-        this.width,
-        this.height
+      moveFieldShip(
+        pirate,
+        target.position,
+        speed,
+        dt,
+        asteroids.filter((rock) => rock.routeBlocking),
+        65
       );
       // Keep non-duelling ships separated without touching the duel's physics.
       for (const other of this.ships.values()) {
@@ -256,7 +243,6 @@ export class LocalPirateTraffic {
         x: Math.max(0, Math.min(this.width, pirate.position.x)),
         y: Math.max(0, Math.min(this.height, pirate.position.y)),
       };
-      pirate.speed = speed;
     }
   }
 
@@ -266,6 +252,7 @@ export class LocalPirateTraffic {
     ship.position = { ...position };
     ship.headingRadians = headingRadians;
     ship.speed = 0;
-    ship.awaitingCombat = false;
+    delete ship.routeState;
+    // Keep the interception latch until the engagement has recovered.
   }
 }
