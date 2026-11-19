@@ -133,13 +133,17 @@ export class MiningEffectsRenderer {
     const impact = model.miningImpact.point;
     const rock = model.miningTarget;
     const distance = rock ? Math.hypot(impact.x - rock.position.x, impact.y - rock.position.y) : 0;
-    const inset = rock && distance > rock.radius * 0.78
-      ? Math.min(rock.radius * 0.14, distance - rock.radius * 0.78)
-      : 0;
-    const adjusted = rock && distance > 0
-      ? { x: impact.x + (rock.position.x - impact.x) * inset / distance,
-          y: impact.y + (rock.position.y - impact.y) * inset / distance }
-      : impact;
+    const inset =
+      rock && distance > rock.radius * 0.78
+        ? Math.min(rock.radius * 0.14, distance - rock.radius * 0.78)
+        : 0;
+    const adjusted =
+      rock && distance > 0
+        ? {
+            x: impact.x + ((rock.position.x - impact.x) * inset) / distance,
+            y: impact.y + ((rock.position.y - impact.y) * inset) / distance,
+          }
+        : impact;
     const target = this.camera.worldToScreen(adjusted, viewportWidth, viewportHeight);
     const normal = normalized(model.miningImpact.normal);
     const pulse = 0.72 + Math.sin(timeSeconds * 13) * 0.22;
