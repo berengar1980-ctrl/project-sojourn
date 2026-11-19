@@ -8,6 +8,8 @@ import {
   isShipCombatWeaponSlotActive,
   componentHullBonus,
   shipHullMaxHp,
+  calculateShipModeEnergy,
+  createShipyardVariantId,
 } from '../systems/ships';
 
 /** Each active security drone weapon mount, hull and shield is Mk III. */
@@ -38,8 +40,13 @@ export function equipSecurityDroneMk3(npc: SectorNpcState): void {
     weapon: weapons,
     hull: ['hull3'],
     shield: ['shield3'],
-    reactor: ['reactor4'],
+    reactor: ['reactor3'],
   };
+  const energy = calculateShipModeEnergy(installed);
+  if (energy.combat > energy.output) {
+    const boosted = createShipyardVariantId('reactor', 'reactor3', 'performance', 100);
+    if (boosted) installed.reactor = [boosted];
+  }
   npc.installedComponents = installed;
   const newMaximum = shipHullMaxHp(ship, componentHullBonus(installed));
   const previousMaximum = Math.max(1, npc.hullMaxHp);
