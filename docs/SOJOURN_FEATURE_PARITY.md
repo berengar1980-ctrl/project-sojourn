@@ -1467,3 +1467,16 @@ während Kampf/Erholung als dieselbe Schiffsinstanz erhalten. Der Scan
 verwendet keinen irreführenden cyan gestrichelten Verbindungsstrahl mehr;
 aktive NPC-Miner verwenden dieselben roten Schneidlaser- und grünen
 Traktorstrahl-Zeichenfunktionen wie der Spieler.
+
+## Review (2026-11-19): NPC-Effekt- und Combat-World-Parität
+
+NPC-Miner rufen denselben MiningEffectsRenderer für Laser-Interferenz,
+Einschlagfunken/-staub, Traktor und Brockenzeichnung wie Spielerschiffe auf.
+Das Bergungs-NPC-Overlay ruft denselben SalvageWorkEffect auf, der auch für
+das Spielerschiff zeichnet. Aktive NPC-gegen-NPC-Gefechte synchronisieren ihre
+PvP-Positions-Snapshots in die persistente Feldszene, statt visuell an der
+Startposition einzufrieren. Das PvP-Kollisionssystem berücksichtigt unbeteiligte
+zivile Schiffe als physische Hindernisse. Korsarenklassen nutzen weiterhin ihre
+Patrouillen-Sprites, jetzt mit der unveränderten 60-m-Quellrumpfgröße statt
+künstlich vergrößerten 80-/120-m-Grafiken. Keine Änderung historischer
+Feature-IDs/-Status.
