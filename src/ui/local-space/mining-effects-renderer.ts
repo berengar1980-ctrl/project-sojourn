@@ -56,8 +56,8 @@ export class MiningEffectsRenderer {
     const normal = { x: dx / length, y: dy / length };
     const impact = {
       point: {
-        x: asteroid.position.x + normal.x * asteroid.radius,
-        y: asteroid.position.y + normal.y * asteroid.radius,
+        x: asteroid.position.x + normal.x * asteroid.radius * 0.86,
+        y: asteroid.position.y + normal.y * asteroid.radius * 0.86,
       },
       normal,
     };
@@ -128,11 +128,23 @@ export class MiningEffectsRenderer {
   ): void {
     if (model.combat || !model.laserActive || !model.miningImpact) return;
 
-    const target = this.camera.worldToScreen(
-      model.miningImpact.point,
-      viewportWidth,
-      viewportHeight
-    );
+    // Move the surface hit slightly inside the irregular rock silhouette.
+    // The renderer remains paint-only: the simulation's impact is unchanged.
+    const impact = model.miningImpact.point;
+    const rock = model.miningTarget;
+    const distance = rock ? Math.hypot(impact.x - rock.position.x, impact.y - rock.position.y) : 0;
+    const inset =
+      rock && distance > rock.radius * 0.78
+        ? Math.min(rock.radius * 0.14, distance - rock.radius * 0.78)
+        : 0;
+    const adjusted =
+      rock && distance > 0
+        ? {
+            x: impact.x + ((rock.position.x - impact.x) * inset) / distance,
+            y: impact.y + ((rock.position.y - impact.y) * inset) / distance,
+          }
+        : impact;
+    const target = this.camera.worldToScreen(adjusted, viewportWidth, viewportHeight);
     const normal = normalized(model.miningImpact.normal);
     const pulse = 0.72 + Math.sin(timeSeconds * 13) * 0.22;
     const hardpoints = model.ship.hardpoints.miningLasers.filter(
@@ -205,6 +217,7 @@ export class MiningEffectsRenderer {
 
   private drawImpactSparks(target: ScreenPoint, normal: ScreenPoint, timeSeconds: number): void {
     const tangent = { x: -normal.y, y: normal.x };
+    const scale = Math.max(1, Math.min(3.2, Math.sqrt(this.camera.getRelativeZoom())));
     this.context.save();
     this.context.lineCap = 'round';
 
@@ -215,16 +228,16 @@ export class MiningEffectsRenderer {
         x: normal.x + tangent.x * spread,
         y: normal.y + tangent.y * spread,
       });
-      const travel = (8 + index * 1.25) * phase;
+      const travel = (8 + index * 1.25) * phase * scale;
       const x = target.x + direction.x * travel;
       const y = target.y + direction.y * travel;
-      const tail = 3 + phase * 6;
+      const tail = (3 + phase * 6) * scale;
       const alpha = Math.max(0, 1 - phase) * 0.88;
 
       this.context.strokeStyle = 'rgba(255, 177, 82, ' + alpha + ')';
       this.context.shadowColor = 'rgba(255, 98, 45, .8)';
       this.context.shadowBlur = 4;
-      this.context.lineWidth = 1 + (1 - phase) * 1.2;
+      this.context.lineWidth = (1 + (1 - phase) * 1.2) * Math.sqrt(scale);
       this.context.beginPath();
       this.context.moveTo(x, y);
       this.context.lineTo(x - direction.x * tail, y - direction.y * tail);
@@ -236,20 +249,21 @@ export class MiningEffectsRenderer {
 
   private drawImpactDust(target: ScreenPoint, normal: ScreenPoint, timeSeconds: number): void {
     const tangent = { x: -normal.y, y: normal.x };
+    const scale = Math.max(1, Math.min(3.2, Math.sqrt(this.camera.getRelativeZoom())));
     this.context.save();
 
-    for (let index = 0; index < 6; index += 1) {
-      const phase = fractional(timeSeconds * 0.72 + index * 0.161);
+    for (let index = 0; index < 12; index += 1) {
+      const phase = fractional(timeSeconds * 0.56 + index * 0.093);
       const spread = Math.sin(index * 1.73 + 0.6) * 0.85;
       const direction = normalized({
         x: normal.x * 0.9 + tangent.x * spread,
         y: normal.y * 0.9 + tangent.y * spread,
       });
-      const drift = (5 + index * 2.1) * phase;
+      const drift = (5 + index * 1.8) * phase * scale;
       const x = target.x + direction.x * drift;
       const y = target.y + direction.y * drift;
-      const size = 3 + phase * 8;
-      const alpha = Math.max(0, 1 - phase) * 0.14;
+      const size = (4 + phase * 10) * scale;
+      const alpha = Math.max(0, 1 - phase) * 0.115;
 
       this.context.fillStyle = 'rgba(150, 136, 119, ' + alpha + ')';
       this.context.beginPath();
