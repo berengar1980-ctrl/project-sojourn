@@ -7,7 +7,7 @@ const root = path.resolve(__dirname, '../..');
 const { addDestroyedShipWreck } = load('src/systems/salvage/combat-destruction-wreck.ts');
 const { salvageFieldCombatArena } = load('src/systems/combat/field-combat-arena.ts');
 
-const variants = ['engine-room', 'cargo-bay', 'bridge'];
+const variants = ['miner', 'freighter', 'patrol'];
 const emptyField = () => ({
   id: 'field-test',
   sourceLocationId: 'field-test',
@@ -23,7 +23,7 @@ for (let i = 0; i < 3; i++) {
   const random = () => sequence.shift() ?? .5;
   const wreck = addDestroyedShipWreck(field, ship, 'battle-1', random);
   assert(wreck, 'destroyed ships must leave an object');
-  assert.equal(wreck.sectionVariant, variants[i], 'three distinct 3D wreck silhouettes');
+  assert.equal(wreck.combatWreckVariant, variants[i], 'three distinct 3D wreck silhouettes');
   assert(wreck.resources.some((deposit) => deposit.remainingAmount > 0), 'wreck must contain recoverable salvage');
   assert.equal(field.wrecks.length, 1);
   assert.equal(addDestroyedShipWreck(field, ship, 'battle-1', () => .5), wreck, 'combat completion must be idempotent');
@@ -31,7 +31,7 @@ for (let i = 0; i < 3; i++) {
   assert.equal(wreck.position.x, ship.position.x);
   assert.equal(wreck.position.y, ship.position.y);
   const visual = salvageFieldCombatArena(field).asteroids.find((body) => body.id === wreck.id);
-  assert(visual && visual.sectionVariant === wreck.sectionVariant, 'wreck remains physical on re-entering combat');
+  assert(visual && visual.combatWreckVariant === wreck.combatWreckVariant, 'wreck remains physical on re-entering combat');
 }
 const intact = emptyField();
 assert.equal(addDestroyedShipWreck(intact, { id: 'survivor', position: { x: 100, y: 100 }, hullHp: 10 }, 'battle-1'), null);
