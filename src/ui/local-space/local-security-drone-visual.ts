@@ -1,7 +1,20 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera } from '../map/map-camera';
 
-/** Field drone paint-only layer; it owns no simulation state. */
+const DRONE_SPRITE_URL = '/drones/security-drone-gc87r8.webp';
+const DRONE_DIAMETER_PX = 26;
+const DRONE_ROTATION_PERIOD_SECONDS = 3;
+let droneSprite: HTMLImageElement | null = null;
+
+function securityDroneSprite(): HTMLImageElement {
+  if (!droneSprite) {
+    droneSprite = new Image();
+    droneSprite.src = DRONE_SPRITE_URL;
+  }
+  return droneSprite;
+}
+
+/** Shared paint-only layer for mining and salvage, including native PvP overlays. */
 export function drawLocalSecurityDrone(
   ctx: CanvasRenderingContext2D,
   camera: MapCamera,
@@ -20,25 +33,19 @@ export function drawLocalSecurityDrone(
   ctx.arc(point.x, point.y, camera.scale(drone.scanRadius), 0, Math.PI * 2);
   ctx.stroke();
   ctx.setLineDash([]);
+
   ctx.translate(point.x, point.y);
-  ctx.rotate(timeSeconds * 0.3);
-  ctx.fillStyle = '#455b66';
-  ctx.strokeStyle = '#74c8df';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  for (let corner = 0; corner < 6; corner++) {
-    const angle = (corner * Math.PI) / 3;
-    const x = Math.cos(angle) * 13;
-    const y = Math.sin(angle) * 13;
-    if (corner === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
+  ctx.rotate((timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS);
+  const image = securityDroneSprite();
+  if (image.complete && image.naturalWidth > 0) {
+    const radius = DRONE_DIAMETER_PX / 2;
+    ctx.drawImage(image, -radius, -radius, DRONE_DIAMETER_PX, DRONE_DIAMETER_PX);
+  } else {
+    // Preserve a visible contact marker until the small transparent asset loads.
+    ctx.fillStyle = '#455b66';
+    ctx.beginPath();
+    ctx.arc(0, 0, DRONE_DIAMETER_PX / 2, 0, Math.PI * 2);
+    ctx.fill();
   }
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#aeeaf9';
-  ctx.beginPath();
-  ctx.arc(0, 0, 3 + Math.sin(timeSeconds * 3) * 1.1, 0, Math.PI * 2);
-  ctx.fill();
   ctx.restore();
 }
