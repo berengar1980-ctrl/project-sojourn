@@ -83,17 +83,18 @@ assert(
   'local-space exposes its authoritative instantaneous world velocity'
 );
 const salvage = read('src/app/game-controller-salvage.ts');
+const salvageCombatEntry = read('src/app/game-controller-salvage-attack.ts');
 assert(
-  salvage.includes('attackerHeadingRadians: playerShip.headingRadians'),
+  salvageCombatEntry.includes('attackerHeadingRadians: playerShip.headingRadians'),
   'salvage encounters transfer the player heading'
 );
 assert(
-  salvage.includes('defenderHeadingRadians: target.headingRadians') &&
-    salvage.includes('defenderVelocity: {'),
+  salvageCombatEntry.includes('defenderHeadingRadians: target.headingRadians') &&
+    salvageCombatEntry.includes('defenderVelocity: {'),
   'salvage combat also inherits the target ship motion'
 );
 assert(
-  salvage.includes('attackerVelocity: {'),
+  salvageCombatEntry.includes('attackerVelocity: {'),
   'salvage encounters transfer the player starting velocity'
 );
 const mining = read('src/app/game-controller-mining.ts');

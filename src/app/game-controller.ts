@@ -59,6 +59,7 @@ import { miningLocationById, salvageLocationById } from './game-controller-local
 import { ensureMiningCombatWorld } from './game-controller-mining-runtime';
 import { createActivePortPanel } from './game-controller-port';
 import { createSalvageScene } from './game-controller-salvage';
+import { salvageSecurityActions } from './game-controller-salvage-security-actions';
 import { generateSectorSalvageEventField } from '../systems/salvage';
 import {
   controllerLocalModel,
@@ -289,9 +290,8 @@ function mountControllerSalvage(
   if (!location) return mountControllerStarMap(context);
   state.mode = 'salvage-space';
   state.embeddedCombat = null;
-  if (!reuseSeed || state.salvageSpaceSeed === 0) {
+  if (!reuseSeed || state.salvageSpaceSeed === 0)
     state.salvageSpaceSeed = localSeed((state.visitCounter += 1));
-  }
   state.salvageScene = createSalvageScene({
     root: context.root,
     ship: state.activeShip,
@@ -318,6 +318,7 @@ function mountControllerSalvage(
     npcEconomy: economy.npcs,
     sectorNpcs: economy.sectorNpcs.npcs,
     wreckClaims: economy.wreckClaims,
+    ...salvageSecurityActions(context),
     getCurrentDay: () => economy.situations.currentDay,
     player: economy.trade.player,
     componentInventory: economy.components,
@@ -341,9 +342,8 @@ function mountControllerSalvage(
     onCombatBystanders: (bystanders) =>
       context.engagements.activePlayerCombat()?.setBystanders(bystanders),
     onCombatGrapple: () => context.engagements.activePlayerCombat()?.fireGrapple('attacker'),
-    onCombatTactic: (tactic) => {
-      context.engagements.activePlayerCombat()?.setTactic('attacker', tactic);
-    },
+    onCombatTactic: (tactic) =>
+      context.engagements.activePlayerCombat()?.setTactic('attacker', tactic),
     ...controllerSalvageEventCallbacks(context, {
       mountStarMap: () => mountControllerStarMap(context),
       mountSalvage: (field) => mountControllerSalvage(context, true, field),

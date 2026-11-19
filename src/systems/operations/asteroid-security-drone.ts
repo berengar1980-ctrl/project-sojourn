@@ -35,6 +35,7 @@ export class AsteroidSecurityDrone {
   private nextWaypoint = 0;
   private readonly observed = new Set<string>();
   private operational = true;
+  private retryAfterSeconds = 0;
 
   constructor(
     width: number,
@@ -115,33 +116,11 @@ export class AsteroidSecurityDrone {
     dt: number,
     asteroids: readonly LocalAsteroid[],
     contacts: readonly DroneContact[],
-    nearbyShips: readonly FieldRouteObstacle[] = []
+    nearbyShips: readonly FieldRouteObstacle[] = [],
+    pursuitTarget?: WorldPoint
   ): string[] {
     if (!this.operational) return [];
-    const destination = this.patrol[this.nextWaypoint]!;
-    const obstacles: FieldRouteObstacle[] = [
-      ...asteroids
-        .filter((rock) => rock.routeBlocking)
-        .map((rock) => ({
-          id: rock.id,
-          position: rock.position,
-          radius: rock.collisionRadius ?? rock.radius,
-        })),
-      ...nearbyShips,
-    ];
-    // Ships move independently: invalidate a stale waypoint when its next leg
-    // becomes obstructed instead of flying through the new contact.
-    const waypoint = this.routeState?.points[this.routeState.index];
-    if (waypoint && this.routeBlocked(waypoint, obstacles)) delete this.routeState;
-    const arrived = moveFieldShip(
-      this,
-      destination,
-      DRONE_CRUISE,
-      Math.max(0, Math.min(dt, 0.25)),
-      obstacles,
-      40
-    );
-    if (arrived) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
+    this.advancePatrolMovement(dt, asteroids, nearbyShips, pursuitTarget);
 
     const active = new Set(
       contacts.map((contact) => JSON.stringify([contact.shipId, contact.asteroidId]))
@@ -157,6 +136,57 @@ export class AsteroidSecurityDrone {
       newlyDetected.push(key);
     }
     return newlyDetected;
+  }
+
+  private advancePatrolMovement(
+    dt: number,
+    asteroids: readonly LocalAsteroid[],
+    nearbyShips: readonly FieldRouteObstacle[],
+    pursuitTarget?: WorldPoint
+  ): void {
+    const previousTarget = this.routeState?.target;
+    const keepPursuitRoute = Boolean(
+      pursuitTarget &&
+      previousTarget &&
+      Math.hypot(pursuitTarget.x - previousTarget.x, pursuitTarget.y - previousTarget.y) < 70
+    );
+    const destination = keepPursuitRoute
+      ? previousTarget!
+      : (pursuitTarget ?? this.patrol[this.nextWaypoint]!);
+    const obstacles: FieldRouteObstacle[] = [
+      ...asteroids
+        .filter((rock) => rock.routeBlocking)
+        .map((rock) => ({
+          id: rock.id,
+          position: rock.position,
+          radius: rock.collisionRadius ?? rock.radius,
+        })),
+      ...nearbyShips,
+    ];
+    // Ships move independently: invalidate a stale waypoint when its next leg
+    // becomes obstructed instead of flying through the new contact.
+    const waypoint = this.routeState?.points[this.routeState.index];
+    if (waypoint && this.routeBlocked(waypoint, obstacles)) delete this.routeState;
+    this.retryAfterSeconds = Math.max(0, this.retryAfterSeconds - Math.max(0, dt));
+    if (this.retryAfterSeconds === 0) {
+      const arrived = moveFieldShip(
+        this,
+        destination,
+        DRONE_CRUISE,
+        Math.max(0, Math.min(dt, 0.25)),
+        obstacles,
+        40,
+        'patrol'
+      );
+      if (arrived && !pursuitTarget)
+        this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
+      else if (!this.routeState) {
+        // Do not perform a full route search every animation frame when the
+        // target is obstructed or the field currently has no safe corridor.
+        if (!pursuitTarget) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
+        this.retryAfterSeconds = 1.5;
+      }
+    }
   }
 
   private routeBlocked(waypoint: WorldPoint, obstacles: readonly FieldRouteObstacle[]): boolean {

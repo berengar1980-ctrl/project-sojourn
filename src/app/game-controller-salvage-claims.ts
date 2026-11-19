@@ -12,6 +12,7 @@ interface WreckClaimActionsOptions {
   readonly getCurrentDay: () => number;
   readonly log: SystemLogService;
   readonly refresh: () => void;
+  readonly onUnauthorizedAttempt?: (wreckId: string) => void;
 }
 
 export function createWreckClaimActions(options: WreckClaimActionsOptions) {
@@ -37,6 +38,7 @@ export function createWreckClaimActions(options: WreckClaimActionsOptions) {
     const owner = wreckClaims.claim(field.id, wreckId, getCurrentDay());
     if (!owner || owner.ownerId === 'player') return true;
     log.write('BERGUNG > FREMDER WRACKANSPRUCH: BERGUNG GESPERRT');
+    options.onUnauthorizedAttempt?.(wreckId);
     return false;
   };
   return { claim, canWork };

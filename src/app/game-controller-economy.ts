@@ -158,13 +158,16 @@ function createOperationsEconomy(
   return { patrol, blockades };
 }
 
-function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): void {
+export function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): void {
   // Drones have normal sector NPC combatants so the existing two-ship AI
   // combat mode can be entered without creating a second combat engine.
   // The local drone service remains the authority for field sensor movement.
   const patrolTemplate = npcStates.find((npc) => npc.job === 'patrol' && !npc.pirate);
   if (patrolTemplate) {
-    for (const location of narrowsSector.locations.filter((entry) => entry.activities.mine)) {
+    for (const location of narrowsSector.locations.filter(
+      (entry) => entry.activities.mine || entry.activities.salvage
+    )) {
+      if (npcStates.some((npc) => npc.id === 'security-drone:' + location.id)) continue;
       const drone: SectorNpcState = {
         ...patrolTemplate,
         id: 'security-drone:' + location.id,

@@ -1,6 +1,7 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { planPointRoute } from '../local-space/local-space-navigation';
+import { planFieldPatrolRoute } from './field-patrol-route';
 
 export interface FieldRouteObstacle {
   readonly id: string;
@@ -49,8 +50,10 @@ function makeRoute(
   start: WorldPoint,
   target: WorldPoint,
   obstacles: readonly FieldRouteObstacle[],
-  clearance: number
+  clearance: number,
+  mode: 'grid' | 'patrol'
 ): readonly WorldPoint[] {
+  if (mode === 'patrol') return planFieldPatrolRoute(start, target, obstacles, clearance);
   if (!obstacles.some((rock) => blocked(start, target, rock, clearance))) return [target];
 
   // Use the native campaign/PvP field planner rather than ad-hoc flank picking.
@@ -88,11 +91,12 @@ export function fieldRouteTarget(
   ship: FieldRouteShip,
   target: WorldPoint,
   obstacles: readonly FieldRouteObstacle[],
-  clearance: number
+  clearance: number,
+  mode: 'grid' | 'patrol' = 'grid'
 ): WorldPoint | null {
   const saved = ship.routeState;
   if (!saved || distance(saved.target, target) > 1 || saved.index >= saved.points.length) {
-    const points = makeRoute(ship.position, target, obstacles, clearance);
+    const points = makeRoute(ship.position, target, obstacles, clearance, mode);
     if (points.length === 0) {
       delete ship.routeState;
       return null;
@@ -109,9 +113,10 @@ export function moveFieldShip(
   speed: number,
   dt: number,
   obstacles: readonly FieldRouteObstacle[],
-  clearance: number
+  clearance: number,
+  mode: 'grid' | 'patrol' = 'grid'
 ): boolean {
-  const waypoint = fieldRouteTarget(ship, target, obstacles, clearance);
+  const waypoint = fieldRouteTarget(ship, target, obstacles, clearance, mode);
   if (!waypoint) {
     ship.speed = 0;
     return false;
