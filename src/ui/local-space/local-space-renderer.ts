@@ -225,7 +225,14 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       width,
       height
     );
-    drawLocalSecurityDrone(this.context, this.camera, this.model.securityDrone, width, height, timeSeconds);
+    drawLocalSecurityDrone(
+      this.context,
+      this.camera,
+      this.model.securityDrone,
+      width,
+      height,
+      timeSeconds
+    );
     this.drawChunks(width, height);
     this.drawNavigationRoute(width, height);
     drawLocalSpaceExitGate(
