@@ -1,6 +1,9 @@
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
-import { AsteroidFieldWorld, type AsteroidFieldRuntime } from '../systems/operations/asteroid-field-world';
+import {
+  AsteroidFieldWorld,
+  type AsteroidFieldRuntime,
+} from '../systems/operations/asteroid-field-world';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import {
   registerNpcAsteroidClaim,
