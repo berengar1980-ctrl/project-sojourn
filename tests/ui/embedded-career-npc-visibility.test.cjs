@@ -29,8 +29,9 @@ assert(
   !miningLayers.includes('this.context.setLineDash([4, 5])'),
   'scanning must no longer draw a misleading blue dashed connection'
 );
-assert(miningLayers.includes('drawMiningTractorBeam('));
-assert(miningLayers.includes('drawMiningLaserBeam('));
+assert(miningLayers.includes('this.miningEffects.drawNpcMining('));
+assert(playerEffects.includes('this.drawMining(workModel,'));
+assert(playerEffects.includes('this.drawTractorFields(workModel,'));
 assert(playerEffects.includes('drawMiningTractorBeam('));
 assert(playerEffects.includes('drawMiningLaserBeam('));
 assert(navigationRoute.includes("model.miningPhase === 'extracting'"));
