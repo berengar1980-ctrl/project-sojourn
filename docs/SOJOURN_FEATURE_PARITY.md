@@ -1508,3 +1508,16 @@ unverändert. Dies erweitert keine Mining- oder Bergungsarbeiten der Drohne.
 Wichtig: Die separate, dauerhafte Drohnenintegration in Bergungs- und
 Wrackgebieten und deren Darstellung während des Kampfes ist noch offen;
 dieser PR deckt nur das bestehende Asteroidenfeld-Objekt ab.
+
+## Review-Log (2026-11-19): Sicherheitsdrohne in Bergungs- und Wrackkarten
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Die Konzessions-Sicherheitsdrohne ist nun auch in Bergungs- und Wrackkarten
+als eigene Patrouilleninstanz mit persistentem Kurszustand eingebunden.
+Sie verwendet die gemeinsame NPC-Wegfindung, berücksichtigt solide Wracks,
+Sektionen und zivile Schiffe und bleibt im lokalen PvP-Overlay sichtbar.
+Auch die bestehende Asteroidenfeld-Drohne wird im PvP-Overlay gezeichnet.
+Die Bergungsdrohne wird als physischer unbeteiligter Collider an die
+Kampfsimulation übergeben. Die bestehenden Regeln zur Registrierung und
+Sperrung fremder Wrackansprüche bleiben unverändert. Keine Bergbau- oder
+Bergungsarbeiten werden von der Drohne ausgeführt.
