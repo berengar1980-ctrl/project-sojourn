@@ -25,6 +25,19 @@ function validOreCollection(value: unknown): boolean {
   return finite(remaining) && remaining <= duration;
 }
 
+function validMiningTarget(
+  ship: Record<string, unknown>,
+  options: NpcLocalMiningOptions
+): boolean {
+  if (ship.targetAsteroidId === null) {
+    return ['entering', 'approaching', 'exiting'].includes(ship.phase as string);
+  }
+  return (
+    typeof ship.targetAsteroidId === 'string' &&
+    options.getAsteroids().some((asteroid) => asteroid.id === ship.targetAsteroidId)
+  );
+}
+
 function validShip(value: unknown, options: NpcLocalMiningOptions): boolean {
   if (!record(value) || typeof value.npcId !== 'string') return false;
   const npc = options.miners.find((item) => item.id === value.npcId);
@@ -42,13 +55,7 @@ function validShip(value: unknown, options: NpcLocalMiningOptions): boolean {
   if (!finite(value.scanProgress) || value.scanProgress > 1) return false;
   if (!finite(value.miningAccumulator) || typeof value.laserActive !== 'boolean') return false;
   if (value.oreCollection !== undefined && !validOreCollection(value.oreCollection)) return false;
-  if (value.targetAsteroidId === null) {
-    return ['entering', 'approaching', 'exiting'].includes(value.phase as string);
-  }
-  return (
-    typeof value.targetAsteroidId === 'string' &&
-    options.getAsteroids().some((asteroid) => asteroid.id === value.targetAsteroidId)
-  );
+  return validMiningTarget(value, options);
 }
 
 function validCombatReturns(
