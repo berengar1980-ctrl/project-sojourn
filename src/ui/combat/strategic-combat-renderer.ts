@@ -265,13 +265,25 @@ export class StrategicCombatRenderer {
       return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
     });
     this.drawShip(this.model.attacker, width, height, timeSeconds, visualElapsed);
-    drawCombatDamageParticles(this.context, this.model.attacker,
-      this.shipGeometry(this.model.attacker, width, height), this.damageParticles,
-      timeSeconds, width, height);
+    drawCombatDamageParticles(
+      this.context,
+      this.model.attacker,
+      this.shipGeometry(this.model.attacker, width, height),
+      this.damageParticles,
+      timeSeconds,
+      width,
+      height
+    );
     this.drawShip(this.model.defender, width, height, timeSeconds, visualElapsed);
-    drawCombatDamageParticles(this.context, this.model.defender,
-      this.shipGeometry(this.model.defender, width, height), this.damageParticles,
-      timeSeconds, width, height);
+    drawCombatDamageParticles(
+      this.context,
+      this.model.defender,
+      this.shipGeometry(this.model.defender, width, height),
+      this.damageParticles,
+      timeSeconds,
+      width,
+      height
+    );
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
