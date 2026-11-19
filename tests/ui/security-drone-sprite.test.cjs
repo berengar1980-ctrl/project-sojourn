@@ -19,16 +19,18 @@ class StubImage {
 }
 global.Image = StubImage;
 try {
-  const { drawLocalSecurityDrone } = loadStandaloneTypeScriptModule(
+  const { drawLocalSecurityDrone, drawDroneShieldHits, localDroneShieldHits } = loadStandaloneTypeScriptModule(
     root,
     'src/ui/local-space/local-security-drone-visual.ts'
   );
-  const calls = { angles: [], draws: [], translations: [] };
+  const calls = { angles: [], draws: [], translations: [], arcs: [] };
   const ctx = {
     save() {},
     restore() {},
     beginPath() {},
-    arc() {},
+    arc(...args) {
+      calls.arcs.push(args);
+    },
     stroke() {},
     fill() {},
     setLineDash() {},
@@ -56,23 +58,23 @@ try {
   };
   const drone = { operational: true, position: { x: 400, y: 200 }, scanRadius: 460 };
   drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 0);
-  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 4);
   drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 8);
+  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 16);
   assert.equal(calls.draws.length, 3, 'Sprite is drawn each frame');
   assert.deepEqual(
     calls.draws.map(({ x, y, width, height }) => [x, y, width, height]),
     [
-      [-13, -13, 26, 26],
+      [-9, -9, 18, 18],
       [-13, -13, 26, 26],
       [-13, -13, 26, 26],
     ]
   );
   assert.equal(calls.draws[0].image.url, '/drones/security-drone-gc87r8.webp');
   relativeZoom = 2;
-  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 9);
+  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 17);
   assert.deepEqual(
     [calls.draws[3].x, calls.draws[3].y, calls.draws[3].width, calls.draws[3].height],
-    [-26, -26, 52, 52],
+    [-18, -18, 36, 36],
     'Sprite must scale with viewport zoom'
   );
   assert(Math.abs(calls.angles[0]) < 1e-9);
@@ -83,9 +85,30 @@ try {
     [120, 80],
     [120, 80],
   ]);
+  const shieldImpact = {
+    id: 1,
+    surfaceAnchor: { x: 0, y: 1 },
+    ageSeconds: 0.1,
+    lifetimeSeconds: 0.6,
+    strength: 1,
+  };
+  assert.deepEqual(
+    localDroneShieldHits([{ attacker: { id: 'pirate-1', shieldImpacts: [] }, defender: {
+      id: 'security-drone:field-1', shieldImpacts: [shieldImpact],
+    } }]),
+    [shieldImpact],
+    'Local NPC combat shield impacts must follow the drone rather than the world'
+  );
+  const beforeArcs = calls.arcs.length;
+  drawDroneShieldHits(ctx, 120, 80, 11, [shieldImpact]);
+  assert.equal(calls.arcs.length, beforeArcs + 1, 'A live shield hit paints a visible arc');
+  assert.equal(calls.arcs.at(-1)[0], 120);
+  assert.equal(calls.arcs.at(-1)[1], 80);
+  drawDroneShieldHits(ctx, 120, 80, 11, [{ ...shieldImpact, ageSeconds: 0.7 }]);
+  assert.equal(calls.arcs.length, beforeArcs + 1, 'Expired shield hits cannot linger');
   drawLocalSecurityDrone(ctx, camera, { ...drone, operational: false }, 900, 650, 4);
   assert.equal(calls.draws.length, 4, 'Destroyed drone is not rendered');
 } finally {
   global.Image = originalImage;
 }
-console.log('PASS shared security drone sprite, 26px diameter and 8-second rotation');
+console.log('PASS shared security drone sprite, 18px diameter, 16-second rotation and shield hits');
