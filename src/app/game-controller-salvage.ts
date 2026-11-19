@@ -276,6 +276,11 @@ const SALVAGE_PRESENTATION_INTERVAL_MS = 1000 / 24;
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
   const { options, service, npcSalvage } = context;
   const combat = options.isCombatActive?.() ? (options.getCombat?.() ?? null) : null;
+  // During player combat the PvP solver is the only source of the drone pose.
+  if (combat?.defender.id === 'security-drone:' + context.field.sourceLocationId) {
+    context.drone.restore(combat.defender.position, combat.defender.hullHp > 0);
+    context.drone.headingRadians = combat.defender.headingRadians;
+  }
   advanceSalvagePirateResponse({
     field: context.field,
     drone: context.drone,
