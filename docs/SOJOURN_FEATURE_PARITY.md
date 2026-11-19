@@ -1496,6 +1496,7 @@ die wirtschaftliche Erzbuchung findet weiterhin im NPC-Mining-Service statt.
 ## Review (2026-11-19): FleetCombat-Testoberfläche und freie Duelle
 
 **Keine Änderung der 241 historischen Feature-IDs oder ihres Status.**
+
 Der PvP-Testmodus entfernt die neun festgelegten Testgefechte sowie die
 zugehörigen festen Preset-Seeds und Analyse-Auswahl. Freie 1vs1-Duelle
 nutzen weiterhin denselben `StrategicCombatService`, denselben
