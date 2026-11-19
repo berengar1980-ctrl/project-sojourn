@@ -1,3 +1,4 @@
+import type { SectorNpcState } from '../core/npc-types';
 import { registerSecurityDroneCombatants } from './game-controller-economy';
 import { captureCareerCustody } from '../systems/persistence/career-custody-checkpoint';
 import { createCareerSaveStore } from '../systems/persistence/career-save-store';
@@ -14,7 +15,8 @@ export function installControllerCareer(
 ): void {
   const saved = options.restoredSession;
   // Older Career saves contain mining drones but no salvage drone defender.
-  if (saved) registerSecurityDroneCombatants(context.economy.sectorNpcs.npcs);
+  if (saved)
+    registerSecurityDroneCombatants(context.economy.sectorNpcs.npcs as SectorNpcState[]);
   registerSectorShips(context);
   if (saved) {
     restoreControllerDayElapsed(context, saved.controllerSecondsIntoDay ?? 0);
