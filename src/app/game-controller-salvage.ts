@@ -6,6 +6,7 @@ import {
   salvageDroneBystanders,
   salvageDroneShipObstacles,
   tickSalvageSecurityDrone,
+  salvageDroneCanSee,
 } from './game-controller-salvage-drone';
 import {
   advanceDistressRamming,
@@ -106,6 +107,7 @@ interface SalvageSceneOptions {
   ) => void;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
   readonly resolveDrone?: (field: SalvageField) => AsteroidSecurityDrone;
+  readonly onUnauthorizedSalvage?: (field: SalvageField, wreckId: string) => void;
   readonly onCombatBystanders?: (bystanders: readonly StrategicCombatBystander[]) => void;
   readonly field?: SalvageField;
   readonly sectorEvent?: SectorSalvageEvent | null;
@@ -202,6 +204,10 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
     getCurrentDay: options.getCurrentDay,
     log: options.log,
     refresh,
+    onUnauthorizedAttempt: (wreckId) => {
+      if (salvageDroneCanSee(context.drone, field, service.getSnapshot().ship.position))
+        options.onUnauthorizedSalvage?.(field, wreckId);
+    },
   });
   return createSalvageSpacePanel({
     root: options.root,
