@@ -72,6 +72,17 @@ export class WreckClaimRegistry {
     });
   }
 
+  droneLocations(): readonly { readonly locationId: string; readonly seed: number }[] {
+    return [...this.fields.values()]
+      .filter((field) => field.drone)
+      .map((field) => ({ locationId: field.locationId, seed: field.seed }));
+  }
+
+  rememberDrone(locationId: string, checkpoint: SecurityDroneCheckpoint): void {
+    const field = this.fields.get(locationId);
+    if (field) this.fields.set(locationId, { ...field, drone: structuredClone(checkpoint) });
+  }
+
   droneCheckpoint(locationId: string): SecurityDroneCheckpoint | null {
     const saved = this.fields.get(locationId)?.drone;
     return saved ? structuredClone(saved) : null;
