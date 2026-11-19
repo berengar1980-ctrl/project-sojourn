@@ -42,7 +42,11 @@ try {
       calls.draws.push({ image, x, y, width, height });
     },
   };
+  let relativeZoom = 1;
   const camera = {
+    getRelativeZoom() {
+      return relativeZoom;
+    },
     worldToScreen() {
       return { x: 120, y: 80 };
     },
@@ -64,16 +68,23 @@ try {
     ]
   );
   assert.equal(calls.draws[0].image.url, '/drones/security-drone-gc87r8.webp');
+  relativeZoom = 2;
+  drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 3.5);
+  assert.deepEqual(
+    [calls.draws[3].x, calls.draws[3].y, calls.draws[3].width, calls.draws[3].height],
+    [-26, -26, 52, 52],
+    'Sprite must scale with viewport zoom'
+  );
   assert(Math.abs(calls.angles[0]) < 1e-9);
   assert(Math.abs(calls.angles[1] - Math.PI) < 1e-9);
   assert(Math.abs(calls.angles[2] - Math.PI * 2) < 1e-9);
-  assert.deepEqual(calls.translations, [
+  assert.deepEqual(calls.translations.slice(0, 3), [
     [120, 80],
     [120, 80],
     [120, 80],
   ]);
   drawLocalSecurityDrone(ctx, camera, { ...drone, operational: false }, 900, 650, 4);
-  assert.equal(calls.draws.length, 3, 'Destroyed drone is not rendered');
+  assert.equal(calls.draws.length, 4, 'Destroyed drone is not rendered');
 } finally {
   global.Image = originalImage;
 }
