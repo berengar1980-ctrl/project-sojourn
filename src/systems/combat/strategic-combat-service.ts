@@ -6,6 +6,7 @@ import {
 } from './career-strategic-combat-checkpoint';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { resolveCombatBystanderContacts } from './combat-bystander-contacts';
+import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import { applyCombatRamImpact } from './combat-ram-impact';
 import { advanceCombatPower } from './combat-power-service';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
@@ -19,7 +20,6 @@ import { advanceCombatGrappleTether, canDockGrappledShips } from './combat-grapp
 import { advanceShieldImpacts } from '../shields/shield-service';
 import type {
   StrategicCombatArenaOptions,
-  StrategicCombatBystander,
   StrategicCombatRuntime,
   StrategicCombatSnapshot,
   StrategicCombatantSetup,
