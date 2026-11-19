@@ -86,6 +86,13 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
             if (!battle) return;
             const active = new Set([battle.attacker.id, battle.defender.id]);
             this.drawNpcShips(width, height, timeSeconds, active);
+            drawLocalNpcCombatEffects(
+              this.context,
+              this.camera,
+              this.model.npcCombats ?? [],
+              width,
+              height
+            );
           }
         );
         this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
