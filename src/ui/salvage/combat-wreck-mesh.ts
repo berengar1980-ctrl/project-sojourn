@@ -50,7 +50,7 @@ function scorch(m: ContainerMesh, x: number, y: number, z: number, size = 0.6): 
 
 function tornRibs(m: ContainerMesh, x: number, width: number): void {
   for (let i = 0; i < 6; i += 1) {
-    const y = (i - 2.5) * width / 5;
+    const y = ((i - 2.5) * width) / 5;
     m.box(x + (i % 3) * 0.14, y, -0.08 + (i % 2) * 0.13, 0.13, 0.1, 0.81, i % 3 ? C.iron : C.edge);
     m.box(x + 0.42 + (i % 2) * 0.1, y, 0.02, 0.67, 0.065, 0.07, C.dark);
   }

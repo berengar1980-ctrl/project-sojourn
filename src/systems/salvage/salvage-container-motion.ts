@@ -24,7 +24,10 @@ const physicsByField = new WeakMap<SalvageField, WorldPhysics>();
 
 function isDynamicWreck(wreck: SalvageWreck): boolean {
   return Boolean(
-    (wreck.containerVariant || wreck.debrisVariant || wreck.sectionVariant || wreck.combatWreckVariant) &&
+    (wreck.containerVariant ||
+      wreck.debrisVariant ||
+      wreck.sectionVariant ||
+      wreck.combatWreckVariant) &&
     wreck.driftVelocity &&
     wreck.rotation3d &&
     wreck.spin3d

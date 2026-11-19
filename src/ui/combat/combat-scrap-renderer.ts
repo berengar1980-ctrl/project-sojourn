@@ -20,9 +20,9 @@ type WreckModel = Pick<
 export function isCombatScrap(model: WreckModel): boolean {
   return Boolean(
     model.debrisVariant ||
-      model.sectionVariant ||
-      model.combatWreckVariant ||
-      model.containerVariant
+    model.sectionVariant ||
+    model.combatWreckVariant ||
+    model.containerVariant
   );
 }
 

@@ -186,15 +186,15 @@ function salvageWreckKindLabel(
     ? 'KAMPFWRACK'
     : wreck.sectionVariant
       ? 'SCHIFFSSEKTION'
-    : wreck.debrisVariant
-      ? 'SCHIFFSFRAGMENT'
-      : wreck.containerVariant
-        ? {
-            standard: 'FRACHTCONTAINER',
-            damaged: 'BESCHÄDIGTER CONTAINER',
-            tank: 'TANKMODUL',
-          }[wreck.containerVariant]
-        : wreckKindLabel(wreck.kind);
+      : wreck.debrisVariant
+        ? 'SCHIFFSFRAGMENT'
+        : wreck.containerVariant
+          ? {
+              standard: 'FRACHTCONTAINER',
+              damaged: 'BESCHÄDIGTER CONTAINER',
+              tank: 'TANKMODUL',
+            }[wreck.containerVariant]
+          : wreckKindLabel(wreck.kind);
 }
 
 function wreckBoardingAttempts(
