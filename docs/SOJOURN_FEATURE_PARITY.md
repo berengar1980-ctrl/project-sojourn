@@ -1532,3 +1532,21 @@ Durchmesser gezeichnet und dreht sich unabhängig vom Kurs kontinuierlich
 mit einer Umdrehung alle drei Sekunden. Die gemeinsame Zeichenfunktion
 wird sowohl in normalen Szenen als auch im PvP-Szenenlayer verwendet.
 Kollisionsgröße, Navigation und Konzessionsregeln bleiben unverändert.
+
+## Review-Log (2026-11-19): Drohnen-Performance und aktive Sicherheit
+
+**Keine Änderung** an den historischen Voidbound-Feature-IDs. Drohnen
+berechnen Kollisionsrouten jetzt mit einem begrenzten Patrouillenplaner und
+wiederholen blockierte Anflüge nicht pro Bild. Bereits besuchte Wrackfelder
+setzen Patrouillen ohne geladene Karte fort. Unberechtigte Bergungsversuche
+bei fremden Wrackkonzessionen werden bei Sensorerfassung über das vorhandene
+Rechtsregister gemeldet; die Bergung selbst bleibt gesperrt. Drohnen suchen
+sichtbare Piraten selbstständig, nähern sich ihnen und starten beim Erreichen
+der Kampfdistanz eine bestehende NPC-Kampfbegegnung. Die Wrackfeldszene nutzt
+nun auch reale lokale Piratenkontakte und rendert diese wie andere NPCs.
+
+Die native Zweikampf-Engine erlaubt aktuell nicht die gleichzeitige Aufnahme
+eines bereits kämpfenden Piraten als dritten direkten Kampfteilnehmer. Die
+Drohne verfolgt solche Kontakte, kann das separate Duell aber nicht
+übernehmen; ein erzwungener Mehrparteienkampf würde die Kampfautorität
+verletzen und benötigt eine eigene Erweiterung der Kampf-Engine.
