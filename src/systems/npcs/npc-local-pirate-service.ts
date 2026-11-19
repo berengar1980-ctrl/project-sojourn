@@ -54,20 +54,6 @@ function resolvePirateCollisions(
   return { x: Math.max(0, Math.min(width, result.x)), y: Math.max(0, Math.min(height, result.y)) };
 }
 
-function keepPirateApart(ship: PirateRuntime, other: WorldPoint): void {
-  const dx = ship.position.x - other.x;
-  const dy = ship.position.y - other.y;
-  const distance = Math.hypot(dx, dy);
-  const minimum = 95;
-  if (distance >= minimum) return;
-  const direction =
-    distance > 0 ? Math.atan2(dy, dx) : (hashId(ship.npcId) % 360) * (Math.PI / 180);
-  ship.position = {
-    x: other.x + Math.cos(direction) * minimum,
-    y: other.y + Math.sin(direction) * minimum,
-  };
-}
-
 export class LocalPirateTraffic {
   private readonly ships = new Map<string, PirateRuntime>();
   private readonly combatReturnPositions = new Map<string, WorldPoint>();
@@ -142,7 +128,7 @@ export class LocalPirateTraffic {
 
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set(
-      pirates.filter((npc) => npc.pirate && !npc.travel && npc.hullHp > 0).map((npc) => npc.id)
+      pirates.filter((npc) => npc.pirate && npc.hullHp > 0 && (!npc.travel || npc.combatMovement)).map((npc) => npc.id)
     );
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
@@ -220,19 +206,40 @@ export class LocalPirateTraffic {
         continue;
       }
       const speed = 128 + (hashId(pirate.npcId) % 24);
+      // Moving traffic is also treated as solid route geometry. Never push
+      // the pirate to an arbitrary position after A* has chosen a safe course:
+      // that caused rapid back-and-forth jitter near working miners.
+      const traffic = [
+        ...[...this.ships.values()]
+          .filter((other) => other.npcId !== pirate.npcId)
+          .map((other) => ({
+            id: other.npcId,
+            position: other.position,
+            radius: 40,
+          })),
+        ...miners
+          .filter((miner) => miner.npcId !== target.id)
+          .map((miner) => ({
+            id: miner.npcId,
+            position: miner.position,
+            radius: 45,
+          })),
+      ];
+      const destination = pirate.routeState &&
+        Math.hypot(
+          pirate.routeState.target.x - target.position.x,
+          pirate.routeState.target.y - target.position.y
+        ) < 70
+        ? pirate.routeState.target
+        : target.position;
       moveFieldShip(
         pirate,
-        target.position,
+        destination,
         speed,
         dt,
-        asteroids.filter((rock) => rock.routeBlocking),
+        [...asteroids.filter((rock) => rock.routeBlocking), ...traffic],
         65
       );
-      // Keep non-duelling ships separated without touching the duel's physics.
-      for (const other of this.ships.values()) {
-        if (other.npcId !== pirate.npcId) keepPirateApart(pirate, other.position);
-      }
-      for (const miner of miners) keepPirateApart(pirate, miner.position);
       pirate.position = resolvePirateCollisions(
         pirate.position,
         asteroids,
