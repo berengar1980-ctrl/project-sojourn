@@ -186,14 +186,13 @@ export class StrategicCombatRenderer {
       this.model.arena.height
     );
     const shipWidth = isDrone ? DRONE_DIAMETER_PX * this.camera.zoom : nominalLength * canvasScale;
-    const aspect =
-      isDrone
-        ? 1
-        : image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
-          ? image.naturalWidth / image.naturalHeight
-          : definition
-            ? definition.sprite.widthPx / definition.sprite.heightPx
-            : 2.2;
+    const aspect = isDrone
+      ? 1
+      : image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+        ? image.naturalWidth / image.naturalHeight
+        : definition
+          ? definition.sprite.widthPx / definition.sprite.heightPx
+          : 2.2;
     return {
       center: this.screen(combatant.position, width, height),
       width: shipWidth,

@@ -59,7 +59,7 @@ export function drawDroneShieldHits(
     const fade = Math.pow(1 - age, 1.35);
     ctx.save();
     ctx.beginPath();
-    ctx.strokeStyle = 'rgba(215, 249, 255, ' + (0.95 * fade) + ')';
+    ctx.strokeStyle = 'rgba(215, 249, 255, ' + 0.95 * fade + ')';
     ctx.lineWidth = 2.2 + 2.5 * impact.strength * fade;
     ctx.shadowColor = '#91eaff';
     ctx.shadowBlur = 8 * fade + 3;
@@ -105,10 +105,7 @@ export function drawLocalSecurityDrone(
     point.y,
     diameter * 0.62,
     1,
-    Math.max(
-      Math.min(1, (drone.shieldContactSeconds ?? 0) / 0.4),
-      shieldHits.length ? 0.85 : 0
-    )
+    Math.max(Math.min(1, (drone.shieldContactSeconds ?? 0) / 0.4), shieldHits.length ? 0.85 : 0)
   );
   drawDroneShieldHits(ctx, point.x, point.y, diameter * 0.62, shieldHits);
   ctx.translate(point.x, point.y);

@@ -19,10 +19,8 @@ class StubImage {
 }
 global.Image = StubImage;
 try {
-  const { drawLocalSecurityDrone, drawDroneShieldHits, localDroneShieldHits } = loadStandaloneTypeScriptModule(
-    root,
-    'src/ui/local-space/local-security-drone-visual.ts'
-  );
+  const { drawLocalSecurityDrone, drawDroneShieldHits, localDroneShieldHits } =
+    loadStandaloneTypeScriptModule(root, 'src/ui/local-space/local-security-drone-visual.ts');
   const calls = { angles: [], draws: [], translations: [], arcs: [] };
   const ctx = {
     save() {},
@@ -93,9 +91,15 @@ try {
     strength: 1,
   };
   assert.deepEqual(
-    localDroneShieldHits([{ attacker: { id: 'pirate-1', shieldImpacts: [] }, defender: {
-      id: 'security-drone:field-1', shieldImpacts: [shieldImpact],
-    } }]),
+    localDroneShieldHits([
+      {
+        attacker: { id: 'pirate-1', shieldImpacts: [] },
+        defender: {
+          id: 'security-drone:field-1',
+          shieldImpacts: [shieldImpact],
+        },
+      },
+    ]),
     [shieldImpact],
     'Local NPC combat shield impacts must follow the drone rather than the world'
   );
