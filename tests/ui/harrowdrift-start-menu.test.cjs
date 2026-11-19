@@ -19,7 +19,8 @@ assert(
   'game boots with a campaign selection'
 );
 assert(bootstrap.includes("action === 'campaign'"), 'campaign opens the existing game');
-assert(bootstrap.includes('createDuelLobby'), 'PvP enters the duel lobby');
+assert(bootstrap.includes('createCombatTestTabs'), 'PvP enters the test mode tabs');
+assert(read('src/ui/start/combat-test-tabs.ts').includes('createDuelLobby('));
 assert(main.includes("import './ui/start/start-menu.css'"), 'menu CSS loaded');
 assert(html.includes('<title>HARROWDRIFT</title>'));
 assert(menu.includes("title.textContent = 'HARROWDRIFT'"));
