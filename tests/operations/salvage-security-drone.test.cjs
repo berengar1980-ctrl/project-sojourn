@@ -45,7 +45,11 @@ const saved = JSON.parse(JSON.stringify(registry.exportState()));
 const restoredRegistry = new WreckClaimRegistry();
 restoredRegistry.restoreState(saved);
 const resumed = createSalvageSecurityDrone(field, restoredRegistry);
-assert.deepEqual(resumed.exportState(), drone.exportState(), 'Patrol must survive scene recreation');
+assert.deepEqual(
+  resumed.exportState(),
+  drone.exportState(),
+  'Patrol must survive scene recreation'
+);
 tickSalvageSecurityDrone(resumed, field, 0.08, traffic);
 assert.notDeepEqual(resumed.position, drone.position, 'Patrol resumes from the saved waypoint');
 assert.equal(registry.droneCheckpoint('unknown'), null);

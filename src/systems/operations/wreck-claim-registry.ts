@@ -55,7 +55,11 @@ export class WreckClaimRegistry {
     this.fields.set(field.sourceLocationId, {
       locationId: field.sourceLocationId,
       seed: field.seed,
-      ...(drone ? { drone: structuredClone(drone) } : previous?.drone ? { drone: structuredClone(previous.drone) } : {}),
+      ...(drone
+        ? { drone: structuredClone(drone) }
+        : previous?.drone
+          ? { drone: structuredClone(previous.drone) }
+          : {}),
       wrecks: field.wrecks.map((wreck) => ({
         id: wreck.id,
         resources: Object.fromEntries(
