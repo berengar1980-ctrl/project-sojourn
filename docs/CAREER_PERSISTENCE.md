@@ -748,3 +748,22 @@ Feld ist optional und rückwärtskompatibel. Es gibt keine künstlichen vier
 Traktorzielobjekte mehr. Laufende NPC-gegen-NPC-Gefechte sind schon zuvor im
 strategischen Kampfzustand vorhanden; ihre Snapshot-FX sind abgeleitete
 Darstellung und erzeugen keine weitere Welt-/Kampfautorität.
+
+### FleetCombat-Testlabor und freie PvP-Duelle (19. November 2026)
+
+**Keine Änderung des Save-Schemas:** Im Hauptmenü öffnet die bisherige PvP-Aktion
+zwei getrennte Test-Tabs. Der freie 1vs1-Pfad verwendet weiterhin unverändert
+`StrategicCombatService`, bestehende Duellarenen, Karten-Seed, Crew- und
+Waffenkonfigurationen. Nur die kuratierten Testgefechte samt fest verdrahteten
+Preset-Seeds und Analyse-UI entfallen. Die pro Duell zufällige Kartengenerierung
+mit Seed bleibt erforderlich und erhalten.
+
+Der neue FleetCombat-Tab erzeugt ausschließlich flüchtige Vorschaukonfigurationen
+(zwei Fraktionen, gewählte Schiffszahlen, Karte, zufällige Modelle,
+hardpointkompatible Mk-I-Waffen und Mk-I-Minen, Mk-IV-Reaktor). Diese Daten
+werden **nicht** in Karriere-Spielständen gespeichert und verändern keine
+NPC- oder Spielerzustände. Eine Mehrschiff-Simulation, ihre Checkpoints,
+dynamische Gefechtsbeitritte und Zustandsübergänge werden hier ausdrücklich
+noch nicht eingeführt; der FleetCombat-Start bleibt deaktiviert. Die
+Persistenzentscheidung für den späteren FleetCombat-Service erfolgt
+gesondert, bevor dieser mit der Kampagne verbunden wird.
