@@ -35,6 +35,7 @@ function createActiveLocalModel(
         phase: npc.phase,
         targetAsteroidId: npc.targetAsteroidId,
         laserActive: npc.laserActive,
+        oreCollection: npc.oreCollection,
         scanProgress: npc.scanProgress,
         nominalLengthMeters: definition.nominalLengthMeters,
         spriteUrl: definition.sprite.assetUrl,
