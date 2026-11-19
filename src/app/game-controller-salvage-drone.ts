@@ -2,6 +2,7 @@ import type { LocalAsteroid } from '../core/local-space-types';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { StrategicCombatBystander } from '../systems/combat/strategic-combat-bystander-types';
 import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
+import type { LocalPirateContact } from '../systems/npcs/npc-local-pirate-service';
 import type { SalvageField } from '../core/salvage-types';
 import type { WorldPoint } from '../core/world-types';
 import type { FieldRouteObstacle } from '../systems/navigation/field-ship-routing';
@@ -97,7 +98,8 @@ export function salvageDroneBystanders(
   combat: StrategicCombatSnapshot,
   ships: NpcLocalSalvageService['ships'],
   drone: AsteroidSecurityDrone,
-  locationId: string
+  locationId: string,
+  pirates: readonly LocalPirateContact[] = []
 ): readonly StrategicCombatBystander[] {
   const excluded = new Set([combat.attacker.id, combat.defender.id]);
   return [
@@ -109,6 +111,12 @@ export function salvageDroneBystanders(
         position: { ...ship.position },
         headingRadians: ship.headingRadians,
       })),
+    ...pirates.filter((ship) => !excluded.has(ship.npcId)).map((ship) => ({
+      id: ship.npcId,
+      shipId: ship.shipId,
+      position: { ...ship.position },
+      headingRadians: ship.headingRadians,
+    })),
     {
       id: 'security-drone:' + locationId,
       shipId: '24m-security-drone',
