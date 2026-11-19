@@ -3,6 +3,7 @@ import {
   DRONE_DIAMETER_PX,
   DRONE_ROTATION_PERIOD_SECONDS,
   drawDroneShield,
+  drawDroneShieldHits,
 } from '../local-space/local-security-drone-visual';
 import { CombatAsteroidBackdrop } from './combat-asteroid-backdrop';
 import type {
@@ -186,7 +187,7 @@ export class StrategicCombatRenderer {
     );
     const shipWidth = isDrone ? DRONE_DIAMETER_PX * this.camera.zoom : nominalLength * canvasScale;
     const aspect =
-      combatant.shipId === '24m-security-drone'
+      isDrone
         ? 1
         : image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
           ? image.naturalWidth / image.naturalHeight
@@ -439,6 +440,13 @@ export class StrategicCombatRenderer {
         geometry.width * 0.62,
         combatant.shieldHp / Math.max(1, combatant.shieldMaxHp),
         combatant.shieldImpacts.length > 0 ? 0.85 : 0
+      );
+      drawDroneShieldHits(
+        this.context,
+        geometry.center.x,
+        geometry.center.y,
+        geometry.width * 0.62,
+        combatant.shieldImpacts
       );
     }
     if (combatant.pirateMark) {
