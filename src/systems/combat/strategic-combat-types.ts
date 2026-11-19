@@ -321,11 +321,22 @@ export interface StrategicCombatArenaOptions {
   readonly backdropSeed?: number;
 }
 
+/** Civilian field contacts use the same world coordinates and hull contact solver
+ * as the PvP duel. They are transient scene input, not checkpoint state.
+ */
+export interface StrategicCombatBystander {
+  readonly id: string;
+  readonly shipId: string;
+  readonly position: CombatPoint;
+  readonly headingRadians: number;
+}
+
 export interface StrategicCombatService {
   exportCareerState(): CareerStrategicCombatCheckpoint;
   getSnapshot(): StrategicCombatSnapshot;
   getCombatLog(): readonly CombatLogEntry[];
   tick(deltaSeconds: number): StrategicCombatSnapshot;
+  setBystanders(ships: readonly StrategicCombatBystander[]): void;
   setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
   surrender(side: StrategicCombatSide): void;
   fireGrapple(side: StrategicCombatSide): boolean;
