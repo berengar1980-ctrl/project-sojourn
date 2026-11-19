@@ -800,3 +800,13 @@ not duplicated into this checkpoint. The scene writes the drone checkpoint
 when unmounted; career saving only occurs in port or orbital mode, after
 that unmount. The regression test covers navigation and a detached
 registry roundtrip.
+
+### Sicherheitsdrohnen-Sprite und Rotation (PR #367)
+
+Das neue transparente Drohnenbild liegt unter `public/drones/` und ersetzt
+nur die frühere geometrische Zeichenroutine. Die selbstständige Rotation
+(360° je drei Sekunden) wird aus der bereits vorhandenen Szenenzeit
+berechnet und erzeugt keine neue autoritative Zustandsvariable. Auch die
+Darstellungsgröße von 26 Bildschirmpixeln ist rein visuell: **keine
+Speicheränderung**. Position, Patrouillenroute und Konzessionszustand nutzen
+unverändert die bestehenden Drohnen-/Wrack-Checkpoints.
