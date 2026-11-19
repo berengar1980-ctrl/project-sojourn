@@ -1,4 +1,5 @@
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
+import type { SecurityDroneCheckpoint } from './asteroid-security-drone-checkpoint';
 
 export interface WreckClaim {
   readonly fieldId: string;
@@ -20,6 +21,7 @@ interface StoredField {
   readonly locationId: string;
   readonly seed: number;
   readonly wrecks: readonly StoredWreck[];
+  readonly drone?: SecurityDroneCheckpoint;
 }
 
 export interface WreckClaimCheckpoint {
@@ -48,10 +50,16 @@ export class WreckClaimRegistry {
     return this.fields.get(locationId)?.seed ?? preferredSeed;
   }
 
-  rememberField(field: SalvageField): void {
+  rememberField(field: SalvageField, drone?: SecurityDroneCheckpoint): void {
+    const previous = this.fields.get(field.sourceLocationId);
     this.fields.set(field.sourceLocationId, {
       locationId: field.sourceLocationId,
       seed: field.seed,
+      ...(drone
+        ? { drone: structuredClone(drone) }
+        : previous?.drone
+          ? { drone: structuredClone(previous.drone) }
+          : {}),
       wrecks: field.wrecks.map((wreck) => ({
         id: wreck.id,
         resources: Object.fromEntries(
@@ -62,6 +70,11 @@ export class WreckClaimRegistry {
         scanLevel: wreck.scanLevel ?? 'unscanned',
       })),
     });
+  }
+
+  droneCheckpoint(locationId: string): SecurityDroneCheckpoint | null {
+    const saved = this.fields.get(locationId)?.drone;
+    return saved ? structuredClone(saved) : null;
   }
 
   restoreField(field: SalvageField): void {
@@ -137,6 +150,7 @@ export class WreckClaimRegistry {
         id,
         {
           ...field,
+          ...(field.drone ? { drone: structuredClone(field.drone) } : {}),
           wrecks: field.wrecks.map((wreck) => ({
             ...wreck,
             resources: { ...wreck.resources },
@@ -155,6 +169,7 @@ export class WreckClaimRegistry {
     for (const [id, field] of saved.fields) {
       this.fields.set(id, {
         ...field,
+        ...(field.drone ? { drone: structuredClone(field.drone) } : {}),
         wrecks: field.wrecks.map((wreck) => ({
           ...wreck,
           resources: { ...wreck.resources },

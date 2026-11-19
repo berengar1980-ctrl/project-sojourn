@@ -1,4 +1,12 @@
 import { measurePerformance } from '../core/performance-diagnostics';
+import type { StrategicCombatBystander } from '../systems/combat/strategic-combat-bystander-types';
+import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
+import {
+  createSalvageSecurityDrone,
+  salvageDroneBystanders,
+  salvageDroneShipObstacles,
+  tickSalvageSecurityDrone,
+} from './game-controller-salvage-drone';
 import {
   advanceDistressRamming,
   createDistressRammingState,
@@ -41,7 +49,7 @@ import {
   syncSalvageCombatField,
 } from './game-controller-salvage-combat-return';
 import { returnToStarMapFromSalvage } from './game-controller-salvage-exit';
-import { createWreckClaimActions } from './game-controller-salvage-claims';
+import { createWreckClaimActions, wreckClaimOwners } from './game-controller-salvage-claims';
 import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
 import {
   requestDistressDiagnosis,
@@ -97,6 +105,7 @@ interface SalvageSceneOptions {
     }
   ) => void;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
+  readonly onCombatBystanders?: (bystanders: readonly StrategicCombatBystander[]) => void;
   readonly field?: SalvageField;
   readonly sectorEvent?: SectorSalvageEvent | null;
   readonly onDiagnoseDistress?: (eventId: string) => void;
@@ -128,6 +137,7 @@ interface SalvageSceneRuntime {
   readonly field: SalvageField;
   readonly service: SalvageLocalService;
   readonly npcSalvage: NpcLocalSalvageService;
+  readonly drone: AsteroidSecurityDrone;
   readonly state: SalvageSceneState;
 }
 
@@ -149,16 +159,8 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
   );
   return {
     ...model,
-    wreckClaimOwners: Object.fromEntries(
-      context.field.wrecks.flatMap((wreck) => {
-        const claim = options.wreckClaims.claim(
-          context.field.id,
-          wreck.id,
-          options.getCurrentDay()
-        );
-        return claim ? [[wreck.id, claim.ownerId]] : [];
-      })
-    ),
+    securityDrone: context.drone.snapshot(),
+    wreckClaimOwners: wreckClaimOwners(context.field, options.wreckClaims, options.getCurrentDay()),
   };
 }
 
@@ -313,7 +315,22 @@ const SALVAGE_PRESENTATION_INTERVAL_MS = 1000 / 24;
 function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
   const { options, service, npcSalvage } = context;
   const combat = options.isCombatActive?.() ? (options.getCombat?.() ?? null) : null;
+  const playerPosition = combat?.attacker.position ?? service.getSnapshot().ship.position;
+  const nearbyShips = salvageDroneShipObstacles(
+    npcSalvage.ships.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
+    playerPosition,
+    Math.max(18, options.ship.nominalLengthMeters * 0.35)
+  );
+  tickSalvageSecurityDrone(context.drone, context.field, deltaSeconds, nearbyShips);
   if (combat) {
+    options.onCombatBystanders?.(
+      salvageDroneBystanders(
+        combat,
+        npcSalvage.ships,
+        context.drone,
+        context.field.sourceLocationId
+      )
+    );
     // The existing duel owns its two combatants and all moving wreck bodies.
     // Reconcile those positions into the visible local scene every frame.
     syncSalvageCombatField(context.field, combat);
@@ -412,6 +429,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     field,
     service,
     npcSalvage: createNpcSalvageRuntime(options, field, service),
+    drone: createSalvageSecurityDrone(field, options.wreckClaims),
     state: {
       selectedNpcId: options.selectedNpcId ?? null,
       sectorEventResolved: false,
@@ -472,7 +490,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       tickSalvageScene(context, deltaSeconds);
     },
     destroy() {
-      options.wreckClaims.rememberField(field);
+      options.wreckClaims.rememberField(field, context.drone.exportState());
       context.state.panel?.destroy();
       context.state.panel = null;
     },

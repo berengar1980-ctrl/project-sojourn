@@ -41,3 +41,17 @@ export function createWreckClaimActions(options: WreckClaimActionsOptions) {
   };
   return { claim, canWork };
 }
+
+/** Expose authoritative ownership without adding claim logic to the view-model. */
+export function wreckClaimOwners(
+  field: SalvageField,
+  registry: WreckClaimRegistry,
+  day: number
+): Readonly<Record<string, string>> {
+  return Object.fromEntries(
+    field.wrecks.flatMap((wreck) => {
+      const claim = registry.claim(field.id, wreck.id, day);
+      return claim ? [[wreck.id, claim.ownerId]] : [];
+    })
+  );
+}
