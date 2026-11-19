@@ -193,7 +193,11 @@ export function tickFieldSecurity(
     }
   }
 
-  const nearbyShips = securityDroneObstacleShips(context, runtime, active?.instance.ship.position ?? null);
+  const nearbyShips = securityDroneObstacleShips(
+    context,
+    runtime,
+    active?.instance.ship.position ?? null
+  );
   drone.tick(seconds, runtime.instance.asteroids, contacts, nearbyShips);
   for (const contact of contacts) {
     if (!drone.detect(contact.position, runtime.instance.asteroids)) continue;
