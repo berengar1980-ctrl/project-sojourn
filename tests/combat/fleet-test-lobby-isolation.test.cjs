@@ -25,7 +25,10 @@ assert(fleet.includes('reactor4'), 'fleet uses mk4 reactors');
 assert(fleet.includes('item.tier === 1'), 'weapons are mk1');
 assert(fleet.includes('item.tier === 1'), 'mines are mk1');
 assert(fleet.includes('fitsWeaponHardpoint'), 'weapons respect mount sizes');
-assert(fleet.includes('start.disabled = true'), 'do not start fleet simulation before implementation');
+assert(
+  fleet.includes('start.disabled = true'),
+  'do not start fleet simulation before implementation'
+);
 assert(core.includes('createStrategicCombatService('), 'legacy 1v1 engine remains');
 for (const file of ['src/ui/start/duel-presets.ts', 'src/ui/start/duel-preset-analysis.ts']) {
   assert(!fs.existsSync(path.join(root, file)), 'obsolete preset logic removed: ' + file);
