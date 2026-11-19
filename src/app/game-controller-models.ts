@@ -163,6 +163,18 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
   };
 }
 
+function localNpcCombatSnapshots(
+  context: ControllerRuntimeContext,
+  locationId: string | null | undefined
+) {
+  const npcs = context.economy.sectorNpcs.npcs;
+  return (context.engagements.activeNpcCombatSnapshots?.() ?? []).filter((duel) => {
+    const first = npcs.find((npc) => npc.id === duel.attacker.id);
+    const second = npcs.find((npc) => npc.id === duel.defender.id);
+    return first?.locationId === locationId && second?.locationId === locationId;
+  });
+}
+
 export function controllerLocalModel(context: ControllerRuntimeContext) {
   const model = createControllerLocalModel(
     context.state.localSpace,
@@ -235,11 +247,7 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
     ...model,
     selectedAsteroidClaimOwner: owner,
     npcShips: [...model.npcShips, ...pirateShips],
-    npcCombats: (context.engagements.activeNpcCombatSnapshots?.() ?? []).filter((duel) => {
-      const first = context.economy.sectorNpcs.npcs.find((npc) => npc.id === duel.attacker.id);
-      const second = context.economy.sectorNpcs.npcs.find((npc) => npc.id === duel.defender.id);
-      return first?.locationId === locationId && second?.locationId === locationId;
-    }),
+    npcCombats: localNpcCombatSnapshots(context, locationId),
     asteroids,
     selectedAsteroid: asteroids.find((asteroid) => asteroid.isSelected) ?? null,
     miningTarget: asteroids.find((asteroid) => asteroid.isMiningTarget) ?? null,
