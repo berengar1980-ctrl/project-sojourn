@@ -7,37 +7,32 @@ const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
-const { pirateRouteDestination } = loadStandaloneTypeScriptModule(
+const { fieldRouteTarget } = loadStandaloneTypeScriptModule(
   root,
-  'src/systems/npcs/npc-local-pirate-routing.ts'
+  'src/systems/navigation/field-ship-routing.ts'
 );
-const start = { x: 100, y: 500 };
+const ship = { position: { x: 100, y: 500 }, headingRadians: 0, speed: 0 };
 const target = { x: 950, y: 500 };
 const rock = {
   id: 'blocker',
-  kind: 'resource',
-  routeBlocking: true,
   position: { x: 500, y: 500 },
   radius: 125,
 };
-const first = pirateRouteDestination(start, target, null, [rock], 1200, 1000);
-assert(first.detour, 'direct path through an asteroid requires a detour');
-assert(
-  Math.hypot(first.destination.x - rock.position.x, first.destination.y - rock.position.y) >
-    rock.radius + 100,
-  'route clearance must account for the size of the corsair'
+const first = fieldRouteTarget(ship, target, [rock], 65);
+assert(first, 'shared A* should find a waypoint around the asteroid');
+assert.notDeepEqual(first, target, 'blocked direct route requires a real A* waypoint');
+assert.deepEqual(
+  fieldRouteTarget(ship, target, [rock], 65),
+  first,
+  'waypoint stays stable until reached'
 );
-const again = pirateRouteDestination({ x: 150, y: 510 }, target, first.detour, [rock], 1200, 1000);
-assert.deepEqual(again.destination, first.destination, 'flank must not switch every tick');
-const clear = pirateRouteDestination(
-  { x: 1050, y: 810 },
+const clear = fieldRouteTarget(
+  { position: { x: 1050, y: 810 }, headingRadians: 0, speed: 0 },
   { x: 1150, y: 850 },
-  null,
   [rock],
-  1200,
-  1000
+  65
 );
-assert.equal(clear.detour, null, 'unblocked travel keeps a direct route');
+assert.deepEqual(clear, { x: 1150, y: 850 }, 'unblocked pirate route stays direct');
 
 const mine = read('src/ui/local-space/local-space-renderer.ts');
 const salvage = read('src/ui/salvage/salvage-space-renderer.ts');
@@ -58,4 +53,4 @@ const safety = read('src/systems/combat/combat-steering-safety.ts');
 const steering = read('src/systems/combat/combat-route-steering.ts');
 assert(safety.includes('(!obstacle || waypoint)'));
 assert(steering.includes('cover ?? waypoint ?? direction'));
-console.log('PASS corsair obstacle detours and campaign/standalone combat overlay parity');
+console.log('PASS shared A* corsair routing and campaign/standalone combat overlay parity');
