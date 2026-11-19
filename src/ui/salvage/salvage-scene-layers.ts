@@ -171,7 +171,15 @@ export abstract class SalvageSceneLayers {
       : null;
     if (!wreck) return;
     if (npc.phase === 'scanning') {
-      this.drawNpcScan(point, wreck.position, wreck.radius, width, height, npc.scanProgress, timeSeconds);
+      this.drawNpcScan(
+        point,
+        wreck.position,
+        wreck.radius,
+        width,
+        height,
+        npc.scanProgress,
+        timeSeconds
+      );
     } else if (npc.salvageActive) {
       drawSalvageWorkEffect(
         this.context,
