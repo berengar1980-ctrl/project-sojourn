@@ -19,7 +19,6 @@ export type {
   CareerStrategicCombatCheckpoint,
   CombatSubsystemHealth,
 } from './strategic-combat-checkpoint-types';
-export type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 export type StrategicCombatSide = 'attacker' | 'defender';
 export type CombatOutcomeReason = 'destruction' | 'escape' | 'boarding' | 'surrender';
 export type CombatTactic = 'fight' | 'kite' | 'flee' | 'minefield';
