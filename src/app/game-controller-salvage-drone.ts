@@ -119,11 +119,15 @@ export function salvageDroneBystanders(
         position: { ...ship.position },
         headingRadians: ship.headingRadians,
       })),
-    {
-      id: 'security-drone:' + locationId,
-      shipId: '24m-security-drone',
-      position: drone.snapshot().position,
-      headingRadians: drone.headingRadians,
-    },
+    ...(excluded.has('security-drone:' + locationId)
+      ? []
+      : [
+          {
+            id: 'security-drone:' + locationId,
+            shipId: '24m-security-drone',
+            position: drone.snapshot().position,
+            headingRadians: drone.headingRadians,
+          },
+        ]),
   ];
 }

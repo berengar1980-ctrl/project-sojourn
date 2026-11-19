@@ -1,4 +1,8 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import {
+  DRONE_DIAMETER_PX,
+  DRONE_ROTATION_PERIOD_SECONDS,
+} from '../local-space/local-security-drone-visual';
 import { CombatAsteroidBackdrop } from './combat-asteroid-backdrop';
 import type {
   Point,
@@ -134,7 +138,10 @@ export class StrategicCombatRenderer {
     if (cached) return cached;
     const image = new Image();
     image.onload = () => this.draw();
-    image.src = definition.sprite.assetUrl;
+    image.src =
+      shipId === '24m-security-drone'
+        ? '/drones/security-drone-gc87r8.webp'
+        : definition.sprite.assetUrl;
     this.images.set(shipId, image);
     return image;
   }
@@ -177,13 +184,18 @@ export class StrategicCombatRenderer {
       this.model.arena.width,
       this.model.arena.height
     );
-    const shipWidth = nominalLength * canvasScale;
+    const shipWidth =
+      combatant.shipId === '24m-security-drone'
+        ? DRONE_DIAMETER_PX * this.camera.zoom
+        : nominalLength * canvasScale;
     const aspect =
-      image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
-        ? image.naturalWidth / image.naturalHeight
-        : definition
-          ? definition.sprite.widthPx / definition.sprite.heightPx
-          : 2.2;
+      combatant.shipId === '24m-security-drone'
+        ? 1
+        : image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+          ? image.naturalWidth / image.naturalHeight
+          : definition
+            ? definition.sprite.widthPx / definition.sprite.heightPx
+            : 2.2;
     return {
       center: this.screen(combatant.position, width, height),
       width: shipWidth,
@@ -379,9 +391,14 @@ export class StrategicCombatRenderer {
     visualElapsed: number
   ): void {
     const definition = getShipDefinition(combatant.shipId);
-    const geometry = this.shipGeometry(combatant, width, height);
+    const isDrone = combatant.shipId === '24m-security-drone';
+    const geometry = {
+      ...this.shipGeometry(combatant, width, height),
+      ...(isDrone ? { angle: (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS } : {}),
+    };
     const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
-    const hardpoints = definition?.sprite.hardpoints;
+    // Rotating drone hull has no ship-style directional exhaust hardpoints.
+    const hardpoints = isDrone ? undefined : definition?.sprite.hardpoints;
     const engineIntensity =
       combatant.subsystems.engine > 0 ? Math.max(0, Math.min(1, combatant.speed / 120)) : 0;
     const maneuverDemand = {

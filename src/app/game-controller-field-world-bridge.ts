@@ -89,6 +89,10 @@ function syncNpcDuelFieldPoses(
         combatant.speed
       );
       field.pirates.syncCombatPose(combatant.id, combatant.position, combatant.headingRadians);
+      if (combatant.id === 'security-drone:' + field.locationId) {
+        field.drone.restore(combatant.position, combatant.hullHp > 0);
+        field.drone.headingRadians = combatant.headingRadians;
+      }
     }
   }
 }
@@ -175,7 +179,13 @@ export function advanceControllerFieldWorld(
       );
     }
     tickFieldPirates(context, seconds, field, activeCombat?.defender.id);
-    if (!activeCombat?.defender.id.startsWith('security-drone:')) {
+    // The combat engine owns drone motion while it is fighting.
+    // A second patrol tick would jump its sprite away from the hitbox.
+    const droneId = 'security-drone:' + field.locationId;
+    const droneFightingNpc = (context.engagements.activeNpcCombatSnapshots?.() ?? []).some(
+      (duel) => duel.attacker.id === droneId || duel.defender.id === droneId
+    );
+    if (activeCombat?.defender.id !== droneId && !droneFightingNpc) {
       tickFieldSecurity(context, seconds, field);
     }
   });

@@ -1550,3 +1550,15 @@ eines bereits kämpfenden Piraten als dritten direkten Kampfteilnehmer. Die
 Drohne verfolgt solche Kontakte, kann das separate Duell aber nicht
 übernehmen; ein erzwungener Mehrparteienkampf würde die Kampfautorität
 verletzen und benötigt eine eigene Erweiterung der Kampf-Engine.
+
+## Review-Log (2026-11-19): Sicherheitsdrohne, Kampfsynchronität und Zoom
+
+**Keine Änderung** an den historischen Voidbound-Feature-IDs. Für aktive
+NPC- und Spielerduelle übernimmt die Sicherheitsdrohne die echte
+Kampfposition aus der bestehenden PvP-Kampfautorität. Ihr separater
+Patrouillenantrieb pausiert, solange die Drohne Kampfteilnehmer ist.
+Doppelt gezeichnete Drohnenkörper und Collider werden im eingebetteten
+Kampf unterdrückt; der native Kampf-Renderer verwendet das GC-87-R8-Bild.
+Spritegröße und Rotation werden mit dem gemeinsamen Kampfkamerazoom
+berechnet. Keine Änderung an Trefferlogik, Kampfberechnung oder
+Konzessionsregeln.
