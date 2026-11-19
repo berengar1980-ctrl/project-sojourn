@@ -19,7 +19,9 @@ export function resolveCombatBystanderContacts(
     const overlap = contact.required - contact.distance + 0.5;
     combatant.position.x -= contact.normal.x * overlap;
     combatant.position.y -= contact.normal.y * overlap;
-    const closing = combatant.velocity.x * contact.normal.x + combatant.velocity.y * contact.normal.y;
+    const velocityX = combatant.velocity.x * contact.normal.x;
+    const velocityY = combatant.velocity.y * contact.normal.y;
+    const closing = velocityX + velocityY;
     if (closing > 0) {
       combatant.velocity.x -= contact.normal.x * closing;
       combatant.velocity.y -= contact.normal.y * closing;
