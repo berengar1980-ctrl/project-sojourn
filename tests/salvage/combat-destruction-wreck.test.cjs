@@ -8,7 +8,6 @@ const { addDestroyedShipWreck } = load('src/systems/salvage/combat-destruction-w
 const { combatWreckVariantFor } = load('src/core/combat-wreck-variant.ts');
 const { salvageFieldCombatArena } = load('src/systems/combat/field-combat-arena.ts');
 
-const variants = ['miner', 'freighter', 'patrol'];
 const emptyField = () => ({
   id: 'field-test',
   sourceLocationId: 'field-test',
