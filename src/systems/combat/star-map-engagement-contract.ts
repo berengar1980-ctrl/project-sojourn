@@ -8,6 +8,7 @@ import type {
   StrategicCombatService,
   StrategicCombatantSetup,
   StrategicCombatArenaOptions,
+  StrategicCombatSnapshot,
 } from './strategic-combat-service';
 
 export interface StarMapEngagementService {
@@ -22,6 +23,7 @@ export interface StarMapEngagementService {
   syncPlayerPursuitTarget(): void;
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
+  activeNpcCombatSnapshots(): readonly StrategicCombatSnapshot[];
   activePlayerEnemy(): SectorNpcState | null;
   finishPlayerCombat(boardingOutcome?: BoardingOutcome): void;
   restorePlayerCareerCombat(combat: StrategicCombatService, enemyId: string): void;
