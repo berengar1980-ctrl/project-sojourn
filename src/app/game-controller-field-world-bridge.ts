@@ -78,7 +78,7 @@ function syncNpcDuelFieldPoses(
   context: ControllerRuntimeContext,
   field: AsteroidFieldRuntime
 ): void {
-  for (const duel of context.engagements.activeNpcCombatSnapshots()) {
+  for (const duel of context.engagements.activeNpcCombatSnapshots?.() ?? []) {
     for (const combatant of [duel.attacker, duel.defender]) {
       const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === combatant.id);
       if (npc?.locationId !== field.locationId) continue;
