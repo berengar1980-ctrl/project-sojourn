@@ -1,6 +1,7 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera } from '../map/map-camera';
 import type { ShieldImpactEffect } from '../../core/shield-types';
+import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
 
 const DRONE_SPRITE_URL = '/drones/security-drone-gc87r8.webp';
 export const DRONE_DIAMETER_PX = 18;
@@ -28,6 +29,19 @@ export function drawDroneShield(
   ctx.shadowBlur = 4 + impact * 12;
   ctx.stroke();
   ctx.restore();
+}
+
+/** A background NPC duel owns shield hits while the patrol drone is fighting. */
+export function localDroneShieldHits(
+  combats: readonly StrategicCombatSnapshot[] = []
+): readonly ShieldImpactEffect[] {
+  for (const duel of combats) {
+    const drone = [duel.attacker, duel.defender].find((ship) =>
+      ship.id.startsWith('security-drone:')
+    );
+    if (drone) return drone.shieldImpacts;
+  }
+  return [];
 }
 
 /** Shield hits are attached to the drone, not to the world or the ship heading. */
