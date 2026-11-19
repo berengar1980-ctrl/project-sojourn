@@ -78,10 +78,7 @@ function teamCount(label: string, initial: number) {
   return result;
 }
 
-export function createFleetTestLobby(
-  root: HTMLElement,
-  onBack: () => void
-): { destroy(): void } {
+export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const shell = document.createElement('section');
   shell.className = 'harrow-duel harrow-fleet';
   const heading = document.createElement('h1');
