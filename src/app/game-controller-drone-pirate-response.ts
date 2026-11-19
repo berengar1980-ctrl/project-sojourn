@@ -16,7 +16,7 @@ export function detectedSecurityPirate(
   field: AsteroidFieldRuntime
 ): SecurityPirateContact | null {
   if (!field.drone.snapshot().operational) return null;
-  const ships = field.pirates.snapshot(context.economy.sectorNpcs.npcs);
+  const ships = field.pirates?.snapshot(context.economy.sectorNpcs.npcs) ?? [];
   const available = ships.filter((ship) => {
     const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === ship.npcId);
     return (
