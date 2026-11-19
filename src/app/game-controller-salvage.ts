@@ -314,8 +314,6 @@ function resolveCompletedSectorEvent(context: SalvageSceneRuntime): void {
   options.onSectorEventResolved?.(state.activeSectorEvent.id);
 }
 
-// Keep NPC/ship movement and rescue timers at full simulation frequency, but
-// do not rebuild the complete wreck model and DOM on every animation frame.
 const lastSalvagePresentation = new WeakMap<SalvageSceneRuntime, number>();
 const SALVAGE_PRESENTATION_INTERVAL_MS = 1000 / 24;
 
@@ -338,8 +336,6 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
         context.field.sourceLocationId
       )
     );
-    // The existing duel owns its two combatants and all moving wreck bodies.
-    // Reconcile those positions into the visible local scene every frame.
     syncSalvageCombatField(context.field, combat);
     service.syncCombatPose(
       combat.attacker.position,
@@ -470,8 +466,6 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     },
     updateSectorEvent(event) {
       context.state.activeSectorEvent = event;
-      // Sector event records are mutable and shared with the economy service.
-      // Do not detect this transition by comparing the previous event reference.
       if (event?.salvageRights && context.field.wrecks[0]?.resources.length === 0) {
         grantDistressSalvageRights(context.field, event);
       }
