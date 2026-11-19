@@ -1,4 +1,3 @@
-import { drawLocalSecurityDrone } from '../local-space/local-security-drone-visual';
 import { centerSalvageCamera } from './salvage-camera-centering';
 import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { pickNearestHitArea } from './salvage-hit-test';
@@ -76,14 +75,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
             if (!battle) return;
             const active = new Set([battle.attacker.id, battle.defender.id]);
             this.drawNpcShips(width, height, timeSeconds, active);
-            drawLocalSecurityDrone(
-              this.context,
-              this.camera,
-              this.model.securityDrone,
-              width,
-              height,
-              timeSeconds
-            );
           }
         );
         this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
@@ -214,14 +205,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     this.hitAreas = hitAreas;
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
-    drawLocalSecurityDrone(
-      this.context,
-      this.camera,
-      this.model.securityDrone,
-      width,
-      height,
-      timeSeconds
-    );
     this.distressParticles.drawScene(
       timeSeconds,
       this.model,
