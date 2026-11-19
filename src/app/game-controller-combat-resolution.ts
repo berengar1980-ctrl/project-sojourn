@@ -115,8 +115,8 @@ export function resolveControllerCombat(
     state.salvageScene?.finishCombat(snapshot);
     if (state.embeddedCombat === 'salvage-space') {
       const field = state.salvageScene?.getField();
-      if (field && snapshot.outcomeReason === 'destruction') {
-        const encounterId = `${field.seed}-${Math.round(snapshot.elapsedSeconds * 1000)}`;
+      if (field) {
+        const encounterId = `${field.seed}-${field.wrecks.length}-${Math.round(snapshot.elapsedSeconds * 1000)}`;
         for (const ship of [snapshot.attacker, snapshot.defender]) {
           if (ship.hullHp > 0 || ship.id.startsWith('security-drone:')) continue;
           const wreck = addDestroyedShipWreck(field, ship, encounterId);
