@@ -79,6 +79,7 @@ export class MiningEffectsRenderer {
       const phase = fractional(timeSeconds * 0.46 + index * 0.25 + (hashId(npc.id) % 31) / 31);
       return {
         id: npc.id + ':work:' + index,
+        amount: 1,
         position: {
           x: impact.point.x + (destination.x - impact.point.x) * phase,
           y: impact.point.y + (destination.y - impact.point.y) * phase,
