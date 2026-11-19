@@ -1,4 +1,4 @@
-import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
+import { moveFieldShip, type FieldRouteObstacle, type FieldRouteState } from '../navigation/field-ship-routing';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
@@ -110,16 +110,46 @@ export class AsteroidSecurityDrone {
   tick(
     dt: number,
     asteroids: readonly LocalAsteroid[],
-    contacts: readonly DroneContact[]
+    contacts: readonly DroneContact[],
+    nearbyShips: readonly FieldRouteObstacle[] = []
   ): string[] {
     if (!this.operational) return [];
     const destination = this.patrol[this.nextWaypoint]!;
+    const obstacles: FieldRouteObstacle[] = [
+      ...asteroids.filter((rock) => rock.routeBlocking).map((rock) => ({
+        id: rock.id,
+        position: rock.position,
+        radius: rock.collisionRadius ?? rock.radius,
+      })),
+      ...nearbyShips,
+    ];
+    // Ships move independently: invalidate a stale waypoint when its next leg
+    // becomes obstructed instead of flying through the new contact.
+    const waypoint = this.routeState?.points[this.routeState.index];
+    if (waypoint) {
+      const dx = waypoint.x - this.position.x;
+      const dy = waypoint.y - this.position.y;
+      const lengthSquared = dx * dx + dy * dy;
+      if (lengthSquared > 0 && obstacles.some((obstacle) => {
+        const t = Math.max(0, Math.min(1, (
+          (obstacle.position.x - this.position.x) * dx +
+          (obstacle.position.y - this.position.y) * dy
+        ) / lengthSquared));
+        // Ignore an obstacle already enclosing the start; the planner must
+        // be allowed to navigate away from an overlapping spawn.
+        if (Math.hypot(obstacle.position.x - this.position.x, obstacle.position.y - this.position.y) < obstacle.radius + 40) return false;
+        return Math.hypot(
+          this.position.x + dx * t - obstacle.position.x,
+          this.position.y + dy * t - obstacle.position.y
+        ) < obstacle.radius + 40;
+      })) delete this.routeState;
+    }
     const arrived = moveFieldShip(
       this,
       destination,
       DRONE_CRUISE,
       Math.max(0, Math.min(dt, 0.25)),
-      asteroids.filter((rock) => rock.routeBlocking),
+      obstacles,
       40
     );
     if (arrived) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
