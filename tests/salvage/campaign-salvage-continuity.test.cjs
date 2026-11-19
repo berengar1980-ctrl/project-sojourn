@@ -17,7 +17,7 @@ const styles = source('src/ui/styles.css');
 
 assert(scene.includes('updateSectorEvent(event)'));
 assert(scene.includes('grantDistressSalvageRights(context.field, event)'));
-assert(scene.includes('state.activeSectorEvent.salvageRights'));
+assert(scene.includes('event?.salvageRights'), 'current sector event salvage rights are preserved');
 assert(
   rights.includes('...current'),
   'existing wreck position and motion must survive loot unlock'
