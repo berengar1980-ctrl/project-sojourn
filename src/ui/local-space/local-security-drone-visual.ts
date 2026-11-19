@@ -21,8 +21,7 @@ export function drawLocalSecurityDrone(
   drone: LocalSpaceViewModel['securityDrone'],
   width: number,
   height: number,
-  timeSeconds: number,
-  hideBody = false
+  timeSeconds: number
 ): void {
   if (!drone?.operational) return;
   const point = camera.worldToScreen(drone.position, width, height);
@@ -35,10 +34,6 @@ export function drawLocalSecurityDrone(
   ctx.stroke();
   ctx.setLineDash([]);
 
-  if (hideBody) {
-    ctx.restore();
-    return;
-  }
   ctx.translate(point.x, point.y);
   ctx.rotate((timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS);
   const image = securityDroneSprite();
