@@ -1,9 +1,10 @@
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera } from '../map/map-camera';
+import type { ShieldImpactEffect } from '../../core/shield-types';
 
 const DRONE_SPRITE_URL = '/drones/security-drone-gc87r8.webp';
-export const DRONE_DIAMETER_PX = 26;
-export const DRONE_ROTATION_PERIOD_SECONDS = 8;
+export const DRONE_DIAMETER_PX = 18;
+export const DRONE_ROTATION_PERIOD_SECONDS = 16;
 let droneSprite: HTMLImageElement | null = null;
 
 /** Drone-only omnidirectional shield, visible whenever it is charged. */
@@ -29,6 +30,31 @@ export function drawDroneShield(
   ctx.restore();
 }
 
+/** Shield hits are attached to the drone, not to the world or the ship heading. */
+export function drawDroneShieldHits(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  radius: number,
+  impacts: readonly ShieldImpactEffect[]
+): void {
+  for (const impact of impacts) {
+    const age = impact.ageSeconds / Math.max(0.01, impact.lifetimeSeconds);
+    if (age < 0 || age >= 1) continue;
+    const angle = Math.atan2(impact.surfaceAnchor.y, impact.surfaceAnchor.x);
+    const fade = Math.pow(1 - age, 1.35);
+    ctx.save();
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(215, 249, 255, ' + (0.95 * fade) + ')';
+    ctx.lineWidth = 2.2 + 2.5 * impact.strength * fade;
+    ctx.shadowColor = '#91eaff';
+    ctx.shadowBlur = 8 * fade + 3;
+    ctx.arc(x, y, radius, angle - 0.34, angle + 0.34);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 function securityDroneSprite(): HTMLImageElement {
   if (!droneSprite) {
     droneSprite = new Image();
@@ -44,7 +70,8 @@ export function drawLocalSecurityDrone(
   drone: LocalSpaceViewModel['securityDrone'],
   width: number,
   height: number,
-  timeSeconds: number
+  timeSeconds: number,
+  shieldHits: readonly ShieldImpactEffect[] = []
 ): void {
   if (!drone?.operational) return;
   const point = camera.worldToScreen(drone.position, width, height);
@@ -64,8 +91,12 @@ export function drawLocalSecurityDrone(
     point.y,
     diameter * 0.62,
     1,
-    Math.min(1, (drone.shieldContactSeconds ?? 0) / 0.4)
+    Math.max(
+      Math.min(1, (drone.shieldContactSeconds ?? 0) / 0.4),
+      shieldHits.length ? 0.85 : 0
+    )
   );
+  drawDroneShieldHits(ctx, point.x, point.y, diameter * 0.62, shieldHits);
   ctx.translate(point.x, point.y);
   ctx.rotate((timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS);
   const image = securityDroneSprite();
