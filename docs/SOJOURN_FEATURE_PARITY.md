@@ -1521,3 +1521,14 @@ Die Bergungsdrohne wird als physischer unbeteiligter Collider an die
 Kampfsimulation übergeben. Die bestehenden Regeln zur Registrierung und
 Sperrung fremder Wrackansprüche bleiben unverändert. Keine Bergbau- oder
 Bergungsarbeiten werden von der Drohne ausgeführt.
+
+## Review-Log (2026-11-19): GC-87-R8-Drohnensprite
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs. Die
+Sicherheitsdrohne in lokalen Bergbau- und Wrackkarten verwendet jetzt
+das mitgelieferte transparente GC-87-R8-Bild anstelle der bisherigen
+gezeichneten Sechseck-Silhouette. Das Sprite wird auf 26 Bildschirmpixel
+Durchmesser gezeichnet und dreht sich unabhängig vom Kurs kontinuierlich
+mit einer Umdrehung alle drei Sekunden. Die gemeinsame Zeichenfunktion
+wird sowohl in normalen Szenen als auch im PvP-Szenenlayer verwendet.
+Kollisionsgröße, Navigation und Konzessionsregeln bleiben unverändert.
