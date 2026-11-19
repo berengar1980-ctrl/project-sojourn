@@ -128,7 +128,9 @@ export class LocalPirateTraffic {
 
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set(
-      pirates.filter((npc) => npc.pirate && npc.hullHp > 0 && (!npc.travel || npc.combatMovement)).map((npc) => npc.id)
+      pirates
+        .filter((npc) => npc.pirate && npc.hullHp > 0 && (!npc.travel || npc.combatMovement))
+        .map((npc) => npc.id)
     );
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
@@ -181,7 +183,9 @@ export class LocalPirateTraffic {
       // pirate traffic must not move or re-engage the active combatant.
       if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
       const busy = new Set(
-        npcs.filter((entry) => entry.combatMovement || entry.combatRecoverySeconds).map((entry) => entry.id)
+        npcs
+          .filter((entry) => entry.combatMovement || entry.combatRecoverySeconds)
+          .map((entry) => entry.id)
       );
       const targets = [
         ...miners
@@ -228,13 +232,14 @@ export class LocalPirateTraffic {
             radius: 45,
           })),
       ];
-      const destination = pirate.routeState &&
-        Math.hypot(
-          pirate.routeState.target.x - target.position.x,
-          pirate.routeState.target.y - target.position.y
+      const previousTarget = pirate.routeState?.target;
+      const destination =
+        previousTarget && Math.hypot(
+          previousTarget.x - target.position.x,
+          previousTarget.y - target.position.y
         ) < 70
-        ? pirate.routeState.target
-        : target.position;
+          ? previousTarget
+          : target.position;
       moveFieldShip(
         pirate,
         destination,
