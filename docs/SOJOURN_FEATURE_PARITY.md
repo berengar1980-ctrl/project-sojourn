@@ -1587,3 +1587,16 @@ gezeichnet, sowohl während NPC-Kämpfen als auch in direktem PvP. Abgeschlossen
 Kämpfe zeichnen keine im eingefrorenen Kampfsnapshot verbliebenen Laser,
 Projektile, Traktorwürfe oder Greifhakenstrahlen mehr. An realer Kampfphysik,
 Ausrüstung, Schadensberechnung und Patrouillenlogik ändert sich nichts.
+
+## Review-Log (2026-11-19): Mining-Treffer, Staub und Zerstörungs-VFX (PR #372)
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Der Mining-Laser trifft bei unregelmäßigen Asteroiden optisch weiter innen; die
+vorhandene Extraktionssimulation bleibt unverändert. Bei großem Zoom werden
+Einschlagfunken und transparente Staubpartikel größer dargestellt. Im nativen
+PvP und in lokalen NPC-Gefechten kommen die bestehenden, von der Hüllenintegrität
+abhängigen Rauch-/Feuerpartikel auch bei Drohnen zum Einsatz. Mehrstufige
+Zerstörungs-VFX erzeugen einen kurzen Blitz, sekundäre Lichtausbrüche und
+Trümmerfragmente. Es handelt sich ausschließlich um visuelle Ergänzungen;
+weder Waffen- und Trefferberechnung noch NPC-Wirtschaft, Navigation oder
+Kampagnen-Speicherformat ändern sich.
