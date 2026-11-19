@@ -157,10 +157,7 @@ export class AsteroidSecurityDrone {
     return newlyDetected;
   }
 
-  private routeBlocked(
-    waypoint: WorldPoint,
-    obstacles: readonly FieldRouteObstacle[]
-  ): boolean {
+  private routeBlocked(waypoint: WorldPoint, obstacles: readonly FieldRouteObstacle[]): boolean {
     const dx = waypoint.x - this.position.x;
     const dy = waypoint.y - this.position.y;
     const lengthSquared = dx * dx + dy * dy;
