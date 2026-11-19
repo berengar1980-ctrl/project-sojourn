@@ -30,6 +30,28 @@ function clearPath(
   });
 }
 
+function recoverPatrolRoute(
+  start: WorldPoint,
+  nodes: readonly WorldPoint[],
+  parents: readonly number[],
+  obstacles: readonly FieldRouteObstacle[],
+  clearance: number
+): readonly WorldPoint[] {
+  const route: WorldPoint[] = [];
+  let cursor = 1;
+  while (cursor > 0) {
+    route.push(nodes[cursor]!);
+    cursor = parents[cursor]!;
+  }
+  const result = route.reverse();
+  let previous = start;
+  for (const point of result) {
+    if (!clearPath(previous, point, obstacles, clearance)) return [];
+    previous = point;
+  }
+  return result;
+}
+
 /** Bounded visibility-graph routing for small patrol craft.
  * Avoids the 44m full-field five-pass A* grid and its multi-second
  * worst-case cost in dense asteroid fields.
@@ -90,19 +112,7 @@ export function planFieldPatrolRoute(
     }
     if (current < 0 || !Number.isFinite(costs[current]!)) break;
     if (current === 1) {
-      const route: WorldPoint[] = [];
-      let cursor = 1;
-      while (cursor > 0) {
-        route.push(nodes[cursor]!);
-        cursor = parents[cursor]!;
-      }
-      const result = route.reverse();
-      let previous = start;
-      for (const point of result) {
-        if (!clearPath(previous, point, obstacles, clearance)) return [];
-        previous = point;
-      }
-      return result;
+      return recoverPatrolRoute(start, nodes, parents, obstacles, clearance);
     }
     visited.add(current);
     for (let index = 1; index < nodes.length; index += 1) {
