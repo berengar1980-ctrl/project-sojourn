@@ -182,8 +182,10 @@ function cargoView(player: PlayerEconomyState): readonly SalvageCargoView[] {
 function salvageWreckKindLabel(
   wreck: SalvageLocalSpaceSnapshot['field']['wrecks'][number]
 ): string {
-  return wreck.sectionVariant
-    ? 'SCHIFFSSEKTION'
+  return wreck.combatWreckVariant
+    ? 'KAMPFWRACK'
+    : wreck.sectionVariant
+      ? 'SCHIFFSSEKTION'
     : wreck.debrisVariant
       ? 'SCHIFFSFRAGMENT'
       : wreck.containerVariant
