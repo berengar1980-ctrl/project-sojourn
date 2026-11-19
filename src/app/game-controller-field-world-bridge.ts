@@ -136,11 +136,7 @@ export function advanceControllerFieldWorld(
           combatant.headingRadians,
           combatant.speed
         );
-        field.pirates.syncCombatPose(
-          combatant.id,
-          combatant.position,
-          combatant.headingRadians
-        );
+        field.pirates.syncCombatPose(combatant.id, combatant.position, combatant.headingRadians);
       }
     }
     field.miners.tick(seconds, activeCombat?.defender.id);
