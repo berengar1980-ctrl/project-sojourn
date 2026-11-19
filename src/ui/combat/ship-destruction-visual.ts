@@ -31,14 +31,7 @@ export function drawShipDestruction(
     const offset = size * 0.25;
     const px = x + Math.cos(angle) * offset;
     const py = y + Math.sin(angle) * offset;
-    const glow = ctx.createRadialGradient(
-      px,
-      py,
-      0,
-      px,
-      py,
-      size * (0.25 + phase * 1.35)
-    );
+    const glow = ctx.createRadialGradient(px, py, 0, px, py, size * (0.25 + phase * 1.35));
     glow.addColorStop(0, 'rgba(255,210,130,' + (0.65 * (1 - phase)) + ')');
     glow.addColorStop(0.28, 'rgba(246,100,39,' + (0.5 * (1 - phase)) + ')');
     glow.addColorStop(1, 'rgba(83,79,77,0)');
