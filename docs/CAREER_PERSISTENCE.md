@@ -869,3 +869,15 @@ No extra visual or checkpoint state is persisted. Finished NPC/player duels
 no longer paint frozen beam/projectile/tractor-tether snapshots, since their
 simulation clock stops at the winner transition. The existing career
 checkpoint format and movement/weapon authorities are unchanged.
+
+## Mining impacts and visual destruction effects (PR #372)
+
+The mining beam contact inset, camera-scaled sparks and transparent dust are
+render-only adjustments. The existing simulation-owned mining target, resource
+extraction, laser activation and cargo checkpoint values remain unchanged.
+
+The damage particle timelines and multi-stage ship/drone breakup visuals use
+current combat hull integrity, existing combat snapshots, and transient
+renderer-local timestamps. They are neither new combat authorities nor saved
+entities. No new persistence field, save migration or checkpoint version is
+required. These visuals must not change the PvP/career combat rules.
