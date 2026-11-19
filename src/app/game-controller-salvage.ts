@@ -111,7 +111,7 @@ interface SalvageSceneOptions {
   readonly getCombat?: () => StrategicCombatSnapshot | null;
   readonly resolveDrone?: (field: SalvageField) => AsteroidSecurityDrone;
   readonly onUnauthorizedSalvage?: (field: SalvageField, wreckId: string) => void;
-  readonly pirateTraffic?: LocalPirateTraffic;
+  readonly resolvePirateTraffic?: (field: SalvageField) => LocalPirateTraffic;
   readonly getNpcCombats?: () => readonly StrategicCombatSnapshot[];
   readonly onPirateAttack?: (
     field: SalvageField,
@@ -448,7 +448,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     field,
     service,
     npcSalvage: createNpcSalvageRuntime(options, field, service),
-    pirates: options.pirateTraffic ?? new LocalPirateTraffic(field.width, field.height, field.seed),
+    pirates:
+      options.resolvePirateTraffic?.(field) ?? new LocalPirateTraffic(field.width, field.height, field.seed),
     drone: options.resolveDrone?.(field) ?? createSalvageSecurityDrone(field, options.wreckClaims),
     state: {
       selectedNpcId: options.selectedNpcId ?? null,
