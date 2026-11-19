@@ -1,4 +1,5 @@
 import { AsteroidClaimRegistry } from '../operations/asteroid-claim-registry';
+import { stageSecurityDroneCheckpoint } from '../operations/asteroid-security-drone-checkpoint';
 import { WreckClaimRegistry, type WreckClaimCheckpoint } from '../operations/wreck-claim-registry';
 import { SectorLegalRegistry } from '../operations/sector-legal-registry';
 import type { AsteroidFieldWorld } from '../operations/asteroid-field-world';
@@ -168,6 +169,9 @@ function verifyWreckField(pair: unknown, fields: Set<string>): void {
     throw new Error('Ungültiges Wrackfeld.');
   }
   fields.add(pair[0]);
+  if (pair[1].drone !== undefined) {
+    stageSecurityDroneCheckpoint(pair[1].drone, 460, 8);
+  }
   const ids = new Set<string>();
   for (const wreck of pair[1].wrecks) verifyWreckRecord(wreck, ids);
 }
