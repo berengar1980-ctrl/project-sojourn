@@ -35,6 +35,7 @@ export class AsteroidSecurityDrone {
   private nextWaypoint = 0;
   private readonly observed = new Set<string>();
   private operational = true;
+  private retryAfterSeconds = 0;
 
   constructor(
     width: number,
@@ -133,15 +134,25 @@ export class AsteroidSecurityDrone {
     // becomes obstructed instead of flying through the new contact.
     const waypoint = this.routeState?.points[this.routeState.index];
     if (waypoint && this.routeBlocked(waypoint, obstacles)) delete this.routeState;
-    const arrived = moveFieldShip(
-      this,
-      destination,
-      DRONE_CRUISE,
-      Math.max(0, Math.min(dt, 0.25)),
-      obstacles,
-      40
-    );
-    if (arrived) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
+    this.retryAfterSeconds = Math.max(0, this.retryAfterSeconds - Math.max(0, dt));
+    if (this.retryAfterSeconds === 0) {
+      const arrived = moveFieldShip(
+        this,
+        destination,
+        DRONE_CRUISE,
+        Math.max(0, Math.min(dt, 0.25)),
+        obstacles,
+        40,
+        'patrol'
+      );
+      if (arrived) this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
+      else if (!this.routeState) {
+        // Do not perform a full route search every animation frame when the
+        // target is obstructed or the field currently has no safe corridor.
+        this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;
+        this.retryAfterSeconds = 1.5;
+      }
+    }
 
     const active = new Set(
       contacts.map((contact) => JSON.stringify([contact.shipId, contact.asteroidId]))
