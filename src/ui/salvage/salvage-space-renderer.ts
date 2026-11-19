@@ -5,6 +5,7 @@ import { drawPlayerSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
 import { drawSalvageDebris3d } from './salvage-debris-mesh';
 import { drawSalvageSection3d } from './salvage-section-mesh';
+import { drawCombatWreck3d } from './combat-wreck-mesh';
 import { DistressDamageParticles } from './distress-damage-particles';
 import { drawDistressRammingShield } from './distress-ramming-shield-effect';
 import type {
@@ -273,6 +274,13 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
         this.context.fillStyle = '#6f858a';
         this.context.fillRect(-radius * 0.8, -radius * 0.24, radius * 1.6, radius * 0.48);
       }
+    } else if (wreck.combatWreckVariant) {
+      drawCombatWreck3d(
+        this.context,
+        wreck.combatWreckVariant,
+        radius,
+        wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation }
+      );
     } else if (wreck.sectionVariant) {
       drawSalvageSection3d(
         this.context,
