@@ -13,7 +13,10 @@ const core = read('src/systems/combat/strategic-combat-service.ts');
 assert(!lobby.includes('DUEL_ENCOUNTERS'));
 assert(!lobby.includes('attachAnalysisControls'));
 assert(!lobby.includes('Vorgefertigtes Testgefecht'));
-assert(lobby.includes('createStrategicCombatService('), 'existing free 1vs1 still launches native combat');
+assert(
+  lobby.includes('createStrategicCombatService('),
+  'existing free 1vs1 still launches native combat'
+);
 assert(lobby.includes('createDuelArena('), 'free 1vs1 retains maps and procedural seed');
 assert(tabs.includes('createDuelLobby(') && tabs.includes('createFleetTestLobby('));
 assert(bootstrap.includes('createCombatTestTabs('));
