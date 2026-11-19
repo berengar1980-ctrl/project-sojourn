@@ -8,7 +8,7 @@ import {
 import { createCharacterEditor } from '../ui/start/character-editor';
 import { createCampaignLoadingScreen } from '../ui/start/campaign-loading';
 import { withPlayerShipName, type PlayerProfile } from '../core/player-profile';
-import { createDuelLobby } from '../ui/start/duel-lobby';
+import { createCombatTestTabs } from '../ui/start/combat-test-tabs';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNavigationService } from '../systems/navigation';
@@ -154,7 +154,7 @@ function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {
         () => navigate('campaign')
       );
     } else if (action === 'pvp') {
-      current = createDuelLobby(root, () => {
+      current = createCombatTestTabs(root, () => {
         current?.destroy();
         showMainMenu(root, selection);
       });

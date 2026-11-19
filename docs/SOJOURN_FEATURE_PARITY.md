@@ -1492,3 +1492,5 @@ Projektile und Treffer verwenden dieselben PvP-FX-Primitiven auch in der
 Mining-Szene. Tatsächliche NPC-Abbauzyklen erzeugen maximal einen sichtbaren
 Sammelbrocken, der vom bestehenden Spieler-Traktorrenderer aufgenommen wird;
 die wirtschaftliche Erzbuchung findet weiterhin im NPC-Mining-Service statt.
+Der neue FleetCombat-Test-Tab ändert keine historischen Feature-IDs und keine
+Kampagnenlogik; feste PvP-Testpresets entfallen, freie Duelle bleiben erhalten.

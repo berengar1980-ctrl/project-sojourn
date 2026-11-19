@@ -11,8 +11,6 @@ import { createSettingsMenu } from '../settings/settings-menu';
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
-import { DUEL_ENCOUNTERS, resolveDuelPreset } from './duel-presets';
-import { analyzeDuelPreset, formatPresetAnalysis } from './duel-preset-analysis';
 import {
   createDuelArena,
   DUEL_MAPS,
@@ -182,47 +180,6 @@ function playerCard(
   return card;
 }
 
-function attachEncounterSelector(
-  select: HTMLSelectElement,
-  ships: readonly ShipDefinition[],
-  drafts: [DuelDraft, DuelDraft],
-  onSelected: (id: string) => void
-): void {
-  select.addEventListener('change', () => {
-    const selectedEncounter = select.value;
-    const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
-    if (scenario) {
-      const configured = resolveDuelPreset(scenario, ships);
-      configured.forEach((entry, index) => {
-        drafts[index]!.shipId = entry.shipId;
-        drafts[index]!.weapons = [...entry.weapons];
-        drafts[index]!.mines = [];
-        Object.assign(drafts[index]!, {
-          reactorId: 'reactor1',
-          engineId: 'engine1',
-          shieldId: 'shield1',
-          hullId: 'hull1',
-          sensorId: 'sensor1',
-          tractorId: 'tractor1',
-          miningId: '',
-          salvageId: '',
-          cargoId: '',
-          armorId: '',
-        });
-        // Curated encounters need a reactor capable of their intended weapon loadout.
-        // Free duels still allow deliberate oversubscription.
-        const activeLoadout = duelInstalledComponents(drafts[index]!);
-        const combatDraw = calculateShipModeEnergy(activeLoadout).combat;
-        const reactors = SHIP_COMPONENT_CATALOG.reactor ?? [];
-        const reactor = reactors.find((part) => (part.output ?? 0) >= combatDraw);
-        drafts[index]!.reactorId = reactor?.id ?? 'reactor6';
-        drafts[index]!.crewId = crewDefinitions[entry.crewIndex % crewDefinitions.length]!.id;
-      });
-    }
-    onSelected(selectedEncounter);
-  });
-}
-
 function createDuelMapSelector(): { mapLabel: HTMLLabelElement; mapSelect: HTMLSelectElement } {
   const mapLabel = document.createElement('label');
   mapLabel.textContent = 'Kampfkarte';
@@ -237,79 +194,6 @@ function createDuelMapSelector(): { mapLabel: HTMLLabelElement; mapSelect: HTMLS
   // A change of battlefield must never change ship durability. All five maps
   // use the exact same loadout, start shields, hull and combat damage rules.
   return { mapLabel, mapSelect };
-}
-
-function populateEncounterOptions(encounterSelect: HTMLSelectElement): void {
-  const manual = document.createElement('option');
-  manual.value = '';
-  manual.textContent = 'Freies Duell · eigene Konfiguration';
-  encounterSelect.append(manual);
-  for (const encounter of DUEL_ENCOUNTERS) {
-    const option = document.createElement('option');
-    option.value = encounter.id;
-    option.textContent = encounter.title + ' — ' + encounter.purpose;
-    encounterSelect.append(option);
-  }
-}
-
-function attachAnalysisControls(
-  actions: HTMLElement,
-  encounterSelect: HTMLSelectElement,
-  mapSelect: HTMLSelectElement
-): void {
-  const seedInput = document.createElement('input');
-  seedInput.type = 'number';
-  seedInput.placeholder = 'Seed (optional)';
-  seedInput.title = 'Leer = fester Preset-Seed';
-  const run = document.createElement('button');
-  run.textContent = 'Analyse exportieren';
-  const all = document.createElement('button');
-  all.textContent = 'Alle 9 analysieren';
-  const status = document.createElement('span');
-  actions.append(seedInput, run, all, status);
-  const execute = async (batch: boolean): Promise<void> => {
-    if (!batch && !encounterSelect.value) {
-      status.textContent = 'Bitte ein Testgefecht wählen.';
-      return;
-    }
-    run.disabled = true;
-    all.disabled = true;
-    const ids = batch ? DUEL_ENCOUNTERS.map((entry) => entry.id) : [encounterSelect.value];
-    const reports = [];
-    try {
-      for (const [index, id] of ids.entries()) {
-        status.textContent = 'Analysiere ' + (index + 1) + '/' + ids.length + ': ' + id;
-        await new Promise<void>((resolve) => setTimeout(resolve, 0));
-        const manualSeed = seedInput.value.trim();
-        reports.push(
-          analyzeDuelPreset(
-            id,
-            mapSelect.value as DuelMapKind,
-            !batch && manualSeed ? Number(manualSeed) : undefined
-          )
-        );
-      }
-      const text = formatPresetAnalysis(reports);
-      const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'harrowdrift-duel-analysis-' + (batch ? 'all' : ids[0]) + '.txt';
-      link.click();
-      URL.revokeObjectURL(url);
-      status.textContent = 'Analyse abgeschlossen: ' + ids.length + ' Duelle.';
-    } catch (error) {
-      status.textContent = error instanceof Error ? error.message : 'Analyse fehlgeschlagen';
-    } finally {
-      run.disabled = false;
-      all.disabled = false;
-    }
-  };
-  run.addEventListener('click', () => {
-    void execute(false);
-  });
-  all.addEventListener('click', () => {
-    void execute(true);
-  });
 }
 
 function logSlowDuelFrame(
@@ -363,13 +247,7 @@ function mountDuelSettings(onBack: () => void): () => void {
 export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts = initialDuelDrafts(ships);
-  let selectedEncounter = '';
   const { mapLabel, mapSelect } = createDuelMapSelector();
-  const encounterLabel = document.createElement('label');
-  encounterLabel.textContent = 'Vorgefertigtes Testgefecht';
-  const encounterSelect = document.createElement('select');
-  populateEncounterOptions(encounterSelect);
-  encounterLabel.append(encounterSelect);
   const shell = document.createElement('section');
   shell.className = 'harrow-duel';
   const title = document.createElement('h1');
@@ -387,12 +265,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
   const fight = document.createElement('button');
   fight.textContent = 'Duell starten';
   actions.append(back, fight);
-  attachAnalysisControls(actions, encounterSelect, mapSelect);
-  attachEncounterSelector(encounterSelect, ships, drafts, (id) => {
-    selectedEncounter = id;
-    render();
-  });
-  shell.append(title, description, encounterLabel, mapLabel, actions, cards);
+  shell.append(title, description, mapLabel, actions, cards);
   root.replaceChildren(shell);
   const destroySettings = mountDuelSettings(onBack);
 
@@ -410,10 +283,9 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     activePanel?.destroy();
     const generation = duelGeneration;
     const setups = duelSetups(drafts, ships);
-    const scenario = DUEL_ENCOUNTERS.find((item) => item.id === selectedEncounter);
     // Preserve the same prepared combatants on every PvP map: in particular,
     // never silently replace the working asteroid map's shield defaults.
-    const duelSeed = scenario?.seed ?? Math.floor(Math.random() * 0x7fffffff);
+    const duelSeed = Math.floor(Math.random() * 0x7fffffff);
     const combat = createStrategicCombatService(
       setups[0]!,
       setups[1]!,
@@ -423,7 +295,6 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
     activePanel = createStrategicCombatPanel({
       root,
       combat,
-      ...(scenario ? { encounterName: scenario.title } : {}),
       onReturn: () => {
         duelGeneration += 1;
         cancelAnimationFrame(frame);
@@ -441,12 +312,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       combat.tick(dt);
       const renderStart = performance.now();
       activePanel.update();
-      logSlowDuelFrame(
-        simulationStart,
-        renderStart,
-        scenario?.id ?? 'custom',
-        combat.getSnapshot().elapsedSeconds
-      );
+      logSlowDuelFrame(simulationStart, renderStart, 'custom', combat.getSnapshot().elapsedSeconds);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
