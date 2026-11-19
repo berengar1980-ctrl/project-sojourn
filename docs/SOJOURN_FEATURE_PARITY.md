@@ -1492,17 +1492,6 @@ Projektile und Treffer verwenden dieselben PvP-FX-Primitiven auch in der
 Mining-Szene. Tatsächliche NPC-Abbauzyklen erzeugen maximal einen sichtbaren
 Sammelbrocken, der vom bestehenden Spieler-Traktorrenderer aufgenommen wird;
 die wirtschaftliche Erzbuchung findet weiterhin im NPC-Mining-Service statt.
+Der neue FleetCombat-Test-Tab ändert keine historischen Feature-IDs und keine
+Kampagnenlogik; feste PvP-Testpresets entfallen, freie Duelle bleiben erhalten.
 
-
-## Review (2026-11-19): FleetCombat-Testlabor
-
-Keine Änderungen an historischen Feature-IDs oder Statuswerten.
-
-Die neun festen PvP-Presets sowie ihre Seeds und Analyse-UI entfallen.
-Das freie 1vs1 nutzt weiterhin den unveränderten StrategicCombatService,
-den bisherigen Renderer und alle fünf Kampfarenen mit zufälligen Seeds.
-Der FleetCombat-Tab zeigt nur eine neue Testkonfiguration mit zwei Fraktionen,
-1 bis 10 Schiffen je Fraktion, zufälligen Mk-I-Waffen und Mk-I-Minen sowie
-Mk-IV-Reaktoren. Der Mehrschiffkampf selbst ist noch nicht implementiert.
-Rammen, Asteroidenwurf und Verstärkungen sind nur für die spätere Umsetzung
-vorgemerkt. Es gibt keine Auswirkungen auf Karriere-Saves und NPC-Wirtschaft.
