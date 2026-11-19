@@ -52,7 +52,8 @@ function movingShipNavigationTest() {
   for (let tick = 0; tick < 100; tick += 1) {
     drone.tick(0.08, asteroids, [], [obstacle]);
     assert.ok(
-      Math.hypot(drone.position.x - obstacle.position.x, drone.position.y - obstacle.position.y) >= 75,
+      Math.hypot(drone.position.x - obstacle.position.x, drone.position.y - obstacle.position.y) >=
+        75,
       'Drone must not enter the passing ship collider'
     );
   }
