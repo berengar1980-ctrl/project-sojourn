@@ -128,6 +128,33 @@ export function tickFieldPirates(
   }
 }
 
+function securityDroneObstacleShips(
+  context: ControllerRuntimeContext,
+  runtime: AsteroidFieldRuntime,
+  playerPosition: { readonly x: number; readonly y: number } | null
+) {
+  const ships = [
+    ...runtime.miners.ships.map((ship) => ({
+      id: ship.npcId,
+      position: ship.position,
+      radius: 35,
+    })),
+    ...(runtime.pirates?.snapshot(context.economy.sectorNpcs.npcs) ?? []).map((ship) => ({
+      id: ship.npcId,
+      position: ship.position,
+      radius: 35,
+    })),
+  ];
+  if (playerPosition) {
+    ships.push({
+      id: 'player',
+      position: playerPosition,
+      radius: Math.max(18, context.state.activeShip.nominalLengthMeters * 0.35),
+    });
+  }
+  return ships;
+}
+
 export function tickFieldSecurity(
   context: ControllerRuntimeContext,
   seconds: number,
@@ -166,27 +193,7 @@ export function tickFieldSecurity(
     }
   }
 
-  const nearbyShips = [
-    ...runtime.miners.ships.map((ship) => ({
-      id: ship.npcId,
-      position: ship.position,
-      radius: 35,
-    })),
-    ...(runtime.pirates?.snapshot(economy.sectorNpcs.npcs) ?? []).map((ship) => ({
-      id: ship.npcId,
-      position: ship.position,
-      radius: 35,
-    })),
-    ...(active
-      ? [
-          {
-            id: 'player',
-            position: active.instance.ship.position,
-            radius: Math.max(18, context.state.activeShip.nominalLengthMeters * 0.35),
-          },
-        ]
-      : []),
-  ];
+  const nearbyShips = securityDroneObstacleShips(context, runtime, active?.instance.ship.position ?? null);
   drone.tick(seconds, runtime.instance.asteroids, contacts, nearbyShips);
   for (const contact of contacts) {
     if (!drone.detect(contact.position, runtime.instance.asteroids)) continue;
