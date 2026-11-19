@@ -1,4 +1,7 @@
 import type { LocalAsteroid } from '../core/local-space-types';
+import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
+import type { StrategicCombatBystander } from '../systems/combat/strategic-combat-bystander-types';
+import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
 import type { SalvageField } from '../core/salvage-types';
 import type { WorldPoint } from '../core/world-types';
 import type { FieldRouteObstacle } from '../systems/navigation/field-ship-routing';
@@ -76,5 +79,31 @@ export function salvageDroneShipObstacles(
       radius: ship.radius,
     })),
     { id: 'player', position: playerPosition, radius: playerRadius },
+  ];
+}
+
+/** Keep all non-fighting local ships solid in the common PvP collision solver. */
+export function salvageDroneBystanders(
+  combat: StrategicCombatSnapshot,
+  ships: NpcLocalSalvageService['ships'],
+  drone: AsteroidSecurityDrone,
+  locationId: string
+): readonly StrategicCombatBystander[] {
+  const excluded = new Set([combat.attacker.id, combat.defender.id]);
+  return [
+    ...ships
+      .filter((ship) => !excluded.has(ship.npcId))
+      .map((ship) => ({
+        id: ship.npcId,
+        shipId: ship.shipId,
+        position: { ...ship.position },
+        headingRadians: ship.headingRadians,
+      })),
+    {
+      id: 'security-drone:' + locationId,
+      shipId: '24m-security-drone',
+      position: drone.snapshot().position,
+      headingRadians: drone.headingRadians,
+    },
   ];
 }
