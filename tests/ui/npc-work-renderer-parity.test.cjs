@@ -22,6 +22,7 @@ assert(mining.includes('this.drawImpactSparks('));
 assert(mining.includes('this.drawImpactDust('));
 assert(mining.includes('drawMiningChunkVisual(this.context, point, chunk.id)'));
 assert(salvage.includes('drawSalvageWorkEffect('));
+assert(salvage.includes('drawTargetDetailScan('));
 assert(!salvage.includes('drawNpcSalvageTether('));
 assert(salvageEffect.includes('drawSalvageWorkEffect('));
 assert(bridge.includes('activeNpcCombatSnapshots?.()'));
