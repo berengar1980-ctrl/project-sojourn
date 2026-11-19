@@ -5,6 +5,7 @@ import {
   securityPirateApproach,
 } from './game-controller-drone-pirate-response';
 import type { DroneContact } from '../systems/operations/asteroid-security-drone';
+import type { FieldRouteObstacle } from '../systems/navigation/field-ship-routing';
 import type { AsteroidFieldRuntime } from '../systems/operations/asteroid-field-world';
 import { dispatchPatrolToReport } from './game-controller-law-enforcement';
 import { localMiningCombatArena } from './game-controller-combat';
@@ -171,6 +172,25 @@ function reportVisibleDroneContacts(
   }
 }
 
+function moveSecurityDroneAndIntercept(
+  context: ControllerRuntimeContext,
+  runtime: AsteroidFieldRuntime,
+  seconds: number,
+  contacts: readonly DroneContact[],
+  nearbyShips: readonly FieldRouteObstacle[]
+): void {
+  const pirate = detectedSecurityPirate(context, runtime);
+  const drone = runtime.drone;
+  drone.tick(
+    seconds,
+    runtime.instance.asteroids,
+    contacts,
+    nearbyShips,
+    pirate ? securityPirateApproach(drone.position, pirate.position) : undefined
+  );
+  if (pirate) interceptSecurityPirate(context, runtime, pirate);
+}
+
 export function tickFieldSecurity(
   context: ControllerRuntimeContext,
   seconds: number,
@@ -180,8 +200,6 @@ export function tickFieldSecurity(
   const active = scene?.instance === runtime.instance ? scene : null;
   const { economy } = context;
   const locationId = runtime.locationId;
-  const drone = runtime.drone;
-
   const contacts: DroneContact[] = [];
   if (active?.laserActive && active.miningTargetId) {
     const asteroid = runtime.instance.asteroids.find((entry) => entry.id === active.miningTargetId);
@@ -214,15 +232,7 @@ export function tickFieldSecurity(
     runtime,
     active?.instance.ship.position ?? null
   );
-  const pirate = detectedSecurityPirate(context, runtime);
-  drone.tick(
-    seconds,
-    runtime.instance.asteroids,
-    contacts,
-    nearbyShips,
-    pirate ? securityPirateApproach(drone.position, pirate.position) : undefined
-  );
-  if (pirate) interceptSecurityPirate(context, runtime, pirate);
+  moveSecurityDroneAndIntercept(context, runtime, seconds, contacts, nearbyShips);
   reportVisibleDroneContacts(context, runtime, contacts);
 }
 
