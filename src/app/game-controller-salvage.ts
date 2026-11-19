@@ -388,6 +388,15 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
   }
 }
 
+function announceSalvageScene(
+  options: SalvageSceneOptions,
+  runtime: ReturnType<typeof resolveShipRuntimeSetup>
+): void {
+  options.log.write('SALVAGE OPS > ' + options.location.name.toUpperCase());
+  if (!runtime.salvage.available)
+    options.log.write('BERGUNG > KEIN EINSATZFÄHIGES BERGUNGSSYSTEM');
+}
+
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
   const runtime = resolveShipRuntimeSetup(options.ship, options.runtimeOptions);
   const field =
@@ -446,11 +455,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   };
   context.state.panel = createSalvagePanel(context);
 
-  options.log.write('SALVAGE OPS > ' + options.location.name.toUpperCase());
-  if (!runtime.salvage.available) {
-    options.log.write('BERGUNG > KEIN EINSATZFÄHIGES BERGUNGSSYSTEM');
-  }
-
+  announceSalvageScene(options, runtime);
   return {
     getField() {
       return field;
