@@ -34,4 +34,4 @@ assert(pirate.includes('moveFieldShip('));
 assert(!pirate.includes('keepPirateApart('));
 assert(!pirate.includes('pirateRouteDestination('));
 
-console.log('PASS parallel NPC duel PvP FX and real single ore pickup through player tractor renderer');
+console.log('PASS NPC duels and real single ore pickup through player tractor renderer');
