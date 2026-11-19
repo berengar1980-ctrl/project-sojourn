@@ -810,3 +810,24 @@ berechnet und erzeugt keine neue autoritative Zustandsvariable. Auch die
 Darstellungsgröße von 26 Bildschirmpixeln ist rein visuell: **keine
 Speicheränderung**. Position, Patrouillenroute und Konzessionszustand nutzen
 unverändert die bestehenden Drohnen-/Wrack-Checkpoints.
+
+## Drohnen-Weltzustand und Hintergrundbetrieb (2026-11-19)
+
+Besuchte Bergungs-/Wrackkarten verwenden jetzt eine gemeinsame Drohneninstanz
+für geladene Szenen und den Kampagnen-Hintergrundtick. Außerhalb der Karte
+wird deren Wegpunktzustand mit begrenzten Schritten weiterbewegt und über
+`WreckClaimRegistry.rememberDrone` im bestehenden optionalen Checkpoint
+`fields[].drone` gespeichert. Bereits vorhandene Spielstände ohne diese
+Daten werden weiterhin geladen. Nur zuvor besuchte dauerhafte Wrackfelder
+werden beim Wiederherstellen wieder für Hintergrundpatrouillen geladen;
+kurzlebige Ereigniswracks bleiben von der Ereignisverwaltung abhängig.
+
+Die Routenberechnung nutzt für Drohnen eine begrenzte Sichtbarkeitsgraph-Suche
+anstelle der großflächigen fünffachen A*-Rasterabfrage. Ein erfolgloser
+Anflugversuch wird vorübergehend zurückgestellt; dieser rein transiente
+Retry-Timer wird nicht gespeichert. Das Checkpointformat bleibt Version 1.
+
+Rechtliche Meldungen bei erkannten Versuchen unbefugter Bergung gehen über
+`SectorLegalRegistry.reportOffense` und deren vorhandene Idempotenzkennung.
+Die normale Sperre fremder Wrackansprüche bleibt bestehen. Piratenduelle
+benutzen die bestehende strategische Kampfsimulation.
