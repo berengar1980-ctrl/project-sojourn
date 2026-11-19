@@ -312,12 +312,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       combat.tick(dt);
       const renderStart = performance.now();
       activePanel.update();
-      logSlowDuelFrame(
-        simulationStart,
-        renderStart,
-        'custom',
-        combat.getSnapshot().elapsedSeconds
-      );
+      logSlowDuelFrame(simulationStart, renderStart, 'custom', combat.getSnapshot().elapsedSeconds);
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
