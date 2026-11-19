@@ -1,7 +1,9 @@
 import type { SalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import type { MapCamera } from '../map/map-camera';
 import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
-import { fractional } from './salvage-scene-layers';
+function fractional(value: number): number {
+  return value - Math.floor(value);
+}
 
 export function drawPlayerSalvageWorkEffect(
   context: CanvasRenderingContext2D,
