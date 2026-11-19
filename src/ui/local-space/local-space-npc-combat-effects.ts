@@ -1,3 +1,4 @@
+import { getShipDefinition } from '../../systems/ships';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
 import type { MapCamera } from '../map/map-camera';
 import { drawCombatBeamVisual } from '../combat/combat-beam-visual';
@@ -52,7 +53,7 @@ export function drawLocalNpcCombatEffects(
       screen,
       (side) => {
         const ship = duel[side];
-        return camera.scale(ship.nominalLengthMeters) / 2;
+        return camera.scale(getShipDefinition(ship.shipId)?.nominalLengthMeters ?? 60) / 2;
       }
     );
   }
