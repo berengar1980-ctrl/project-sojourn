@@ -1,0 +1,30 @@
+name: Temporary salvage drone format
+on:
+  push:
+    branches:
+      - feat/persistent-salvage-security-drone
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/persistent-salvage-security-drone
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write src/systems/operations/wreck-claim-registry.ts tests/operations/salvage-security-drone.test.cjs
+      - name: Commit formatting if needed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/systems/operations/wreck-claim-registry.ts tests/operations/salvage-security-drone.test.cjs
+          if ! git diff --cached --quiet; then
+            git commit -m "Apply project Prettier formatting to salvage drone"
+            git push origin HEAD:feat/persistent-salvage-security-drone
+          fi
