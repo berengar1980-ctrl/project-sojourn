@@ -158,6 +158,10 @@
     "src/systems/navigation/field-patrol-route.ts": {
       "mode": "derived",
       "reason": "Pure bounded obstacle-visibility path calculation; the resulting patrol waypoint is checkpointed by the drone authority, while geometry is reconstructed from the current field."
+    },
+    "src/systems/operations/security-drone-debris-contact.ts": {
+      "mode": "derived",
+      "reason": "Stateless instantaneous contact resolver over current drone and local asteroid state; no independent checkpoint authority."
     }
   }
 }
