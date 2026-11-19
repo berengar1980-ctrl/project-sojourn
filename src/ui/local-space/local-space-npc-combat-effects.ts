@@ -106,7 +106,8 @@ export function drawLocalNpcCombatEffects(
       }
     );
   }
-  for (const key of damageParticles.keys()) if (!active.has(key)) damageParticles.delete(key);
+  for (const key of damageParticles.keys())
+    if (!active.has(key)) damageParticles.delete(key);
   for (const key of destructionStarts.keys())
     if (!active.has(key)) destructionStarts.delete(key);
 }
