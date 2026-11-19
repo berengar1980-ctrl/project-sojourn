@@ -44,5 +44,23 @@ function obstructionTest() {
   assert.deepEqual(drone.tick(0, asteroids, blocked), [], 'Asteroid shields the line of sight');
   assert.equal(drone.tick(0, [], blocked).length, 1, 'Clear sensor ray detects violation');
 }
+function movingShipNavigationTest() {
+  const asteroids = [rock('a', 100, 100), rock('b', 650, 100)];
+  const drone = new AsteroidSecurityDrone(1000, 500, asteroids);
+  const initial = drone.snapshot().position;
+  const obstacle = { id: 'passing-freighter', position: { x: 410, y: 100 }, radius: 75 };
+  for (let tick = 0; tick < 100; tick += 1) {
+    drone.tick(0.08, asteroids, [], [obstacle]);
+    assert.ok(
+      Math.hypot(drone.position.x - obstacle.position.x, drone.position.y - obstacle.position.y) >= 75,
+      'Drone must not enter the passing ship collider'
+    );
+  }
+  assert.notDeepEqual(drone.snapshot().position, initial, 'Drone patrol must continue moving');
+  const saved = drone.exportState();
+  const restored = AsteroidSecurityDrone.fromCheckpoint(1000, 500, asteroids, saved);
+  assert.deepEqual(restored.exportState(), saved, 'Patrol route and position survive a checkpoint');
+}
 securityDroneTest();
 obstructionTest();
+movingShipNavigationTest();
