@@ -92,8 +92,8 @@ assert(
   'NPC miners must visibly scan their asteroid before starting extraction'
 );
 assert(
-  renderer.includes('drawNpcMiningBeam'),
-  'working NPC miners must visibly fire a mining beam at their target asteroid'
+  renderer.includes('this.miningEffects.drawNpcMining('),
+  'NPC miners must use the same complete mining effect renderer as the player'
 );
 assert(
   renderer.includes('drawFieldNpcThrusters(') &&
