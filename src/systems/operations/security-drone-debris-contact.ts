@@ -14,7 +14,7 @@ export function resolveSecurityDroneDebrisContacts(
 ): number {
   let contacts = 0;
   for (const rock of asteroids) {
-    if (rock.routeBlocking) continue;
+    if (rock.kind !== 'debris' || rock.routeBlocking || !rock.physics) continue;
     const radius = DRONE_SHIELD_RADIUS_METERS + (rock.collisionRadius ?? rock.radius);
     const dx = rock.position.x - position.x;
     const dy = rock.position.y - position.y;
