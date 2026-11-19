@@ -62,7 +62,11 @@ export interface LocalNpcShipView {
   readonly phase: 'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
   readonly targetAsteroidId: string | null;
   readonly laserActive: boolean;
-  readonly oreCollection?: { readonly resourceId: string; readonly remainingSeconds: number; readonly durationSeconds: number };
+  readonly oreCollection?: {
+    readonly resourceId: string;
+    readonly remainingSeconds: number;
+    readonly durationSeconds: number;
+  };
   readonly scanProgress?: number;
   readonly nominalLengthMeters: number;
   readonly spriteUrl: string;
