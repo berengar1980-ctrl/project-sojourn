@@ -1,0 +1,30 @@
+name: Temporary security drone contact format
+on:
+  push:
+    branches:
+      - fix/drone-debris-shield-mk3-impact-lifetime
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/drone-debris-shield-mk3-impact-lifetime
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write src/app/game-controller-security-drone-loadout.ts src/systems/operations/security-drone-debris-contact.ts src/ui/combat/strategic-combat-renderer.ts src/ui/local-space/local-security-drone-visual.ts tests/combat/local-npc-impact-expiry.test.cjs tests/operations/security-drone-debris-shield-mk3.test.cjs
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/game-controller-security-drone-loadout.ts src/systems/operations/security-drone-debris-contact.ts src/ui/combat/strategic-combat-renderer.ts src/ui/local-space/local-security-drone-visual.ts tests/combat/local-npc-impact-expiry.test.cjs tests/operations/security-drone-debris-shield-mk3.test.cjs
+          if ! git diff --cached --quiet; then
+            git commit -m "Format drone shield, debris and impact fixes"
+            git push origin HEAD:fix/drone-debris-shield-mk3-impact-lifetime
+          fi
