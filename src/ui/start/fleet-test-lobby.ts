@@ -11,6 +11,12 @@ import { createFleetCombatService } from '../../systems/combat/fleet-combat-serv
 import { createFleetCombatTestPanel } from './fleet-combat-test-panel';
 import { createFleetDronePrototype } from './fleet-drone-prototype';
 import { getShipDefinition } from '../../systems/ships';
+import { generateMiningSpace } from '../../systems/local-space/local-space-generator';
+import { miningFieldCombatArena } from '../../systems/combat/field-combat-arena';
+import { withClearCombatSpawns } from '../../systems/combat/combat-field-spawns';
+import { createSectorNpcEconomyStates } from '../../data/economy/sector-npc-economy';
+import { createFleetMiningTestSetup } from './fleet-mining-test-setup';
+import type { FleetCombatParticipant } from '../../systems/combat/fleet-combat-service';
 
 export type FleetTestRole = 'player' | 'miner' | 'drone' | 'pirate-a' | 'pirate-b';
 
@@ -125,7 +131,21 @@ export function createFleetTestScenario(
       });
     }
   };
-  addShips('miner', 'civilian', normalized.miners, miners);
+  const minerTemplates = createSectorNpcEconomyStates().filter((npc) => npc.job === 'miner');
+  for (let index = 0; index < normalized.miners; index += 1) {
+    const template = minerTemplates[index % minerTemplates.length];
+    const ship = getShipDefinition(template?.shipId ?? '') ?? miners[index % miners.length];
+    if (!ship) throw new Error('Campaign miner ship definition missing');
+    roster.push({
+      id: 'miner-' + (index + 1),
+      team: 'civilian',
+      role: 'miner',
+      name: ship.name,
+      draft: null,
+      spawnAtSeconds: 0,
+      delaySeconds: 30,
+    });
+  }
   for (let index = 0; index < normalized.drones; index += 1) {
     roster.push({
       id: 'drone-' + (index + 1),
@@ -172,7 +192,15 @@ function countSelect(label: string, initial: number) {
 
 function createFleetPrototype(config: FleetTestConfiguration) {
   const arenaSeed = Math.floor(Math.random() * 0x7fffffff);
-  const arena = createDuelArena(config.map, arenaSeed);
+  const minerEntries = config.ships.filter((entry) => entry.role === 'miner');
+  const density = config.map === 'scattered' ? 'sparse' : 'standard';
+  const field = minerEntries.length > 0
+    ? generateMiningSpace('duel', arenaSeed, undefined, density)
+    : null;
+  const arena = field
+    ? withClearCombatSpawns(miningFieldCombatArena(field, { x: 0, y: 0 }))
+    : createDuelArena(config.map, arenaSeed);
+  const miningSetup = field ? createFleetMiningTestSetup(minerEntries, field) : null;
   const firstPirateA = config.ships.find((entry) => entry.role === 'pirate-a');
   const firstPirate = config.ships.find(
     (entry) => entry.role === 'pirate-a' || entry.role === 'pirate-b'
@@ -181,14 +209,15 @@ function createFleetPrototype(config: FleetTestConfiguration) {
   const pirateIndices = config.ships.flatMap((ship, position) =>
     ship.role === 'pirate-a' || ship.role === 'pirate-b' ? [position] : []
   );
-  const participants = config.ships.map((entry, index) => {
+  const participants = config.ships.flatMap((entry, index): FleetCombatParticipant[] => {
+    if (entry.role === 'miner') return [];
     if (entry.role === 'drone') {
       const pirateIndex = pirateIndices[(index - 1) % pirateIndices.length] ?? 1;
       const lane = 0.15 + (0.7 * (pirateIndex - 0.5)) / shipCount;
-      return createFleetDronePrototype(entry, index, arena, {
+      return [createFleetDronePrototype(entry, index, arena, {
         x: arena.width * 0.69 - 20 * (index % 3),
         y: arena.height * lane,
-      });
+      })];
     }
     if (!entry.draft) throw new Error('Missing fleet ship loadout');
     const ship = getShipDefinition(entry.draft.shipId);
@@ -197,7 +226,7 @@ function createFleetPrototype(config: FleetTestConfiguration) {
     const isPlayer = entry.role === 'player';
     const lane = isPlayer ? 0.5 : 0.15 + (0.7 * (index - 0.5)) / shipCount;
     const rival = entry.role === 'pirate-b' ? firstPirateA?.id : null;
-    return {
+    return [{
       setup: { ...setup, id: entry.id, name: entry.name },
       factionId: entry.team,
       position: {
@@ -210,9 +239,13 @@ function createFleetPrototype(config: FleetTestConfiguration) {
       },
       targetId: isPlayer ? (firstPirate?.id ?? null) : (rival ?? 'player'),
       spawnAtSeconds: entry.spawnAtSeconds,
-    };
+    }];
   });
-  return createFleetCombatService(participants, arena);
+  return createFleetCombatService(
+    [...participants, ...(miningSetup?.participants ?? [])],
+    arena,
+    miningSetup?.world
+  );
 }
 
 function renderFleetRoster(
@@ -237,7 +270,7 @@ function renderFleetRoster(
     for (const ship of entries) {
       const line = document.createElement('p');
       if (!ship.draft) {
-        line.textContent = ship.id + ' · ' + ship.name + ' · Kampagnen-KI vorgesehen';
+        line.textContent = ship.id + ' · ' + ship.name + (ship.role === 'miner' ? ' · Kampagnen-Bergbau aktiv' : ' · Kampagnen-Drohne aktiv');
       } else {
         const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
         const equipped = ship.draft.weapons
@@ -295,6 +328,7 @@ function createFleetLobbyElements(onBack: () => void) {
   description.textContent =
     'Szenario einer gemeinsamen lokalen Karte: Der Spieler ist immer dabei. Zivile Miner, Sicherheitsdrohnen und zwei Piratenfraktionen werden unabhängig konfiguriert.';
   const map = labeledSelect('Kampfkarte', DUEL_MAPS);
+  map.control.value = 'scattered';
   const player = labeledSelect(
     'Spielerschiff (immer vorhanden)',
     getAllShipDefinitions().map((ship) => ({ id: ship.id, title: ship.name }))
@@ -316,7 +350,7 @@ function createFleetLobbyElements(onBack: () => void) {
   const capabilities = document.createElement('p');
   capabilities.className = 'harrow-fleet__capabilities';
   capabilities.textContent =
-    'Testaufbau · Spieler, Piraten und Sicherheitsdrohnen können gemeinsam kämpfen. Die Drohnen verwenden ihre Kampagnen-Sensorik und echte Abfangnavigation. Miner, vollständige Kampagnen-KI und Waffenphysik folgen.';
+    'Testaufbau · NPC-Miner verwenden jetzt echte Kampagnen-Bergbau-, Scan-, Fracht- und Feldnavigation. Die Drohnen nutzen ihre Kampagnen-Sensorik. Mehrschiff-Waffenphysik bleibt vorläufig vereinfacht.';
   const roster = document.createElement('div');
   roster.className = 'harrow-fleet__roster';
   const actions = document.createElement('div');
@@ -329,7 +363,7 @@ function createFleetLobbyElements(onBack: () => void) {
   start.textContent = 'FleetCombat-Prototyp starten';
   start.disabled = true;
   start.title =
-    'Gemeinsame Karte mit Spieler, Piraten und optionalen Sicherheitsdrohnen; Miner folgen';
+    'Gemeinsame Karte mit Kampagnen-Minern, Piraten und Sicherheitsdrohnen';
   const back = document.createElement('button');
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';
@@ -347,14 +381,18 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   let config: FleetTestConfiguration;
   let activePanel: ReturnType<typeof createFleetCombatTestPanel> | null = null;
   const canLaunch = (): boolean =>
-    config.counts.miners === 0 &&
-    (config.counts.piratesA + config.counts.piratesB >= 2 ||
+    config.ships.length >= 3 &&
+    (config.counts.miners === 0 ||
+      config.map === 'scattered' ||
+      config.map === 'asteroid_field') &&
+    (config.counts.miners > 0 ||
+      config.counts.piratesA + config.counts.piratesB >= 2 ||
       (config.counts.drones > 0 && config.counts.piratesA + config.counts.piratesB >= 1));
   const updateLaunch = (): void => {
     start.disabled = !canLaunch();
     start.title = canLaunch()
-      ? 'FleetCombat-Test mit Kampagnen-Drohnenbewegung; noch ohne volle Waffenphysik'
-      : '0 Miner und mindestens 2 Piraten oder 1 Pirat mit mindestens 1 Drohne wählen';
+      ? 'FleetCombat-Test mit echtem Kampagnen-Bergbau und Drohnenbewegung'
+      : 'Mindestens drei Schiffe wählen; Miner arbeiten auf Asteroidenkarten';
   };
   start.addEventListener('click', () => {
     if (!canLaunch()) return;
