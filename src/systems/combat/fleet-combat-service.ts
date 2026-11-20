@@ -266,6 +266,8 @@ function initializeFleetParticipants(
     if (entry.liveCombatant) {
       if (entry.liveCombatant.setup.id !== id)
         throw new Error('FleetCombat live combatant ID mismatch: ' + id);
+      if (entry.liveCombatant.setup !== entry.setup)
+        throw new Error('FleetCombat live combatant loadout authority mismatch: ' + id);
       if (
         !Number.isFinite(entry.liveCombatant.position.x) ||
         !Number.isFinite(entry.liveCombatant.position.y) ||
