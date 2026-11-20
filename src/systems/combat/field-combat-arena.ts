@@ -51,6 +51,33 @@ export function miningFieldCombatArena(
   };
 }
 
+/** Keep the active combat arena in sync with newly registered career wrecks.
+ * Use the same body/radius factory as initial scene creation; no replacement
+ * collision engine and no duplicate bodies on repeated settlement ticks.
+ */
+export function appendCombatWrecksToArena(
+  arena: StrategicCombatArenaOptions,
+  wrecks: readonly SalvageWreck[]
+): void {
+  if (!arena.asteroids || !arena.obstacles) {
+    throw new Error('FleetCombat career arena requires asteroid and obstacle collections');
+  }
+  const bodies = arena.asteroids as CombatVisualAsteroid[];
+  const obstacles = arena.obstacles as { id: string; position: WorldPoint; radius: number }[];
+  const existing = new Set([...bodies.map((body) => body.id), ...obstacles.map((body) => body.id)]);
+  for (const wreck of wrecks) {
+    if (existing.has(wreck.id)) continue;
+    existing.add(wreck.id);
+    const body = wreckCombatBody(wreck);
+    bodies.push(body);
+    obstacles.push({
+      id: wreck.id,
+      position: body.position,
+      radius: body.collisionRadius ?? body.radius,
+    });
+  }
+}
+
 function wreckCombatBody(wreck: SalvageWreck): CombatVisualAsteroid {
   const kind = wreck.sectionVariant || wreck.combatWreckVariant ? 'resource' : 'debris';
   const variant = {
