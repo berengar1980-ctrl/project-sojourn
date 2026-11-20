@@ -16,6 +16,7 @@ import type { AsteroidClaimRegistry } from './asteroid-claim-registry';
 export interface AsteroidFieldRuntime {
   readonly locationId: string;
   readonly instance: LocalSpaceInstance;
+  readonly combatWrecks: readonly SalvageWreck[];
   readonly miners: NpcLocalMiningService;
   readonly pirates: LocalPirateTraffic;
   readonly drone: AsteroidSecurityDrone;
@@ -104,7 +105,9 @@ export class AsteroidFieldWorld {
       const instance = generateMiningSpace(location.id, seed, location.minedResourceIds);
       claims.restoreField(location.id, instance.asteroids);
       const saved = checkpoint?.fields[location.id];
+      if (!this.combatWrecksByLocation.has(location.id)) this.combatWrecksByLocation.set(location.id, []);
       this.fields.set(location.id, {
+        combatWrecks: this.combatWrecksByLocation.get(location.id)!,
         locationId: location.id,
         instance,
         miners: miners(location, instance, saved?.miners),
@@ -163,10 +166,9 @@ export class AsteroidFieldWorld {
   }
 
   reconcileCombatWrecks(locationId: string, wrecks: readonly SalvageWreck[]): void {
-    this.combatWrecksByLocation.set(
-      locationId,
-      wrecks.filter((wreck) => wreck.combatWreckVariant !== undefined)
-    );
+    const recorded = this.combatWrecksByLocation.get(locationId) ?? [];
+    recorded.splice(0, recorded.length, ...wrecks.filter((wreck) => wreck.combatWreckVariant !== undefined));
+    this.combatWrecksByLocation.set(locationId, recorded);
   }
 
   field(locationId: string): AsteroidFieldRuntime | null {
