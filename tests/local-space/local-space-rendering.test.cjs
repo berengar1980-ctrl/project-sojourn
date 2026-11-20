@@ -43,6 +43,10 @@ const operationsHud = fs.readFileSync(
   path.join(root, 'src/ui/local-operations/local-operations-hud.ts'),
   'utf8'
 );
+const scanOverlay = fs.readFileSync(
+  path.join(root, 'src/ui/local-space/local-space-scan-renderer.ts'),
+  'utf8'
+);
 const scanEffects = fs.readFileSync(
   path.join(root, 'src/ui/local-operations/scan-effects.ts'),
   'utf8'
@@ -266,7 +270,7 @@ assert(tractorShared && tractorGreen, 'tractor field must use the shared green p
 assert(operationsHud.includes('VORGANG ABBRECHEN'), 'active mining must provide a cancel action');
 assert(operationsHud.includes('FERNBEREICHSSCAN'), 'local UI must expose long-range scanning');
 assert(
-  renderer.includes('drawLongRangeScan'),
+  renderer.includes('drawLocalLongRangeScan') && scanOverlay.includes('drawWideAreaScan'),
   'long-range scan must have a visible expanding wave'
 );
 assert(
@@ -280,8 +284,8 @@ assert(
   'close-range scan progress must be visible in the local status UI'
 );
 assert(
-  renderer.includes('drawShortRangeScan') &&
-    renderer.includes('drawTargetDetailScan') &&
+  renderer.includes('drawLocalShortRangeScan') &&
+    scanOverlay.includes('drawTargetDetailScan') &&
     scanEffects.includes('const sweepY') &&
     scanEffects.includes('context.clip()'),
   'close-range scan must visibly sweep across the moving target asteroid'
