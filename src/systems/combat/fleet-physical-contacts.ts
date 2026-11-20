@@ -126,7 +126,8 @@ export function firstFleetThrownContact(
   if (a <= 1e-9) return null;
   for (const ship of ships) {
     if (ship.setup.id === sourceId || ship.hullHp <= 0) continue;
-    const radius = rockRadius +
+    const radius =
+      rockRadius +
       Math.max(ship.setup.shieldGeometry?.radiusX ?? 30, ship.setup.shieldGeometry?.radiusY ?? 20);
     const fx = from.x - ship.position.x;
     const fy = from.y - ship.position.y;
@@ -136,11 +137,14 @@ export function firstFleetThrownContact(
     if (discriminant < 0) continue;
     const t = d <= 0 ? 0 : (-b - Math.sqrt(discriminant)) / (2 * a);
     if (t < 0 || t > 1) continue;
-    if (!nearest || t < nearest.t - 1e-9 ||
-        (Math.abs(t - nearest.t) <= 1e-9 &&
-          ship.setup.id.localeCompare(nearest.ship.setup.id) < 0)) {
+    if (
+      !nearest ||
+      t < nearest.t - 1e-9 ||
+      (Math.abs(t - nearest.t) <= 1e-9 && ship.setup.id.localeCompare(nearest.ship.setup.id) < 0)
+    ) {
       nearest = {
-        ship, t,
+        ship,
+        t,
         point: { x: from.x + dx * t, y: from.y + dy * t },
         shieldHit: null,
       };
