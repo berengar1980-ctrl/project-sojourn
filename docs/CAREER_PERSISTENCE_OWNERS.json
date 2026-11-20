@@ -218,6 +218,10 @@
     "src/systems/combat/fleet-career-hostile-contacts.ts": {
       "mode": "derived",
       "reason": "Pure career FleetCombat contact projection using the existing faction hostility predicate, live combat snapshots and currently present native field ships. No mutable target or checkpoint authority."
+    },
+    "src/systems/combat/fleet-career-loot-settlement.ts": {
+      "mode": "transient",
+      "reason": "The shared FleetCombat encounter keeps a per-victim damage-contributor ledger and exactly-once settlement flags in memory, while all awarded cargo and pirate activity changes are made to checkpoint-owned SectorNpcState. Active fleet checkpoint/recovery must preserve contributor ledger and settlement flags before productive activation."
     }
   }
 }
