@@ -1,0 +1,45 @@
+name: FleetCombat branch formatting
+
+on:
+  push:
+    branches:
+      - feature/fleetcombat-scenario-lab
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  format-feature-code:
+    if: github.ref == 'refs/heads/feature/fleetcombat-scenario-lab'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Format new fleet files only
+        run: |
+          npx prettier --write \
+            docs/FLEET_COMBAT_REQUIREMENTS.md \
+            src/systems/combat/combat-engagement-manager.ts \
+            src/systems/combat/fleet-combat-service.ts \
+            src/ui/start/fleet-combat-test-panel.ts \
+            src/ui/start/fleet-test-lobby.ts \
+            tests/combat/fleet-combat-service.test.cjs \
+            tests/combat/fleet-legacy-baseline.test.cjs
+      - name: Commit formatting to feature branch
+        run: |
+          if git diff --quiet; then
+            echo "Fleet files already formatted"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/FLEET_COMBAT_REQUIREMENTS.md src/systems/combat/combat-engagement-manager.ts src/systems/combat/fleet-combat-service.ts src/ui/start/fleet-combat-test-panel.ts src/ui/start/fleet-test-lobby.ts tests/combat/fleet-combat-service.test.cjs tests/combat/fleet-legacy-baseline.test.cjs
+          git commit -m "style(fleet): apply repository Prettier formatting"
+          git push origin HEAD:feature/fleetcombat-scenario-lab
