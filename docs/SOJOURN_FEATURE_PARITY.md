@@ -1629,3 +1629,14 @@ Die bisherigen kompletten Sieg-/Niederlage-Overlays wurden durch eine
 kleine Statusmeldung rechts unten ersetzt. Explosionsdarstellungen bleiben
 mindestens etwa 2,2 Sekunden sichtbar, bevor eine notwendige Rückkehr
 zur Sternkarte ausgeführt wird. Kampfphysik und Schadenswerte bleiben gleich.
+
+## Review-Log (2026-11-20): PvP-Testnavigation während des Duells
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Die separate 1vs1-/FleetCombat-Auswahlleiste wird beim Start des nativen 1vs1-Duells
+ausgeblendet und erst nach dem Zurückkehren in die Duellkonfiguration wieder
+angezeigt. Die PvP-Szene nutzt den vollständig verbleibenden Viewport statt
+eine feste Tab-Höhe von 63 px abzuziehen. Die Berechnung berücksichtigt die
+globale Systemkonsole und verhindert zusätzliche Scrollbereiche auf dem
+Lobby-Container. Kampfphysik, KI, Kampfkamera, Waffen und FleetCombat-Testlogik
+bleiben unverändert.
