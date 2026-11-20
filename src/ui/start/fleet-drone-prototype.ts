@@ -13,7 +13,6 @@ import type { NpcInstalledComponents } from '../../core/npc-types';
 import { getShipDefinition } from '../../systems/ships';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 import { duelCombatant, type DuelDraft } from './duel-combatant-setup';
-import type { FleetTestShip } from './fleet-test-lobby';
 
 function droneFieldAsteroids(arena: StrategicCombatArenaOptions): LocalAsteroid[] {
   return (arena.asteroids ?? []).map((rock) => {
@@ -60,7 +59,7 @@ function campaignDroneDraft(
 
 /** Real campaign NPC-equivalent drone combatant; no fabricated hull or gun. */
 export function createFleetDronePrototype(
-  entry: FleetTestShip,
+  entry: { readonly id: string; readonly name: string; readonly role: string },
   index: number,
   arena: StrategicCombatArenaOptions,
   entryPosition?: { readonly x: number; readonly y: number }
