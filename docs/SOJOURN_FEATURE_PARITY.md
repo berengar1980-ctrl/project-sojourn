@@ -1677,7 +1677,6 @@ Duell bleibt die native Kampfphysik zuständig. Das Drohnensprite ist von
 18 auf 12 Basispixel verkleinert; Schildradius, Sensorweite und Gameplaywerte
 bleiben unverändert.
 
-
 ## Review-Log (2026-11-20): FleetCombat-Feature-Branch, Mehrschiffe und Interceptions
 
 **Keine Statusänderung** der historischen Voidbound-Feature-IDs.
