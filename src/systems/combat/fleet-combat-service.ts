@@ -357,6 +357,21 @@ function createFleetTargeting(
   return { validEnemy, acquire };
 }
 
+function setFleetTarget(
+  shipId: string,
+  targetId: string | null,
+  byId: ReadonlyMap<string, FleetShip>,
+  validEnemy: (ship: FleetShip, target: FleetShip | undefined) => boolean
+): void {
+  const ship = byId.get(shipId);
+  if (!ship) throw new Error('Unknown FleetCombat ship: ' + shipId);
+  if (!ship.active) throw new Error('FleetCombat ship has not arrived: ' + shipId);
+  if (targetId !== null && !validEnemy(ship, byId.get(targetId))) {
+    throw new Error('Invalid FleetCombat target: ' + targetId);
+  }
+  ship.targetId = targetId;
+}
+
 /**
  * First independently simulated N-ship combat kernel.
  * Reuses 1vs1's ship construction, flight/obstacle/contact and layered
@@ -461,13 +476,7 @@ export function createFleetCombatService(
       return view();
     },
     setTarget(shipId, targetId) {
-      const ship = byId.get(shipId);
-      if (!ship) throw new Error('Unknown FleetCombat ship: ' + shipId);
-      if (!ship.active) throw new Error('FleetCombat ship has not arrived: ' + shipId);
-      if (targetId !== null && !validEnemy(ship, byId.get(targetId))) {
-        throw new Error('Invalid FleetCombat target: ' + targetId);
-      }
-      ship.targetId = targetId;
+      setFleetTarget(shipId, targetId, byId, validEnemy);
     },
   };
 }
