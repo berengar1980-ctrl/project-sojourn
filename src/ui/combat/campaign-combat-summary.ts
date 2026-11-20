@@ -42,7 +42,7 @@ export function showCampaignCombatSummary(
     : 'Bergbare Wracks können im Einsatzgebiet geborgen werden.';
   notice.append(heading, details, loot);
   document.body.append(notice);
-  // No confirmation or central overlay: resume the scene immediately.
-  onContinue();
+  // Resume after this frame so scene transitions cannot run inside the combat tick.
+  setTimeout(onContinue, 0);
   setTimeout(() => notice.remove(), 5500);
 }
