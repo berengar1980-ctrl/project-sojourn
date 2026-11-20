@@ -33,7 +33,11 @@ export interface FleetCombatParticipant {
   readonly externalMovement?: (
     dt: number,
     nearby: readonly FleetCombatShipSnapshot[]
-  ) => { readonly position: CombatPoint; readonly headingRadians: number; readonly targetId: string | null };
+  ) => {
+    readonly position: CombatPoint;
+    readonly headingRadians: number;
+    readonly targetId: string | null;
+  };
 }
 
 export interface FleetCombatShipSnapshot {
@@ -334,8 +338,11 @@ export function createFleetCombatService(
     for (const ship of present) {
       if (!ship.targetId || ship.combatant.hullHp <= 0) continue;
       const enemy = byId.get(ship.targetId);
-      if (enemy?.active && enemy.combatant.hullHp > 0 &&
-          isFleetHostile(ship.factionId, enemy.factionId)) {
+      if (
+        enemy?.active &&
+        enemy.combatant.hullHp > 0 &&
+        isFleetHostile(ship.factionId, enemy.factionId)
+      ) {
         engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
       }
     }
