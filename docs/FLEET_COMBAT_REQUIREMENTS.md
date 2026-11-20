@@ -287,3 +287,38 @@ bleibt die aus der Karriereausrüstung abgeleitete Kampf-Doktrin erhalten.
   kampagnenspielbares Mehrschiffgefecht. Die Formatierung der FC-32-Dateien
   erfolgt über den dedizierten FleetCombat-Branch-Workflow; CI prüft den
   formatierten Folgecommit erneut.
+
+## FC-33 – Echte lokale Piraten und Feld-Sicherheitsdrohne (Integrationsgrundlage)
+
+- `createFleetCareerFieldSecurityBridge` verwendet die **vorhandenen**
+  `LocalPirateTraffic`- und `AsteroidSecurityDrone`-Instanzen aus
+  `AsteroidFieldWorld.field(locationId)`; keine neue PvP-Route,
+  Sensorlogik oder NPC-Hüllenfabrik.
+- Aktive lokale Piraten beider Karrierefraktionen erhalten die Ausrüstung
+  aus `createFleetCareerNpcParticipant`. Die bestehende
+  `LocalPirateTraffic.tick`-KI läuft genau einmal im gemeinsamen Feld-Tick.
+  Die vorhandene Intercept-Entscheidung meldet ihr Ziel an FleetCombat;
+  während des eigentlichen Kampfmanövers wird `moveCombatant` des
+  strategischen Kampfsystems verwendet und die Pose zurück in die
+  Originalinstanz synchronisiert.
+- Für die echte Karriere-Drohne gilt die vorhandene Sensorik samt
+  Asteroiden-Verdeckung, Patrouillen- und Hindernisnavigation über
+  `AsteroidSecurityDrone` und `createFleetDroneInterceptor`. Die
+  Drohne verfolgt jeden erkannten Piraten, auch wenn er bereits kämpft.
+  Eine bereits anderweitig übergebene Drohne wird nicht dupliziert.
+- Schäden an Piraten/Drohne werden zum existierenden `SectorNpcState`
+  synchronisiert; eine zerstörte Drohne wird auch im Feld abgeschaltet.
+- Die FC-31-Fabrik führt Miner, lokale Piraten und Drohne in derselben
+  `createFleetCombatService`-Instanz zusammen. Die FC-32-Tick-Lease
+  verhindert, dass parallel der normale Feld-Callback läuft.
+- Regression `fleet-career-field-security-bridge.test.cjs` deckt echte
+  lokale Teilnehmer, Native-Traffic-Tick, Pose und keine doppelte
+  Drohneninstanz ab.
+
+**Status: FOUNDATION, nicht produktiv aktiviert.** Native Piraten nehmen
+derzeit vorhandene zivile Ziele (Miner/Spieler) ins Visier; vollständige
+Piraten-A/B-Feindzielwahl, gemeinsame Beute, Fraktionsdynamik, legale
+Drohnenmeldungen, Nachzügler und kontinuierliche Karriere-Speicherung müssen
+vor produktiver Aktivierung ergänzt werden. Außerdem basiert die
+Fleet-Waffenlaufzeit noch auf vereinfachten Direkt-Treffern, nicht auf der
+vollständigen Kampagnen-Physik. Die alten 1vs1-Module bleiben geschützt.
