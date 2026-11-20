@@ -14,6 +14,10 @@ assert(fleet.includes("role: 'drone'"), 'drones are distinct security entities')
 assert(fleet.includes("id: 'drone-'"), 'drones have stable identities');
 assert(fleet.includes("addShips('pirate-a'"), 'pirate faction A is configurable');
 assert(fleet.includes("addShips('pirate-b'"), 'pirate faction B is configurable');
+assert(
+  fleet.includes('createFleetMiningTestSetup(') && fleet.includes('miningSetup?.world'),
+  'PvP launch must run native campaign miner service through shared FleetCombat tick'
+);
 assert(fleet.includes('Math.min(10'), 'counts are bounded');
 assert(fleet.includes('String(count)'), 'zero units is a valid scenario');
 assert(fleet.includes('start.disabled = true'), 'do not simulate before fleet runtime exists');
