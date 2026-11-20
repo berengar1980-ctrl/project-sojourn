@@ -126,6 +126,8 @@ function advanceFleetMotion(
   }
   for (let i = 0; i < fleet.length; i += 1) {
     for (let j = i + 1; j < fleet.length; j += 1) {
+      // The campaign drone already resolves its own physical ship contacts.
+      if (fleet[i]!.externalMovement || fleet[j]!.externalMovement) continue;
       const a = fleet[i]!.combatant;
       const b = fleet[j]!.combatant;
       if (a.hullHp > 0 && b.hullHp > 0) resolveCombatantCollision(a, b);
