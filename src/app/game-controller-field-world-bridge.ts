@@ -76,7 +76,9 @@ export function beginControllerFieldFleet(
   const fleet = createFleetCombatForCareerField(
     field,
     context.economy.sectorNpcs.npcs,
-    participants
+    participants,
+    { x: 0, y: 0 },
+    (wrecks) => fieldWorldFor(context).registerCombatWrecks(locationId, wrecks)
   );
   owners.acquire(field, fleet);
   return fleet;
