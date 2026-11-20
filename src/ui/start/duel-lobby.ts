@@ -244,7 +244,11 @@ function mountDuelSettings(onBack: () => void): () => void {
   };
 }
 
-export function createDuelLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
+export function createDuelLobby(
+  root: HTMLElement,
+  onBack: () => void,
+  onCombatActiveChange: (active: boolean) => void = () => {}
+): { destroy(): void } {
   const ships = getAllShipDefinitions();
   const drafts = initialDuelDrafts(ships);
   const { mapLabel, mapSelect } = createDuelMapSelector();
@@ -292,6 +296,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       duelSeed,
       createDuelArena(mapSelect.value as DuelMapKind, duelSeed)
     );
+    onCombatActiveChange(true);
     activePanel = createStrategicCombatPanel({
       root,
       combat,
@@ -301,6 +306,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
         activePanel?.destroy();
         activePanel = null;
         root.replaceChildren(shell);
+        onCombatActiveChange(false);
       },
     });
     let previous = performance.now();
@@ -324,6 +330,7 @@ export function createDuelLobby(root: HTMLElement, onBack: () => void): { destro
       duelGeneration += 1;
       cancelAnimationFrame(frame);
       activePanel?.destroy();
+      onCombatActiveChange(false);
       destroySettings();
       shell.remove();
     },
