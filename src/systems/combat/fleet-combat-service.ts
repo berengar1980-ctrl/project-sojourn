@@ -6,14 +6,18 @@ import type {
   StrategicCombatantSetup,
   StrategicCombatantSnapshot,
 } from './strategic-combat-types';
-import { createCombatant, distance, snapshot } from './strategic-combat-geometry';
+import { createCombatant, createRng, distance, hashSeed, snapshot } from './strategic-combat-geometry';
 import {
   moveCombatant,
   resolveCombatantCollision,
   resolveArenaObstacles,
 } from './strategic-combat-movement';
 import { advanceShieldImpacts } from '../shields/shield-service';
-import { resolveShipWeaponHit } from './ship-weapon-service';
+import {
+  createFleetWeaponPhysics,
+  type FleetWeaponBeam,
+  type FleetWeaponProjectile,
+} from './fleet-weapon-physics';
 import { isFleetHostile } from './fleet-faction-policy';
 import {
   activateFleetArrivals,
@@ -77,6 +81,8 @@ export interface FleetCombatSnapshot {
   readonly elapsedSeconds: number;
   readonly ships: readonly FleetCombatShipSnapshot[];
   readonly shots: readonly FleetCombatShotSnapshot[];
+  readonly projectiles: readonly FleetWeaponProjectile[];
+  readonly beams: readonly FleetWeaponBeam[];
   readonly pendingArrivals: readonly { id: string; atSeconds: number }[];
   readonly arrivedShipIds: readonly string[];
   readonly engagements: readonly EngagementSnapshot[];
@@ -217,80 +223,11 @@ function advanceFleetMotion(
   }
 }
 
-function fleetDirectShot(
-  actor: MutableCombatant,
-  victim: MutableCombatant,
-  index: number
-): FleetCombatShotSnapshot | null {
-  const weapon = actor.setup.weapons[index];
-  const profile = weapon?.weapon;
-  if (!weapon || !profile || actor.cooldowns[index]! > 0) return null;
-  if (distance(actor.position, victim.position) > profile.rangeMeters) return null;
-  const toTarget = Math.atan2(
-    victim.position.y - actor.position.y,
-    victim.position.x - actor.position.x
-  );
-  const angle = Math.atan2(
-    Math.sin(toTarget - actor.headingRadians),
-    Math.cos(toTarget - actor.headingRadians)
-  );
-  const mount = actor.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
-  const facing = mount?.facing ?? 'forward';
-  const expected = facing === 'port' ? -Math.PI / 2 : facing === 'starboard' ? Math.PI / 2 : 0;
-  const offset = Math.atan2(Math.sin(angle - expected), Math.cos(angle - expected));
-  const arc =
-    profile.mount === 'turret' || profile.mount === 'guided'
-      ? Math.PI * 2
-      : ((mount?.arcDegrees ?? profile.arcDegrees ?? 65) * Math.PI) / 180;
-  if (Math.abs(offset) > arc / 2) return null;
-  // Direct-hit prototype only; accurate projectiles, misses and ammunition follow.
-  const hit = resolveShipWeaponHit(weapon, victim);
-  victim.shieldHp = hit.shieldRemaining;
-  victim.hullHp = hit.hullRemaining;
-  actor.cooldowns[index] = Math.max(
-    0.15,
-    profile.cooldownSeconds * actor.setup.cycleTimeMultiplier
-  );
-  return {
-    sourceId: actor.setup.id,
-    targetId: victim.setup.id,
-    origin: { ...actor.position },
-    destination: { ...victim.position },
-    weaponId: weapon.id,
-    shieldDamage: hit.shieldDamage,
-    hullDamage: hit.hullDamage,
-  };
-}
-
-function advanceFleetFire(
-  fleet: readonly FleetShip[],
-  acquire: (ship: FleetShip) => FleetShip | null,
-  dt: number
-): FleetCombatShotSnapshot[] {
-  const shots: FleetCombatShotSnapshot[] = [];
-  for (const ship of fleet) {
-    const actor = ship.combatant;
-    if (actor.hullHp <= 0) continue;
-    const target = acquire(ship);
-    for (let index = 0; index < actor.cooldowns.length; index += 1) {
-      actor.cooldowns[index] = Math.max(0, actor.cooldowns[index]! - dt);
-    }
-    if (!target) continue;
-    for (let index = 0; index < actor.setup.weapons.length; index += 1) {
-      const shot = fleetDirectShot(actor, target.combatant, index);
-      if (shot) shots.push(shot);
-      if (target.combatant.hullHp <= 0) break;
-    }
-  }
-  for (const ship of fleet) {
-    if (ship.targetId) acquire(ship);
-  }
-  return shots;
-}
-
 function fleetView(
   fleet: readonly FleetShip[],
   shots: readonly FleetCombatShotSnapshot[],
+  projectiles: readonly FleetWeaponProjectile[],
+  beams: readonly FleetWeaponBeam[],
   arrivedIds: readonly string[],
   engagements: readonly EngagementSnapshot[],
   elapsedSeconds: number,
@@ -318,6 +255,8 @@ function fleetView(
       origin: { ...shot.origin },
       destination: { ...shot.destination },
     })),
+    projectiles,
+    beams,
     arena,
   };
 }
@@ -378,9 +317,9 @@ function initializeFleetParticipants(
 /**
  * First independently simulated N-ship combat kernel.
  * Reuses 1vs1's ship construction, flight/obstacle/contact and layered
- * damage rules. Does not instantiate overlapping StrategicCombatService
- * duels or change its runtime. Unsupported weapons effects, mines, rams
- * and tractor throws are not advertised as implemented here.
+ * damage rules and native fire control/projectile flight. Does not instantiate
+ * overlapping StrategicCombatService duels or change its runtime.
+ * Mines, rams and tractor throws remain separate integration work.
  */
 export function createFleetCombatService(
   participants: readonly FleetCombatParticipant[],
@@ -393,6 +332,10 @@ export function createFleetCombatService(
   let shots: FleetCombatShotSnapshot[] = [];
   let arrivedIds: string[] = [];
   const engagementManager = createCombatEngagementManager();
+  const weaponPhysics = createFleetWeaponPhysics(
+    arena,
+    createRng(hashSeed(participants.map((entry) => entry.setup.id).join('|')))
+  );
 
   const validEnemy = (ship: FleetShip, target: FleetShip | undefined): boolean =>
     !!target &&
@@ -422,7 +365,10 @@ export function createFleetCombatService(
   };
 
   const view = (): FleetCombatSnapshot =>
-    fleetView(fleet, shots, arrivedIds, engagementManager.engagements(), elapsedSeconds, arena);
+    fleetView(
+      fleet, shots, weaponPhysics.projectiles(), weaponPhysics.beams(), arrivedIds,
+      engagementManager.engagements(), elapsedSeconds, arena
+    );
 
   const step = (dt: number): void => {
     // Only ships present at the START of this interval may move/fire in it.
@@ -443,7 +389,18 @@ export function createFleetCombatService(
         engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
       }
     }
-    shots = advanceFleetFire(remainingShips, acquire, dt);
+    shots = weaponPhysics.tick(
+      dt,
+      elapsedSeconds + dt,
+      remainingShips.map((ship) => ship.combatant),
+      (actor) => {
+        const ship = byId.get(actor.setup.id);
+        return ship ? acquire(ship)?.combatant ?? null : null;
+      }
+    ).map((hit) => ({ ...hit }));
+    for (const ship of remainingShips) {
+      if (ship.targetId) acquire(ship);
+    }
     reportFleetCombatToWorld(world, remainingShips, shots);
     for (const ship of remainingShips) {
       if (ship.combatant.hullHp <= 0) {
