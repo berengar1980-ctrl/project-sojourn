@@ -438,3 +438,5 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   1vs1-Wrackgenerator bleibt unangetastet. FC-36 verbietet das Speichern
   während laufender FleetCombat-Gefechte; außerhalb werden diese Wracks
   über das normale Karriere-Feldcheckpoint mitgenommen.
+  Die FC-37-Qualitätsprüfung erfolgt nach der automatischen Formatierung
+  erneut auf dem formatierten Feature-Branch.
