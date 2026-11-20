@@ -273,6 +273,60 @@ assert(
   'a thrown rock keeps its original trajectory and damage source after withdrawal'
 );
 assert.equal(rockIntruder.shieldHp, 100, 'late-joining enemy does not steal prior projectile');
+
+// FC-43: thrown rocks hit the FIRST intervening ship, including friendly or
+// neutral ships, and do not pass through to their originally designated enemy.
+const collateralArena = arena();
+collateralArena.asteroids.push({
+  id: 'collateral-rock', kind: 'debris', radius: 12,
+  position: { x: 250, y: 500 }, velocity: { x: 0, y: 0 },
+  angularVelocity: 0, rotation: 0,
+});
+const collateralThrower = ship('collateral-thrower', 200, 0);
+collateralThrower.setup.tractorCanManipulateObjects = true;
+collateralThrower.setup.tractorRangeMeters = 500;
+collateralThrower.subsystems.tractor = 100;
+const collateralEnemy = ship('collateral-enemy', 650, 120);
+const collateralCivilian = ship('collateral-civilian', 460, 120);
+const collateralPhysics = createFleetNativeSpecials(collateralArena);
+collateralPhysics.tick(0.08, 0.08, [collateralThrower, collateralEnemy],
+  (actor) => actor === collateralThrower ? collateralEnemy : null);
+assert.equal(collateralPhysics.throws().length, 1);
+const collateralHits = [];
+for (let tick = 1; tick < 51; tick++) {
+  collateralHits.push(...collateralPhysics.tick(
+    0.08, (tick + 1) * 0.08,
+    [collateralThrower, collateralEnemy, collateralCivilian], () => null
+  ));
+}
+assert(collateralHits.some((hit) => hit.targetId === 'collateral-civilian' &&
+  hit.sourceId === 'collateral-thrower'), 'third-party ship takes actual native rock damage');
+assert.equal(collateralEnemy.shieldHp, 120, 'rock must stop at first collision');
+assert.equal(collateralPhysics.throws().length, 0, 'spent thrown rock is consumed');
+
+// A physical asteroid obstacle blocks a thrown object before any ship.
+const blockedRockArena = arena();
+blockedRockArena.asteroids.push({
+  id: 'blocked-rock', kind: 'debris', radius: 12,
+  position: { x: 250, y: 500 }, velocity: { x: 0, y: 0 },
+  angularVelocity: 0, rotation: 0,
+});
+const blockedThrower = ship('blocked-thrower', 200, 0);
+blockedThrower.setup.tractorCanManipulateObjects = true;
+blockedThrower.setup.tractorRangeMeters = 500;
+blockedThrower.subsystems.tractor = 100;
+const blockedRockEnemy = ship('blocked-rock-enemy', 650, 120);
+const blockedRockPhysics = createFleetNativeSpecials(blockedRockArena);
+blockedRockPhysics.tick(0.08, 0.08, [blockedThrower, blockedRockEnemy],
+  (actor) => actor === blockedThrower ? blockedRockEnemy : null);
+blockedRockArena.obstacles.push({
+  id: 'post-launch-cover', position: { x: 375, y: 500 }, radius: 35,
+});
+for (let tick = 1; tick < 51; tick++) blockedRockPhysics.tick(
+  0.08, (tick + 1) * 0.08, [blockedThrower, blockedRockEnemy], () => null
+);
+assert.equal(blockedRockEnemy.shieldHp, 120, 'rock obstacle intercepts thrown asteroid');
+assert.equal(blockedRockPhysics.throws().length, 0);
 console.log(
-  'PASS fleet native ram, simultaneous mines, persistent target locks and tractor physics using protected campaign functions'
+  'PASS fleet native ram, simultaneous mines, persistent target locks and tractor physics and collateral using protected campaign functions'
 );
