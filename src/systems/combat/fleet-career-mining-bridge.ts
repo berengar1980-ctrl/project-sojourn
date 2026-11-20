@@ -6,6 +6,51 @@ import { npcDefenseReaction } from '../npcs/npc-combat-ai';
 import type { FleetCombatShipSnapshot } from './fleet-combat-service';
 import type { FleetCombatParticipant, FleetCombatWorldOptions } from './fleet-combat-service';
 
+function threatenedBy(
+  mining: NpcLocalMiningService,
+  npc: SectorNpcState,
+  ships: readonly FleetCombatShipSnapshot[]
+): FleetCombatShipSnapshot | null {
+  const local = mining.ships.find((ship) => ship.npcId === npc.id);
+  if (!local || npc.hullHp <= 0) return null;
+  return ships
+    .filter((entry) =>
+      (entry.factionId === 'pirate-a' || entry.factionId === 'pirate-b') &&
+      entry.ship.hullHp > 0 &&
+      entry.targetId === npc.id
+    )
+    .sort((a, b) =>
+      Math.hypot(a.ship.position.x - local.position.x, a.ship.position.y - local.position.y) -
+      Math.hypot(b.ship.position.x - local.position.x, b.ship.position.y - local.position.y)
+    )[0] ?? null;
+}
+
+function beginDefense(
+  mining: NpcLocalMiningService,
+  participants: readonly FleetCombatParticipant[],
+  npc: SectorNpcState,
+  ships: readonly FleetCombatShipSnapshot[]
+): void {
+  const pirate = threatenedBy(mining, npc, ships);
+  const local = mining.ships.find((ship) => ship.npcId === npc.id);
+  if (!local || !pirate) {
+    if (npc.combatMovement?.targetKind === 'npc') delete npc.combatMovement;
+    return;
+  }
+  const setup = participants.find((entry) => entry.setup.id === npc.id)?.setup;
+  if (!setup) return;
+  // Reuse the career combat doctrine, not a PvP-specific aggression rule.
+  const canFight = setup.preferredTactic !== 'flee' && npcDefenseReaction(npc) === 'fight';
+  npc.combatMovement = {
+    mode: canFight ? 'engaged' : 'flee',
+    targetKind: 'npc',
+    targetId: pirate.ship.id,
+    position: { ...local.position },
+    headingRadians: local.headingRadians,
+    speed: local.speed,
+  };
+}
+
 /** Attach the actual campaign local-miner world, not a PvP mining simulation.
  * The career world remains the sole movement, navigation, scanning, ore,
  * cargo, event and collision authority. Use the returned tickWorld as the
@@ -22,48 +67,6 @@ export function createFleetCareerMiningBridge(
   readonly participants: readonly FleetCombatParticipant[];
   readonly world: FleetCombatWorldOptions;
 } {
-  const threatenedBy = (npc: SectorNpcState, ships: readonly FleetCombatShipSnapshot[]) => {
-    const local = mining.ships.find((ship) => ship.npcId === npc.id);
-    if (!local || npc.hullHp <= 0) return null;
-    return (
-      ships
-        .filter(
-          (entry) =>
-            (entry.factionId === 'pirate-a' || entry.factionId === 'pirate-b') &&
-            entry.ship.hullHp > 0 &&
-            entry.targetId === npc.id
-        )
-        .sort(
-          (a, b) =>
-            Math.hypot(a.ship.position.x - local.position.x, a.ship.position.y - local.position.y) -
-            Math.hypot(b.ship.position.x - local.position.x, b.ship.position.y - local.position.y)
-        )[0] ?? null
-    );
-  };
-  const beginDefense = (npc: SectorNpcState, ships: readonly FleetCombatShipSnapshot[]) => {
-    const pirate = threatenedBy(npc, ships);
-    const local = mining.ships.find((ship) => ship.npcId === npc.id);
-    if (!local || !pirate) {
-      if (npc.combatMovement && npc.combatMovement.targetKind === 'npc') {
-        delete npc.combatMovement;
-      }
-      return;
-    }
-    const setup = participants.find((entry) => entry.setup.id === npc.id)?.setup;
-    if (!setup) return;
-    // The career combat policy (including armed/unarmed civilian doctrine) is
-    // authoritative. FleetCombat only notices the existing hostile target lock.
-    const canFight = setup.preferredTactic !== 'flee' && npcDefenseReaction(npc) === 'fight';
-    const mode = canFight ? 'engaged' : 'flee';
-    npc.combatMovement = {
-      mode,
-      targetKind: 'npc',
-      targetId: pirate.ship.id,
-      position: { ...local.position },
-      headingRadians: local.headingRadians,
-      speed: local.speed,
-    };
-  };
   const participants = miners.map((npc) => {
     if (npc.job !== 'miner') throw new Error('Fleet miner bridge requires career miners');
     const local = mining.ships.find((ship) => ship.npcId === npc.id);
@@ -126,7 +129,7 @@ export function createFleetCareerMiningBridge(
     participants,
     world: {
       beforeWorldTick(ships) {
-        for (const npc of miners) beginDefense(npc, ships);
+        for (const npc of miners) beginDefense(mining, participants, npc, ships);
       },
       tickWorld: (dt) => mining.tick(dt),
       afterCombatTick(ships) {
