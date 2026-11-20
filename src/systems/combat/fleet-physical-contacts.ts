@@ -91,8 +91,9 @@ export function firstFleetShipContact(
   for (const ship of ships) {
     if (ship.setup.id === sourceId || ship.hullHp <= 0) continue;
     const shield = segmentShieldHit(from, to, ship);
-    const hull = shield ? null : hullSegmentContact(from, to, ship);
-    const contact = shield ?? hull;
+    const hull = hullSegmentContact(from, to, ship, padding);
+    const useHull = hull !== null && (shield === null || hull.t < shield.t);
+    const contact = useHull ? hull : shield;
     if (!contact) continue;
     if (
       !nearest ||
