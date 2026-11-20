@@ -480,3 +480,32 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   vollständige visuelle Renderer-Anbindung werden getrennt integriert und
   getestet. Der geschützte 1vs1-Quellkern bleibt unverändert; die produktive
   automatische Kampagnenaktivierung ist weiterhin gesperrt.
+
+
+## FC-40 – Native Minen, Rammen und Traktor-Asteroiden in FleetCombat (Integrationsstand)
+
+- `fleet-native-specials.ts` ruft die **unveränderten** Kampagnen-Module
+  `maybeDropRuntimeMine`/`advanceRuntimeMines`, `applyCombatRamImpact`
+  und `maybeLaunchTractorAsteroid`/`advanceThrownAsteroids` auf.
+- Ein Begegnungspaar verwendet dieselben Live-`MutableCombatant`-Referenzen und
+  dieselbe Arena; es werden weder Schiffe noch Ausrüstung oder Asteroiden
+  neu initialisiert. Ein gefangener Asteroid wird durch die native Routine
+  aus den stationären Körpern entfernt.
+- Minen benutzen den bestehenden Bestand, die native Scharfschaltung,
+  Verfolgung und Schaden. Traktorwürfe behalten die native Fang-, Lade-,
+  Flug- und Trefferphase. Rammkontakt wird vor der gemeinsamen physischen
+  Schiffstrennung nach der vorhandenen Impuls-/Panzerungsberechnung bewertet.
+- Der Adapter berücksichtigt pro Schiff nur einen Abklingzeit-Tick; eine
+  aktive Zweierbegegnung kann in einer Mehrschiffszene fortlaufen, während
+  weitere Paare unabhängig kämpfen.
+- Wirkliche Schild-/Hüllenschäden gehen über denselben
+  `FleetCombatShotSnapshot`-Meldekanal wie normale Waffen an die
+  Kampagnen-Abrechnung. Mine-/Wurf-Snapshots werden ergänzt.
+- Regression `tests/combat/fleet-native-specials.test.cjs` prüft
+  native Ramm-Sperrzeit, Inventarverbrauch, Minenzündung und
+  echten Traktor-Asteroidenwurf ohne künstlichen Soforttreffer.
+- **Status: Implementiert, vollständige CI und Szenario-/Renderer-Parität noch
+  nachzuweisen.** Diese Integrationsstufe ist keine produktive
+  Kampagnenfreigabe. Insbesondere gleichzeitige Mehrfachdetonationen,
+  Wechsel von Eigentümern/Zielen und echte grafische Anzeige
+  müssen in nachfolgenden N-Schiff-Regressionen abgesichert werden.
