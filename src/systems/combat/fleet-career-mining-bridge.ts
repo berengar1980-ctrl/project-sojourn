@@ -116,7 +116,7 @@ export function createFleetCareerMiningBridge(
             headingRadians: lastHeading,
             targetId: defending ? battle.targetId : null,
             combatMotionTargetId: battle.targetId,
-            combatTactic: defending ? ('fight' as const) : ('flee' as const),
+            combatTactic: defending ? (participant.setup.preferredTactic ?? 'fight') : 'flee',
             afterCombatMotion(position: WorldPoint, heading: number, speed: number) {
               mining.syncCombatPose(npc.id, position, heading, speed);
               if (!npc.combatMovement) return;
