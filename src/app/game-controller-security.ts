@@ -62,7 +62,8 @@ export function tickFieldPirates(
       if (!pirate) return false;
       const arena = localMiningCombatArena(
         field.instance,
-        space?.getShipWorldVelocity() ?? { x: 0, y: 0 }
+        space?.getShipWorldVelocity() ?? { x: 0, y: 0 },
+        field.combatWrecks
       );
       if (targetId === 'player') {
         if (!space || context.engagements.activePlayerCombat()) return false;
