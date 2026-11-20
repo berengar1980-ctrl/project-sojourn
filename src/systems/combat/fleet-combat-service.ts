@@ -290,7 +290,8 @@ export function createFleetCombatService(
     return selected;
   };
 
-  const view = (): FleetCombatSnapshot => fleetView(fleet, shots, arrivedIds, elapsedSeconds, arena);
+  const view = (): FleetCombatSnapshot =>
+    fleetView(fleet, shots, arrivedIds, elapsedSeconds, arena);
 
   const step = (dt: number): void => {
     // Only ships present at the START of this interval may move/fire in it.
