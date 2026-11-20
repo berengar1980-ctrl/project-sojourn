@@ -140,11 +140,20 @@ assert.equal(mining.ships[0].speed, 0, 'native miner service stops physical work
 // remove the participant rather than leaving an untouchable ghost ship.
 mining.ships.splice(0, 1);
 fleet.tick(0.08);
-assert.equal(fleet.getSnapshot().ships.some((item) => item.ship.id === miner.id), false);
-assert.equal(fleet.getSnapshot().pendingArrivals.some((item) => item.id === miner.id), false);
+assert.equal(
+  fleet.getSnapshot().ships.some((item) => item.ship.id === miner.id),
+  false
+);
+assert.equal(
+  fleet.getSnapshot().pendingArrivals.some((item) => item.id === miner.id),
+  false
+);
 fleet.tick(0.08);
-assert.equal(fleet.getSnapshot().ships.some((item) => item.ship.id === miner.id), false,
-  'departed miner must not respawn');
+assert.equal(
+  fleet.getSnapshot().ships.some((item) => item.ship.id === miner.id),
+  false,
+  'departed miner must not respawn'
+);
 console.log(
   'PASS real career miner route, scan, extraction, cargo, interruption in shared FleetCombat'
 );
