@@ -32,19 +32,23 @@ function threatenedBy(
 function beginDefense(
   mining: NpcLocalMiningService,
   participants: readonly FleetCombatParticipant[],
+  ownedResponses: Set<string>,
   npc: SectorNpcState,
   ships: readonly FleetCombatShipSnapshot[]
 ): void {
   const pirate = threatenedBy(mining, npc, ships);
   const local = mining.ships.find((ship) => ship.npcId === npc.id);
   if (!local || !pirate) {
-    if (npc.combatMovement?.targetKind === 'npc') delete npc.combatMovement;
+    if (ownedResponses.delete(npc.id)) delete npc.combatMovement;
     return;
   }
+  // A campaign combat owner already active on this NPC must not be replaced.
+  if (npc.combatMovement && !ownedResponses.has(npc.id)) return;
   const setup = participants.find((entry) => entry.setup.id === npc.id)?.setup;
   if (!setup) return;
   // Reuse the career combat doctrine, not a PvP-specific aggression rule.
   const canFight = setup.preferredTactic !== 'flee' && npcDefenseReaction(npc) === 'fight';
+  ownedResponses.add(npc.id);
   npc.combatMovement = {
     mode: canFight ? 'engaged' : 'flee',
     targetKind: 'npc',
@@ -71,6 +75,7 @@ export function createFleetCareerMiningBridge(
   readonly participants: readonly FleetCombatParticipant[];
   readonly world: FleetCombatWorldOptions;
 } {
+  const ownedResponses = new Set<string>();
   const participants = miners.map((npc) => {
     if (npc.job !== 'miner') throw new Error('Fleet miner bridge requires career miners');
     const local = mining.ships.find((ship) => ship.npcId === npc.id);
@@ -104,7 +109,7 @@ export function createFleetCareerMiningBridge(
         lastPosition = { ...ship.position };
         lastHeading = ship.headingRadians;
         const battle = npc.combatMovement;
-        if (battle && battle.targetKind === 'npc') {
+        if (battle && battle.targetKind === 'npc' && ownedResponses.has(npc.id)) {
           const defending = battle.mode !== 'flee';
           return {
             position: { ...lastPosition },
@@ -133,7 +138,7 @@ export function createFleetCareerMiningBridge(
     participants,
     world: {
       beforeWorldTick(ships) {
-        for (const npc of miners) beginDefense(mining, participants, npc, ships);
+        for (const npc of miners) beginDefense(mining, participants, ownedResponses, npc, ships);
       },
       tickWorld: (dt) => mining.tick(dt),
       afterCombatTick(ships) {
