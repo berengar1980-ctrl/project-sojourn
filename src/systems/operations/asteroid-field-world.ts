@@ -1,6 +1,9 @@
 import type { LocalSpaceInstance } from '../../core/local-space-types';
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
-import { advanceSalvageContainerDrift } from '../salvage/salvage-container-motion';
+import {
+  advanceSalvageContainerDrift,
+  invalidateSalvagePhysics,
+} from '../salvage/salvage-container-motion';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalMinerCheckpoint } from '../npcs/npc-mining-targets';
 import { cloneCareerJson } from '../persistence/career-save-contract';
@@ -196,6 +199,8 @@ export class AsteroidFieldWorld {
       ...wrecks.filter((wreck) => wreck.combatWreckVariant !== undefined)
     );
     this.combatWrecksByLocation.set(locationId, recorded);
+    const field = this.wreckMotionFields.get(locationId);
+    if (field) invalidateSalvagePhysics(field);
   }
 
   /** The same 3D spin, impulse and drift physics used in salvage maps.
@@ -203,6 +208,10 @@ export class AsteroidFieldWorld {
   advanceCombatWreckMotion(deltaSeconds: number, skipLocationId?: string | null): void {
     const dt = Math.min(0.05, Math.max(0, deltaSeconds));
     if (dt <= 0) return;
+    if (skipLocationId) {
+      const suspended = this.wreckMotionFields.get(skipLocationId);
+      if (suspended) invalidateSalvagePhysics(suspended);
+    }
     for (const [locationId, wrecks] of this.combatWrecksByLocation) {
       if (locationId === skipLocationId || wrecks.length === 0) continue;
       let field = this.wreckMotionFields.get(locationId);
