@@ -204,7 +204,9 @@ export class LocalPirateTraffic {
     asteroids: readonly LocalAsteroid[],
     onIntercept: (pirateId: string, targetId: string | 'player', position: WorldPoint) => boolean,
     combatantId?: string,
-    additionalTargets?: (pirate: SectorNpcState) => ReadonlyArray<{ id: string; position: WorldPoint }>
+    additionalTargets?: (
+      pirate: SectorNpcState
+    ) => ReadonlyArray<{ id: string; position: WorldPoint }>
   ): void {
     const dt = Math.max(0, Math.min(0.25, deltaSeconds));
     for (const pirate of this.ships.values()) {

@@ -37,11 +37,7 @@ const positions = [
   { x: 640, y: 535 },
 ];
 pirates.forEach((npc, i) => traffic.syncCombatPose(npc.id, positions[i], 0));
-const drone = new AsteroidSecurityDrone(
-  arenaField.width,
-  arenaField.height,
-  arenaField.asteroids
-);
+const drone = new AsteroidSecurityDrone(arenaField.width, arenaField.height, arenaField.asteroids);
 drone.destroy();
 const field = {
   locationId: arenaField.sourceLocationId,
