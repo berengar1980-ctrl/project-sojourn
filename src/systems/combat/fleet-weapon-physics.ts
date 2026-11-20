@@ -11,7 +11,6 @@ import { clamp, distance, normalize, weaponKind } from './strategic-combat-geome
 import {
   applyDamage,
   combatShieldCenter,
-  combatShieldGeometry,
   firstObstacleHit,
   projectileSpeed,
   segmentShieldHit,
@@ -30,6 +29,7 @@ import {
 } from './combat-weapon-fire-control';
 import { effectiveTargetSubsystem, engineShotAvailable } from './combat-subsystem-targeting';
 import { recordWeaponDamage, recordWeaponFired } from './combat-weapon-telemetry';
+import { firstFleetShipContact } from './fleet-physical-contacts';
 
 export interface FleetWeaponHit {
   readonly sourceId: string;
@@ -68,6 +68,7 @@ interface PendingProjectile extends FleetWeaponProjectile {
   missed: boolean;
   readonly weaponIndex: number;
   readonly weaponId: string;
+  readonly source: MutableCombatant;
   readonly speed: number;
   shieldDamage: number;
   hullDamage: number;
@@ -146,6 +147,7 @@ interface FleetLaunch {
 function fireFleetBeam(
   state: FleetPhysicsState,
   launch: FleetLaunch,
+  ships: readonly MutableCombatant[],
   hits: FleetWeaponHit[]
 ): void {
   const { source, target, index, component, muzzle, hit, critical, subsystem } = launch;
@@ -153,15 +155,16 @@ function fireFleetBeam(
   const kind = weaponKind(weapon.family);
   if (kind !== 'laser' && kind !== 'rail') return;
   const aim = target.shieldHp > 0 ? combatShieldCenter(target) : target.position;
-  const end = hit ? aim : missedShotEnd(muzzle, aim);
-  const shieldHit = hit ? segmentShieldHit(muzzle, end, target) : null;
-  const beamEnd = shieldHit?.point ?? end;
-  const obstacle = firstObstacleHit(
-    muzzle,
-    beamEnd,
-    state.arena.obstacles ?? [],
-    state.arena.asteroids
-  );
+  const scatteredAim = hit ? aim : missedShotEnd(muzzle, aim);
+  const direction = normalize(scatteredAim.x - muzzle.x, scatteredAim.y - muzzle.y);
+  const end = {
+    x: muzzle.x + direction.x * weapon.rangeMeters,
+    y: muzzle.y + direction.y * weapon.rangeMeters,
+  };
+  const shipHit = firstFleetShipContact(muzzle, end, ships, source.setup.id);
+  const obstacle = firstObstacleHit(muzzle, end, state.arena.obstacles ?? [], state.arena.asteroids);
+  const physicalHit = shipHit && (!obstacle || shipHit.t < obstacle.t) ? shipHit : null;
+  const beamEnd = physicalHit?.point ?? obstacle?.point ?? end;
   state.beams.push({
     id: ++state.beamSerial,
     sourceId: source.setup.id,
@@ -169,22 +172,16 @@ function fireFleetBeam(
     kind,
     family: weapon.family,
     origin: { ...muzzle },
-    end: { ...(obstacle?.point ?? beamEnd) },
+    end: { ...beamEnd },
     ttlSeconds: WEAPON_VISUALS[weapon.family].beamSeconds ?? (kind === 'laser' ? 0.16 : 0.09),
   });
-  if (!hit || obstacle) return;
+  if (!physicalHit) return;
+  const damage = nativeWeaponDamage(component);
   const dealt = applyFleetHit(
-    state,
-    source,
-    target,
-    component.id,
-    index,
-    muzzle,
-    nativeWeaponDamage(component).shieldDamage,
-    nativeWeaponDamage(component).hullDamage,
-    critical,
-    subsystem,
-    shieldHit
+    state, source, physicalHit.ship, component.id, index, muzzle,
+    damage.shieldDamage, damage.hullDamage, critical,
+    physicalHit.ship === target ? subsystem : 'hull',
+    physicalHit.shieldHit
   );
   if (dealt) hits.push(dealt);
 }
@@ -214,9 +211,10 @@ function fireFleetProjectile(state: FleetPhysicsState, launch: FleetLaunch): voi
     missed: !hit,
     weaponIndex: index,
     weaponId: component.id,
+    source,
     speed,
-    shieldDamage: hit ? damage.shieldDamage : 0,
-    hullDamage: hit ? damage.hullDamage : 0,
+    shieldDamage: damage.shieldDamage,
+    hullDamage: damage.hullDamage,
     critical: hit && critical,
     subsystem,
   });
@@ -227,6 +225,7 @@ function fireFleetWeapon(
   source: MutableCombatant,
   target: MutableCombatant,
   index: number,
+  ships: readonly MutableCombatant[],
   hits: FleetWeaponHit[]
 ): void {
   const component = source.setup.weapons[index];
@@ -242,7 +241,7 @@ function fireFleetWeapon(
     subsystem: effectiveTargetSubsystem(source, target),
   };
   const kind = weaponKind(component.weapon.family);
-  if (kind === 'laser' || kind === 'rail') fireFleetBeam(state, launch, hits);
+  if (kind === 'laser' || kind === 'rail') fireFleetBeam(state, launch, ships, hits);
   else fireFleetProjectile(state, launch);
 }
 
@@ -265,48 +264,24 @@ function steerFleetMissile(
 function resolveFleetProjectileContact(
   state: FleetPhysicsState,
   projectile: PendingProjectile,
-  source: MutableCombatant,
-  target: MutableCombatant,
   next: CombatPoint,
+  ships: readonly MutableCombatant[],
   hits: FleetWeaponHit[]
 ): boolean {
-  const harmful = projectile.shieldDamage > 0 || projectile.hullDamage > 0;
-  const shieldHit = harmful ? segmentShieldHit(projectile.position, next, target) : null;
-  const obstacle = firstObstacleHit(
-    projectile.position,
-    next,
-    state.arena.obstacles ?? [],
-    state.arena.asteroids
+  const contact = firstFleetShipContact(
+    projectile.position, next, ships, projectile.sourceId
   );
-  if (obstacle && (!shieldHit || obstacle.t < shieldHit.t)) return true;
-  if (!harmful) return false;
-  const contact = shieldHit;
-  if (!contact) {
-    const sx = next.x - projectile.position.x;
-    const sy = next.y - projectile.position.y;
-    const t = clamp(
-      ((target.position.x - projectile.position.x) * sx +
-        (target.position.y - projectile.position.y) * sy) /
-        Math.max(0.001, sx * sx + sy * sy),
-      0,
-      1
-    );
-    const closest = { x: projectile.position.x + t * sx, y: projectile.position.y + t * sy };
-    const radius = Math.max(28, Math.min(45, combatShieldGeometry(target).radiusY));
-    if (distance(closest, target.position) > radius) return false;
-  }
+  const obstacle = firstObstacleHit(
+    projectile.position, next, state.arena.obstacles ?? [], state.arena.asteroids
+  );
+  if (obstacle && (!contact || obstacle.t <= contact.t)) return true;
+  if (!contact) return false;
   const dealt = applyFleetHit(
-    state,
-    source,
-    target,
-    projectile.weaponId,
-    projectile.weaponIndex,
-    projectile.position,
-    projectile.shieldDamage,
-    projectile.hullDamage,
-    projectile.critical,
-    projectile.subsystem,
-    contact ?? undefined,
+    state, projectile.source, contact.ship, projectile.weaponId, projectile.weaponIndex,
+    projectile.position, projectile.shieldDamage, projectile.hullDamage,
+    projectile.critical, contact.ship.setup.id === projectile.targetId
+      ? projectile.subsystem : 'hull',
+    contact.shieldHit ?? undefined,
     projectile.kind === 'missile' ? 'missile' : 'laser'
   );
   if (dealt) hits.push(dealt);
@@ -317,30 +292,23 @@ function advanceFleetProjectile(
   state: FleetPhysicsState,
   projectile: PendingProjectile,
   dt: number,
-  shipsById: ReadonlyMap<string, MutableCombatant>,
+  ships: readonly MutableCombatant[],
   hits: FleetWeaponHit[]
 ): boolean {
-  const source = shipsById.get(projectile.sourceId);
-  const target = shipsById.get(projectile.targetId);
-  if (!source || !target || target.hullHp <= 0) return false;
-  const dx = target.position.x - projectile.position.x;
-  const dy = target.position.y - projectile.position.y;
-  steerFleetMissile(projectile, target, dt);
+  const target = ships.find((ship) => ship.setup.id === projectile.targetId);
+  if (target && target.hullHp > 0) steerFleetMissile(projectile, target, dt);
   const next = {
     x: projectile.position.x + projectile.direction.x * projectile.speed * dt,
     y: projectile.position.y + projectile.direction.y * projectile.speed * dt,
   };
   projectile.ttlSeconds -= dt;
-  if (resolveFleetProjectileContact(state, projectile, source, target, next, hits)) return false;
+  if (resolveFleetProjectileContact(state, projectile, next, ships, hits)) return false;
   projectile.position = next;
-  if (
-    projectile.kind === 'missile' &&
-    !projectile.missed &&
-    dx * projectile.direction.x + dy * projectile.direction.y < -55
-  ) {
+  if (target && target.hullHp > 0 && projectile.kind === 'missile' &&
+      !projectile.missed &&
+      (target.position.x - projectile.position.x) * projectile.direction.x +
+      (target.position.y - projectile.position.y) * projectile.direction.y < -55) {
     projectile.missed = true;
-    projectile.shieldDamage = 0;
-    projectile.hullDamage = 0;
     projectile.ttlSeconds = Math.min(projectile.ttlSeconds, 0.65);
   }
   return projectile.ttlSeconds > 0;
@@ -377,14 +345,13 @@ export function createFleetWeaponPhysics(
   return {
     tick(dt, now, ships, targetFor) {
       const hits: FleetWeaponHit[] = [];
-      const byId = new Map(ships.map((ship) => [ship.setup.id, ship]));
       for (let index = state.beams.length - 1; index >= 0; index--) {
         state.beams[index]!.ttlSeconds -= dt;
         if (state.beams[index]!.ttlSeconds <= 0) state.beams.splice(index, 1);
       }
       // Fired rounds already in flight are resolved before launching new volleys.
       for (let index = state.pending.length - 1; index >= 0; index--) {
-        if (!advanceFleetProjectile(state, state.pending[index]!, dt, byId, hits))
+        if (!advanceFleetProjectile(state, state.pending[index]!, dt, ships, hits))
           state.pending.splice(index, 1);
       }
       for (const source of ships) {
@@ -409,7 +376,7 @@ export function createFleetWeaponPhysics(
           if (target.hullHp <= 0) break;
           const component = source.setup.weapons[index]!;
           if (!component.weapon) continue;
-          fireFleetWeapon(state, source, target, index, hits);
+          fireFleetWeapon(state, source, target, index, ships, hits);
           source.cooldowns[index] = weaponCycleSeconds(
             component.weapon,
             source.setup.cycleTimeMultiplier
