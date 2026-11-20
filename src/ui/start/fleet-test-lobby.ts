@@ -194,9 +194,8 @@ function createFleetPrototype(config: FleetTestConfiguration) {
   const arenaSeed = Math.floor(Math.random() * 0x7fffffff);
   const minerEntries = config.ships.filter((entry) => entry.role === 'miner');
   const density = config.map === 'scattered' ? 'sparse' : 'standard';
-  const field = minerEntries.length > 0
-    ? generateMiningSpace('duel', arenaSeed, undefined, density)
-    : null;
+  const field =
+    minerEntries.length > 0 ? generateMiningSpace('duel', arenaSeed, undefined, density) : null;
   const arena = field
     ? withClearCombatSpawns(miningFieldCombatArena(field, { x: 0, y: 0 }))
     : createDuelArena(config.map, arenaSeed);
@@ -214,10 +213,12 @@ function createFleetPrototype(config: FleetTestConfiguration) {
     if (entry.role === 'drone') {
       const pirateIndex = pirateIndices[(index - 1) % pirateIndices.length] ?? 1;
       const lane = 0.15 + (0.7 * (pirateIndex - 0.5)) / shipCount;
-      return [createFleetDronePrototype(entry, index, arena, {
-        x: arena.width * 0.69 - 20 * (index % 3),
-        y: arena.height * lane,
-      })];
+      return [
+        createFleetDronePrototype(entry, index, arena, {
+          x: arena.width * 0.69 - 20 * (index % 3),
+          y: arena.height * lane,
+        }),
+      ];
     }
     if (!entry.draft) throw new Error('Missing fleet ship loadout');
     const ship = getShipDefinition(entry.draft.shipId);
@@ -226,20 +227,22 @@ function createFleetPrototype(config: FleetTestConfiguration) {
     const isPlayer = entry.role === 'player';
     const lane = isPlayer ? 0.5 : 0.15 + (0.7 * (index - 0.5)) / shipCount;
     const rival = entry.role === 'pirate-b' ? firstPirateA?.id : null;
-    return [{
-      setup: { ...setup, id: entry.id, name: entry.name },
-      factionId: entry.team,
-      position: {
-        x: isPlayer
-          ? arena.width * 0.25
-          : entry.spawnAtSeconds > 0
-            ? arena.width - 180
-            : arena.width * 0.72,
-        y: arena.height * lane,
+    return [
+      {
+        setup: { ...setup, id: entry.id, name: entry.name },
+        factionId: entry.team,
+        position: {
+          x: isPlayer
+            ? arena.width * 0.25
+            : entry.spawnAtSeconds > 0
+              ? arena.width - 180
+              : arena.width * 0.72,
+          y: arena.height * lane,
+        },
+        targetId: isPlayer ? (firstPirate?.id ?? null) : (rival ?? 'player'),
+        spawnAtSeconds: entry.spawnAtSeconds,
       },
-      targetId: isPlayer ? (firstPirate?.id ?? null) : (rival ?? 'player'),
-      spawnAtSeconds: entry.spawnAtSeconds,
-    }];
+    ];
   });
   return createFleetCombatService(
     [...participants, ...(miningSetup?.participants ?? [])],
@@ -270,7 +273,11 @@ function renderFleetRoster(
     for (const ship of entries) {
       const line = document.createElement('p');
       if (!ship.draft) {
-        line.textContent = ship.id + ' · ' + ship.name + (ship.role === 'miner' ? ' · Kampagnen-Bergbau aktiv' : ' · Kampagnen-Drohne aktiv');
+        line.textContent =
+          ship.id +
+          ' · ' +
+          ship.name +
+          (ship.role === 'miner' ? ' · Kampagnen-Bergbau aktiv' : ' · Kampagnen-Drohne aktiv');
       } else {
         const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
         const equipped = ship.draft.weapons
@@ -362,8 +369,7 @@ function createFleetLobbyElements(onBack: () => void) {
   start.type = 'button';
   start.textContent = 'FleetCombat-Prototyp starten';
   start.disabled = true;
-  start.title =
-    'Gemeinsame Karte mit Kampagnen-Minern, Piraten und Sicherheitsdrohnen';
+  start.title = 'Gemeinsame Karte mit Kampagnen-Minern, Piraten und Sicherheitsdrohnen';
   const back = document.createElement('button');
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';
@@ -382,9 +388,7 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   let activePanel: ReturnType<typeof createFleetCombatTestPanel> | null = null;
   const canLaunch = (): boolean =>
     config.ships.length >= 3 &&
-    (config.counts.miners === 0 ||
-      config.map === 'scattered' ||
-      config.map === 'asteroid_field') &&
+    (config.counts.miners === 0 || config.map === 'scattered' || config.map === 'asteroid_field') &&
     (config.counts.miners > 0 ||
       config.counts.piratesA + config.counts.piratesB >= 2 ||
       (config.counts.drones > 0 && config.counts.piratesA + config.counts.piratesB >= 1));
