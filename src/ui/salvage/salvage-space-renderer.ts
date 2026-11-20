@@ -82,7 +82,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       } else {
         this.sharedCombatRenderer.update(model.combat);
       }
-      // The native PvP renderer owns combat; career bystanders remain in its scene overlay.
       return;
     }
     if (this.sharedCombatRenderer)
@@ -270,7 +269,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
         (url) => this.ensureNpcImage(url)
       );
       if (!drewShip) {
-        // Ship silhouette while the existing distress-rescue sprite is loading.
         this.context.fillStyle = '#6f858a';
         this.context.fillRect(-radius * 0.8, -radius * 0.24, radius * 1.6, radius * 0.48);
       }
@@ -332,7 +330,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     if (!wreck.id.startsWith('event-wreck-salvage-distress-')) {
       this.context.arc(point.x, point.y, radius + 10, 0, Math.PI * 2);
     } else {
-      // Open target corners indicate selection without resembling a shield bubble.
       const extent = radius + 12;
       const arm = 12;
       for (const xSide of [-1, 1]) {
@@ -354,7 +351,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     radius: number
   ): void {
     if (!this.scanLabelsVisible) return;
-    // Same map callouts as asteroid scan: ? from range scan, contents after detail scan.
     if (wreck.scanLevel === 'surveyed' || wreck.scanLevel === 'analyzed') {
       const lines =
         wreck.scanLevel === 'analyzed'
