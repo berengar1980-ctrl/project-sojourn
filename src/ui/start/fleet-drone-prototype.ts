@@ -8,6 +8,7 @@ import type {
 } from '../../systems/combat/fleet-combat-service';
 import type { StrategicCombatArenaOptions } from '../../systems/combat/strategic-combat-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
+import type { NpcInstalledComponents } from '../../core/npc-types';
 import { getShipDefinition } from '../../systems/ships';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 import { duelCombatant, type DuelDraft } from './duel-combatant-setup';
@@ -37,6 +38,24 @@ function droneFieldAsteroids(arena: StrategicCombatArenaOptions): LocalAsteroid[
   });
 }
 
+function campaignDroneDraft(
+  shipId: string,
+  installed: NpcInstalledComponents | undefined
+): DuelDraft {
+  return {
+    shipId,
+    weapons: [...(installed?.weapon ?? [])],
+    mines: [],
+    crewId: crewDefinitions[0]!.id,
+    reactorId: installed?.reactor?.[0] ?? 'reactor3',
+    engineId: installed?.engine?.[0] ?? 'engine1',
+    shieldId: installed?.shield?.[0] ?? 'shield3',
+    hullId: installed?.hull?.[0] ?? 'hull3',
+    sensorId: installed?.sensor?.[0] ?? 'sensor1',
+    tractorId: installed?.tractor?.[0] ?? 'tractor1',
+  };
+}
+
 /** Real campaign NPC-equivalent drone combatant; no fabricated hull or gun. */
 export function createFleetDronePrototype(
   entry: FleetTestShip,
@@ -53,18 +72,7 @@ export function createFleetDronePrototype(
   const ship = getShipDefinition(template.shipId);
   if (!ship) throw new Error('Campaign drone hull definition missing');
   const installed = template.installedComponents;
-  const draft: DuelDraft = {
-    shipId: ship.id,
-    weapons: [...(installed?.weapon ?? [])],
-    mines: [],
-    crewId: crewDefinitions[0]!.id,
-    reactorId: installed?.reactor?.[0] ?? 'reactor3',
-    engineId: installed?.engine?.[0] ?? 'engine1',
-    shieldId: installed?.shield?.[0] ?? 'shield3',
-    hullId: installed?.hull?.[0] ?? 'hull3',
-    sensorId: installed?.sensor?.[0] ?? 'sensor1',
-    tractorId: installed?.tractor?.[0] ?? 'tractor1',
-  };
+  const draft = campaignDroneDraft(ship.id, installed);
   const setup = duelCombatant(index, draft, ship);
   const asteroids = droneFieldAsteroids(arena);
   const drone = new AsteroidSecurityDrone(arena.width, arena.height, asteroids);
