@@ -227,3 +227,7 @@ wegfallen. Ein grüner Prototyp-Test oder eine unveränderte 1vs1-Engine ist
   sowie volles Kampf-/Waffenverhalten müssen vor Featurefreigabe mit der
   produktiven Kampagne vollständig verbunden werden. Bestehender 1vs1-Kern
   bleibt unverändert.
+
+Bestehende, bereits von der Kampagne verwaltete NPC-Gefechte werden weder
+überschrieben noch bei Zielverlust durch den FleetCombat-Adapter gelöscht;
+der Regressionstest prüft die unveränderte Zustandsidentität.
