@@ -14,6 +14,7 @@ import {
 import { advanceShieldImpacts } from '../shields/shield-service';
 import { resolveShipWeaponHit } from './ship-weapon-service';
 import { isFleetHostile } from './fleet-faction-policy';
+import { createCombatEngagementManager, type EngagementSnapshot } from './combat-engagement-manager';
 
 /** Fleet factions are identifiers, not hard-coded attacker/defender sides. */
 export interface FleetCombatParticipant {
@@ -49,6 +50,7 @@ export interface FleetCombatSnapshot {
   readonly shots: readonly FleetCombatShotSnapshot[];
   readonly pendingArrivals: readonly { id: string; atSeconds: number }[];
   readonly arrivedShipIds: readonly string[];
+  readonly engagements: readonly EngagementSnapshot[];
   readonly arena: StrategicCombatArenaOptions;
 }
 
@@ -175,6 +177,7 @@ function fleetView(
   fleet: readonly FleetShip[],
   shots: readonly FleetCombatShotSnapshot[],
   arrivedIds: readonly string[],
+  engagements: readonly EngagementSnapshot[],
   elapsedSeconds: number,
   arena: StrategicCombatArenaOptions
 ): FleetCombatSnapshot {
@@ -194,6 +197,7 @@ function fleetView(
         atSeconds: entry.spawnAtSeconds,
       })),
     arrivedShipIds: arrivedIds.slice(),
+    engagements,
     shots: shots.map((shot) => ({
       ...shot,
       origin: { ...shot.origin },
@@ -263,6 +267,7 @@ export function createFleetCombatService(
   let elapsedSeconds = 0;
   let shots: FleetCombatShotSnapshot[] = [];
   let arrivedIds: string[] = [];
+  const engagementManager = createCombatEngagementManager();
 
   const validEnemy = (ship: FleetShip, target: FleetShip | undefined): boolean =>
     !!target &&
@@ -292,13 +297,26 @@ export function createFleetCombatService(
   };
 
   const view = (): FleetCombatSnapshot =>
-    fleetView(fleet, shots, arrivedIds, elapsedSeconds, arena);
+    fleetView(fleet, shots, arrivedIds, engagementManager.engagements(), elapsedSeconds, arena);
 
   const step = (dt: number): void => {
     // Only ships present at the START of this interval may move/fire in it.
     const present = fleet.filter((ship) => ship.active);
+    for (const ship of present) {
+      if (!ship.targetId || ship.combatant.hullHp <= 0) continue;
+      const enemy = byId.get(ship.targetId);
+      if (enemy?.active && enemy.combatant.hullHp > 0 &&
+          isFleetHostile(ship.factionId, enemy.factionId)) {
+        engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
+      }
+    }
     advanceFleetMotion(present, acquire, arena, dt);
     shots = advanceFleetFire(present, acquire, dt);
+    for (const ship of present) {
+      if (ship.combatant.hullHp <= 0) {
+        engagementManager.disengage(ship.combatant.setup.id);
+      }
+    }
     elapsedSeconds += dt;
     arrivedIds = [];
     for (const ship of fleet) {
