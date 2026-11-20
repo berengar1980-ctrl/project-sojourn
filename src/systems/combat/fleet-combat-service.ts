@@ -13,6 +13,7 @@ import {
 } from './strategic-combat-movement';
 import { advanceShieldImpacts } from '../shields/shield-service';
 import { resolveShipWeaponHit } from './ship-weapon-service';
+import { isFleetHostile } from './fleet-faction-policy';
 
 /** Fleet factions are identifiers, not hard-coded attacker/defender sides. */
 export interface FleetCombatParticipant {
@@ -268,7 +269,7 @@ export function createFleetCombatService(
     target !== ship &&
     target.active &&
     target.combatant.hullHp > 0 &&
-    target.factionId !== ship.factionId;
+    isFleetHostile(ship.factionId, target.factionId);
 
   const acquire = (ship: FleetShip): FleetShip | null => {
     // A current target is sticky, preventing tick-by-tick oscillation.
