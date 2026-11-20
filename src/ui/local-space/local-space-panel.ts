@@ -160,6 +160,23 @@ function combatAwareLocalOptions(
   };
 }
 
+function bindCombatTactics(
+  combatTactics: HTMLElement,
+  options: LocalSpacePanelOptions
+): void {
+  combatTactics.addEventListener('click', (event) => {
+    const grapple = (event.target as HTMLElement).closest('[data-grapple]');
+    if (grapple) {
+      options.onCombatGrapple();
+      return;
+    }
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const tactic = target.dataset.tactic as CombatTactic | undefined;
+    if (tactic) options.onCombatTactic(tactic);
+  });
+}
+
 export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
   const shell = createLocalSpaceShell(options);
   const combatHud = createEmbeddedCombatHud(shell);
@@ -237,17 +254,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     const selected = model.npcShips.find((npc) => npc.isSelected);
     if (selected) options.onAttackNpc(selected.id);
   });
-  combatTactics.addEventListener('click', (event) => {
-    const grapple = (event.target as HTMLElement).closest('[data-grapple]');
-    if (grapple) {
-      options.onCombatGrapple();
-      return;
-    }
-    const target = event.target;
-    if (!(target instanceof HTMLButtonElement)) return;
-    const tactic = target.dataset.tactic as CombatTactic | undefined;
-    if (tactic) options.onCombatTactic(tactic);
-  });
+  bindCombatTactics(combatTactics, options);
   cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();
