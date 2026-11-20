@@ -957,7 +957,6 @@ Sicherheitsdrohnen-Checkpoint erfasst. Die optische Größe ist reine
 UI-Konfiguration. Keine neue Version oder Felder im Karriere-Save;
 die bisherigen Sicherheits- und Kampfzustände bleiben kompatibel.
 
-
 ## FleetCombat-Testlabor und verzögerte Schiffsankunft (Feature-Branch)
 
 **Aktueller Career-Persistenz-Effekt: keine Speicheränderung.** Die neuen
