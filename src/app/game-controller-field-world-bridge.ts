@@ -109,7 +109,8 @@ export function advanceControllerFieldWorld(
     context.state.embeddedCombat === 'local-space'
       ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
       : null;
-  fieldWorldFor(context).tick(deltaSeconds, localId, (field, seconds) => {
+  const fieldWorld = fieldWorldFor(context);
+  fieldWorld.tick(deltaSeconds, localId, (field, seconds) => {
     const activeCombat = field.locationId === localId ? combat : null;
     if (activeCombat) {
       // NPC miners and passing pirates are solid ship bodies inside embedded
@@ -156,6 +157,14 @@ export function advanceControllerFieldWorld(
         asteroid.physics.velocity = { ...body.velocity };
         asteroid.physics.angularVelocity = body.angularVelocity;
       }
+      for (const wreck of field.combatWrecks) {
+        const body = bodies.get(wreck.id);
+        if (!body) continue;
+        wreck.position = { ...body.position };
+        wreck.driftVelocity = { ...body.velocity };
+        wreck.rotation = body.rotation;
+        if (wreck.rotation3d) wreck.rotation3d = { ...wreck.rotation3d, z: body.rotation };
+      }
       context.state.localSpace?.syncCombatPose(
         activeCombat.attacker.position,
         activeCombat.attacker.headingRadians,
@@ -189,4 +198,12 @@ export function advanceControllerFieldWorld(
       tickFieldSecurity(context, seconds, field);
     }
   });
+  const salvageLocation =
+    context.state.mode === 'salvage-space'
+      ? context.state.salvageScene?.getField().sourceLocationId
+      : null;
+  fieldWorld.advanceCombatWreckMotion(
+    deltaSeconds,
+    context.state.embeddedCombat === 'local-space' ? localId : salvageLocation
+  );
 }
