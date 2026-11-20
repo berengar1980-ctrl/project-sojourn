@@ -201,6 +201,11 @@ function bindCombatOrders(
   });
 }
 
+function combatReturnLabel(model: StrategicCombatSnapshot): string {
+  if (model.winner !== null && model.attacker.hullHp <= 0) return 'SCHIFF ZERSTÖRT · BERGUNG...';
+  return model.boardingInitiator ? 'ENTERKAMPF STARTEN' : 'ZUR STERNKARTE';
+}
+
 export function createStrategicCombatPanel(
   options: StrategicCombatPanelOptions
 ): StrategicCombatPanel {
@@ -253,12 +258,7 @@ export function createStrategicCombatPanel(
         String(seconds % 60).padStart(2, '0');
     }
     returnButton.hidden = model.winner === null;
-    returnButton.textContent =
-      model.attacker.hullHp <= 0 && model.winner !== null
-        ? 'SCHIFF ZERSTÖRT · BERGUNG...'
-        : model.boardingInitiator
-          ? 'ENTERKAMPF STARTEN'
-          : 'ZUR STERNKARTE';
+    returnButton.textContent = combatReturnLabel(model);
     returnButton.disabled =
       defeatReturnStartedAt !== null && performance.now() - defeatReturnStartedAt < 2200;
     if (grappleButton) {
