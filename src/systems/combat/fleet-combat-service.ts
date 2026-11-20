@@ -123,8 +123,8 @@ function advanceExternalFleetMotion(
     return;
   }
   if (next.combatMotionTargetId) {
-    const enemy = fleet.find((candidate) =>
-      candidate.combatant.setup.id === next.combatMotionTargetId
+    const enemy = fleet.find(
+      (candidate) => candidate.combatant.setup.id === next.combatMotionTargetId
     );
     if (enemy?.active && enemy.combatant.hullHp > 0) {
       actor.tactic = next.combatTactic ?? actor.tactic;
@@ -318,11 +318,13 @@ function reportFleetCombatToWorld(
   ships: readonly FleetShip[]
 ): void {
   if (!world.afterCombatTick) return;
-  world.afterCombatTick(ships.map((ship) => ({
-    factionId: ship.factionId,
-    targetId: ship.targetId,
-    ship: snapshot(ship.combatant),
-  })));
+  world.afterCombatTick(
+    ships.map((ship) => ({
+      factionId: ship.factionId,
+      targetId: ship.targetId,
+      ship: snapshot(ship.combatant),
+    }))
+  );
 }
 
 function activateFleetArrivals(fleet: readonly FleetShip[], elapsedSeconds: number): string[] {

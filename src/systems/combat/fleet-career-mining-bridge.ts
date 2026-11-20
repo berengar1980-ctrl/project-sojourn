@@ -13,16 +13,20 @@ function threatenedBy(
 ): FleetCombatShipSnapshot | null {
   const local = mining.ships.find((ship) => ship.npcId === npc.id);
   if (!local || npc.hullHp <= 0) return null;
-  return ships
-    .filter((entry) =>
-      (entry.factionId === 'pirate-a' || entry.factionId === 'pirate-b') &&
-      entry.ship.hullHp > 0 &&
-      entry.targetId === npc.id
-    )
-    .sort((a, b) =>
-      Math.hypot(a.ship.position.x - local.position.x, a.ship.position.y - local.position.y) -
-      Math.hypot(b.ship.position.x - local.position.x, b.ship.position.y - local.position.y)
-    )[0] ?? null;
+  return (
+    ships
+      .filter(
+        (entry) =>
+          (entry.factionId === 'pirate-a' || entry.factionId === 'pirate-b') &&
+          entry.ship.hullHp > 0 &&
+          entry.targetId === npc.id
+      )
+      .sort(
+        (a, b) =>
+          Math.hypot(a.ship.position.x - local.position.x, a.ship.position.y - local.position.y) -
+          Math.hypot(b.ship.position.x - local.position.x, b.ship.position.y - local.position.y)
+      )[0] ?? null
+  );
 }
 
 function beginDefense(
