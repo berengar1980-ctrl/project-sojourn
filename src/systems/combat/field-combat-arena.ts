@@ -73,7 +73,7 @@ export function appendCombatWrecksToArena(
     obstacles.push({
       id: wreck.id,
       position: body.position,
-      radius: body.collisionRadius ?? body.radius,
+      radius: wreck.radius * 0.5,
     });
   }
 }
