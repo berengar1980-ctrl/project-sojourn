@@ -2,7 +2,7 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { AsteroidFieldRuntime } from '../operations/asteroid-field-world';
-import { miningFieldCombatArena } from './field-combat-arena';
+import { appendCombatWrecksToArena, miningFieldCombatArena } from './field-combat-arena';
 import { createFleetCareerMiningBridge } from './fleet-career-mining-bridge';
 import { createFleetCareerFieldSecurityBridge } from './fleet-career-field-security-bridge';
 import { createFleetCareerLootSettlement } from './fleet-career-loot-settlement';
@@ -69,6 +69,7 @@ export function createFleetCombatForCareerField(
     registerWrecks,
     'fleet-' + field.locationId + '-' + field.combatWrecks.length
   );
+  const arena = miningFieldCombatArena(field.instance, playerVelocity, field.combatWrecks);
   let elapsedSeconds = 0;
   const world = {
     beforeWorldTick(ships: Parameters<NonNullable<typeof bridge.world.beforeWorldTick>>[0]) {
@@ -87,10 +88,10 @@ export function createFleetCombatForCareerField(
       bridge.world.afterCombatTick?.(ships, shots);
       security?.world.afterCombatTick?.(ships, shots);
       loot.settle(ships, shots);
-      wrecks.settle(ships, elapsedSeconds);
+      const createdWrecks = wrecks.settle(ships, elapsedSeconds);
+      if (createdWrecks.length) appendCombatWrecksToArena(arena, createdWrecks);
     },
   };
-  const arena = miningFieldCombatArena(field.instance, playerVelocity, field.combatWrecks);
   return createFleetCombatService(
     [...otherParticipants, ...bridge.participants, ...(security?.participants ?? [])],
     arena,
