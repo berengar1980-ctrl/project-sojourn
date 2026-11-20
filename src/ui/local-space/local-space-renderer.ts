@@ -1,6 +1,9 @@
 import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-drone-visual';
 import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
-import { drawMiningCombatWrecks } from './local-combat-wreck-renderer';
+import {
+  drawMiningCombatWrecks,
+  type CombatWreckHitArea,
+} from './local-combat-wreck-renderer';
 import { drawLocalNavigationRoute } from './local-space-navigation-route';
 import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { measurePerformance } from '../../core/performance-diagnostics';
@@ -48,6 +51,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected model: LocalSpaceViewModel;
   protected hitAreas: readonly AsteroidHitArea[] = [];
   protected npcHitAreas: readonly NpcHitArea[] = [];
+  private combatWreckHitAreas: readonly CombatWreckHitArea[] = [];
+  private selectedCombatWreckId: string | null = null;
   protected loadedShipUrl = '';
   protected hasFitted = false;
   protected debugHardpoints = false;
@@ -186,6 +191,18 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     }
     return best?.id ?? null;
   }
+  pickCombatWreck(x: number, y: number): string | null {
+    let closest: CombatWreckHitArea | null = null;
+    for (const area of this.combatWreckHitAreas) {
+      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
+      if (!closest || area.radius < closest.radius) closest = area;
+    }
+    return closest?.id ?? null;
+  }
+  selectCombatWreck(id: string | null): void {
+    this.selectedCombatWreckId = id;
+    this.draw();
+  }
   protected ensureShipImage(url: string): void {
     if (this.loadedShipUrl === url) return;
     this.loadedShipUrl = url;
@@ -229,7 +246,14 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       return areas;
     });
 
-    drawMiningCombatWrecks(this.context, this.camera, this.model.combatWrecks ?? [], width, height);
+    this.combatWreckHitAreas = drawMiningCombatWrecks(
+      this.context,
+      this.camera,
+      this.model.combatWrecks ?? [],
+      width,
+      height,
+      this.selectedCombatWreckId
+    );
     this.npcHitAreas = measurePerformance('canvas.local.npc-ships', () =>
       this.drawNpcShips(width, height, timeSeconds)
     );
