@@ -517,7 +517,6 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Regression in `tests/combat/fleet-native-specials.test.cjs`: zwei gegnerische Minen, beide in derselben Simulationsrunde scharf und ausgelöst; jede Detonation muss gesondert dem korrekten Angreifer und Ziel zugeordnet sein.
 - **Status: implementiert, automatisch formatiert und zur vollständigen CI-Verifikation eingereicht.** Nachfolgend zu prüfen sind Zielwechsel während aktiver Minen/Würfe, Mehrfachkontakte mit Drittparteien und Renderer-/Kampagnen-Integrationsparität.
 
-
 ## FC-42 – Zielwechsel und Lebenszyklus bestehender Kampfobjekte
 
 - Nach dem Abschuss beziehungsweise Legen behalten **Minen und Traktorwürfe** ihre ursprüngliche Ziel- und Besitzerbindung; eine neue Zielwahl des Schiffs und das Auftauchen eines dritten Kämpfers ändern bereits ausgelöste Flug- und Detonationsvorgänge nicht.

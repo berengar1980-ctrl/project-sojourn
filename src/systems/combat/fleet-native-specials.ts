@@ -172,13 +172,15 @@ function advanceExistingFleetSpecials(
   if (!attackerActive && !defenderActive) return false;
   runtime.elapsedSeconds = now;
   runtime.mines.splice(
-    0, runtime.mines.length,
+    0,
+    runtime.mines.length,
     ...runtime.mines.filter((mine) =>
       activeIds.has((mine.owner === 'attacker' ? runtime.defender : runtime.attacker).setup.id)
     )
   );
   runtime.thrownAsteroids.splice(
-    0, runtime.thrownAsteroids.length,
+    0,
+    runtime.thrownAsteroids.length,
     ...runtime.thrownAsteroids.filter((rock) =>
       activeIds.has((rock.owner === 'attacker' ? runtime.defender : runtime.attacker).setup.id)
     )
