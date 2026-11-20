@@ -49,12 +49,20 @@ function renderFleetCanvas(
     context.rotate(ship.headingRadians);
     context.fillStyle = ship.hullHp > 0 ? color : '#58616b';
     context.beginPath();
-    context.moveTo(11, 0);
-    context.lineTo(-8, -7);
-    context.lineTo(-5, 0);
-    context.lineTo(-8, 7);
-    context.closePath();
-    context.fill();
+    if (entry.factionId === 'security') {
+      context.arc(0, 0, 8, 0, Math.PI * 2);
+      context.fill();
+      context.strokeStyle = '#bca65c';
+      context.lineWidth = 1.5;
+      context.stroke();
+    } else {
+      context.moveTo(11, 0);
+      context.lineTo(-8, -7);
+      context.lineTo(-5, 0);
+      context.lineTo(-8, 7);
+      context.closePath();
+      context.fill();
+    }
     context.restore();
     context.font = '12px monospace';
     context.fillStyle = '#d9e0e3';
