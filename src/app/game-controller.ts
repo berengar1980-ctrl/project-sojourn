@@ -420,9 +420,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     world: () => engagementWorld(),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
-    onNpcCombatEnded: (snapshot, attacker, defender) => {
-      if (!combatContext) return;
-      recordCareerCombatWrecks(combatContext, snapshot, attacker.locationId ?? defender.locationId);
+    onNpcCombatEnded: (snapshot, attacker) => {
+      if (combatContext) recordCareerCombatWrecks(combatContext, snapshot, attacker.locationId);
     },
     mayInterceptPlayer: () => !state.combatResultPending && state.combatReengageSeconds <= 0,
     getPlayerShip: () => state.activeShip,
