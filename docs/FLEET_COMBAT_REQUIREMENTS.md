@@ -440,3 +440,13 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   über das normale Karriere-Feldcheckpoint mitgenommen.
   Die FC-37-Qualitätsprüfung erfolgt nach der automatischen Formatierung
   erneut auf dem formatierten Feature-Branch.
+
+
+## FC-38 – Neue Wracks sofort in der aktiven FleetCombat-Arena (Implementierung)
+
+- Der FC-37-Adapter erzeugt und persistiert Wracks weiterhin ausschließlich über die bestehende Kampagnen-Bergungsfabrik und die Feldwelt.
+- Nach der Schadensrunde ergänzt `appendCombatWrecksToArena` neu registrierte Wracks unmittelbar in **derselben** FleetCombat-Arena, statt die Arena neu zu erstellen. Ihre vorhandene `wreckCombatBody`-Geometrie wird unverändert wiederverwendet: Darstellung, Silhouetten-Kollisionsradius, Drift und Rotation.
+- Die bereits vorhandene `resolveCombatAsteroidContacts`-Kollisionsroutine und Hindernisnavigation finden diese Körper ab dem nächsten Simulationsschritt. Es gibt keinen zweiten Kollisionssolver.
+- Wiederholte Schadensrunden dürfen dieselbe Wrack-ID nicht erneut einfügen. Später zerstörte NPCs erscheinen zusätzlich in der bereits laufenden Arena.
+- Regression: `tests/combat/fleet-career-wreck-settlement.test.cjs` prüft sofortige Einfügung, Kollisions-/Navigationskörper, native Kontaktgeometrie, idempotente Wiederholung und nachfolgende Abschüsse.
+- **Status: Implementiert, noch nicht als CI-grün bestätigt.** Automatische Kampagnenaktivierung und vollständige Waffen-/Renderer-Parität bleiben offen; der geschützte 1vs1-Kern bleibt unverändert.
