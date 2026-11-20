@@ -420,6 +420,33 @@
   color: #efd66b;
 }
 
+/* PvP test navigation is a lobby control, never part of the combat viewport. */
+.harrow-combat-tests {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+.harrow-combat-tabs__content {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.harrow-combat-tabs[hidden],
+.harrow-combat-tests.is-combat-active > .harrow-combat-tabs {
+  display: none;
+}
+.harrow-combat-tabs__content > .strategic-combat-shell {
+  width: 100%;
+  height: 100%;
+}
+.harrow-combat-tabs__content > .harrow-duel,
+.harrow-combat-tabs__content > .harrow-fleet {
+  height: 100%;
+}
 /* The FleetCombat test lab is separate from the unchanged 1vs1 canvas. */
 .harrow-combat-tabs {
   display: flex;
@@ -440,9 +467,6 @@
   color: #efd66b;
   border-color: #c5a94f;
   background: #303027;
-}
-.harrow-combat-tabs__content > .harrow-duel {
-  height: calc(100vh - 63px);
 }
 .harrow-fleet__options {
   display: flex;
