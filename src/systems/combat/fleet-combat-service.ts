@@ -265,10 +265,7 @@ function fleetView(
   };
 }
 
-function activateFleetArrivals(
-  fleet: readonly FleetShip[],
-  elapsedSeconds: number
-): string[] {
+function activateFleetArrivals(fleet: readonly FleetShip[], elapsedSeconds: number): string[] {
   const arrivals: string[] = [];
   for (const ship of fleet) {
     if (!ship.active && !ship.departed && ship.spawnAtSeconds <= elapsedSeconds + 1e-8) {
