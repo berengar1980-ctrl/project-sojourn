@@ -41,6 +41,7 @@ if (mainAvailable) {
     'src/systems/combat/fleet-faction-policy.ts',
     'src/systems/combat/fleet-security-drone-interceptor.ts',
     'src/systems/combat/fleet-career-npc-adapter.ts',
+    'src/systems/combat/fleet-career-mining-bridge.ts',
   ]);
   const unexpected = changed.filter((file) => !allowed.has(file));
   assert.deepEqual(
