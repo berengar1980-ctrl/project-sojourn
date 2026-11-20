@@ -202,6 +202,10 @@
     "src/systems/combat/fleet-combat-lifecycle.ts": {
       "mode": "derived",
       "reason": "Stateless FleetCombat scenario validation, arrival activation and authoritative campaign-world synchronization; does not own any checkpoint domain."
+    },
+    "src/systems/combat/fleet-career-field-entry.ts": {
+      "mode": "derived",
+      "reason": "Stateless entrypoint composing the already checkpointed AsteroidFieldWorld, its authoritative local miner service and supplied career participants into the shared FleetCombat factory. The campaign retains ownership of persisted field and NPC state; active fleet encounter checkpoint integration is not yet implemented."
     }
   }
 }
