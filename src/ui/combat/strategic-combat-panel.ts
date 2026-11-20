@@ -226,9 +226,15 @@ export function createStrategicCombatPanel(
   resizeObserver.observe(canvas);
 
   let lastHudTime = -Infinity;
+  let defeatReturnTimer: ReturnType<typeof setTimeout> | null = null;
+  let defeatReturnStartedAt: number | null = null;
   const render = (): void => {
     const model = options.combat.getSnapshot();
     renderer.update(model);
+    if (model.winner !== null && model.attacker.hullHp <= 0 && defeatReturnTimer === null) {
+      defeatReturnStartedAt = performance.now();
+      defeatReturnTimer = setTimeout(() => options.onReturn(), 2200);
+    }
     // Canvas follows every frame; rebuilding HTML/HUD controls at 60 FPS causes
     // avoidable layout and garbage-collection work during longer duels.
     if (model.elapsedSeconds - lastHudTime < 0.1 && model.winner === null) return;
@@ -247,7 +253,14 @@ export function createStrategicCombatPanel(
         String(seconds % 60).padStart(2, '0');
     }
     returnButton.hidden = model.winner === null;
-    returnButton.textContent = model.boardingInitiator ? 'ENTERKAMPF STARTEN' : 'ZUR STERNKARTE';
+    returnButton.textContent =
+      model.attacker.hullHp <= 0 && model.winner !== null
+        ? 'SCHIFF ZERSTÖRT · BERGUNG...'
+        : model.boardingInitiator
+          ? 'ENTERKAMPF STARTEN'
+          : 'ZUR STERNKARTE';
+    returnButton.disabled =
+      defeatReturnStartedAt !== null && performance.now() - defeatReturnStartedAt < 2200;
     if (grappleButton) {
       grappleButton.disabled =
         model.winner !== null ||
@@ -271,13 +284,17 @@ export function createStrategicCombatPanel(
     if (surrenderButton) surrenderButton.disabled = model.winner !== null;
   };
 
-  returnButton.addEventListener('click', options.onReturn);
+  returnButton.addEventListener('click', () => {
+    if (defeatReturnStartedAt !== null && performance.now() - defeatReturnStartedAt < 2200) return;
+    options.onReturn();
+  });
   bindCombatOrders(shell, options.combat, render);
   render();
 
   return {
     update: render,
     destroy() {
+      if (defeatReturnTimer !== null) clearTimeout(defeatReturnTimer);
       resizeObserver.disconnect();
       unbindCamera();
       shell.remove();
