@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
+const load = (filename) => loadStandaloneTypeScriptModule(root, filename);
 const { createFleetFieldTickOwnership } = load('src/systems/combat/fleet-field-tick-ownership.ts');
 
 const firstField = { locationId: 'field-a' };
