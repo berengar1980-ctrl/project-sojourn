@@ -91,6 +91,8 @@ const members = [
 ];
 let worldTicks = 0;
 const world = {
+  beforeWorldTick: bridge.world.beforeWorldTick,
+  afterCombatTick: bridge.world.afterCombatTick,
   tickWorld(dt) {
     worldTicks++;
     bridge.world.tickWorld(dt);
