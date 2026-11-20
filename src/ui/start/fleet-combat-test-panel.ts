@@ -72,7 +72,9 @@ function renderFleetCanvas(
     current.ships.filter((entry) => entry.ship.hullHp > 0).length +
     ' / ' +
     current.ships.length +
-    ' Schiffe intakt';
+    ' Schiffe intakt · Wartend: ' +
+    current.pendingArrivals.map((entry) => entry.id + ' (+' + entry.atSeconds + ' s)').join(', ') +
+    (current.arrivedShipIds.length ? ' · Eingetroffen: ' + current.arrivedShipIds.join(', ') : '');
 }
 
 /**
