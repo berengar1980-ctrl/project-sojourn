@@ -159,6 +159,87 @@ assert.deepEqual(
   new Set(['mine-a:mine-b', 'mine-b:mine-a']),
   'each simultaneous mine hit retains its own attacker/target contribution'
 );
+
+// FC-42: a mine keeps its ORIGINAL victim when the owner switches to a third
+// ship. It must also finish arming/detonating after its owner leaves the field.
+const switchingSource = ship('switching-miner', 200);
+const originalVictim = ship('original-victim', 440);
+const interveningPirate = ship('intervening-pirate', 900);
+switchingSource.mineStock.push({
+  id: 'switch-mine', name: 'Switch mine', kind: 'ion', tier: 1,
+  pursuitSeconds: 0, pursuitSpeedMetersPerSecond: 0,
+  triggerRadiusMeters: 120, shieldDamage: 25, hullDamage: 20,
+});
+originalVictim.velocity.x = -25;
+const switchingSpecials = createFleetNativeSpecials(arena());
+switchingSpecials.tick(0.08, 0.08, [switchingSource, originalVictim, interveningPirate],
+  (actor) => actor === switchingSource ? originalVictim : null);
+assert.equal(switchingSpecials.mines().length, 1, 'original mine has been deployed');
+originalVictim.position.x = 260;
+switchingSpecials.tick(0.08, 0.16, [switchingSource, originalVictim, interveningPirate],
+  (actor) => actor === switchingSource ? interveningPirate : null);
+assert.equal(switchingSpecials.mines()[0].ownerId, 'switching-miner');
+const retainedMineHits = [];
+for (let index = 2; index < 15; index++) {
+  // The mine owner has exited, and the third participant is still present.
+  retainedMineHits.push(...switchingSpecials.tick(
+    0.08, (index + 1) * 0.08, [originalVictim, interveningPirate], () => null
+  ));
+}
+assert(retainedMineHits.some((hit) =>
+  hit.sourceId === 'switching-miner' && hit.targetId === 'original-victim'
+), 'departed owner retains attribution and the original mine still detonates');
+assert.equal(interveningPirate.shieldHp, 100, 'third-party ship is not a retargeted victim');
+
+// If the original mine victim leaves, the old target-locked mine must not
+// freeze indefinitely and later hit a ghost or a newly arriving ship.
+const abandonedSource = ship('abandoned-source', 200);
+const abandonedVictim = ship('abandoned-victim', 440);
+abandonedVictim.velocity.x = -25;
+abandonedSource.mineStock.push({
+  id: 'abandoned-mine', name: 'Abandoned mine', kind: 'ion', tier: 1,
+  pursuitSeconds: 0, pursuitSpeedMetersPerSecond: 0,
+  triggerRadiusMeters: 120, shieldDamage: 25, hullDamage: 20,
+});
+const abandonedPhysics = createFleetNativeSpecials(arena());
+abandonedPhysics.tick(0.08, 0.08, [abandonedSource, abandonedVictim],
+  (actor) => actor === abandonedSource ? abandonedVictim : null);
+assert.equal(abandonedPhysics.mines().length, 1);
+abandonedPhysics.tick(0.08, 0.16, [abandonedSource], () => null);
+assert.equal(abandonedPhysics.mines().length, 0, 'departed target cannot retain ghost mine');
+assert.equal(abandonedPhysics.tick(0.08, 0.24, [abandonedSource, abandonedVictim],
+  () => null).length, 0, 'a returning ship cannot be hit by a removed mine');
+
+// A launched native tractor rock must keep moving and striking the original
+// victim even if the thrower changes targets and subsequently departs.
+const switchingArena = arena();
+switchingArena.asteroids.push({
+  id: 'switching-rock', kind: 'debris', radius: 12,
+  position: { x: 250, y: 500 }, velocity: { x: 0, y: 0 },
+  angularVelocity: 0, rotation: 0,
+});
+const rockThrower = ship('rock-thrower', 200, 0);
+rockThrower.setup.tractorCanManipulateObjects = true;
+rockThrower.setup.tractorRangeMeters = 500;
+rockThrower.subsystems.tractor = 100;
+const rockVictim = ship('rock-victim', 650, 120);
+const rockIntruder = ship('rock-intruder', 1000);
+const switchingRocks = createFleetNativeSpecials(switchingArena);
+switchingRocks.tick(0.08, 0.08, [rockThrower, rockVictim, rockIntruder],
+  (actor) => actor === rockThrower ? rockVictim : null);
+assert.equal(switchingRocks.throws().length, 1);
+switchingRocks.tick(0.08, 0.16, [rockThrower, rockVictim, rockIntruder],
+  (actor) => actor === rockThrower ? rockIntruder : null);
+const rockSwitchHits = [];
+for (let index = 2; index < 51; index++) {
+  rockSwitchHits.push(...switchingRocks.tick(
+    0.08, (index + 1) * 0.08, [rockVictim, rockIntruder], () => null
+  ));
+}
+assert(rockSwitchHits.some((hit) =>
+  hit.sourceId === 'rock-thrower' && hit.targetId === 'rock-victim'
+), 'a thrown rock keeps its original trajectory and damage source after withdrawal');
+assert.equal(rockIntruder.shieldHp, 100, 'late-joining enemy does not steal prior projectile');
 console.log(
-  'PASS fleet native ram, simultaneous mines and tractor physics using protected campaign functions'
+  'PASS fleet native ram, simultaneous mines, persistent target locks and tractor physics using protected campaign functions'
 );
