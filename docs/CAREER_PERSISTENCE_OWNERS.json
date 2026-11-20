@@ -222,6 +222,10 @@
     "src/systems/combat/fleet-career-loot-settlement.ts": {
       "mode": "transient",
       "reason": "The shared FleetCombat encounter keeps a per-victim damage-contributor ledger and exactly-once settlement flags in memory, while all awarded cargo and pirate activity changes are made to checkpoint-owned SectorNpcState. Active fleet checkpoint/recovery must preserve contributor ledger and settlement flags before productive activation."
+    },
+    "src/systems/combat/fleet-career-wreck-settlement.ts": {
+      "mode": "transient",
+      "reason": "One-time destroyed-ship bookkeeping for an active shared encounter. Wrecks are created with the existing salvage factory and committed to authoritative persisted AsteroidFieldWorld combatWrecksByLocation; no separate permanent wreck ledger."
     }
   }
 }
