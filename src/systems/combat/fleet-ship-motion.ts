@@ -156,9 +156,7 @@ export function advanceFleetMotion(
       const a = fleet[i]!.combatant;
       const b = fleet[j]!.combatant;
       if (a.hullHp > 0 && b.hullHp > 0) {
-        registerNativeRamContact(
-          a, b, fleet[i]!.factionId, fleet[j]!.factionId, onRamContact
-        );
+        registerNativeRamContact(a, b, fleet[i]!.factionId, fleet[j]!.factionId, onRamContact);
         resolveCombatantCollision(a, b);
       }
     }
