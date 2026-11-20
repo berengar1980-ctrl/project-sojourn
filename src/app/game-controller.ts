@@ -24,14 +24,12 @@ import { createShipOperatingService } from '../systems/ships/ship-operating-cost
 import { createFuelJourneyService } from './game-controller-fuel-journey';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
-import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import { createControllerSettingsMenu } from './game-controller-settings';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
 import { captureControllerCareer } from './game-controller-career-capture';
-import { controllerCareerSaveBlockReason } from './game-controller-career-save-policy';
 import {
   installControllerCareer,
-  saveControllerCareer,
   rememberMiningField,
 } from './game-controller-career-install';
 import { createInitialControllerState } from './game-controller-initial-state';
@@ -80,20 +78,6 @@ import {
   servicedPlayerCombatant,
 } from './game-controller-ship-service';
 export type { GameController } from './game-controller-types';
-function createControllerSettingsMenu(
-  context: ControllerRuntimeContext,
-  options: GameControllerOptions
-): ReturnType<typeof createSettingsMenu> {
-  return createSettingsMenu(
-    context.audio,
-    options.onReturnToMainMenu,
-    context.state.playerProfile,
-    () => saveControllerCareer(context),
-    options.onLoadCareer,
-    () => controllerCareerSaveBlockReason(context)
-  );
-}
-
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   mountControllerShipSwitcher(context, (mode) => {
     if (mode === 'local-space') mountControllerMining(context, true);
