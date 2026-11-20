@@ -72,7 +72,7 @@ function restoredCombatWrecks(
           )
         )
           throw new Error('Invalid saved combat wreck field');
-    restored.set(id, cloneCareerJson(wrecks));
+    restored.set(id, cloneCareerJson([...wrecks]));
       }
   return restored;
 }
