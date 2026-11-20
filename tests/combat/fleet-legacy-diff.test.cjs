@@ -42,6 +42,7 @@ if (mainAvailable) {
     'src/systems/combat/fleet-security-drone-interceptor.ts',
     'src/systems/combat/fleet-career-npc-adapter.ts',
     'src/systems/combat/fleet-career-mining-bridge.ts',
+    'src/systems/combat/fleet-career-field-entry.ts',
     'src/systems/combat/fleet-combat-lifecycle.ts',
   ]);
   const unexpected = changed.filter((file) => !allowed.has(file));
