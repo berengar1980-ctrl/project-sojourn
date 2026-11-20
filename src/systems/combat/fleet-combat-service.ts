@@ -13,7 +13,7 @@ import {
   hashSeed,
   snapshot,
 } from './strategic-combat-geometry';
-import { advanceFleetMotion } from './fleet-ship-motion';
+import { advanceFleetMotion, type FleetMotionShip } from './fleet-ship-motion';
 import {
   createFleetWeaponPhysics,
   type FleetWeaponBeam,
@@ -118,16 +118,7 @@ export interface FleetCombatService {
   setTarget(shipId: string, targetId: string | null): void;
 }
 
-export interface FleetShip {
-  readonly factionId: string;
-  readonly combatant: MutableCombatant;
-  targetId: string | null;
-  readonly spawnAtSeconds: number;
-  active: boolean;
-  departed: boolean;
-  combatMotionOwned: boolean;
-  readonly externalMovement?: FleetCombatParticipant['externalMovement'];
-}
+type FleetShip = FleetMotionShip;
 
 function fleetView(
   fleet: readonly FleetShip[],
