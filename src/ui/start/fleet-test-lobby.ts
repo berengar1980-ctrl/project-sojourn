@@ -253,7 +253,7 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   const capabilities = document.createElement('p');
   capabilities.className = 'harrow-fleet__capabilities';
   capabilities.textContent =
-    'Testaufbau · Die gemeinsame Kampfsimulation und die Kampagnen-NPC-KI sind noch nicht angeschlossen. Es werden keine separaten 1vs1-Kämpfe als FleetCombat vorgetäuscht.';
+    'Testaufbau · Der gemeinsame 2vs1-Kampfkern ist für 0 Miner, 0 Drohnen, 2 Piraten A und 0 Piraten B verfügbar. Kampagnen-NPC-KI, Minen, Traktor und vollständige Waffenphysik folgen.';
   const roster = document.createElement('div');
   roster.className = 'harrow-fleet__roster';
   const actions = document.createElement('div');
