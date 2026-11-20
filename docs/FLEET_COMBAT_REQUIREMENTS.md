@@ -516,3 +516,13 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Schiffs-Cooldowns werden weiterhin höchstens einmal pro aktivem Combatant-Tick dekrementiert. Nicht beteiligte NPCs behalten ihre Werte.
 - Regression in `tests/combat/fleet-native-specials.test.cjs`: zwei gegnerische Minen, beide in derselben Simulationsrunde scharf und ausgelöst; jede Detonation muss gesondert dem korrekten Angreifer und Ziel zugeordnet sein.
 - **Status: implementiert, automatisch formatiert und zur vollständigen CI-Verifikation eingereicht.** Nachfolgend zu prüfen sind Zielwechsel während aktiver Minen/Würfe, Mehrfachkontakte mit Drittparteien und Renderer-/Kampagnen-Integrationsparität.
+
+
+## FC-42 – Zielwechsel und Lebenszyklus bestehender Kampfobjekte
+
+- Nach dem Abschuss beziehungsweise Legen behalten **Minen und Traktorwürfe** ihre ursprüngliche Ziel- und Besitzerbindung; eine neue Zielwahl des Schiffs und das Auftauchen eines dritten Kämpfers ändern bereits ausgelöste Flug- und Detonationsvorgänge nicht.
+- Verlässt der Besitzer die Detailkarte, läuft ein bereits ausgelöster Spezialangriff gegen das **noch anwesende ursprüngliche Ziel** weiter. Schadensbeiträge werden weiterhin der Besitzer-ID gutgeschrieben, ohne diese Einheit erneut zu spawnen oder selbständig zu steuern.
+- Hat das ursprüngliche Ziel die Detailkarte verlassen, werden dessen veraltete zielgebundene Minen und Wurfobjekte aus dem Begegnungszustand entfernt, statt unbegrenzt einzufrieren oder später ein zurückkehrendes Schiff als Geistertreffer zu treffen.
+- Ein historischer Kontakt ohne ausstehende Kampfobjekte verlängert nicht unbegrenzt die Kampf-Cooldowns eines mittlerweile neutralen NPCs. Die vorhandenen 1vs1-Module für Schaden und Physik bleiben unverändert.
+- Regression in `tests/combat/fleet-native-specials.test.cjs`: Zielwechsel vor Minenexplosion, Abgang des Minenlegers, Abgang und Rückkehr des ursprünglichen Ziels, Zielwechsel vor Traktorwurf-Treffer, Abgang des Werfers sowie Eingriff eines dritten Schiffs ohne nachträgliche Projektil-Umlenkung.
+- **Status: implementiert, CI noch zu verifizieren.** Mehrpartei-Kollateralschaden auf fremde Schiffe, Besitzerwechsel bei Bergung und vollständige visuelle Integration bleiben separate offene Anforderungen.
