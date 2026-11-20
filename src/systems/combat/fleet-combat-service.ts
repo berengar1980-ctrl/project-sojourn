@@ -265,6 +265,20 @@ function fleetView(
   };
 }
 
+function activateFleetArrivals(
+  fleet: readonly FleetShip[],
+  elapsedSeconds: number
+): string[] {
+  const arrivals: string[] = [];
+  for (const ship of fleet) {
+    if (!ship.active && !ship.departed && ship.spawnAtSeconds <= elapsedSeconds + 1e-8) {
+      ship.active = true;
+      arrivals.push(ship.combatant.setup.id);
+    }
+  }
+  return arrivals;
+}
+
 function validateFleetScenario(
   participants: readonly FleetCombatParticipant[],
   arena: StrategicCombatArenaOptions
@@ -400,13 +414,7 @@ export function createFleetCombatService(
       }
     }
     elapsedSeconds += dt;
-    arrivedIds = [];
-    for (const ship of fleet) {
-      if (!ship.active && !ship.departed && ship.spawnAtSeconds <= elapsedSeconds + 1e-8) {
-        ship.active = true;
-        arrivedIds.push(ship.combatant.setup.id);
-      }
-    }
+    arrivedIds = activateFleetArrivals(fleet, elapsedSeconds);
   };
 
   return {
