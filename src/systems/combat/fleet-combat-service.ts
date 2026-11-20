@@ -22,6 +22,8 @@ export interface FleetCombatParticipant {
   readonly headingRadians?: number;
   /** An uninvolved worker may remain neutral and can later be engaged. */
   readonly targetId?: string | null;
+  /** 0 = present from scene start; positive seconds = enter through a map boundary. */
+  readonly spawnAtSeconds?: number;
 }
 
 export interface FleetCombatShipSnapshot {
@@ -44,6 +46,8 @@ export interface FleetCombatSnapshot {
   readonly elapsedSeconds: number;
   readonly ships: readonly FleetCombatShipSnapshot[];
   readonly shots: readonly FleetCombatShotSnapshot[];
+  readonly pendingArrivals: readonly { id: string; atSeconds: number }[];
+  readonly arrivedShipIds: readonly string[];
   readonly arena: StrategicCombatArenaOptions;
 }
 
@@ -57,7 +61,8 @@ interface FleetShip {
   readonly factionId: string;
   readonly combatant: MutableCombatant;
   targetId: string | null;
-  nextTargetReview: number;
+  readonly spawnAtSeconds: number;
+  active: boolean;
 }
 
 function advanceFleetMotion(
@@ -184,6 +189,9 @@ export function createFleetCombatService(
     const id = entry.setup.id;
     if (!id || byId.has(id)) throw new Error('Duplicate or empty FleetCombat ship ID: ' + id);
     if (!entry.factionId) throw new Error('Missing FleetCombat faction for ' + id);
+    if (entry.spawnAtSeconds !== undefined && (!Number.isFinite(entry.spawnAtSeconds) || entry.spawnAtSeconds < 0)) {
+      throw new Error('Invalid FleetCombat arrival time for ' + id);
+    }
     const combatant = createCombatant(entry.setup, 'attacker', {
       ...arena,
       attackerPosition: entry.position,
@@ -195,13 +203,15 @@ export function createFleetCombatService(
       factionId: entry.factionId,
       combatant,
       targetId: entry.targetId ?? null,
-      nextTargetReview: 0,
+      spawnAtSeconds: entry.spawnAtSeconds ?? 0,
+      active: (entry.spawnAtSeconds ?? 0) === 0,
     };
     fleet.push(ship);
     byId.set(id, ship);
   }
   let elapsedSeconds = 0;
   let shots: FleetCombatShotSnapshot[] = [];
+  let arrivedIds: string[] = [];
 
   const validEnemy = (ship: FleetShip, target: FleetShip | undefined): target is FleetShip =>
     !!target &&
@@ -229,11 +239,16 @@ export function createFleetCombatService(
 
   const view = (): FleetCombatSnapshot => ({
     elapsedSeconds,
-    ships: fleet.map((entry) => ({
+    ships: fleet.filter((entry) => entry.active).map((entry) => ({
       factionId: entry.factionId,
       targetId: entry.targetId,
       ship: snapshot(entry.combatant),
     })),
+    pendingArrivals: fleet.filter((entry) => !entry.active).map((entry) => ({
+      id: entry.combatant.setup.id,
+      atSeconds: entry.spawnAtSeconds,
+    })),
+    arrivedShipIds: arrivedIds.slice(),
     shots: shots.map((shot) => ({
       ...shot,
       origin: { ...shot.origin },
@@ -244,8 +259,16 @@ export function createFleetCombatService(
 
   const step = (dt: number): void => {
     elapsedSeconds += dt;
-    advanceFleetMotion(fleet, acquire, arena, dt);
-    shots = advanceFleetFire(fleet, acquire, dt);
+    arrivedIds = [];
+    for (const ship of fleet) {
+      if (!ship.active && ship.spawnAtSeconds <= elapsedSeconds + 1e-8) {
+        ship.active = true;
+        arrivedIds.push(ship.combatant.setup.id);
+      }
+    }
+    const present = fleet.filter((ship) => ship.active);
+    advanceFleetMotion(present, acquire, arena, dt);
+    shots = advanceFleetFire(present, acquire, dt);
   };
 
   return {
@@ -253,16 +276,25 @@ export function createFleetCombatService(
     tick(deltaSeconds) {
       if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return view();
       let remaining = Math.min(deltaSeconds, 0.5);
+      const arrivals: string[] = [];
       while (remaining > 0.000001) {
-        const dt = Math.min(remaining, 0.08);
+        const nextArrival = fleet.reduce((earliest, ship) =>
+          !ship.active && ship.spawnAtSeconds > elapsedSeconds + 1e-8
+            ? Math.min(earliest, ship.spawnAtSeconds - elapsedSeconds)
+            : earliest, Infinity);
+        const dt = Math.min(remaining, 0.08, nextArrival);
+        if (dt <= 0) break;
         step(dt);
+        arrivals.push(...arrivedIds);
         remaining -= dt;
       }
+      arrivedIds = arrivals;
       return view();
     },
     setTarget(shipId, targetId) {
       const ship = byId.get(shipId);
       if (!ship) throw new Error('Unknown FleetCombat ship: ' + shipId);
+      if (!ship.active) throw new Error('FleetCombat ship has not arrived: ' + shipId);
       if (targetId !== null && !validEnemy(ship, byId.get(targetId))) {
         throw new Error('Invalid FleetCombat target: ' + targetId);
       }
