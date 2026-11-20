@@ -8,7 +8,8 @@ import type { CombatVisualAsteroid, StrategicCombatArenaOptions } from './strate
 /** Preserve every native mining body, including its real velocity and contact radius. */
 export function miningFieldCombatArena(
   instance: LocalSpaceInstance,
-  velocity: WorldPoint
+  velocity: WorldPoint,
+  wrecks: readonly SalvageWreck[] = []
 ): StrategicCombatArenaOptions {
   return {
     width: instance.width,
@@ -17,7 +18,7 @@ export function miningFieldCombatArena(
     attackerPosition: { ...instance.ship.position },
     attackerHeadingRadians: instance.ship.headingRadians,
     attackerVelocity: { ...velocity },
-    asteroids: instance.asteroids.map((asteroid) => ({
+    asteroids: [...instance.asteroids.map((asteroid) => ({
       id: asteroid.id,
       kind: asteroid.kind,
       position: { ...asteroid.position },
@@ -29,14 +30,19 @@ export function miningFieldCombatArena(
         ? { collisionRadius: asteroid.collisionRadius }
         : {}),
       rotation: asteroid.rotation,
-    })),
-    obstacles: instance.asteroids
-      .filter((asteroid) => asteroid.kind === 'resource')
-      .map((asteroid) => ({
+    })), ...wrecks.map(wreckCombatBody)],
+    obstacles: [
+      ...instance.asteroids.filter((asteroid) => asteroid.kind === 'resource').map((asteroid) => ({
         id: asteroid.id,
         position: { ...asteroid.position },
         radius: asteroid.collisionRadius ?? asteroid.radius,
       })),
+      ...wrecks.map((wreck) => ({
+        id: wreck.id,
+        position: { ...wreck.position },
+        radius: wreck.radius * 0.5,
+      })),
+    ],
   };
 }
 
