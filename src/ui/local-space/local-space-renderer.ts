@@ -1,5 +1,6 @@
 import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-drone-visual';
 import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
+import { drawMiningCombatWrecks } from './local-combat-wreck-renderer';
 import { drawLocalNavigationRoute } from './local-space-navigation-route';
 import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { measurePerformance } from '../../core/performance-diagnostics';
@@ -228,6 +229,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       return areas;
     });
 
+    drawMiningCombatWrecks(this.context, this.camera, this.model.combatWrecks ?? [], width, height);
     this.npcHitAreas = measurePerformance('canvas.local.npc-ships', () =>
       this.drawNpcShips(width, height, timeSeconds)
     );
