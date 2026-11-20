@@ -1,9 +1,38 @@
-import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
 import type {
-  FleetShip,
-  FleetCombatShipSnapshot,
-  FleetCombatWorldOptions,
-} from './fleet-combat-service';
+  CombatPoint, CombatTactic, MutableCombatant,
+  StrategicCombatArenaOptions, StrategicCombatantSnapshot,
+} from './strategic-combat-types';
+
+interface FleetCombatShipSnapshot {
+  readonly factionId: string;
+  readonly targetId: string | null;
+  readonly ship: StrategicCombatantSnapshot;
+}
+export interface FleetMotionShip {
+  readonly factionId: string;
+  readonly combatant: MutableCombatant;
+  targetId: string | null;
+  readonly spawnAtSeconds: number;
+  active: boolean;
+  departed: boolean;
+  combatMotionOwned: boolean;
+  readonly externalMovement?: (
+    dt: number, nearby: readonly FleetCombatShipSnapshot[]
+  ) => {
+    readonly position: CombatPoint;
+    readonly headingRadians: number;
+    readonly targetId: string | null;
+    readonly active?: boolean;
+    readonly combatMotionTargetId?: string;
+    readonly combatTactic?: CombatTactic;
+    readonly afterCombatMotion?: (
+      position: CombatPoint, heading: number, speed: number
+    ) => void;
+  };
+}
+type FleetShip = FleetMotionShip;
+type FleetWorldTick = (dt: number) => void;
+type FleetBeforeTick = (ships: readonly FleetCombatShipSnapshot[]) => void;
 import { distance, snapshot } from './strategic-combat-geometry';
 import {
   moveCombatant,
@@ -58,8 +87,8 @@ export function advanceFleetMotion(
   acquire: (ship: FleetShip) => FleetShip | null,
   arena: StrategicCombatArenaOptions,
   dt: number,
-  worldTick?: FleetCombatWorldOptions['tickWorld'],
-  beforeWorldTick?: FleetCombatWorldOptions['beforeWorldTick'],
+  worldTick?: FleetWorldTick,
+  beforeWorldTick?: FleetBeforeTick,
   onRamContact?: (first: MutableCombatant, second: MutableCombatant) => void
 ): void {
   // Threat decisions precede the field tick: a threatened miner cannot mine.
