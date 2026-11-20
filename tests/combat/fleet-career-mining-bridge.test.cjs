@@ -186,8 +186,11 @@ const priorCareerCombat = {
 };
 miner.combatMovement = priorCareerCombat;
 fleet.tick(0.08);
-assert.equal(miner.combatMovement, priorCareerCombat,
-  'FleetCombat bridge must never erase an engagement owned by the real campaign');
+assert.equal(
+  miner.combatMovement,
+  priorCareerCombat,
+  'FleetCombat bridge must never erase an engagement owned by the real campaign'
+);
 delete miner.combatMovement;
 const cargoBefore = miner.cargo.ferrite;
 miner.combatRecoverySeconds = 5;
