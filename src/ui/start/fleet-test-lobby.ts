@@ -20,6 +20,8 @@ export interface FleetTestShip {
   readonly name: string;
   /** Drones have their own campaign entity type, not a fabricated ship hull. */
   readonly draft: DuelDraft | null;
+  /** 0 for initial presence, otherwise simulated seconds until edge entry. */
+  readonly spawnAtSeconds: number;
 }
 
 export interface FleetTestCounts {
@@ -97,6 +99,7 @@ export function createFleetTestScenario(
       role: 'player',
       name: player.name,
       draft: previewDraft(player),
+      spawnAtSeconds: 0,
     },
   ];
   const addShips = (
@@ -113,6 +116,7 @@ export function createFleetTestScenario(
         role,
         name: ship.name,
         draft: previewDraft(ship),
+        spawnAtSeconds: 0,
       });
     }
   };
@@ -124,6 +128,7 @@ export function createFleetTestScenario(
       role: 'drone',
       name: 'Sicherheitsdrohne',
       draft: null,
+      spawnAtSeconds: 0,
     });
   }
   // Temporary loadout preview only. Real pirate hulls and NPC AI must come from
@@ -177,12 +182,17 @@ function createFleetPrototype(config: FleetTestConfiguration) {
         y: arena.height * (isPlayer ? 0.5 : 0.5 + distanceFactor * 0.09),
       },
       targetId: isPlayer ? 'pirate-a-1' : 'player',
+      spawnAtSeconds: entry.spawnAtSeconds,
     };
   });
   return createFleetCombatService(participants, arena);
 }
 
-function renderFleetRoster(roster: HTMLElement, config: FleetTestConfiguration): void {
+function renderFleetRoster(
+  roster: HTMLElement,
+  config: FleetTestConfiguration,
+  setArrival: (id: string, seconds: number) => void
+): void {
   roster.replaceChildren();
   for (const [team, label] of [
     ['player', 'Spieler'],
@@ -215,6 +225,35 @@ function renderFleetRoster(roster: HTMLElement, config: FleetTestConfiguration):
         ].join(' | ');
       }
       section.append(line);
+      if (ship.role !== 'player' && ship.role !== 'drone') {
+        const setting = document.createElement('div');
+        setting.className = 'harrow-fleet__arrival';
+        const initialLabel = document.createElement('label');
+        initialLabel.textContent = 'Von Beginn an auf der Karte';
+        const initial = document.createElement('input');
+        initial.type = 'checkbox';
+        initial.checked = ship.spawnAtSeconds === 0;
+        const secondsLabel = document.createElement('label');
+        secondsLabel.textContent = 'Eintritt nach (Sekunden)';
+        const seconds = document.createElement('input');
+        seconds.type = 'number';
+        seconds.min = '1';
+        seconds.max = '3600';
+        seconds.step = '1';
+        seconds.value = String(ship.spawnAtSeconds || 30);
+        seconds.disabled = initial.checked;
+        initialLabel.append(initial);
+        secondsLabel.append(seconds);
+        initial.addEventListener('change', () => {
+          seconds.disabled = initial.checked;
+          setArrival(ship.id, initial.checked ? 0 : Number(seconds.value));
+        });
+        seconds.addEventListener('change', () => {
+          if (!initial.checked) setArrival(ship.id, Number(seconds.value));
+        });
+        setting.append(initialLabel, secondsLabel);
+        section.append(setting);
+      }
     }
     roster.append(section);
   }
@@ -300,13 +339,29 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
     piratesA: Number(piratesA.control.value),
     piratesB: Number(piratesB.control.value),
   });
+  const setArrival = (id: string, seconds: number): void => {
+    const spawnAtSeconds = seconds === 0 ? 0 : Math.max(1, Math.min(3600, Number.isFinite(seconds) ? Math.floor(seconds) : 30));
+    config = {
+      ...config,
+      ships: config.ships.map((ship) => ship.id === id ? { ...ship, spawnAtSeconds } : ship),
+    };
+    renderFleetRoster(roster, config, setArrival);
+  };
   const draw = (): void => {
+    const oldArrivals = new Map((config?.ships ?? []).map((ship) => [ship.id, ship.spawnAtSeconds]));
     config = createFleetTestScenario(
       map.control.value as DuelMapKind,
       player.control.value,
       counts()
     );
-    renderFleetRoster(roster, config);
+    config = {
+      ...config,
+      ships: config.ships.map((ship) => ({
+        ...ship,
+        spawnAtSeconds: oldArrivals.get(ship.id) ?? 0,
+      })),
+    };
+    renderFleetRoster(roster, config, setArrival);
     updateLaunch();
   };
   shuffle.addEventListener('click', draw);
