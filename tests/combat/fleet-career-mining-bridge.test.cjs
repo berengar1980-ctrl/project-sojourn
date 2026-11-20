@@ -176,6 +176,19 @@ assert.equal(
   undefined,
   'once the raid ends, the career NPC returns to its normal work authority'
 );
+const priorCareerCombat = {
+  mode: 'engaged',
+  targetKind: 'npc',
+  targetId: pirates[1].id,
+  position: { ...mining.ships[0].position },
+  headingRadians: mining.ships[0].headingRadians,
+  speed: 0,
+};
+miner.combatMovement = priorCareerCombat;
+fleet.tick(0.08);
+assert.equal(miner.combatMovement, priorCareerCombat,
+  'FleetCombat bridge must never erase an engagement owned by the real campaign');
+delete miner.combatMovement;
 const cargoBefore = miner.cargo.ferrite;
 miner.combatRecoverySeconds = 5;
 fleet.tick(0.08);
