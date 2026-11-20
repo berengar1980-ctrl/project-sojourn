@@ -194,6 +194,10 @@
     "src/systems/combat/fleet-career-npc-adapter.ts": {
       "mode": "derived",
       "reason": "Stateless adapter uses the authoritative career NPC combatant setup, faction and local position without independent persistence; NPC cargo, travel, work and live world stay owned by campaign services."
+    },
+    "src/systems/combat/fleet-career-mining-bridge.ts": {
+      "mode": "derived",
+      "reason": "Stateless bridge delegates field navigation, scanning, ore, cargo and interruptions to existing checkpointed career NpcLocalMiningService. World retains sole authority."
     }
   }
 }
