@@ -9,6 +9,7 @@ import { duelCombatant } from './duel-combatant-setup';
 import { createDuelArena } from '../../systems/combat/duel-arena-presets';
 import { createFleetCombatService } from '../../systems/combat/fleet-combat-service';
 import { createFleetCombatTestPanel } from './fleet-combat-test-panel';
+import { createFleetDronePrototype } from './fleet-drone-prototype';
 import { getShipDefinition } from '../../systems/ships';
 
 export type FleetTestRole = 'player' | 'miner' | 'drone' | 'pirate-a' | 'pirate-b';
@@ -178,7 +179,8 @@ function createFleetPrototype(config: FleetTestConfiguration) {
   );
   const shipCount = config.ships.length - 1;
   const participants = config.ships.map((entry, index) => {
-    if (!entry.draft) throw new Error('The fleet prototype cannot simulate security drones yet');
+    if (entry.role === 'drone') return createFleetDronePrototype(entry, index, arena);
+    if (!entry.draft) throw new Error('Missing fleet ship loadout');
     const ship = getShipDefinition(entry.draft.shipId);
     if (!ship) throw new Error('Missing FleetCombat hull: ' + entry.draft.shipId);
     const setup = duelCombatant(index, entry.draft, ship);
@@ -304,7 +306,7 @@ function createFleetLobbyElements(onBack: () => void) {
   const capabilities = document.createElement('p');
   capabilities.className = 'harrow-fleet__capabilities';
   capabilities.textContent =
-    'Testaufbau · Eine gemeinsame Simulation mit Spieler und mehreren Piraten beider Fraktionen ist verfügbar. Miner, Drohnen, Kampagnen-KI, Minen und vollständige Waffenphysik folgen.';
+    'Testaufbau · Spieler, Piraten und Sicherheitsdrohnen können gemeinsam kämpfen. Die Drohnen verwenden ihre Kampagnen-Sensorik und echte Abfangnavigation. Miner, vollständige Kampagnen-KI und Waffenphysik folgen.';
   const roster = document.createElement('div');
   roster.className = 'harrow-fleet__roster';
   const actions = document.createElement('div');
@@ -317,7 +319,7 @@ function createFleetLobbyElements(onBack: () => void) {
   start.textContent = 'FleetCombat-Prototyp starten';
   start.disabled = true;
   start.title =
-    'Gemeinsame Karte mit Spieler und mindestens zwei Piraten; Miner und Drohnen folgen';
+    'Gemeinsame Karte mit Spieler, Piraten und optionalen Sicherheitsdrohnen; Miner folgen';
   const back = document.createElement('button');
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';
@@ -336,13 +338,13 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   let activePanel: ReturnType<typeof createFleetCombatTestPanel> | null = null;
   const canLaunch = (): boolean =>
     config.counts.miners === 0 &&
-    config.counts.drones === 0 &&
-    config.counts.piratesA + config.counts.piratesB >= 2;
+    (config.counts.piratesA + config.counts.piratesB >= 2 ||
+      (config.counts.drones > 0 && config.counts.piratesA + config.counts.piratesB >= 1));
   const updateLaunch = (): void => {
     start.disabled = !canLaunch();
     start.title = canLaunch()
-      ? 'Experimenteller 2vs1-Kern, noch ohne Minen, Traktor und vollständige Waffenphysik'
-      : 'Für den aktuellen Test: 0 Miner, 0 Drohnen und insgesamt mindestens 2 Piraten wählen';
+      ? 'FleetCombat-Test mit Kampagnen-Drohnenbewegung; noch ohne volle Waffenphysik'
+      : '0 Miner und mindestens 2 Piraten oder 1 Pirat mit mindestens 1 Drohne wählen';
   };
   start.addEventListener('click', () => {
     if (!canLaunch()) return;
