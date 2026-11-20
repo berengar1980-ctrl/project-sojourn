@@ -170,6 +170,14 @@ function advanceFleetFire(
   return shots;
 }
 
+function validateFleetScenario(
+  participants: readonly FleetCombatParticipant[],
+  arena: StrategicCombatArenaOptions
+): void {
+  if (participants.length < 3) throw new Error('FleetCombat needs at least three ships');
+  if (!(arena.width > 0 && arena.height > 0)) throw new Error('Invalid FleetCombat arena');
+}
+
 function initializeFleetParticipants(
   participants: readonly FleetCombatParticipant[],
   arena: StrategicCombatArenaOptions
@@ -217,8 +225,7 @@ export function createFleetCombatService(
   participants: readonly FleetCombatParticipant[],
   arena: StrategicCombatArenaOptions
 ): FleetCombatService {
-  if (participants.length < 3) throw new Error('FleetCombat needs at least three ships');
-  if (!(arena.width > 0 && arena.height > 0)) throw new Error('Invalid FleetCombat arena');
+  validateFleetScenario(participants, arena);
   const { byId, fleet } = initializeFleetParticipants(participants, arena);
   let elapsedSeconds = 0;
   let shots: FleetCombatShotSnapshot[] = [];
