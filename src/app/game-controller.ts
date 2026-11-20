@@ -7,7 +7,7 @@ import {
   advanceNpcPenalCustody,
 } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
-import { localMiningCombatArena } from './game-controller-combat';
+import { startPlayerMiningCombat } from './game-controller-mining-combat-action';
 import { toggleControllerAsteroidClaim } from './game-controller-claim-actions';
 import { resolveControllerCombat } from './game-controller-combat-resolution';
 import { recordCareerCombatWrecks } from './game-controller-combat-wrecks';
@@ -237,36 +237,7 @@ function mountControllerMining(
       state.selectedNpcId = id;
       state.panels.local?.update(controllerLocalModel(context));
     },
-    onAttackNpc: (id) => {
-      state.selectedNpcId = id;
-      const local = state.localSpace?.getSnapshot();
-      const target =
-        state.localNpcMining?.ships.find((entry) => entry.npcId === id) ??
-        context.economy.localPirates
-          .get(local?.instance.sourceLocationId ?? '')
-          ?.snapshot(context.economy.sectorNpcs.npcs)
-          .find((entry) => entry.npcId === id);
-      if (!local || !target) return;
-      const arena = localMiningCombatArena(
-        local.instance,
-        state.localSpace!.getShipWorldVelocity(),
-        fieldWorldFor(context).combatWrecks(local.instance.sourceLocationId)
-      );
-      const started = context.engagements.engageNpcInArena(id, {
-        ...arena,
-        defenderPosition: { ...target.position },
-        defenderHeadingRadians: target.headingRadians,
-        defenderVelocity: {
-          x: Math.cos(target.headingRadians) * target.speed,
-          y: Math.sin(target.headingRadians) * target.speed,
-        },
-      });
-      if (started) {
-        state.embeddedCombat = 'local-space';
-        context.systemLog.write('COMBAT > GEFECHT IM ASTEROIDENFELD');
-        state.panels.local?.update(controllerLocalModel(context));
-      }
-    },
+    onAttackNpc: (id) => startPlayerMiningCombat(context, id),
     onCombatGrapple: () => {
       context.engagements.activePlayerCombat()?.fireGrapple('attacker');
     },
