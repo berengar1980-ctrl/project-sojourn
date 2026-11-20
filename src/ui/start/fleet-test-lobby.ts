@@ -22,6 +22,8 @@ export interface FleetTestShip {
   readonly draft: DuelDraft | null;
   /** 0 for initial presence, otherwise simulated seconds until edge entry. */
   readonly spawnAtSeconds: number;
+  /** Remember the entered delay when initial presence is toggled off and on. */
+  readonly delaySeconds: number;
 }
 
 export interface FleetTestCounts {
@@ -100,6 +102,7 @@ export function createFleetTestScenario(
       name: player.name,
       draft: previewDraft(player),
       spawnAtSeconds: 0,
+      delaySeconds: 30,
     },
   ];
   const addShips = (
@@ -117,6 +120,7 @@ export function createFleetTestScenario(
         name: ship.name,
         draft: previewDraft(ship),
         spawnAtSeconds: 0,
+        delaySeconds: 30,
       });
     }
   };
@@ -129,6 +133,7 @@ export function createFleetTestScenario(
       name: 'Sicherheitsdrohne',
       draft: null,
       spawnAtSeconds: 0,
+      delaySeconds: 30,
     });
   }
   // Temporary loadout preview only. Real pirate hulls and NPC AI must come from
@@ -241,16 +246,16 @@ function renderFleetRoster(
         seconds.min = '1';
         seconds.max = '3600';
         seconds.step = '1';
-        seconds.value = String(ship.spawnAtSeconds || 30);
+        seconds.value = String(ship.delaySeconds);
         seconds.disabled = initial.checked;
         initialLabel.append(initial);
         secondsLabel.append(seconds);
         initial.addEventListener('change', () => {
           seconds.disabled = initial.checked;
-          setArrival(ship.id, initial.checked ? 0 : Number(seconds.value));
+          setArrival(ship.id, initial.checked ? 0 : Math.max(1, Number(seconds.value) || 30));
         });
         seconds.addEventListener('change', () => {
-          if (!initial.checked) setArrival(ship.id, Number(seconds.value));
+          if (!initial.checked) setArrival(ship.id, Math.max(1, Number(seconds.value) || 30));
         });
         setting.append(initialLabel, secondsLabel);
         section.append(setting);
@@ -353,14 +358,16 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
         : Math.max(1, Math.min(3600, Number.isFinite(seconds) ? Math.floor(seconds) : 30));
     config = {
       ...config,
-      ships: config.ships.map((ship) => (ship.id === id ? { ...ship, spawnAtSeconds } : ship)),
+      ships: config.ships.map((ship) =>
+        ship.id === id
+          ? { ...ship, spawnAtSeconds, delaySeconds: spawnAtSeconds || ship.delaySeconds }
+          : ship
+      ),
     };
     renderFleetRoster(roster, config, setArrival);
   };
   const draw = (): void => {
-    const oldArrivals = new Map(
-      (config?.ships ?? []).map((ship) => [ship.id, ship.spawnAtSeconds])
-    );
+    const oldArrivals = new Map((config?.ships ?? []).map((ship) => [ship.id, ship]));
     config = createFleetTestScenario(
       map.control.value as DuelMapKind,
       player.control.value,
@@ -370,7 +377,8 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
       ...config,
       ships: config.ships.map((ship) => ({
         ...ship,
-        spawnAtSeconds: oldArrivals.get(ship.id) ?? 0,
+        spawnAtSeconds: oldArrivals.get(ship.id)?.spawnAtSeconds ?? 0,
+        delaySeconds: oldArrivals.get(ship.id)?.delaySeconds ?? 30,
       })),
     };
     renderFleetRoster(roster, config, setArrival);
