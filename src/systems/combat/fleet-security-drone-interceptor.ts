@@ -70,9 +70,21 @@ export function createFleetDroneInterceptor(
       const current = pirates.find((ship) => ship.id === selected);
       const target = current ?? pirates[0] ?? null;
       selected = target?.id ?? null;
-      // Only genuine physical movement: the drone approaches its detected
-      // pirate through career field-routing and obstacle response.
-      drone.tick(dt, asteroids, [], nearbyShips, target?.position);
+      // A ship is a solid obstacle. Approach a point outside its collision
+      // envelope instead of routing into its occupied centre.
+      const separation = target
+        ? Math.hypot(target.position.x - drone.position.x, target.position.y - drone.position.y)
+        : 0;
+      const standoff = Math.max(0, attackRangeMeters - 10);
+      const pursuitPoint =
+        target && separation > 0.001
+          ? {
+              x: target.position.x + ((drone.position.x - target.position.x) / separation) * standoff,
+              y: target.position.y + ((drone.position.y - target.position.y) / separation) * standoff,
+            }
+          : target?.position;
+      // The campaign patrol still owns sensor/route/contact resolution.
+      drone.tick(dt, asteroids, [], nearbyShips, pursuitPoint);
       inAttackRange =
         !!target &&
         Math.hypot(target.position.x - drone.position.x, target.position.y - drone.position.y) <=
