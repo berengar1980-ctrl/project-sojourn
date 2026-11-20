@@ -1,5 +1,5 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
-import { advanceControllerFieldWorld } from './game-controller-field-world-bridge';
+import { advanceControllerFieldWorld, fieldWorldFor } from './game-controller-field-world-bridge';
 import {
   inspectLegalDockArrival,
   reportLegalDeparture,
@@ -240,7 +240,8 @@ function mountControllerMining(
       if (!local || !target) return;
       const arena = localMiningCombatArena(
         local.instance,
-        state.localSpace!.getShipWorldVelocity()
+        state.localSpace!.getShipWorldVelocity(),
+        fieldWorldFor(context).combatWrecks(local.instance.sourceLocationId)
       );
       const started = context.engagements.engageNpcInArena(id, {
         ...arena,
