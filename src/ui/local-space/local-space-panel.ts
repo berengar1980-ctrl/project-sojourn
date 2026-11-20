@@ -160,10 +160,7 @@ function combatAwareLocalOptions(
   };
 }
 
-function bindCombatTactics(
-  combatTactics: HTMLElement,
-  options: LocalSpacePanelOptions
-): void {
+function bindCombatTactics(combatTactics: HTMLElement, options: LocalSpacePanelOptions): void {
   combatTactics.addEventListener('click', (event) => {
     const grapple = (event.target as HTMLElement).closest('[data-grapple]');
     if (grapple) {

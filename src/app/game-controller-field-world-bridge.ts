@@ -102,14 +102,14 @@ function syncCombatWreckPoses(
   field: AsteroidFieldRuntime,
   bodies: ReadonlyMap<string, CombatVisualAsteroid>
 ): void {
-    for (const wreck of field.combatWrecks) {
-      const body = bodies.get(wreck.id);
-      if (!body) continue;
-      wreck.position = { ...body.position };
-      wreck.driftVelocity = { ...body.velocity };
-      wreck.rotation = body.rotation;
-      if (wreck.rotation3d) wreck.rotation3d = { ...wreck.rotation3d, z: body.rotation };
-    }
+  for (const wreck of field.combatWrecks) {
+    const body = bodies.get(wreck.id);
+    if (!body) continue;
+    wreck.position = { ...body.position };
+    wreck.driftVelocity = { ...body.velocity };
+    wreck.rotation = body.rotation;
+    if (wreck.rotation3d) wreck.rotation3d = { ...wreck.rotation3d, z: body.rotation };
+  }
 }
 
 /** All field operations advance on the campaign clock, not only during local rendering. */
