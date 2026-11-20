@@ -68,7 +68,10 @@ function restoredCombatWrecks(
           !Number.isFinite(wreck.position.x) ||
           !Number.isFinite(wreck.position.y) ||
           !Array.isArray(wreck.resources) ||
-          wreck.resources.some((resource) => !Number.isFinite(resource.remainingAmount))
+          wreck.resources.some(
+                (resource: SalvageWreck['resources'][number]) =>
+                  !Number.isFinite(resource.remainingAmount)
+              )
       )
     )
       throw new Error('Invalid saved combat wreck field');
