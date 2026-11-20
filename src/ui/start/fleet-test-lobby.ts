@@ -172,22 +172,27 @@ function countSelect(label: string, initial: number) {
 function createFleetPrototype(config: FleetTestConfiguration) {
   const arenaSeed = Math.floor(Math.random() * 0x7fffffff);
   const arena = createDuelArena(config.map, arenaSeed);
+  const firstPirateA = config.ships.find((entry) => entry.role === 'pirate-a');
+  const firstPirate = config.ships.find(
+    (entry) => entry.role === 'pirate-a' || entry.role === 'pirate-b'
+  );
+  const shipCount = config.ships.length - 1;
   const participants = config.ships.map((entry, index) => {
-    if (!entry.draft) throw new Error('The initial 2vs1 test cannot run drone entities');
+    if (!entry.draft) throw new Error('The fleet prototype cannot simulate security drones yet');
     const ship = getShipDefinition(entry.draft.shipId);
     if (!ship) throw new Error('Missing FleetCombat hull: ' + entry.draft.shipId);
     const setup = duelCombatant(index, entry.draft, ship);
     const isPlayer = entry.role === 'player';
-    const distanceFactor = index === 1 ? -1 : 1;
+    const lane = isPlayer ? 0.5 : 0.15 + (0.7 * (index - 0.5)) / shipCount;
+    const rival = entry.role === 'pirate-b' ? firstPirateA?.id : null;
     return {
       setup: { ...setup, id: entry.id, name: entry.name },
-      factionId: isPlayer ? 'player' : 'pirate-a',
+      factionId: entry.team,
       position: {
-        // Delayed contacts enter near the local map boundary, not at an existing ship.
-        x: entry.spawnAtSeconds > 0 ? arena.width - 180 : arena.width * (isPlayer ? 0.27 : 0.72),
-        y: arena.height * (isPlayer ? 0.5 : 0.5 + distanceFactor * 0.09),
+        x: isPlayer ? arena.width * 0.25 : entry.spawnAtSeconds > 0 ? arena.width - 180 : arena.width * 0.72,
+        y: arena.height * lane,
       },
-      targetId: isPlayer ? 'pirate-a-1' : 'player',
+      targetId: isPlayer ? (firstPirate?.id ?? null) : rival ?? 'player',
       spawnAtSeconds: entry.spawnAtSeconds,
     };
   });
@@ -295,7 +300,7 @@ function createFleetLobbyElements(onBack: () => void) {
   const capabilities = document.createElement('p');
   capabilities.className = 'harrow-fleet__capabilities';
   capabilities.textContent =
-    'Testaufbau · Der gemeinsame 2vs1-Kampfkern ist für 0 Miner, 0 Drohnen, 2 Piraten A und 0 Piraten B verfügbar. Kampagnen-NPC-KI, Minen, Traktor und vollständige Waffenphysik folgen.';
+    'Testaufbau · Eine gemeinsame Simulation mit Spieler und mehreren Piraten beider Fraktionen ist verfügbar. Miner, Drohnen, Kampagnen-KI, Minen und vollständige Waffenphysik folgen.';
   const roster = document.createElement('div');
   roster.className = 'harrow-fleet__roster';
   const actions = document.createElement('div');
@@ -305,9 +310,9 @@ function createFleetLobbyElements(onBack: () => void) {
   shuffle.textContent = 'Ausrüstung neu auslosen';
   const start = document.createElement('button');
   start.type = 'button';
-  start.textContent = '2vs1-Prototyp starten';
+  start.textContent = 'FleetCombat-Prototyp starten';
   start.disabled = true;
-  start.title = 'Aktuell nur Spieler gegen zwei Piraten derselben Fraktion ohne Miner oder Drohnen';
+  start.title = 'Gemeinsame Karte mit Spieler und mindestens zwei Piraten; Miner und Drohnen folgen';
   const back = document.createElement('button');
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';
@@ -327,13 +332,12 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   const canLaunch = (): boolean =>
     config.counts.miners === 0 &&
     config.counts.drones === 0 &&
-    config.counts.piratesA === 2 &&
-    config.counts.piratesB === 0;
+    config.counts.piratesA + config.counts.piratesB >= 2;
   const updateLaunch = (): void => {
     start.disabled = !canLaunch();
     start.title = canLaunch()
       ? 'Experimenteller 2vs1-Kern, noch ohne Minen, Traktor und vollständige Waffenphysik'
-      : 'Für den ersten Test: 0 Miner, 0 Drohnen, 2 Piraten A und 0 Piraten B auswählen';
+      : 'Für den aktuellen Test: 0 Miner, 0 Drohnen und insgesamt mindestens 2 Piraten wählen';
   };
   start.addEventListener('click', () => {
     if (!canLaunch()) return;
