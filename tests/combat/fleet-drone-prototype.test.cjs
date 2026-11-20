@@ -30,15 +30,35 @@ assert(drone.setup.shieldHp > 0 && drone.setup.hullHp > 0);
 
 function ship(id, weapons = []) {
   return {
-    id, name: id, shipId: 'test-ship', shieldHp: 1000, hullHp: 1000, weapons,
-    hitChance: 1, dodgeChance: 0, damageMultiplier: 1, criticalChance: 0,
-    cycleTimeMultiplier: 1, combatSpeed: 80, preferredTactic: 'fight',
+    id,
+    name: id,
+    shipId: 'test-ship',
+    shieldHp: 1000,
+    hullHp: 1000,
+    weapons,
+    hitChance: 1,
+    dodgeChance: 0,
+    damageMultiplier: 1,
+    criticalChance: 0,
+    cycleTimeMultiplier: 1,
+    combatSpeed: 80,
+    preferredTactic: 'fight',
   };
 }
 const sim = createFleetCombatService(
   [
-    { setup: ship('player'), factionId: 'player', position: { x: 200, y: 300 }, targetId: 'pirate' },
-    { setup: ship('pirate'), factionId: 'pirate-a', position: { x: 1420, y: 1000 }, targetId: 'player' },
+    {
+      setup: ship('player'),
+      factionId: 'player',
+      position: { x: 200, y: 300 },
+      targetId: 'pirate',
+    },
+    {
+      setup: ship('pirate'),
+      factionId: 'pirate-a',
+      position: { x: 1420, y: 1000 },
+      targetId: 'player',
+    },
     drone,
   ],
   arena
@@ -51,13 +71,16 @@ for (let step = 0; step < 160; step++) {
   const view = sim.tick(0.08);
   const current = view.ships.find((entry) => entry.ship.id === 'drone-1');
   assert(current);
-  if (Math.hypot(current.ship.position.x - 1100, current.ship.position.y - 1000) > 30)
-    moved = true;
+  if (Math.hypot(current.ship.position.x - 1100, current.ship.position.y - 1000) > 30) moved = true;
   fired ||= view.shots.some((shot) => shot.sourceId === 'drone-1' && shot.targetId === 'pirate');
-  if (view.engagements.some((fight) => fight.kind === 'fleet' && fight.memberIds.includes('drone-1')))
+  if (
+    view.engagements.some((fight) => fight.kind === 'fleet' && fight.memberIds.includes('drone-1'))
+  )
     joined = true;
 }
 assert(moved, 'drone should travel physically using campaign field routing');
 assert(joined, 'drone must join the already-running player/pirate encounter');
 assert(fired, 'drone should use its campaign Mk-III equipped weapons after joining');
-console.log('PASS real campaign drone loadout, sensor intercept, physical join and active weapon fire');
+console.log(
+  'PASS real campaign drone loadout, sensor intercept, physical join and active weapon fire'
+);

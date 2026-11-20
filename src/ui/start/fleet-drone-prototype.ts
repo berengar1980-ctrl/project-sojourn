@@ -45,7 +45,9 @@ export function createFleetDronePrototype(
   entryPosition?: { readonly x: number; readonly y: number }
 ): FleetCombatParticipant {
   if (entry.role !== 'drone') throw new Error('Fleet drone adapter requires a drone');
-  const template = createSectorNpcEconomyStates().find((npc) => npc.job === 'patrol' && !npc.pirate);
+  const template = createSectorNpcEconomyStates().find(
+    (npc) => npc.job === 'patrol' && !npc.pirate
+  );
   if (!template) throw new Error('Campaign drone patrol combatant template missing');
   equipSecurityDroneMk3(template);
   const ship = getShipDefinition(template.shipId);
