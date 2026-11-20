@@ -3,6 +3,7 @@ import type { WorldPoint } from '../../core/world-types';
 import type { AsteroidFieldRuntime } from '../operations/asteroid-field-world';
 import { miningFieldCombatArena } from './field-combat-arena';
 import { createFleetCareerMiningBridge } from './fleet-career-mining-bridge';
+import { createFleetCareerFieldSecurityBridge } from './fleet-career-field-security-bridge';
 import {
   createFleetCombatService,
   type FleetCombatParticipant,
@@ -40,10 +41,31 @@ export function createFleetCombatForCareerField(
   if (otherParticipants.some((entry) => entry.setup.id === 'player' && entry.spawnAtSeconds))
     throw new Error('Career player cannot arrive after the field handoff');
   const bridge = createFleetCareerMiningBridge(field.miners, miners);
+  const reservedIds = new Set([
+    ...otherParticipants.map((entry) => entry.setup.id),
+    ...bridge.participants.map((entry) => entry.setup.id),
+  ]);
+  // The career field owns its pirate and security services. Never create
+  // alternative PvP traffic or a replacement security drone here.
+  const security =
+    field.pirates && field.drone
+      ? createFleetCareerFieldSecurityBridge(field, careerNpcs, reservedIds)
+      : null;
+  const world = {
+    beforeWorldTick: bridge.world.beforeWorldTick,
+    tickWorld(dt: number) {
+      bridge.world.tickWorld?.(dt);
+      security?.world.tickWorld?.(dt);
+    },
+    afterCombatTick(ships: Parameters<NonNullable<typeof bridge.world.afterCombatTick>>[0]) {
+      bridge.world.afterCombatTick?.(ships);
+      security?.world.afterCombatTick?.(ships);
+    },
+  };
   const arena = miningFieldCombatArena(field.instance, playerVelocity, field.combatWrecks);
   return createFleetCombatService(
-    [...otherParticipants, ...bridge.participants],
+    [...otherParticipants, ...bridge.participants, ...(security?.participants ?? [])],
     arena,
-    bridge.world
+    world
   );
 }
