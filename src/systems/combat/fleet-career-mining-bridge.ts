@@ -38,7 +38,7 @@ export function createFleetCareerMiningBridge(
     return {
       ...participant,
       externalMovement(_dt: number) {
-        const ship = mining.ships.find((entry) => entry.npcId === npc.id);
+        const ship = mining.ships.find((candidate) => candidate.npcId === npc.id);
         if (!ship && !hasArrived)
           throw new Error('Scheduled career miner did not enter local field: ' + npc.id);
         if (!ship) {
