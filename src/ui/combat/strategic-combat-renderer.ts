@@ -109,8 +109,6 @@ export class StrategicCombatRenderer {
       const lifetime = burst.flightSeconds + (AUTOCANNON_ROUNDS - 1) * AUTOCANNON_ROUND_INTERVAL;
       if (model.elapsedSeconds - burst.spawnedAt >= lifetime) this.autocannonBursts.delete(id);
     }
-    // Multiple independently firing mounts may land hits in the same simulation tick.
-    // Render each real event once; keep the single lastImpact fallback for other physics sources.
     const recentImpacts = model.recentImpacts ?? [];
     const finalImpact = model.lastImpact ? [model.lastImpact] : [];
     const unseen = [...recentImpacts, ...finalImpact]
@@ -283,8 +281,6 @@ export class StrategicCombatRenderer {
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
     this.drawDestruction(width, height, timeSeconds);
-    // Career-only ships are a scene layer, not a competing combat renderer.
-    // Native PvP leaves this callback unset.
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
   }
@@ -331,8 +327,6 @@ export class StrategicCombatRenderer {
     }
   }
   private drawBeam(beam: CombatBeamSnapshot, width: number, height: number): void {
-    // The beam origin is captured at fire time, so it cannot slide with a
-    // turning or translating ship while the brief beam effect is visible.
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     drawCombatBeamVisual(this.context, beam, start, end);
@@ -420,7 +414,6 @@ export class StrategicCombatRenderer {
       ...(isDrone ? { angle: (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS } : {}),
     };
     const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
-    // Rotating drone hull has no ship-style directional exhaust hardpoints.
     const hardpoints = isDrone ? undefined : definition?.sprite.hardpoints;
     const engineIntensity =
       combatant.subsystems.engine > 0 ? Math.max(0, Math.min(1, combatant.speed / 120)) : 0;
