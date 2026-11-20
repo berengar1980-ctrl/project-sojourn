@@ -429,6 +429,9 @@
   min-height: 0;
   overflow: hidden;
 }
+body.app-has-system-bar .harrow-combat-tests {
+  height: 100%;
+}
 .harrow-combat-tabs__content {
   flex: 1 1 auto;
   min-height: 0;
