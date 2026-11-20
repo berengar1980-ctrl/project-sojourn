@@ -5,6 +5,11 @@ import { fitsWeaponHardpoint, getAllShipDefinitions, getShipsByRole } from '../.
 import type { ShipDefinition } from '../../systems/ships';
 import type { DuelDraft } from './duel-combatant-setup';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
+import { duelCombatant } from './duel-combatant-setup';
+import { createDuelArena } from '../../systems/combat/duel-arena-presets';
+import { createFleetCombatService } from '../../systems/combat/fleet-combat-service';
+import { createFleetCombatTestPanel } from './fleet-combat-test-panel';
+import { getShipDefinition } from '../../systems/ships';
 
 export type FleetTestRole = 'player' | 'miner' | 'drone' | 'pirate-a' | 'pirate-b';
 
@@ -184,9 +189,9 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   shuffle.textContent = 'Ausrüstung neu auslosen';
   const start = document.createElement('button');
   start.type = 'button';
-  start.textContent = 'FleetCombat starten (Simulation in Arbeit)';
+  start.textContent = '2vs1-Prototyp starten';
   start.disabled = true;
-  start.title = 'Start erst nach Anbindung einer gemeinsamen Mehrschiff-Simulation';
+  start.title = 'Aktuell nur Spieler gegen zwei Piraten derselben Fraktion ohne Miner oder Drohnen';
   const back = document.createElement('button');
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';
@@ -196,6 +201,47 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   root.replaceChildren(shell);
 
   let config: FleetTestConfiguration;
+  let activePanel: ReturnType<typeof createFleetCombatTestPanel> | null = null;
+  const canLaunch = (): boolean =>
+    config.counts.miners === 0 &&
+    config.counts.drones === 0 &&
+    config.counts.piratesA === 2 &&
+    config.counts.piratesB === 0;
+  const updateLaunch = (): void => {
+    start.disabled = !canLaunch();
+    start.title = canLaunch()
+      ? 'Experimenteller 2vs1-Kern, noch ohne Minen, Traktor und vollständige Waffenphysik'
+      : 'Für den ersten Test: 0 Miner, 0 Drohnen, 2 Piraten A und 0 Piraten B auswählen';
+  };
+  start.addEventListener('click', () => {
+    if (!canLaunch()) return;
+    const arenaSeed = Math.floor(Math.random() * 0x7fffffff);
+    const arena = createDuelArena(config.map, arenaSeed);
+    const participants = config.ships.map((entry, index) => {
+      if (!entry.draft) throw new Error('The initial 2vs1 test cannot run drone entities');
+      const ship = getShipDefinition(entry.draft.shipId);
+      if (!ship) throw new Error('Missing FleetCombat hull: ' + entry.draft.shipId);
+      const setup = duelCombatant(index, entry.draft, ship);
+      const isPlayer = entry.role === 'player';
+      const distanceFactor = index === 1 ? -1 : 1;
+      return {
+        setup: { ...setup, id: entry.id, name: entry.name },
+        factionId: isPlayer ? 'player' : 'pirate-a',
+        position: {
+          x: arena.width * (isPlayer ? 0.27 : 0.72),
+          y: arena.height * (isPlayer ? 0.5 : 0.5 + distanceFactor * 0.09),
+        },
+        targetId: isPlayer ? 'pirate-a-1' : 'player',
+      };
+    });
+    const combat = createFleetCombatService(participants, arena);
+    activePanel?.destroy();
+    activePanel = createFleetCombatTestPanel(root, combat, () => {
+      activePanel?.destroy();
+      activePanel = null;
+      root.replaceChildren(shell);
+    });
+  });
   const counts = (): FleetTestCounts => ({
     miners: Number(miners.control.value),
     drones: Number(drones.control.value),
@@ -236,6 +282,7 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
       }
       roster.append(section);
     }
+    updateLaunch();
   };
   shuffle.addEventListener('click', draw);
   for (const select of [
@@ -243,5 +290,5 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
     piratesA.control, piratesB.control,
   ]) select.addEventListener('change', draw);
   draw();
-  return { destroy: () => shell.remove() };
+  return { destroy: () => { activePanel?.destroy(); shell.remove(); } };
 }
