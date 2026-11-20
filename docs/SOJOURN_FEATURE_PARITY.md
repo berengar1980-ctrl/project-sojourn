@@ -1688,10 +1688,13 @@ Der bestehende 1vs1-Service, seine KI, Waffen-/Projektillogik, Physik
 und Duelloberfläche werden nicht verändert. Dies wird durch
 Git-Blob-Baselines und einen Branch-Diff-Test abgesichert.
 
-Die getrennte Drohnen-Interceptor-Komponente nutzt die bestehende
-Kampagnen-Drohnenklasse zum Sehen und Anfliegen; ein automatischer
-Kampfbeitritt ist noch offen. Auch das aktuell vereinfachte direkte
-Mehrschiff-Waffenmodell, lokale Miner-Arbeit, vollständige Kampagnen-KI,
+Die Drohnen-Interceptor-Komponente nutzt die bestehende Kampagnen-Drohnenklasse
+für Sensorik, Hindernisnavigation und Anflug. Im PvP-FleetCombat-Testlabor
+wird zusätzlich ein regulärer Kampagnen-Drohnen-Kampfteilnehmer samt
+Mk-III-Waffen, Schild und Hülle angebunden. Erst nach Erreichen der
+Angriffsreichweite tritt er über die gemeinsame Gefechtsverwaltung bei;
+die Drohnen-Flugbewegung wird nicht durch eine zweite Kampfbewegung ersetzt. Das aktuell vereinfachte direkte Mehrschiff-Waffenmodell, lokale Miner-Arbeit,
+vollständige Kampagnen-KI,
 Minen, Rammen, Traktorwürfe und Career-Integration sind noch **nicht**
 als abgeschlossen oder Feature-Parität anzusehen. Deshalb kein Merge
 nach main bis zur vollständigen Prüfung und Freigabe.
