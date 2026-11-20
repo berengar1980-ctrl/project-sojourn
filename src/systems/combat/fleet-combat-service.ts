@@ -42,6 +42,8 @@ export interface FleetCombatParticipant {
     readonly position: CombatPoint;
     readonly headingRadians: number;
     readonly targetId: string | null;
+    /** The career-world owner may remove a ship when it departs the field. */
+    readonly active?: boolean;
   };
 }
 
@@ -91,6 +93,7 @@ interface FleetShip {
   targetId: string | null;
   readonly spawnAtSeconds: number;
   active: boolean;
+  departed: boolean;
   readonly externalMovement?: FleetCombatParticipant['externalMovement'];
 }
 
@@ -111,6 +114,12 @@ function advanceFleetMotion(
     if (actor.hullHp <= 0) continue;
     if (ship.externalMovement) {
       const next = ship.externalMovement(dt, nearby);
+      if (next.active === false) {
+        ship.active = false;
+        ship.departed = true;
+        ship.targetId = null;
+        continue;
+      }
       const previous = { ...actor.position };
       actor.position = { ...next.position };
       actor.velocity = {
@@ -237,7 +246,7 @@ function fleetView(
         ship: snapshot(entry.combatant),
       })),
     pendingArrivals: fleet
-      .filter((entry) => !entry.active)
+      .filter((entry) => !entry.active && !entry.departed)
       .map((entry) => ({
         id: entry.combatant.setup.id,
         atSeconds: entry.spawnAtSeconds,
@@ -304,6 +313,7 @@ function initializeFleetParticipants(
       targetId: entry.targetId ?? null,
       spawnAtSeconds: entry.spawnAtSeconds ?? 0,
       active: (entry.spawnAtSeconds ?? 0) === 0,
+      departed: false,
       ...(entry.externalMovement ? { externalMovement: entry.externalMovement } : {}),
     };
     fleet.push(ship);
@@ -369,6 +379,10 @@ export function createFleetCombatService(
     const present = fleet.filter((ship) => ship.active);
     advanceFleetMotion(present, acquire, arena, dt);
     for (const ship of present) {
+      if (ship.departed) engagementManager.disengage(ship.combatant.setup.id);
+    }
+    const remainingShips = present.filter((ship) => ship.active);
+    for (const ship of remainingShips) {
       if (!ship.targetId || ship.combatant.hullHp <= 0) continue;
       const enemy = byId.get(ship.targetId);
       if (
@@ -379,8 +393,8 @@ export function createFleetCombatService(
         engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
       }
     }
-    shots = advanceFleetFire(present, acquire, dt);
-    for (const ship of present) {
+    shots = advanceFleetFire(remainingShips, acquire, dt);
+    for (const ship of remainingShips) {
       if (ship.combatant.hullHp <= 0) {
         engagementManager.disengage(ship.combatant.setup.id);
       }
@@ -388,7 +402,7 @@ export function createFleetCombatService(
     elapsedSeconds += dt;
     arrivedIds = [];
     for (const ship of fleet) {
-      if (!ship.active && ship.spawnAtSeconds <= elapsedSeconds + 1e-8) {
+      if (!ship.active && !ship.departed && ship.spawnAtSeconds <= elapsedSeconds + 1e-8) {
         ship.active = true;
         arrivedIds.push(ship.combatant.setup.id);
       }
@@ -404,7 +418,7 @@ export function createFleetCombatService(
       while (remaining > 0.000001) {
         const nextArrival = fleet.reduce(
           (earliest, ship) =>
-            !ship.active && ship.spawnAtSeconds > elapsedSeconds + 1e-8
+            !ship.active && !ship.departed && ship.spawnAtSeconds > elapsedSeconds + 1e-8
               ? Math.min(earliest, ship.spawnAtSeconds - elapsedSeconds)
               : earliest,
           Infinity
