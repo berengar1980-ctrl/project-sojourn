@@ -82,7 +82,9 @@ export class AsteroidFieldWorld {
       this.backgroundAccumulator = checkpoint.backgroundAccumulator;
       for (const [id, wrecks] of Object.entries(checkpoint.combatWrecksByLocation ?? {})) {
         if (
-          !locations.some((location) => location.id === id) ||
+          (!locations.some((location) => location.id === id) &&
+            !id.startsWith('salvage-special-') &&
+            !id.startsWith('salvage-distress-')) ||
           !Array.isArray(wrecks) ||
           wrecks.length > 512 ||
           wrecks.some(
