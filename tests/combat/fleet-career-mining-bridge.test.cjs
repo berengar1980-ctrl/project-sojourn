@@ -138,6 +138,8 @@ assert.equal(mining.ships[0].laserActive, false, 'native miner service disables 
 assert.equal(mining.ships[0].speed, 0, 'native miner service stops physical work');
 // When the native career field despawns a departed miner, FleetCombat must
 // remove the participant rather than leaving an untouchable ghost ship.
+// Career dispatch changes the worker's autonomy phase before the ship leaves.
+miner.autonomy.phase = 'thinking';
 mining.ships.splice(0, 1);
 fleet.tick(0.08);
 assert.equal(
