@@ -474,7 +474,7 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   Kollisionsdeckung, Autokanonen-Flugzeit, Hüll-/Schild-Buchung, Raketen-
   Blockade und neutrale Drittparteien. Die bisherigen
   `fleet-combat-service.test.cjs`-Mehrschiff-/Late-Join-Tests bleiben Pflicht.
-- **Status: Implementiert, vollständiger Quality-Gate-Lauf auf formatiertem Quellstand noch zu verifizieren.** Dies ist **noch
+- **Status: Implementiert; Modul- und Laufzeitfunktionen wurden für die ESLint-Grenzen strukturell zerlegt. Quality-Gate-Lauf auf dem formatierten Folgecommit muss alle Prüfungen bestehen.** Dies ist **noch
   keine vollständige Waffen-/Kampfparität**: Energieverwaltung, Welt-Asteroiden-
   Bewegung, Minen, Rammen, Traktorwürfe, komplexe Kollateraltreffer und
   vollständige visuelle Renderer-Anbindung werden getrennt integriert und
