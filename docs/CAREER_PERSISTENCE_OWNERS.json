@@ -179,6 +179,10 @@
       "mode": "transient",
       "reason": "Isolated PvP FleetCombat laboratory runtime, with delayed arrivals in simulation seconds; not used by career. On campaign integration a versioned encounter and arrival schedule checkpoint will be mandatory."
     },
+    "src/systems/combat/fleet-native-specials.ts": {
+      "mode": "transient",
+      "reason": "Encounter-scoped native mine, kinetic ram and tractor-throw state. The campaign save gate prohibits active FleetCombat checkpoints; released encounters have no private persisted authority."
+    },
     "src/systems/combat/fleet-weapon-physics.ts": {
       "mode": "transient",
       "reason": "In-memory FleetCombat projectile, beam, random-sequence and impact state exists only during an active battle. Career saving remains blocked while FleetCombat is active; no separate checkpoint authority."
