@@ -115,4 +115,38 @@ assert(
   ),
   'physical tractor impact credited'
 );
-console.log('PASS fleet native ram, mine and tractor physics using protected campaign functions');
+
+// FC-41: two armed mines detonate in the SAME physics interval. The native
+// duel runtime exposes only lastImpact, so FleetCombat must retain BOTH
+// contribution records rather than crediting only the final explosion.
+const twoMineA = ship('mine-a', 300);
+const twoMineB = ship('mine-b', 580);
+for (const [actor, id] of [[twoMineA, 'a'], [twoMineB, 'b']]) {
+  actor.tactic = 'minefield';
+  actor.mineStock.push({
+    id: 'ion-' + id, name: 'Ion ' + id, kind: 'ion', tier: 1,
+    pursuitSeconds: 0, pursuitSpeedMetersPerSecond: 0,
+    triggerRadiusMeters: 120, shieldDamage: 25, hullDamage: 20,
+  });
+}
+twoMineA.velocity.x = 25;
+twoMineB.velocity.x = -25;
+const dualMines = createFleetNativeSpecials(arena());
+dualMines.tick(0.08, 0.08, [twoMineA, twoMineB],
+  (actor) => actor === twoMineA ? twoMineB : twoMineA);
+assert.equal(dualMines.mines().length, 2, 'both opponents deploy real mines');
+twoMineA.position.x = 580;
+twoMineB.position.x = 300;
+const simultaneousHits = [];
+for (let index = 1; index <= 11; index++) {
+  simultaneousHits.push(...dualMines.tick(
+    0.08, (index + 1) * 0.08, [twoMineA, twoMineB], () => null
+  ));
+}
+assert.equal(dualMines.mines().length, 0, 'both armed mines detonated');
+assert.deepEqual(
+  new Set(simultaneousHits.map((hit) => hit.sourceId + ':' + hit.targetId)),
+  new Set(['mine-a:mine-b', 'mine-b:mine-a']),
+  'each simultaneous mine hit retains its own attacker/target contribution'
+);
+console.log('PASS fleet native ram, simultaneous mines and tractor physics using protected campaign functions');
