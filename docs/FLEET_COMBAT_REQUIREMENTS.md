@@ -236,3 +236,24 @@ Der Karriere-Miner besitzt in den echten Vorlagen funktionierende Bewaffnung.
 Deshalb wird im Integrationstest sowohl die Flucht bei geringer Aggressivität
 als auch die Gegenwehr bei hoher Aggressivität nachgewiesen; bei Gegenwehr
 bleibt die aus der Karriereausrüstung abgeleitete Kampf-Doktrin erhalten.
+
+## FC-31 – Einstieg mit der bereits existierenden Karriere-Feldinstanz
+
+- `createFleetCombatForCareerField` nimmt eine **bereits laufende**
+  `AsteroidFieldWorld.field(locationId)`-Instanz entgegen. Sie erzeugt
+  weder neue Asteroiden noch eine zweite Miner-/Wirtschaftsinstanz.
+- Aktive Karriere-Miner werden anhand ihrer realen lokalen Schiffs-ID
+  und `SectorNpcState` an die vorhandene `createFleetCareerMiningBridge`
+  übergeben. Doppelte IDs und doppelte Bewegungsautorität werden abgewiesen.
+- Arena und Wracks stammen von `miningFieldCombatArena` und der echten
+  Feldinstanz. Weitere Teilnehmer müssen als reale Career-Teilnehmer
+  übergeben werden; es gibt keine hier versteckten Testschiffe.
+- `fleet-career-field-entry.test.cjs` prüft Identität der Feld- und
+  Mining-Instanz, einen statt mehrfachen Mining-Ticks, Weltpositionen
+  und Fehlerfälle.
+- **Status: FOUNDATION, nicht produktiv verbunden.** Der Kampagnen-Controller
+  muss die normale Feld-Tickautorität beim Start an FleetCombat übergeben
+  und nach dem Ende zurücknehmen. Die derzeitige reguläre
+  `advanceControllerFieldWorld`-Schleife darf nicht parallel laufen.
+  Piraten-/Drohnen-Lebenszyklus und Persistenz müssen ebenfalls vor
+  Produktivfreigabe angeschlossen werden. Kein CI-/Build-Erfolg behauptet.
