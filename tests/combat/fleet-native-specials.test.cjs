@@ -69,7 +69,7 @@ assert.equal(mineSource.mineStock.length, 0, 'native mine consumes actual invent
 assert.equal(minePhysics.mines().length, 1, 'mine laid into authoritative encounter');
 assert.equal(minePhysics.mines()[0].armed, false);
 mineVictim.position.x = 260;
-let mineDamage = [];
+const mineDamage = [];
 for (let i = 1; i < 15; i++) {
   mineDamage.push(...minePhysics.tick(0.08, 0.08 * (i + 1), mineActors, mineTarget));
 }
@@ -105,7 +105,7 @@ throwPhysics.tick(0.08, 0.08, thrownActors, getTarget);
 assert.equal(throwPhysics.throws().length, 1);
 assert.equal(throwArena.asteroids.length, 0, 'native capture removes original collider');
 assert.equal(throwPhysics.throws()[0].phase, 'capture');
-let throwHits = [];
+const throwHits = [];
 for (let i = 1; i < 50; i++) {
   throwHits.push(...throwPhysics.tick(0.08, (i + 1) * 0.08, thrownActors, getTarget));
 }
