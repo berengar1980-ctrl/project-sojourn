@@ -15,14 +15,23 @@ const { createFleetCombatService } = loadStandaloneTypeScriptModule(
 
 function setup(id) {
   return {
-    id, name: id, shipId: 'patrol-test', shieldHp: 180, hullHp: 260,
-    weapons: [], hitChance: 0.5, dodgeChance: 0.1,
-    damageMultiplier: 1, criticalChance: 0, cycleTimeMultiplier: 1,
+    id,
+    name: id,
+    shipId: 'patrol-test',
+    shieldHp: 180,
+    hullHp: 260,
+    weapons: [],
+    hitChance: 0.5,
+    dodgeChance: 0.1,
+    damageMultiplier: 1,
+    criticalChance: 0,
+    cycleTimeMultiplier: 1,
   };
 }
 const arena = { width: 3000, height: 2000, obstacles: [], asteroids: [] };
 const existing = createCombatant(setup('career-npc'), 'defender', {
-  ...arena, defenderPosition: { x: 1200, y: 750 },
+  ...arena,
+  defenderPosition: { x: 1200, y: 750 },
   defenderVelocity: { x: 13, y: -7 },
   defenderHeadingRadians: 1.7,
 });
@@ -65,20 +74,28 @@ assert.equal(existing.mineCooldown, 4.2, 'non-combat civilian preserves mine sta
 assert.equal(existing.subsystems.engine, 24);
 
 assert.throws(
-  () => createFleetCombatService([
-    { ...handoff, position: { x: 1199, y: 750 } },
-    { setup: setup('player'), factionId: 'player', position: { x: 150, y: 150 } },
-    { setup: setup('pirate'), factionId: 'pirate-a', position: { x: 2600, y: 1500 } },
-  ], arena),
+  () =>
+    createFleetCombatService(
+      [
+        { ...handoff, position: { x: 1199, y: 750 } },
+        { setup: setup('player'), factionId: 'player', position: { x: 150, y: 150 } },
+        { setup: setup('pirate'), factionId: 'pirate-a', position: { x: 2600, y: 1500 } },
+      ],
+      arena
+    ),
   /position mismatch/,
   'invalid world handoffs must not silently teleport a career NPC'
 );
 assert.throws(
-  () => createFleetCombatService([
-    { ...handoff, setup: setup('other') },
-    { setup: setup('player'), factionId: 'player', position: { x: 150, y: 150 } },
-    { setup: setup('pirate'), factionId: 'pirate-a', position: { x: 2600, y: 1500 } },
-  ], arena),
+  () =>
+    createFleetCombatService(
+      [
+        { ...handoff, setup: setup('other') },
+        { setup: setup('player'), factionId: 'player', position: { x: 150, y: 150 } },
+        { setup: setup('pirate'), factionId: 'pirate-a', position: { x: 2600, y: 1500 } },
+      ],
+      arena
+    ),
   /ID mismatch/,
   'invalid handoffs cannot silently replace an existing career entity'
 );
