@@ -201,3 +201,29 @@ wegfallen. Ein grüner Prototyp-Test oder eine unveränderte 1vs1-Engine ist
   mit dem produktiven Kampagnencontroller und die Darstellung der
   Abbaulasereffekte bleiben offen; 1vs1 und vollständige Waffenparität
   sind unverändert bzw. weiterhin ausstehend.
+
+## FC-30 – Karriere-Miner reagiert auf Piratenangriff in FleetCombat
+
+- Der gemeinsame FleetCombat-Kern meldet vor jedem Karriere-Welttick die
+  bereits bestehende Angriffszielbindung eines Piraten. Es findet **keine**
+  eigene Sensor- oder Aggressionsentscheidung des Testlabors statt.
+- Der Karriere-Miner verwendet `npcDefenseReaction` und die aus
+  `npcCombatant` abgeleitete zivile Kampf-Doktrin für die Entscheidung
+  **fliehen oder kämpfen**. Ein unbewaffneter Miner flieht.
+- `SectorNpcState.combatMovement` erfasst den Angriff im vorhandenen
+  persistenten NPC-Zustand. Der native `NpcLocalMiningService` stoppt dadurch
+  Scan/Abbau und Mining-Laser, bevor der nächste Abbauzyklus läuft.
+- Für die tatsächliche Flucht-/Kampfflugbewegung verwendet FleetCombat
+  `moveCombatant` aus dem vorhandenen strategischen Kampfsystem;
+  `syncCombatPose` hält die Position des originalen lokalen Miners synchron.
+  Der Miner erhält niemals gleichzeitig eine zweite Arbeits-Flugbewegung.
+- Nur beim Verteidigen wird ein Gegner als Schussziel gesetzt; der fliehende
+  Miner bewegt sich vom Angreifer fort und schießt nicht zurück.
+  Verliert der Pirat das Angriffsziel, geht die Bewegungsautorität zurück
+  an den Karriere-Feldservice. Kampfschaden wird in NPC-Hülle zurückgeschrieben.
+- Regression: `fleet-career-mining-bridge.test.cjs` prüft Angriff,
+  Unterbrechung, tatsächliche Fluchtbewegung, Pose und Rückgabe der Kontrolle.
+- **Status: FOUNDATION.** Piraten-Targeting und Sensor-/Sichtlinienprüfung
+  sowie volles Kampf-/Waffenverhalten müssen vor Featurefreigabe mit der
+  produktiven Kampagne vollständig verbunden werden. Bestehender 1vs1-Kern
+  bleibt unverändert.
