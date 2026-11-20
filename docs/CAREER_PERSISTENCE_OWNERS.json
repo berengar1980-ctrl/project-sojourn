@@ -186,6 +186,10 @@
     "src/systems/combat/fleet-security-drone-interceptor.ts": {
       "mode": "transient",
       "reason": "PvP-only interceptor coordinates a transient campaign AsteroidSecurityDrone instance; the real drone's authoritative checkpoint remains in its existing career component and no FleetCombat career session is attached yet."
+    },
+    "src/systems/ships/security-drone-loadout.ts": {
+      "mode": "derived",
+      "reason": "Shared deterministic Mk-III drone outfitting derived from catalog, hardpoint metadata and a supplied NPC state; the sector NPC inventory remains the authoritative checkpoint owner."
     }
   }
 }
