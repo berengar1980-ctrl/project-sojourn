@@ -19,12 +19,7 @@ assert(
   near(Math.hypot(hit.position.x - 400, hit.position.y - 400), 53.5),
   'drone must stay outside player shield plus its own 18m shield radius'
 );
-const collisionFree = resolveSecurityDroneSolidContacts(
-  { x: 200, y: 200 },
-  [],
-  ship,
-  bounds
-);
+const collisionFree = resolveSecurityDroneSolidContacts({ x: 200, y: 200 }, [], ship, bounds);
 assert.equal(collisionFree.contacts, 0);
 assert.deepEqual(collisionFree.position, { x: 200, y: 200 });
 
@@ -36,12 +31,7 @@ const asteroid = {
   radius: 75,
   collisionRadius: 68,
 };
-const rockHit = resolveSecurityDroneSolidContacts(
-  { x: 480, y: 500 },
-  [asteroid],
-  [],
-  bounds
-);
+const rockHit = resolveSecurityDroneSolidContacts({ x: 480, y: 500 }, [asteroid], [], bounds);
 assert(rockHit.contacts > 0, 'route-blocking asteroids also need actual shield contacts');
 assert(Math.hypot(rockHit.position.x - 500, rockHit.position.y - 500) >= 86);
 
