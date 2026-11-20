@@ -12,6 +12,7 @@ const modules = [
   'src/systems/combat/fleet-career-mining-bridge.ts',
   'src/systems/combat/fleet-career-field-security-bridge.ts',
   'src/systems/combat/fleet-career-hostile-contacts.ts',
+  'src/systems/combat/fleet-career-loot-settlement.ts',
   'src/systems/combat/fleet-combat-lifecycle.ts',
 ];
 
