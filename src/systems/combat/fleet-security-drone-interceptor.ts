@@ -79,8 +79,12 @@ export function createFleetDroneInterceptor(
       const pursuitPoint =
         target && separation > 0.001
           ? {
-              x: target.position.x + ((drone.position.x - target.position.x) / separation) * standoff,
-              y: target.position.y + ((drone.position.y - target.position.y) / separation) * standoff,
+              x:
+                target.position.x +
+                ((drone.position.x - target.position.x) / separation) * standoff,
+              y:
+                target.position.y +
+                ((drone.position.y - target.position.y) / separation) * standoff,
             }
           : target?.position;
       // The campaign patrol still owns sensor/route/contact resolution.
