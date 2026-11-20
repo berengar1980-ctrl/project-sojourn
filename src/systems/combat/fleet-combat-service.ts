@@ -14,6 +14,7 @@ import {
 import { advanceShieldImpacts } from '../shields/shield-service';
 import { resolveShipWeaponHit } from './ship-weapon-service';
 import { isFleetHostile } from './fleet-faction-policy';
+import { activateFleetArrivals, reportFleetCombatToWorld, validateFleetScenario } from './fleet-combat-lifecycle';
 import {
   createCombatEngagementManager,
   type EngagementSnapshot,
@@ -311,39 +312,6 @@ function fleetView(
     })),
     arena,
   };
-}
-
-function reportFleetCombatToWorld(
-  world: FleetCombatWorldOptions,
-  ships: readonly FleetShip[]
-): void {
-  if (!world.afterCombatTick) return;
-  world.afterCombatTick(
-    ships.map((ship) => ({
-      factionId: ship.factionId,
-      targetId: ship.targetId,
-      ship: snapshot(ship.combatant),
-    }))
-  );
-}
-
-function activateFleetArrivals(fleet: readonly FleetShip[], elapsedSeconds: number): string[] {
-  const arrivals: string[] = [];
-  for (const ship of fleet) {
-    if (!ship.active && !ship.departed && ship.spawnAtSeconds <= elapsedSeconds + 1e-8) {
-      ship.active = true;
-      arrivals.push(ship.combatant.setup.id);
-    }
-  }
-  return arrivals;
-}
-
-function validateFleetScenario(
-  participants: readonly FleetCombatParticipant[],
-  arena: StrategicCombatArenaOptions
-): void {
-  if (participants.length < 3) throw new Error('FleetCombat needs at least three ships');
-  if (!(arena.width > 0 && arena.height > 0)) throw new Error('Invalid FleetCombat arena');
 }
 
 function initializeFleetParticipants(
