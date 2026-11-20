@@ -39,6 +39,7 @@ if (mainAvailable) {
     'src/systems/combat/combat-engagement-manager.ts',
     'src/systems/combat/fleet-combat-service.ts',
     'src/systems/combat/fleet-weapon-physics.ts',
+    'src/systems/combat/fleet-native-specials.ts',
     // FC-38 adds a career wreck adapter; original collision mechanics stay untouched.
     'src/systems/combat/field-combat-arena.ts',
     'src/systems/combat/fleet-faction-policy.ts',
