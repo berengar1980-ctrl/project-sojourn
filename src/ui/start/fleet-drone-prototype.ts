@@ -24,7 +24,7 @@ function droneFieldAsteroids(arena: StrategicCombatArenaOptions): LocalAsteroid[
       routeBlocking: rock.kind === 'resource' || rock.radius >= 30,
       position: { ...rock.position },
       radius: rock.radius,
-      collisionRadius: rock.collisionRadius,
+      ...(rock.collisionRadius !== undefined ? { collisionRadius: rock.collisionRadius } : {}),
       rotation: rock.rotation,
       physics: {
         mass,
