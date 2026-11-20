@@ -136,6 +136,15 @@ fleet.tick(0.08);
 assert.equal(miner.cargo.ferrite, cargoBefore, 'career recovery interrupts extraction');
 assert.equal(mining.ships[0].laserActive, false, 'native miner service disables laser');
 assert.equal(mining.ships[0].speed, 0, 'native miner service stops physical work');
+// When the native career field despawns a departed miner, FleetCombat must
+// remove the participant rather than leaving an untouchable ghost ship.
+mining.ships.splice(0, 1);
+fleet.tick(0.08);
+assert.equal(fleet.getSnapshot().ships.some((item) => item.ship.id === miner.id), false);
+assert.equal(fleet.getSnapshot().pendingArrivals.some((item) => item.id === miner.id), false);
+fleet.tick(0.08);
+assert.equal(fleet.getSnapshot().ships.some((item) => item.ship.id === miner.id), false,
+  'departed miner must not respawn');
 console.log(
   'PASS real career miner route, scan, extraction, cargo, interruption in shared FleetCombat'
 );
