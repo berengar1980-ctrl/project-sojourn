@@ -1,0 +1,29 @@
+name: Temporary pirate contact formatting
+on:
+  push:
+    branches: [fix/pirate-ship-shield-contacts]
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/pirate-ship-shield-contacts
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write src/systems/npcs/npc-local-pirate-service.ts tests/npcs/local-pirate-ship-contacts.test.cjs
+      - name: Commit formatted files
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src tests
+            git commit -m "style: format pirate shield contact integration"
+            git push origin HEAD:fix/pirate-ship-shield-contacts
+          fi
