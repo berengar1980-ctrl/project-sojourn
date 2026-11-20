@@ -6,7 +6,7 @@
  * Intentional 1vs1 changes require an explicit baseline-review decision.
  */
 const assert = require('node:assert/strict');
-const crypto = require('node:crypto');
+const nodeCrypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
