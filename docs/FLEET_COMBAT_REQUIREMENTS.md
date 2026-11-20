@@ -376,7 +376,7 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Regression `fleet-career-loot-settlement.test.cjs` prüft die Aufteilung
   zwischen feindlichen Piratenfraktionen, Frachterhaltung, Ladegrenzen,
   Null-Schaden, Einmaligkeit sowie die unveränderte 1vs1-Standardgrenze.
-- **Status: FOUNDATION.** Der Ledger/Abschlussmarker lebt aktuell nur
+- **Status: FOUNDATION; CI auf formatiertem Stand ausstehend.** Der Ledger/Abschlussmarker lebt aktuell nur
   im laufenden FleetCombat und benötigt versionierte Save/Resume-Unterstützung.
   Rechtliche Konsequenzen, Wrackgenerierung, Markt- und Versicherungs-
   Ereignisse sowie vollständige Waffen-/Projektilphysik sind nicht Teil
