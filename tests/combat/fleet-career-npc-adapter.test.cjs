@@ -4,16 +4,20 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { createSectorNpcEconomyStates } = loadStandaloneTypeScriptModule(
-  root, 'src/data/economy/sector-npc-economy.ts'
+  root,
+  'src/data/economy/sector-npc-economy.ts'
 );
 const { npcCombatant } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/npc-combatant-setup.ts'
+  root,
+  'src/systems/combat/npc-combatant-setup.ts'
 );
 const { createFleetCareerNpcParticipant } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/fleet-career-npc-adapter.ts'
+  root,
+  'src/systems/combat/fleet-career-npc-adapter.ts'
 );
 const { createFleetCombatService } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/fleet-combat-service.ts'
+  root,
+  'src/systems/combat/fleet-combat-service.ts'
 );
 
 const npcs = createSectorNpcEconomyStates();
@@ -25,10 +29,14 @@ assert(miner && piratesA && piratesB, 'real career roster must include a miner a
 const minerPosition = { x: 850, y: 600 };
 const minerParticipant = createFleetCareerNpcParticipant(miner, minerPosition, { targetId: null });
 const a = createFleetCareerNpcParticipant(piratesA, { x: 1250, y: 620 }, { targetId: miner.id });
-const b = createFleetCareerNpcParticipant(piratesB, { x: 1400, y: 650 }, {
-  targetId: piratesA.id,
-  spawnAtSeconds: 9,
-});
+const b = createFleetCareerNpcParticipant(
+  piratesB,
+  { x: 1400, y: 650 },
+  {
+    targetId: piratesA.id,
+    spawnAtSeconds: 9,
+  }
+);
 assert.equal(minerParticipant.factionId, 'civilian');
 assert.equal(a.factionId, 'pirate-a');
 assert.equal(b.factionId, 'pirate-b');
@@ -71,4 +79,6 @@ assert.throws(
 );
 assert.equal(miner.job, 'miner');
 assert.equal(minerParticipant.setup.aiControlled, true, 'same campaign NPC AI setup flag');
-console.log('PASS real career miner and two pirate factions use shared NPC combatant equipment and fleet arrival');
+console.log(
+  'PASS real career miner and two pirate factions use shared NPC combatant equipment and fleet arrival'
+);

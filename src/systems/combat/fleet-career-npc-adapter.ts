@@ -25,20 +25,21 @@ export function createFleetCareerNpcParticipant(
   if (!Number.isFinite(position.x) || !Number.isFinite(position.y))
     throw new Error('Invalid career NPC local position: ' + npc.id);
 
-  const factionId = npc.pirate || npc.job === 'pirate'
-    ? npc.factionId === 'pirates2' ? 'pirate-b' : 'pirate-a'
-    : npc.id.startsWith('security-drone:') ? 'security' : 'civilian';
+  const factionId =
+    npc.pirate || npc.job === 'pirate'
+      ? npc.factionId === 'pirates2'
+        ? 'pirate-b'
+        : 'pirate-a'
+      : npc.id.startsWith('security-drone:')
+        ? 'security'
+        : 'civilian';
 
   return {
     setup,
     factionId,
     position: { ...position },
-    ...(options.headingRadians !== undefined
-      ? { headingRadians: options.headingRadians }
-      : {}),
+    ...(options.headingRadians !== undefined ? { headingRadians: options.headingRadians } : {}),
     ...(options.targetId !== undefined ? { targetId: options.targetId } : {}),
-    ...(options.spawnAtSeconds !== undefined
-      ? { spawnAtSeconds: options.spawnAtSeconds }
-      : {}),
+    ...(options.spawnAtSeconds !== undefined ? { spawnAtSeconds: options.spawnAtSeconds } : {}),
   };
 }
