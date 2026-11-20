@@ -32,6 +32,11 @@ function shouldTickFieldSecurity(
   return defenderId !== droneId && !droneFightingNpc;
 }
 
+/** The current career checkpoint format cannot encode active FleetCombat leases. */
+export function hasControllerActiveFieldFleet(context: ControllerRuntimeContext): boolean {
+  return fieldFleetOwners.get(context)?.hasActiveFleet() ?? false;
+}
+
 function fleetOwnersFor(context: ControllerRuntimeContext): FleetFieldTickOwnership {
   let owners = fieldFleetOwners.get(context);
   if (!owners) {
