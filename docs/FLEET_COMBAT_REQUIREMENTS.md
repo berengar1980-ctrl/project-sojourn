@@ -348,7 +348,7 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   aktives Gefecht, Tod und Abwesenheit; `fleet-career-pirate-crossfaction.test.cjs`
   prüft das Zusammenführen zweier A-Piraten und eines bereits bekämpften
   B-Piraten in dieselbe Fleet-Begegnung.
-- **Status: FC-34-Implementierung, CI ausstehend.** Die bestehende native
+- **Status: FC-34-Implementierung, CI nach der automatischen Formatierung erneut ausstehend.** Die bestehende native
   Zielwahl bleibt entfernungsgesteuert. Dauerhafte Piraten-/Fraktionspolitik,
   geteilte Beute, Save/Resume, vollständige Waffenphysik und automatisierte
   produktive Aktivierung bleiben separat offen.
