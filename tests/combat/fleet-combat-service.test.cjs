@@ -220,6 +220,24 @@ try {
   multiFaction.tick(0.5);
   assert.equal(multiFaction.getSnapshot().ships.length, 5);
 
+  const parallel = createFleetCombatService(
+    [
+      { setup: combatant('player'), factionId: 'player', position: { x: 1500, y: 2000 }, targetId: 'pirate-a' },
+      { setup: combatant('miner'), factionId: 'civilian', position: { x: 1500, y: 3500 }, targetId: 'pirate-b' },
+      { setup: combatant('pirate-a'), factionId: 'pirate-a', position: { x: 2300, y: 2000 }, targetId: 'player' },
+      { setup: combatant('pirate-b'), factionId: 'pirate-b', position: { x: 2300, y: 3500 }, targetId: 'miner' },
+    ],
+    arena
+  );
+  parallel.tick(0.08);
+  assert.equal(parallel.getSnapshot().engagements.length, 2);
+  assert(parallel.getSnapshot().engagements.every((entry) => entry.kind === 'duel'));
+  parallel.setTarget('pirate-b', 'player');
+  parallel.tick(0.08);
+  assert.equal(parallel.getSnapshot().engagements.length, 1);
+  assert.equal(parallel.getSnapshot().engagements[0].kind, 'fleet');
+  assert.equal(new Set(parallel.getSnapshot().engagements[0].memberIds).size, 4);
+
   const policy = require(path.join(root, 'src/systems/combat/fleet-faction-policy.ts'));
   assert.equal(policy.isFleetHostile('player', 'civilian'), false);
   assert.equal(policy.isFleetHostile('security', 'player'), false);
