@@ -449,3 +449,35 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Wiederholte Schadensrunden dürfen dieselbe Wrack-ID nicht erneut einfügen. Später zerstörte NPCs erscheinen zusätzlich in der bereits laufenden Arena.
 - Regression: `tests/combat/fleet-career-wreck-settlement.test.cjs` prüft sofortige Einfügung, Kollisions-/Navigationskörper, native Kontaktgeometrie, idempotente Wiederholung und nachfolgende Abschüsse.
 - **Status: Implementiert, noch nicht als CI-grün bestätigt.** Automatische Kampagnenaktivierung und vollständige Waffen-/Renderer-Parität bleiben offen; der geschützte 1vs1-Kern bleibt unverändert.
+
+
+## FC-39 – Native Waffensteuerung und Geschossflug für N Schiffe (Implementierung)
+
+- Die vereinfachte `fleetDirectShot`-Soforttrefferfunktion wurde entfernt. Die gemeinsame
+  FleetCombat-Laufzeit verwendet `createFleetWeaponPhysics` mit **vorhandenen**
+  Kampagnen-Modulen für Waffenkategorien, Hardpoints/Waffenwinkel,
+  `selectFireControlVolley`, `weaponCycleSeconds`, Cooldowns, Feuerleit-Kadenz,
+  Treffer-/Kritischwurf, Schaden, Schildsegmente, Panzerung, Subsysteme und
+  `firstObstacleHit`. Keine zweite Schadens- oder Feuerleit-Tabelle.
+- Laser/Rail: Sichtlinie, Waffenmündung, Strahlenende, Schildtreffer und Deckung
+  werden auf Basis der bisherigen 1vs1-Funktionen berechnet.
+- Plasma/Autokanone: fliegende Weltkoordinaten-Geschosse verwenden dieselbe
+  `ballisticInterceptPoint`-Vorausberechnung, Fluggeschwindigkeit,
+  Schild-Segmenttests, Rumpfkontakt und Hindernis-Raycast. Schäden werden
+  **erst beim tatsächlichen Einschlag** gebucht.
+- Lenkflugkörper: vorhandener begrenzter Kurswechsel, Hindernisprüfung,
+  Flugzeit und Überschussbehandlung. Verfehlte Geschosse verursachen
+  nach dem Vorbeiflug keinen Schaden mehr.
+- Die FleetCombat-Snapshots enthalten aktive Flugkörper und Strahlen für
+  den späteren gemeinsamen Renderer; Trefferereignisse für FC-35 entstehen
+  erst bei einem echten Schild- oder Hüllenschaden (keine Beute für Fehlschüsse).
+- Regression `fleet-weapon-physics.test.cjs` prüft native Laser-Treffer,
+  Kollisionsdeckung, Autokanonen-Flugzeit, Hüll-/Schild-Buchung, Raketen-
+  Blockade und neutrale Drittparteien. Die bisherigen
+  `fleet-combat-service.test.cjs`-Mehrschiff-/Late-Join-Tests bleiben Pflicht.
+- **Status: Implementiert, CI/Build noch zu verifizieren.** Dies ist **noch
+  keine vollständige Waffen-/Kampfparität**: Energieverwaltung, Welt-Asteroiden-
+  Bewegung, Minen, Rammen, Traktorwürfe, komplexe Kollateraltreffer und
+  vollständige visuelle Renderer-Anbindung werden getrennt integriert und
+  getestet. Der geschützte 1vs1-Quellkern bleibt unverändert; die produktive
+  automatische Kampagnenaktivierung ist weiterhin gesperrt.
