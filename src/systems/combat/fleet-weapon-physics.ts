@@ -233,7 +233,7 @@ function resolveFleetProjectileContact(
   );
   if (obstacle && (!shieldHit || obstacle.t < shieldHit.t)) return true;
   if (!harmful) return false;
-  let contact = shieldHit;
+  const contact = shieldHit;
   if (!contact) {
     const sx = next.x - projectile.position.x;
     const sy = next.y - projectile.position.y;
