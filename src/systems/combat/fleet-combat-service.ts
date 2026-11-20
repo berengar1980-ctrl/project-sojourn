@@ -44,6 +44,10 @@ export interface FleetCombatParticipant {
     readonly targetId: string | null;
     /** The career-world owner may remove a ship when it departs the field. */
     readonly active?: boolean;
+    /** Existing combat movement takes ownership while the career miner is threatened. */
+    readonly combatMotionTargetId?: string;
+    readonly combatTactic?: 'fight' | 'flee';
+    readonly afterCombatMotion?: (position: CombatPoint, heading: number, speed: number) => void;
   };
 }
 
@@ -79,6 +83,10 @@ export interface FleetCombatSnapshot {
  */
 export interface FleetCombatWorldOptions {
   readonly tickWorld?: (dt: number) => void;
+  /** Resolve threats before the native worker ticks, preventing parallel mining. */
+  readonly beforeWorldTick?: (ships: readonly FleetCombatShipSnapshot[]) => void;
+  /** Reconcile combat damage to campaign NPCs after weapon processing. */
+  readonly afterCombatTick?: (ships: readonly FleetCombatShipSnapshot[]) => void;
 }
 
 export interface FleetCombatService {
@@ -94,6 +102,7 @@ interface FleetShip {
   readonly spawnAtSeconds: number;
   active: boolean;
   departed: boolean;
+  combatMotionOwned: boolean;
   readonly externalMovement?: FleetCombatParticipant['externalMovement'];
 }
 
@@ -102,9 +111,15 @@ function advanceFleetMotion(
   acquire: (ship: FleetShip) => FleetShip | null,
   arena: StrategicCombatArenaOptions,
   dt: number,
-  worldTick?: FleetCombatWorldOptions['tickWorld']
+  worldTick?: FleetCombatWorldOptions['tickWorld'],
+  beforeWorldTick?: FleetCombatWorldOptions['beforeWorldTick']
 ): void {
-  // The existing campaign field owns and advances all local NPCs exactly once.
+  // Threat decisions precede the field tick: a threatened miner cannot mine.
+  beforeWorldTick?.(fleet.map((entry) => ({
+    factionId: entry.factionId,
+    targetId: entry.targetId,
+    ship: snapshot(entry.combatant),
+  })));
   worldTick?.(dt);
   const nearby = fleet.map((ship) => ({
     factionId: ship.factionId,
@@ -112,6 +127,7 @@ function advanceFleetMotion(
     ship: snapshot(ship.combatant),
   }));
   for (const ship of fleet) {
+    ship.combatMotionOwned = false;
     const actor = ship.combatant;
     actor.shieldImpacts = advanceShieldImpacts(actor.shieldImpacts, dt);
     if (actor.hullHp <= 0) continue;
@@ -122,6 +138,19 @@ function advanceFleetMotion(
         ship.departed = true;
         ship.targetId = null;
         continue;
+      }
+      if (next.combatMotionTargetId) {
+        const enemy = fleet.find((candidate) =>
+          candidate.combatant.setup.id === next.combatMotionTargetId
+        );
+        if (enemy?.active && enemy.combatant.hullHp > 0) {
+          actor.tactic = next.combatTactic ?? actor.tactic;
+          moveCombatant(actor, enemy.combatant, 'attacker', dt, arena, []);
+          ship.combatMotionOwned = true;
+          ship.targetId = next.targetId;
+          next.afterCombatMotion?.(actor.position, actor.headingRadians, actor.speed);
+          continue;
+        }
       }
       const previous = { ...actor.position };
       actor.position = { ...next.position };
@@ -153,7 +182,10 @@ function advanceFleetMotion(
     for (let j = i + 1; j < fleet.length; j += 1) {
       if (!fleet[i]!.active || !fleet[j]!.active) continue;
       // The campaign drone already resolves its own physical ship contacts.
-      if (fleet[i]!.externalMovement || fleet[j]!.externalMovement) continue;
+      if (
+        (fleet[i]!.externalMovement && !fleet[i]!.combatMotionOwned) ||
+        (fleet[j]!.externalMovement && !fleet[j]!.combatMotionOwned)
+      ) continue;
       const a = fleet[i]!.combatant;
       const b = fleet[j]!.combatant;
       if (a.hullHp > 0 && b.hullHp > 0) resolveCombatantCollision(a, b);
@@ -329,6 +361,7 @@ function initializeFleetParticipants(
       spawnAtSeconds: entry.spawnAtSeconds ?? 0,
       active: (entry.spawnAtSeconds ?? 0) === 0,
       departed: false,
+      combatMotionOwned: false,
       ...(entry.externalMovement ? { externalMovement: entry.externalMovement } : {}),
     };
     fleet.push(ship);
@@ -389,7 +422,7 @@ export function createFleetCombatService(
   const step = (dt: number): void => {
     // Only ships present at the START of this interval may move/fire in it.
     const present = fleet.filter((ship) => ship.active);
-    advanceFleetMotion(present, acquire, arena, dt, world.tickWorld);
+    advanceFleetMotion(present, acquire, arena, dt, world.tickWorld, world.beforeWorldTick);
     for (const ship of present) {
       if (ship.departed) engagementManager.disengage(ship.combatant.setup.id);
     }
@@ -406,6 +439,11 @@ export function createFleetCombatService(
       }
     }
     shots = advanceFleetFire(remainingShips, acquire, dt);
+    world.afterCombatTick?.(remainingShips.map((ship) => ({
+      factionId: ship.factionId,
+      targetId: ship.targetId,
+      ship: snapshot(ship.combatant),
+    })));
     for (const ship of remainingShips) {
       if (ship.combatant.hullHp <= 0) {
         engagementManager.disengage(ship.combatant.setup.id);
