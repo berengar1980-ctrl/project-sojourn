@@ -12,6 +12,7 @@ import type {
   SalvageDebrisVariant,
   SalvageSection,
   SalvageSectionVariant,
+  CombatWreckVariant,
   SalvageWreckKind,
   SectorSalvageEvent,
 } from '../../core/salvage-types';
@@ -47,6 +48,7 @@ export interface SalvageWreckView {
   readonly containerVariant?: SalvageContainerVariant;
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
+  readonly combatWreckVariant?: CombatWreckVariant | undefined;
   readonly effectSeed?: number;
   readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly integrity: number;
@@ -180,17 +182,19 @@ function cargoView(player: PlayerEconomyState): readonly SalvageCargoView[] {
 function salvageWreckKindLabel(
   wreck: SalvageLocalSpaceSnapshot['field']['wrecks'][number]
 ): string {
-  return wreck.sectionVariant
-    ? 'SCHIFFSSEKTION'
-    : wreck.debrisVariant
-      ? 'SCHIFFSFRAGMENT'
-      : wreck.containerVariant
-        ? {
-            standard: 'FRACHTCONTAINER',
-            damaged: 'BESCHÄDIGTER CONTAINER',
-            tank: 'TANKMODUL',
-          }[wreck.containerVariant]
-        : wreckKindLabel(wreck.kind);
+  return wreck.combatWreckVariant
+    ? 'KAMPFWRACK'
+    : wreck.sectionVariant
+      ? 'SCHIFFSSEKTION'
+      : wreck.debrisVariant
+        ? 'SCHIFFSFRAGMENT'
+        : wreck.containerVariant
+          ? {
+              standard: 'FRACHTCONTAINER',
+              damaged: 'BESCHÄDIGTER CONTAINER',
+              tank: 'TANKMODUL',
+            }[wreck.containerVariant]
+          : wreckKindLabel(wreck.kind);
 }
 
 function wreckBoardingAttempts(
@@ -216,6 +220,7 @@ function wreckViews(snapshot: SalvageLocalSpaceSnapshot): readonly SalvageWreckV
       ...(wreck.containerVariant ? { containerVariant: wreck.containerVariant } : {}),
       ...(wreck.debrisVariant ? { debrisVariant: wreck.debrisVariant } : {}),
       ...(wreck.sectionVariant ? { sectionVariant: wreck.sectionVariant } : {}),
+      combatWreckVariant: wreck.combatWreckVariant,
       ...(wreck.effectSeed !== undefined ? { effectSeed: wreck.effectSeed } : {}),
       ...(wreck.rotation3d ? { rotation3d: wreck.rotation3d } : {}),
       integrity: wreck.integrity,

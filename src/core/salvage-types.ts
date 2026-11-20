@@ -7,6 +7,7 @@ import type { WorldPoint } from './world-types';
 
 export type SalvageWreckKind = 'freighter' | 'miner' | 'salvager' | 'patrol';
 export type SalvageWreckQuality = 1 | 2 | 3;
+export type CombatWreckVariant = 'miner' | 'freighter' | 'patrol';
 export type SalvageContainerVariant = 'standard' | 'damaged' | 'tank';
 export type SalvageSectionVariant =
   | 'corridor-complex'
@@ -69,6 +70,7 @@ export interface SalvageWreck {
   readonly containerVariant?: SalvageContainerVariant;
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
+  readonly combatWreckVariant?: CombatWreckVariant;
   readonly effectSeed?: number;
   driftVelocity?: WorldPoint;
   rotation3d?: { x: number; y: number; z: number };

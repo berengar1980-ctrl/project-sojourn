@@ -5,6 +5,7 @@ import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import { mountCombatScene } from './game-controller-combat-scene';
 import { recordPlayerCombatHull } from './game-controller-ship-service';
+import { addDestroyedShipWreck } from '../systems/salvage/combat-destruction-wreck';
 import { startCombatBoarding } from './game-controller-combat-boarding';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 
@@ -64,6 +65,21 @@ function synchronizeLocalDefender(
     defender.speed
   );
 }
+function registerDestroyedWrecks(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot
+): void {
+  if (context.state.embeddedCombat !== 'salvage-space') return;
+  const field = context.state.salvageScene?.getField();
+  if (!field) return;
+  const encounterId = `${field.seed}-${field.wrecks.length}-${Math.round(snapshot.elapsedSeconds * 1000)}`;
+  for (const ship of [snapshot.attacker, snapshot.defender]) {
+    if (ship.hullHp > 0 || ship.id.startsWith('security-drone:')) continue;
+    const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
+    if (wreck) context.systemLog.write(`BERGUNG > NEUES WRACK: ${wreck.name}`);
+  }
+}
+
 export function resolveControllerCombat(
   context: ControllerRuntimeContext,
   scenes: CombatReturnScenes
@@ -112,6 +128,7 @@ export function resolveControllerCombat(
     synchronizeLocalDefender(context, snapshot.defender);
   } else {
     state.salvageScene?.finishCombat(snapshot);
+    registerDestroyedWrecks(context, snapshot);
   }
   emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();

@@ -37,7 +37,7 @@ import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
 import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatDamagePair } from './combat-damage-visual';
-import { drawShipDestruction } from './ship-destruction-visual';
+import { drawDestroyedCombatant } from './combat-wreck-destruction-renderer';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
@@ -107,8 +107,6 @@ export class StrategicCombatRenderer {
       const lifetime = burst.flightSeconds + (AUTOCANNON_ROUNDS - 1) * AUTOCANNON_ROUND_INTERVAL;
       if (model.elapsedSeconds - burst.spawnedAt >= lifetime) this.autocannonBursts.delete(id);
     }
-    // Multiple independently firing mounts may land hits in the same simulation tick.
-    // Render each real event once; keep the single lastImpact fallback for other physics sources.
     const recentImpacts = model.recentImpacts ?? [];
     const finalImpact = model.lastImpact ? [model.lastImpact] : [];
     const unseen = [...recentImpacts, ...finalImpact]
@@ -264,8 +262,10 @@ export class StrategicCombatRenderer {
       const mount = points?.grapplingHooks?.[0];
       return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
     });
-    this.drawShip(this.model.attacker, width, height, timeSeconds, visualElapsed);
-    this.drawShip(this.model.defender, width, height, timeSeconds, visualElapsed);
+    if (this.model.winner === null || this.model.attacker.hullHp > 0)
+      this.drawShip(this.model.attacker, width, height, timeSeconds, visualElapsed);
+    if (this.model.winner === null || this.model.defender.hullHp > 0)
+      this.drawShip(this.model.defender, width, height, timeSeconds, visualElapsed);
     drawCombatDamagePair(
       this.context,
       [this.model.attacker, this.model.defender],
@@ -278,24 +278,29 @@ export class StrategicCombatRenderer {
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
+    this.drawDestruction(width, height, timeSeconds);
+    this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
+    this.context.restore();
+  }
+  private drawDestruction(width: number, height: number, timeSeconds: number): void {
     if (this.model.winner !== null) {
       if (this.destructionStartedAt === null) this.destructionStartedAt = timeSeconds;
       const loser = this.model.winner === 'attacker' ? this.model.defender : this.model.attacker;
       if (loser.hullHp <= 0) {
         const geometry = this.shipGeometry(loser, width, height);
-        drawShipDestruction(
+        const age = timeSeconds - this.destructionStartedAt;
+        drawDestroyedCombatant(
           this.context,
-          geometry.center.x,
-          geometry.center.y,
-          Math.max(geometry.width, geometry.height) * 0.6,
-          timeSeconds - this.destructionStartedAt
+          geometry.center,
+          Math.max(geometry.width, geometry.height),
+          loser.headingRadians,
+          loser.id,
+          this.model.arena.backdropSeed ?? 0,
+          this.model.elapsedSeconds,
+          age
         );
       }
     }
-    // Career-only ships are a scene layer, not a competing combat renderer.
-    // Native PvP leaves this callback unset.
-    this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
-    this.context.restore();
   }
   private drawBeams(width: number, height: number, above: boolean): void {
     if (this.model.winner !== null) return;
@@ -306,8 +311,6 @@ export class StrategicCombatRenderer {
     }
   }
   private drawBeam(beam: CombatBeamSnapshot, width: number, height: number): void {
-    // The beam origin is captured at fire time, so it cannot slide with a
-    // turning or translating ship while the brief beam effect is visible.
     const start = this.screen(beam.origin, width, height);
     const end = this.screen(beam.end, width, height);
     drawCombatBeamVisual(this.context, beam, start, end);
@@ -395,7 +398,6 @@ export class StrategicCombatRenderer {
       ...(isDrone ? { angle: (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS } : {}),
     };
     const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
-    // Rotating drone hull has no ship-style directional exhaust hardpoints.
     const hardpoints = isDrone ? undefined : definition?.sprite.hardpoints;
     const engineIntensity =
       combatant.subsystems.engine > 0 ? Math.max(0, Math.min(1, combatant.speed / 120)) : 0;

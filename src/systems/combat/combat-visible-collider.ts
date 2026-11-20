@@ -15,11 +15,18 @@ import type { CombatVisualAsteroid } from './strategic-combat-types';
 export function combatVisibleContactRadius(
   asteroid: Pick<
     CombatVisualAsteroid,
-    'id' | 'kind' | 'radius' | 'containerVariant' | 'debrisVariant' | 'sectionVariant'
+    | 'id'
+    | 'kind'
+    | 'radius'
+    | 'containerVariant'
+    | 'debrisVariant'
+    | 'sectionVariant'
+    | 'combatWreckVariant'
   >
 ): number {
   if (asteroid.containerVariant) return salvageSolidContactRadius(asteroid.radius, 'container');
   if (asteroid.debrisVariant) return salvageSolidContactRadius(asteroid.radius, 'debris');
-  if (asteroid.sectionVariant) return salvageSolidContactRadius(asteroid.radius, 'section');
+  if (asteroid.sectionVariant || asteroid.combatWreckVariant)
+    return salvageSolidContactRadius(asteroid.radius, 'section');
   return asteroid.radius * asteroidContactBound(asteroid.id, asteroid.kind);
 }

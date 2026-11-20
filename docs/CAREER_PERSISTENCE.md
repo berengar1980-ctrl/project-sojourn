@@ -881,3 +881,19 @@ current combat hull integrity, existing combat snapshots, and transient
 renderer-local timestamps. They are neither new combat authorities nor saved
 entities. No new persistence field, save migration or checkpoint version is
 required. These visuals must not change the PvP/career combat rules.
+
+## Kampfwracks und Bergungsfelder (PR #373)
+
+Ein zerstörtes Schiff in einem aktiven Bergungsfeld erzeugt ein neues
+`SalvageWreck` mit eigener ID, einer von drei neutralen 3D-Rumpfformen und
+verwertbaren Ressourcen. Der Wrackgenerator speichert selbst keinen Zustand,
+sondern ergänzt das autoritative `SalvageField.wrecks`-Array. Damit verwenden
+Spieler-Bergung, NPC-Bergung und Kollisionen dieselbe Objektinstanz.
+
+**Persistenzgrenze:** Die neuen Kampfwracks überleben die Rückkehr aus dem
+eingebetteten Kampf im aktuell laufenden Feld. Ein kompletter Karriere-
+Save/Reload oder das Neuerzeugen eines verlassenen Felds ist hiermit
+noch nicht garantiert. Für einen vollständigen Restore muss die erzeugte
+Wrackliste samt abgebauten Mengen, IDs, Positionen und Varianten in den
+Feld-Checkpoint aufgenommen werden. NPC-gegen-NPC-Gefechte und Kämpfe in
+Minenfeldern erhalten noch keine entsprechende autoritative Wrackablage.

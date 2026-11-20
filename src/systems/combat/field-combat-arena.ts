@@ -41,9 +41,10 @@ export function miningFieldCombatArena(
 }
 
 function wreckCombatBody(wreck: SalvageWreck): CombatVisualAsteroid {
-  const kind = wreck.sectionVariant ? 'resource' : 'debris';
+  const kind = wreck.sectionVariant || wreck.combatWreckVariant ? 'resource' : 'debris';
   const variant = {
     ...(wreck.sectionVariant ? { sectionVariant: wreck.sectionVariant } : {}),
+    ...(wreck.combatWreckVariant ? { combatWreckVariant: wreck.combatWreckVariant } : {}),
     ...(wreck.debrisVariant ? { debrisVariant: wreck.debrisVariant } : {}),
     ...(wreck.containerVariant ? { containerVariant: wreck.containerVariant } : {}),
   };

@@ -4,6 +4,7 @@ import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
   SalvageDebrisVariant,
   SalvageSectionVariant,
+  CombatWreckVariant,
   SalvageContainerVariant,
 } from '../../core/salvage-types';
 import type { MineContactLevel, ShipMineDefinition } from '../../core/combat-types';
@@ -33,14 +34,12 @@ export type CombatDoctrine =
   | 'tractor_intercept'
   | 'escape';
 export type CombatPlanPhase = 'reach_range' | 'align_weapons' | 'fire' | 'regroup';
-
 export interface CombatLogEntry {
   readonly timeSeconds: number;
   readonly side: StrategicCombatSide | 'system';
   readonly event: 'start' | 'plan' | 'phase' | 'state' | 'impact' | 'action' | 'result';
   readonly detail: string;
 }
-
 export interface CombatStrategyPlan {
   readonly doctrine?: CombatDoctrine;
   readonly phase?: CombatPlanPhase;
@@ -53,13 +52,9 @@ export interface CombatStrategyPlan {
   readonly score: number;
   readonly reason: string;
 }
-
 export type CombatImpactLayer = 'shield' | 'hull' | 'miss' | 'obstacle';
-
 export type CombatProjectileKind = 'plasma' | 'missile' | 'autocannon';
-
 export type CombatBeamKind = 'laser' | 'rail' | 'tractor';
-
 export interface CombatPoint {
   readonly x: number;
   readonly y: number;
@@ -240,6 +235,7 @@ export interface CombatImpactSnapshot {
 export interface ThrownAsteroidSnapshot {
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
+  readonly combatWreckVariant?: CombatWreckVariant;
   readonly containerVariant?: SalvageContainerVariant;
   readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly effectSeed?: number;
@@ -285,6 +281,7 @@ export interface StrategicCombatSnapshot {
 export interface CombatVisualAsteroid {
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
+  readonly combatWreckVariant?: CombatWreckVariant;
   readonly containerVariant?: SalvageContainerVariant;
   rotation3d?: { x: number; y: number; z: number };
   readonly spin3d?: Readonly<{ x: number; y: number; z: number }>;
@@ -452,6 +449,7 @@ export type { ShieldSegmentHit } from './combat-shield-segment-types';
 export interface MutableThrownAsteroid {
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
+  readonly combatWreckVariant?: CombatWreckVariant;
   readonly containerVariant?: SalvageContainerVariant;
   readonly rotation3d?: Readonly<{ x: number; y: number; z: number }>;
   readonly effectSeed?: number;

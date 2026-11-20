@@ -5,6 +5,8 @@ import { drawPlayerSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
 import { drawSalvageDebris3d } from './salvage-debris-mesh';
 import { drawSalvageSection3d } from './salvage-section-mesh';
+import { drawCombatWreck3d } from './combat-wreck-mesh';
+import { drawWreckSelection } from './salvage-wreck-selection-renderer';
 import { DistressDamageParticles } from './distress-damage-particles';
 import { drawDistressRammingShield } from './distress-ramming-shield-effect';
 import type {
@@ -81,7 +83,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       } else {
         this.sharedCombatRenderer.update(model.combat);
       }
-      // The native PvP renderer owns combat; career bystanders remain in its scene overlay.
       return;
     }
     if (this.sharedCombatRenderer)
@@ -269,10 +270,16 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
         (url) => this.ensureNpcImage(url)
       );
       if (!drewShip) {
-        // Ship silhouette while the existing distress-rescue sprite is loading.
         this.context.fillStyle = '#6f858a';
         this.context.fillRect(-radius * 0.8, -radius * 0.24, radius * 1.6, radius * 0.48);
       }
+    } else if (wreck.combatWreckVariant) {
+      drawCombatWreck3d(
+        this.context,
+        wreck.combatWreckVariant,
+        radius,
+        wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation }
+      );
     } else if (wreck.sectionVariant) {
       drawSalvageSection3d(
         this.context,
@@ -305,49 +312,15 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     this.context.restore();
     this.drawWreckScanCallout(wreck, point, radius);
-    this.drawWreckSelection(wreck, point, radius);
+    drawWreckSelection(this.context, wreck, point, radius);
     return { id: wreck.id, point, radius: hitRadius };
   }
-  private drawWreckSelection(
-    wreck: SalvageWreckView,
-    point: { x: number; y: number },
-    radius: number
-  ): void {
-    if (!wreck.isSelected && !wreck.isWorkTarget) return;
-    this.context.save();
-    this.context.strokeStyle = wreck.isWorkTarget
-      ? 'rgba(232, 184, 96, 0.95)'
-      : 'rgba(130, 206, 224, 0.86)';
-    this.context.lineWidth = 1.5;
-    this.context.setLineDash(wreck.inspected ? [] : [5, 4]);
-    this.context.beginPath();
-    if (!wreck.id.startsWith('event-wreck-salvage-distress-')) {
-      this.context.arc(point.x, point.y, radius + 10, 0, Math.PI * 2);
-    } else {
-      // Open target corners indicate selection without resembling a shield bubble.
-      const extent = radius + 12;
-      const arm = 12;
-      for (const xSide of [-1, 1]) {
-        for (const ySide of [-1, 1]) {
-          const x = point.x + xSide * extent;
-          const y = point.y + ySide * extent;
-          this.context.moveTo(x - xSide * arm, y);
-          this.context.lineTo(x, y);
-          this.context.lineTo(x, y - ySide * arm);
-        }
-      }
-    }
-    this.context.stroke();
-    this.context.restore();
-  }
-
   private drawWreckScanCallout(
     wreck: SalvageWreckView,
     point: { x: number; y: number },
     radius: number
   ): void {
     if (!this.scanLabelsVisible) return;
-    // Same map callouts as asteroid scan: ? from range scan, contents after detail scan.
     if (wreck.scanLevel === 'surveyed' || wreck.scanLevel === 'analyzed') {
       const lines =
         wreck.scanLevel === 'analyzed'
@@ -376,7 +349,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.restore();
     }
   }
-
   protected drawLongRangeSalvageScan(width: number, height: number, timeSeconds: number): void {
     const progress = this.model.longRangeScanProgress;
     if (progress === null) return;
@@ -389,7 +361,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       height
     );
   }
-
   protected drawPlayerScanCone(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'inspecting') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);

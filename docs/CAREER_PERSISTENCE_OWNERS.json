@@ -162,6 +162,10 @@
     "src/systems/operations/security-drone-debris-contact.ts": {
       "mode": "derived",
       "reason": "Stateless instantaneous contact resolver over current drone and local asteroid state; no independent checkpoint authority."
+    },
+    "src/systems/salvage/combat-destruction-wreck.ts": {
+      "mode": "derived",
+      "reason": "Pure wreck factory mutating an explicitly passed live salvage field; the field owns its spawned wrecks and this module retains no private state."
     }
   }
 }

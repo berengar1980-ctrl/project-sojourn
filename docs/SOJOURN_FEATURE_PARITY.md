@@ -1600,3 +1600,19 @@ Zerstörungs-VFX erzeugen einen kurzen Blitz, sekundäre Lichtausbrüche und
 Trümmerfragmente. Es handelt sich ausschließlich um visuelle Ergänzungen;
 weder Waffen- und Trefferberechnung noch NPC-Wirtschaft, Navigation oder
 Kampagnen-Speicherformat ändern sich.
+
+## Review-Log (2026-11-20): Verwertbare Kampfwracks (PR #373)
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Drei dunkel-metallische 3D-Wrackgeometrien (Miner, Frachter, Patrouille mit
+abgerissenen Flügeln) ergänzen die gemeinsame Kampf- und Bergungsdarstellung.
+Bei zerstörten Schiffen in eingebetteten Bergungsfeld-Kämpfen erzeugt der
+Kampfabschluss ein physisches und durch Spieler wie NPCs verwertbares
+`SalvageWreck`-Objekt mit zufällig zugewiesener Form. Die Zufallsauswahl
+hängt nicht vom Schiffstyp ab. Die Visualisierung ersetzt den zerstörten
+Schiffssprite während der Explosion.
+
+**Bewusste Restlücke:** NPC-gegen-NPC-Kämpfe außerhalb aktiver Bergungsfelder,
+Minenfeld-Kämpfe und feldübergreifende Career-Persistenz generierter
+Schiffswracks gehören noch nicht zu diesem PR. Keine Änderung an
+Trefferberechnung, Wirtschaftssimulation oder Kampfschadenslogik.
