@@ -39,3 +39,7 @@ Status: **DONE** = im Code umgesetzt und durch eigene Tests abgedeckt (CI weiter
 6. Für die Freigabe: fünf Karten; 0/1/viele Einheiten jeder Kategorie; 2 unabhängige Duelle; 2vs1; 3vs3; Drohnen-Abfang; Flucht; Join/Leave; Minen; Rammen; Traktor-Asteroiden; zivile Tätigkeit; Kampagnenparität.
 
 **Aktueller Testumfang:** Der 2vs1-Prototyp startet nur mit 0 Minern, 0 Drohnen, 2 Piraten A und 0 Piraten B. Er zeigt die drei Schiffe auf einer gemeinsamen Arena mit Bewegung, Kollision und direkten Waffen-Treffern. Das Diagnose-Canvas ist nicht der finale Renderer. Die vollständige Trefferchance, Munition, Geschosse, Minen, Rammen, Traktorwürfe, NPC-Arbeit und Kampagnen-KI sind **nicht** implementiert. Der vorhandene 1vs1-Modus bleibt bytegleich.
+
+## Prototyp-Grenzen
+
+Die erste Laufzeit verwendet direkte Treffer statt der vollständigen Projektilsimulation. Vor jeder Freigabe müssen Waffenreichweite, Trefferchance, Laufzeiten, Munition, Rammen, Minen und Traktorwürfe auf das Kampagnenniveau gebracht werden. Ein erfolgreicher 2vs1-Test allein erfüllt FC-08 daher nicht.
