@@ -1,6 +1,6 @@
 import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-drone-visual';
 import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
-import { drawMiningCombatWrecks } from './local-combat-wreck-renderer';
+import { drawMiningCombatWrecks, type CombatWreckHitArea } from './local-combat-wreck-renderer';
 import { drawLocalNavigationRoute } from './local-space-navigation-route';
 import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { measurePerformance } from '../../core/performance-diagnostics';
@@ -29,7 +29,7 @@ import {
 } from './local-space-scene-layers';
 import { AsteroidBackdropRenderer } from '../space/asteroid-backdrop-renderer';
 import { MiningEffectsRenderer } from './mining-effects-renderer';
-import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
+import { drawLocalShortRangeScan, drawLocalLongRangeScan } from './local-space-scan-renderer';
 export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
   private sharedCombatRenderer: StrategicCombatRenderer | null = null;
@@ -48,6 +48,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected model: LocalSpaceViewModel;
   protected hitAreas: readonly AsteroidHitArea[] = [];
   protected npcHitAreas: readonly NpcHitArea[] = [];
+  private combatWreckHitAreas: readonly CombatWreckHitArea[] = [];
+  private selectedCombatWreckId: string | null = null;
   protected loadedShipUrl = '';
   protected hasFitted = false;
   protected debugHardpoints = false;
@@ -186,6 +188,18 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     }
     return best?.id ?? null;
   }
+  pickCombatWreck(x: number, y: number): string | null {
+    let closest: CombatWreckHitArea | null = null;
+    for (const area of this.combatWreckHitAreas) {
+      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
+      if (!closest || area.radius < closest.radius) closest = area;
+    }
+    return closest?.id ?? null;
+  }
+  selectCombatWreck(id: string | null): void {
+    this.selectedCombatWreckId = id;
+    this.draw();
+  }
   protected ensureShipImage(url: string): void {
     if (this.loadedShipUrl === url) return;
     this.loadedShipUrl = url;
@@ -229,7 +243,14 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       return areas;
     });
 
-    drawMiningCombatWrecks(this.context, this.camera, this.model.combatWrecks ?? [], width, height);
+    this.combatWreckHitAreas = drawMiningCombatWrecks(
+      this.context,
+      this.camera,
+      this.model.combatWrecks ?? [],
+      width,
+      height,
+      this.selectedCombatWreckId
+    );
     this.npcHitAreas = measurePerformance('canvas.local.npc-ships', () =>
       this.drawNpcShips(width, height, timeSeconds)
     );
@@ -260,8 +281,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       this.model.height,
       this.model.backgroundSeed
     );
-    this.drawLongRangeScan(width, height, timeSeconds);
-    this.drawShortRangeScan(width, height, timeSeconds);
+    drawLocalLongRangeScan(this.context, this.camera, this.model, width, height, timeSeconds);
+    drawLocalShortRangeScan(this.context, this.camera, this.model, width, height, timeSeconds);
     this.miningEffects.drawTractorFields(this.model, geometry, width, height, timeSeconds, 'below');
     this.miningEffects.drawMining(this.model, geometry, width, height, timeSeconds, 'below');
     measurePerformance('canvas.local.player-ship', () => this.drawShip(geometry, timeSeconds));
@@ -466,31 +487,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     if (this.model.combat) {
       drawEmbeddedCombatShipTelemetry(this.context, this.model.combat.attacker, geometry);
     }
-  }
-  protected drawShortRangeScan(width: number, height: number, timeSeconds: number): void {
-    const progress = this.model.shortRangeScanProgress;
-    const target = this.model.scanTarget;
-    if (progress === null || !target) return;
-    drawTargetDetailScan(
-      this.context,
-      this.camera.worldToScreen(target.position, width, height),
-      Math.max(14, this.camera.scale(target.radius) + 9),
-      progress,
-      timeSeconds
-    );
-  }
-
-  protected drawLongRangeScan(width: number, height: number, timeSeconds: number): void {
-    const progress = this.model.longRangeScanProgress;
-    if (progress === null) return;
-    drawWideAreaScan(
-      this.context,
-      this.camera.worldToScreen(this.model.ship.position, width, height),
-      progress,
-      timeSeconds,
-      width,
-      height
-    );
   }
   protected drawNavigationRoute(width: number, height: number): void {
     drawLocalNavigationRoute(this.context, this.camera, this.model, width, height);

@@ -20,7 +20,8 @@ assert(
   'embedded mining advances background systems'
 );
 assert(
-  fieldBridge.includes('fieldWorldFor(context).tick(deltaSeconds, localId'),
+  fieldBridge.includes('const fieldWorld = fieldWorldFor(context)') &&
+    fieldBridge.includes('fieldWorld.tick(deltaSeconds, localId'),
   'mining field stays active in duel'
 );
 assert(

@@ -107,6 +107,37 @@ first.registerCombatWrecks(fieldId, [battleWreck]);
 assert.strictEqual(first.field(fieldId).combatWrecks[0], battleWreck);
 first.registerCombatWrecks(fieldId, [battleWreck]);
 assert.equal(first.combatWrecks(fieldId).length, 1, 'same destroyed ship cannot be duplicated');
+const initialPose = {
+  position: { ...battleWreck.position },
+  rotation: { ...battleWreck.rotation3d },
+};
+first.advanceCombatWreckMotion(0.05);
+assert.notDeepEqual(battleWreck.position, initialPose.position, 'combat wrecks must drift');
+assert.notDeepEqual(
+  battleWreck.rotation3d,
+  initialPose.rotation,
+  'combat wrecks must rotate in 3D'
+);
+const pausedPose = {
+  position: { ...battleWreck.position },
+  rotation: { ...battleWreck.rotation3d },
+};
+first.advanceCombatWreckMotion(0.05, fieldId);
+assert.deepEqual(
+  battleWreck.position,
+  pausedPose.position,
+  'active salvage/combat owns its own drift'
+);
+assert.deepEqual(battleWreck.rotation3d, pausedPose.rotation, 'skip prevents double integration');
+battleWreck.position = { x: 700, y: 720 };
+battleWreck.rotation3d = { x: 0.4, y: 0.5, z: 1.4 };
+first.advanceCombatWreckMotion(0.05, fieldId);
+first.advanceCombatWreckMotion(0.05);
+assert(
+  Math.hypot(battleWreck.position.x - 700, battleWreck.position.y - 720) < 1,
+  'background physics must resume from the live salvage/combat pose, not an old cached body'
+);
+assert(battleWreck.rotation3d.x > 0.4, '3D rotation must continue from the live pose');
 const combatSave = first.exportState();
 const combatRestore = new AsteroidFieldWorld(
   narrowsSector.locations,

@@ -26,6 +26,7 @@ import {
 } from './local-space-panel-controls';
 
 import { updateLocalOverlay } from './local-space-panel-view';
+import { showLocalCombatWreckSelection } from './local-combat-wreck-selection';
 
 export interface LocalSpacePanel {
   update(model: LocalSpaceViewModel): void;
@@ -65,7 +66,8 @@ function bindNavigationInput(
   renderer: LocalSpaceRenderer,
   options: LocalSpacePanelOptions,
   systemLog: SystemLogPanel,
-  updateOverlay: () => void
+  updateOverlay: () => void,
+  onSelectCombatWreck: (id: string | null) => void
 ): () => void {
   let navigationRequest = 0;
 
@@ -74,6 +76,7 @@ function bindNavigationInput(
     renderer,
     onSelectAsteroid: options.onSelectAsteroid,
     onSelectNpc: options.onSelectNpc,
+    onSelectCombatWreck,
     onNavigate: (x, y) => {
       navigationRequest += 1;
       const request = navigationRequest;
@@ -157,6 +160,20 @@ function combatAwareLocalOptions(
   };
 }
 
+function bindCombatTactics(combatTactics: HTMLElement, options: LocalSpacePanelOptions): void {
+  combatTactics.addEventListener('click', (event) => {
+    const grapple = (event.target as HTMLElement).closest('[data-grapple]');
+    if (grapple) {
+      options.onCombatGrapple();
+      return;
+    }
+    const target = event.target;
+    if (!(target instanceof HTMLButtonElement)) return;
+    const tactic = target.dataset.tactic as CombatTactic | undefined;
+    if (tactic) options.onCombatTactic(tactic);
+  });
+}
+
 export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
   const shell = createLocalSpaceShell(options);
   const combatHud = createEmbeddedCombatHud(shell);
@@ -177,6 +194,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   } = controls;
 
   let model = options.model;
+  let selectedCombatWreckId: string | null = null;
   const renderer = new LocalSpaceRenderer(canvas, model);
   const systemLog = createSystemLogPanel({
     root: shell,
@@ -207,6 +225,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
       miningEventPanel,
       miningResourceSelector,
     });
+    showLocalCombatWreckSelection(controls, model, selectedCombatWreckId);
   };
 
   const observer = observeCanvas(canvas, renderer);
@@ -215,7 +234,12 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     renderer,
     combatAwareLocalOptions(options, () => model.combat !== null),
     systemLog,
-    updateOverlay
+    updateOverlay,
+    (id) => {
+      selectedCombatWreckId = id;
+      renderer.selectCombatWreck(id);
+      updateOverlay();
+    }
   );
 
   bindRoutePlanning(mineButton, options.log, systemLog, options.onStartMining, updateOverlay);
@@ -227,17 +251,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     const selected = model.npcShips.find((npc) => npc.isSelected);
     if (selected) options.onAttackNpc(selected.id);
   });
-  combatTactics.addEventListener('click', (event) => {
-    const grapple = (event.target as HTMLElement).closest('[data-grapple]');
-    if (grapple) {
-      options.onCombatGrapple();
-      return;
-    }
-    const target = event.target;
-    if (!(target instanceof HTMLButtonElement)) return;
-    const tactic = target.dataset.tactic as CombatTactic | undefined;
-    if (tactic) options.onCombatTactic(tactic);
-  });
+  bindCombatTactics(combatTactics, options);
   cancelButton.addEventListener('click', options.onCancelMining);
   backButton.addEventListener('click', options.onReturnToStarMap);
   updateOverlay();

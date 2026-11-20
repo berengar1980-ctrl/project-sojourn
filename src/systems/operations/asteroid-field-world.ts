@@ -1,5 +1,9 @@
 import type { LocalSpaceInstance } from '../../core/local-space-types';
-import type { SalvageWreck } from '../../core/salvage-types';
+import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
+import {
+  advanceSalvageContainerDrift,
+  invalidateSalvagePhysics,
+} from '../salvage/salvage-container-motion';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalMinerCheckpoint } from '../npcs/npc-mining-targets';
 import { cloneCareerJson } from '../persistence/career-save-contract';
@@ -84,6 +88,7 @@ export class AsteroidFieldWorld {
   private readonly fields = new Map<string, AsteroidFieldRuntime>();
   private backgroundAccumulator = 0;
   private readonly combatWrecksByLocation = new Map<string, SalvageWreck[]>();
+  private readonly wreckMotionFields = new Map<string, SalvageField>();
 
   constructor(
     locations: readonly WorldLocation[],
@@ -194,6 +199,36 @@ export class AsteroidFieldWorld {
       ...wrecks.filter((wreck) => wreck.combatWreckVariant !== undefined)
     );
     this.combatWrecksByLocation.set(locationId, recorded);
+    const field = this.wreckMotionFields.get(locationId);
+    if (field) invalidateSalvagePhysics(field);
+  }
+
+  /** The same 3D spin, impulse and drift physics used in salvage maps.
+   * Active salvage and embedded combat own their wreck poses themselves. */
+  advanceCombatWreckMotion(deltaSeconds: number, skipLocationId?: string | null): void {
+    const dt = Math.min(0.05, Math.max(0, deltaSeconds));
+    if (dt <= 0) return;
+    if (skipLocationId) {
+      const suspended = this.wreckMotionFields.get(skipLocationId);
+      if (suspended) invalidateSalvagePhysics(suspended);
+    }
+    for (const [locationId, wrecks] of this.combatWrecksByLocation) {
+      if (locationId === skipLocationId || wrecks.length === 0) continue;
+      let field = this.wreckMotionFields.get(locationId);
+      if (!field || field.wrecks !== wrecks) {
+        const mining = this.fields.get(locationId)?.instance;
+        field = {
+          id: 'combat-wreck-motion-' + locationId,
+          sourceLocationId: locationId,
+          seed: mining?.seed ?? 0,
+          width: mining?.width ?? 2400,
+          height: mining?.height ?? 1800,
+          wrecks,
+        };
+        this.wreckMotionFields.set(locationId, field);
+      }
+      advanceSalvageContainerDrift(field, dt);
+    }
   }
 
   field(locationId: string): AsteroidFieldRuntime | null {

@@ -1640,3 +1640,15 @@ eine feste Tab-Höhe von 63 px abzuziehen. Die Berechnung berücksichtigt die
 globale Systemkonsole und verhindert zusätzliche Scrollbereiche auf dem
 Lobby-Container. Kampfphysik, KI, Kampfkamera, Waffen und FleetCombat-Testlogik
 bleiben unverändert.
+
+## Review-Log (2026-11-20): Kampfwracks anklickbar und rotierend
+
+**Keine Statusänderung** historischer Feature-IDs.
+Kampfwracks besitzen nun auswählbare Hit-Areas in der Minenfeldkarte.
+Ein Klick markiert das Wrack und zeigt seine verwertbaren Rohstoffe,
+anstatt eine Punktnavigation auszulösen. Die aktive Karte zeichnet den
+Auswahlring; Mining-Aktionen bleiben für Wracks gesperrt.
+Dieselben Wracks nutzen außerhalb des Bergungsfelds nun die bereits
+bestehende Impuls-, Drift- und 3D-Rotationsphysik. Doppelte Integration
+während eines aktiven Kampfes oder Bergungseinsatzes ist ausgeschlossen.
+Schadensberechnung, 1vs1-Kampflogik und Bergungsausbeute bleiben unverändert.
