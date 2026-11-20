@@ -36,6 +36,6 @@ assert(
   'Do not instantiate duplicate combat services within the shared runtime'
 );
 
-// This is an architecture-direction guard, not a claim that campaign parity
-// is complete. FC-19/FC-25 remain OPEN until both entrypoints pass replay tests.
+// Mandatory FC-25 CI guard; campaign parity still requires replay tests.
+// FC-19/FC-25 remain OPEN until both entrypoints pass them.
 console.log('PASS FleetCombat runtime independent of test UI; PvP calls systems factory');
