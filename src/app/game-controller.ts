@@ -10,6 +10,7 @@ import { observeControllerOperations, operationsCombatHooks } from './game-contr
 import { localMiningCombatArena } from './game-controller-combat';
 import { toggleControllerAsteroidClaim } from './game-controller-claim-actions';
 import { resolveControllerCombat } from './game-controller-combat-resolution';
+import { recordCareerCombatWrecks } from './game-controller-combat-wrecks';
 import { skipControllerTickForCombatResult } from './game-controller-combat-result-guard';
 import type { SalvageField } from '../core/salvage-types';
 import { snapshotPlayerProfile, withPlayerShipName } from '../core/player-profile';
@@ -423,12 +424,17 @@ export function createGameController(options: GameControllerOptions): GameContro
   const fuelJourney = createFuelJourneyService();
   let foreignWorld = () => false;
   let engagementWorld: () => WorldMap = () => narrowsSector;
+  let combatContext: ControllerRuntimeContext | null = null;
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     world: () => engagementWorld(),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
+    onNpcCombatEnded: (snapshot, attacker, defender) => {
+      if (!combatContext) return;
+      recordCareerCombatWrecks(combatContext, snapshot, attacker.locationId ?? defender.locationId);
+    },
     mayInterceptPlayer: () => !state.combatResultPending && state.combatReengageSeconds <= 0,
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
@@ -476,6 +482,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     ...campaignServices,
     state,
   };
+  combatContext = context;
   installControllerCareer(context, options);
   const menu = createSettingsMenu(
     context.audio,
