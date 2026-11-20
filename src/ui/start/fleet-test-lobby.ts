@@ -200,6 +200,7 @@ function createFleetPrototype(config: FleetTestConfiguration) {
     ? withClearCombatSpawns(miningFieldCombatArena(field, { x: 0, y: 0 }))
     : createDuelArena(config.map, arenaSeed);
   const miningSetup = field ? createFleetMiningTestSetup(minerEntries, field) : null;
+  const firstMiner = config.ships.find((entry) => entry.role === 'miner');
   const firstPirateA = config.ships.find((entry) => entry.role === 'pirate-a');
   const firstPirate = config.ships.find(
     (entry) => entry.role === 'pirate-a' || entry.role === 'pirate-b'
@@ -239,7 +240,9 @@ function createFleetPrototype(config: FleetTestConfiguration) {
               : arena.width * 0.72,
           y: arena.height * lane,
         },
-        targetId: isPlayer ? (firstPirate?.id ?? null) : (rival ?? 'player'),
+        targetId: isPlayer
+        ? (firstPirate?.id ?? null)
+        : (rival ?? firstMiner?.id ?? 'player'),
         spawnAtSeconds: entry.spawnAtSeconds,
       },
     ];
