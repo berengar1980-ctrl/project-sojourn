@@ -231,3 +231,8 @@ wegfallen. Ein grüner Prototyp-Test oder eine unveränderte 1vs1-Engine ist
 Bestehende, bereits von der Kampagne verwaltete NPC-Gefechte werden weder
 überschrieben noch bei Zielverlust durch den FleetCombat-Adapter gelöscht;
 der Regressionstest prüft die unveränderte Zustandsidentität.
+
+Der Karriere-Miner besitzt in den echten Vorlagen funktionierende Bewaffnung.
+Deshalb wird im Integrationstest sowohl die Flucht bei geringer Aggressivität
+als auch die Gegenwehr bei hoher Aggressivität nachgewiesen; bei Gegenwehr
+bleibt die aus der Karriereausrüstung abgeleitete Kampf-Doktrin erhalten.
