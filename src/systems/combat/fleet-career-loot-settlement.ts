@@ -16,9 +16,7 @@ export interface FleetCareerLootResult {
  * Cargo movement uses the existing 1vs1 career transfer routine, including
  * real inventory/capacity bookkeeping and the pirate activity update.
  */
-export function createFleetCareerLootSettlement(
-  npcs: readonly SectorNpcState[]
-): {
+export function createFleetCareerLootSettlement(npcs: readonly SectorNpcState[]): {
   settle(
     ships: readonly FleetCombatShipSnapshot[],
     shots: readonly FleetCombatShotSnapshot[]
@@ -88,9 +86,7 @@ export function createFleetCareerLootSettlement(
         contributors.delete(victim.id);
         if (!sources) continue;
         const participants = [...sources]
-          .filter(([id]) =>
-            ships.some((entry) => entry.ship.id === id && entry.ship.hullHp > 0)
-          )
+          .filter(([id]) => ships.some((entry) => entry.ship.id === id && entry.ship.hullHp > 0))
           .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
           .map(([id]) => byId.get(id))
           .filter((pirate): pirate is SectorNpcState => Boolean(pirate?.pirate));

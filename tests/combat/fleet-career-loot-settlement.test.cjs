@@ -69,7 +69,10 @@ const ignoredPirate = { ...a, cargo: {} };
 const empty = createFleetCareerLootSettlement([ignoredPirate, ignoredVictim]);
 assert.deepEqual(
   empty.settle(
-    [{ ship: { id: ignoredPirate.id, hullHp: 100 } }, { ship: { id: ignoredVictim.id, hullHp: 0 } }],
+    [
+      { ship: { id: ignoredPirate.id, hullHp: 100 } },
+      { ship: { id: ignoredVictim.id, hullHp: 0 } },
+    ],
     [{ sourceId: ignoredPirate.id, targetId: ignoredVictim.id, shieldDamage: 0, hullDamage: 0 }]
   ),
   [],
