@@ -23,7 +23,9 @@ function fieldStep(field, dt) {
 }
 fieldStep(firstField, 0.08);
 assert.equal(nativeTicks, 1, 'native career step remains active without a lease');
+assert.equal(owners.hasActiveFleet(), false);
 owners.acquire(firstField, fleet);
+assert.equal(owners.hasActiveFleet(), true);
 assert.equal(owners.owns(firstField), true);
 assert.throws(() => owners.acquire(firstField, wrongFleet), /already owned/);
 fieldStep(firstField, 0.08);
@@ -34,6 +36,7 @@ assert.throws(() => owners.release(firstField, wrongFleet), /ownership mismatch/
 assert.equal(owners.owns(firstField), true);
 assert.throws(() => owners.tickIfOwned(firstField, NaN), /Invalid FleetCombat field delta/);
 owners.release(firstField, fleet);
+assert.equal(owners.hasActiveFleet(), false);
 fieldStep(firstField, 0.08);
 assert.equal(nativeTicks, 3, 'releasing the lease restores native career ticks');
 assert.equal(owners.owns(firstField), false);
