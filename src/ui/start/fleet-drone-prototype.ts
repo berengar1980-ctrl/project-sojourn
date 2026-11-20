@@ -1,6 +1,7 @@
 import { createSectorNpcEconomyStates } from '../../data/economy/sector-npc-economy';
 import { equipSecurityDroneMk3 } from '../../app/game-controller-security-drone-loadout';
 import { AsteroidSecurityDrone } from '../../systems/operations/asteroid-security-drone';
+import { DRONE_SHIELD_RADIUS_METERS } from '../../systems/operations/security-drone-debris-contact';
 import { createFleetDroneInterceptor } from '../../systems/combat/fleet-security-drone-interceptor';
 import type {
   FleetCombatParticipant,
@@ -83,7 +84,18 @@ export function createFleetDronePrototype(
   drone.restore(position, true);
   const interceptor = createFleetDroneInterceptor(drone, asteroids);
   return {
-    setup: { ...setup, id: entry.id, name: entry.name, preferredTactic: 'fight' },
+    setup: {
+      ...setup,
+      id: entry.id,
+      name: entry.name,
+      preferredTactic: 'fight',
+      shieldGeometry: {
+        centerOffset: { x: 0, y: 0 },
+        radiusX: DRONE_SHIELD_RADIUS_METERS,
+        radiusY: DRONE_SHIELD_RADIUS_METERS,
+        modifier: 1,
+      },
+    },
     factionId: 'security',
     position,
     targetId: null,
