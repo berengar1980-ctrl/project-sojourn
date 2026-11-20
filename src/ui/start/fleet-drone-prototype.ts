@@ -43,7 +43,7 @@ function campaignDroneDraft(
   shipId: string,
   installed: NpcInstalledComponents | undefined
 ): DuelDraft {
-  const parts = installed ?? {};
+  const parts: NpcInstalledComponents = installed ?? {};
   return {
     shipId,
     weapons: [...(parts.weapon ?? [])],
