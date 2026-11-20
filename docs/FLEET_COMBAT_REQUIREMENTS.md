@@ -15,13 +15,13 @@ Status: **DONE** = im Code umgesetzt und durch eigene Tests abgedeckt (CI weiter
 | FC-05 | NPC-Miner verwenden Kampagnenarbeit und Fluchtverhalten | OPEN | NPC-Runtime in gemeinsamer Welt integrieren |
 | FC-06 | Sicherheitsdrohnen: Sensor -> sofortiger Abfangkurs -> realer Beitritt | OPEN | Sensorkontakte, Hindernisnavigation und Reichweite testen |
 | FC-07 | Zwei unabhängige 1vs1 parallel | FOUNDATION | `fleet-engagement-manager.test.cjs`; Simulation noch nicht angeschlossen |
-| FC-08 | Echte 2vs1, 3vs3, N-vs-M mit einer physischen Welt | OPEN | FleetCombatService implementieren; kein Duell-Pseudo-Fleet |
+| FC-08 | Echte 2vs1, 3vs3, N-vs-M mit einer physischen Welt | FOUNDATION | 2vs1-Testlaufzeit mit einer Arena und drei Schiffen; 3vs3, vollwertige KI und Waffenphysik noch offen |
 | FC-09 | Schiffe können laufende Kämpfe verstärken | FOUNDATION | EngagementManager verwaltet Beitritt; Zustandsübernahme noch offen |
 | FC-10 | Keine doppelte Schiffsautorität | FOUNDATION | EngagementManager exklusiv; später World-/Combat-Scheduler prüfen |
 | FC-11 | Positionen, Geschwindigkeit, Waffen, Schilde, Subsysteme beim Übergang erhalten | OPEN | Zustandsübergabe erst nach eigenständigem 2vs1-Kern |
 | FC-12 | Neutrale Schiffe arbeiten, beobachten, navigieren oder fliehen weiter | OPEN | Weltintegration mit unabhängigen NPC-Aktivitäten |
-| FC-13 | KI-Zielwahl mit Zielbindung, Re-Targeting und Fokusangriff | OPEN | Runtime-KI integrieren und testen |
-| FC-14 | Hindernisse, Asteroiden, Rammen, Traktorwürfe, Minen | OPEN | Physik und Effektbausteine gemeinsam wiederverwenden |
+| FC-13 | KI-Zielwahl mit Zielbindung, Re-Targeting und Fokusangriff | FOUNDATION | Feste Ziel-IDs und einfaches Retargeting vorhanden; Kampagnen-KI und differenzierte Zielwahl fehlen |
+| FC-14 | Hindernisse, Asteroiden, Rammen, Traktorwürfe, Minen | FOUNDATION | Bestehende Navigation und Hinderniskollision wiederverwendet; Rammen, Traktorwürfe und Minen offen |
 | FC-15 | Fraktionen A/B verfeindet; gemeinsame Beute bei gemeinsamem Kill | OPEN | Deterministische Beuteteilung; keine automatische Allianz |
 | FC-16 | Mehr als zwei Parteien je Gefecht möglich | FOUNDATION | EngagementManager kennt nur eindeutige Schiff-IDs, keine Zwei-Team-Grenze |
 | FC-17 | Kein Merge durch räumliche Nähe | FOUNDATION | `engage()` nur bei expliziter Kampfhandlung; Tests |
@@ -38,4 +38,4 @@ Status: **DONE** = im Code umgesetzt und durch eigene Tests abgedeckt (CI weiter
 5. Anforderungen in diesem Register nachführen und nur bei belegtem Verhalten als abgeschlossen markieren.
 6. Für die Freigabe: fünf Karten; 0/1/viele Einheiten jeder Kategorie; 2 unabhängige Duelle; 2vs1; 3vs3; Drohnen-Abfang; Flucht; Join/Leave; Minen; Rammen; Traktor-Asteroiden; zivile Tätigkeit; Kampagnenparität.
 
-**Aktuelle Sperre:** Der Startknopf des FleetCombat-Testlabors bleibt deaktiviert, bis ein autoritativer Mehrschiff-Runtime samt Rendering tatsächlich lauffähig ist.
+**Aktueller Testumfang:** Der 2vs1-Prototyp startet nur mit 0 Minern, 0 Drohnen, 2 Piraten A und 0 Piraten B. Er zeigt die drei Schiffe auf einer gemeinsamen Arena mit Bewegung, Kollision und direkten Waffen-Treffern. Das Diagnose-Canvas ist nicht der finale Renderer. Die vollständige Trefferchance, Munition, Geschosse, Minen, Rammen, Traktorwürfe, NPC-Arbeit und Kampagnen-KI sind **nicht** implementiert. Der vorhandene 1vs1-Modus bleibt bytegleich.
