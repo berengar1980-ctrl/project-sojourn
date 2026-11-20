@@ -19,10 +19,12 @@ export function showLocalCombatWreckSelection(
     .filter((item) => item.remainingAmount > 0)
     .map((item) => item.resourceId.toUpperCase() + ' ' + Math.round(item.remainingAmount) + ' t')
     .join(' · ');
-  controls.meta.textContent = remaining > 0
-    ? 'BERGBAR · ' + resources + ' · BERGUNGSSCHIFF ERFORDERLICH'
-    : 'VOLLSTÄNDIG VERWERTET';
-  controls.oreBar.style.width = (initial > 0 ? Math.min(100, 100 * remaining / initial) : 0) + '%';
+  controls.meta.textContent =
+    remaining > 0
+      ? 'BERGBAR · ' + resources + ' · BERGUNGSSCHIFF ERFORDERLICH'
+      : 'VOLLSTÄNDIG VERWERTET';
+  controls.oreBar.style.width =
+    (initial > 0 ? Math.min(100, (100 * remaining) / initial) : 0) + '%';
   controls.mineButton.hidden = true;
   controls.shortScanButton.hidden = true;
   controls.claimButton.hidden = true;

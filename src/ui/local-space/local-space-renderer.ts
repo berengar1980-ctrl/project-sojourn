@@ -1,9 +1,6 @@
 import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-drone-visual';
 import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
-import {
-  drawMiningCombatWrecks,
-  type CombatWreckHitArea,
-} from './local-combat-wreck-renderer';
+import { drawMiningCombatWrecks, type CombatWreckHitArea } from './local-combat-wreck-renderer';
 import { drawLocalNavigationRoute } from './local-space-navigation-route';
 import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
 import { measurePerformance } from '../../core/performance-diagnostics';

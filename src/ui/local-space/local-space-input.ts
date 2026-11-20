@@ -10,7 +10,8 @@ interface LocalSpaceInputOptions {
 }
 
 export function bindLocalSpaceInput(options: LocalSpaceInputOptions): () => void {
-  const { canvas, renderer, onSelectAsteroid, onSelectNpc, onNavigate, onSelectCombatWreck } = options;
+  const { canvas, renderer, onSelectAsteroid, onSelectNpc, onNavigate, onSelectCombatWreck } =
+    options;
   let dragging = false;
   let moved = false;
   let lastX = 0;

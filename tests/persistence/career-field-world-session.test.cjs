@@ -113,13 +113,21 @@ const initialPose = {
 };
 first.advanceCombatWreckMotion(0.05);
 assert.notDeepEqual(battleWreck.position, initialPose.position, 'combat wrecks must drift');
-assert.notDeepEqual(battleWreck.rotation3d, initialPose.rotation, 'combat wrecks must rotate in 3D');
+assert.notDeepEqual(
+  battleWreck.rotation3d,
+  initialPose.rotation,
+  'combat wrecks must rotate in 3D'
+);
 const pausedPose = {
   position: { ...battleWreck.position },
   rotation: { ...battleWreck.rotation3d },
 };
 first.advanceCombatWreckMotion(0.05, fieldId);
-assert.deepEqual(battleWreck.position, pausedPose.position, 'active salvage/combat owns its own drift');
+assert.deepEqual(
+  battleWreck.position,
+  pausedPose.position,
+  'active salvage/combat owns its own drift'
+);
 assert.deepEqual(battleWreck.rotation3d, pausedPose.rotation, 'skip prevents double integration');
 const combatSave = first.exportState();
 const combatRestore = new AsteroidFieldWorld(
