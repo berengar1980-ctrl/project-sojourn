@@ -151,3 +151,26 @@ wegfallen. Ein grüner Prototyp-Test oder eine unveränderte 1vs1-Engine ist
   noch nicht auf. NPC-Arbeit, Feldnavigation, Flucht, Kontinuität von Cargo und
   tatsächlicher Career-Checkpoint müssen weiter integriert werden. FC-19/FC-25
   bleiben OPEN. Die Testarena ist nicht die Kampagnen-Detailkarte.
+
+## FC-28 – Echtes Karriere-Mining läuft im gemeinsamen FleetCombat-Tick
+
+- FleetCombat kann vor der Schiffsbewegung eine bereits existierende
+  Karriere-Feldwelt **genau einmal pro Simulationsintervall** aktualisieren.
+  Die Welt behält die alleinige Bewegungs-, Kollisions- und Wirtschaftsautorität.
+- `createFleetCareerMiningBridge` verwendet die echte
+  `createNpcLocalMiningService`-Runtime und leitet deren unveränderte
+  Schiffspositionen und Ausrichtungen an FleetCombat weiter.
+- Die Kampagnenservices entscheiden unverändert über Erzvorkommen,
+  Anflugrouten, Asteroidenscans, Abbauzyklen, NPC-Fracht, Ereignisse,
+  Abreise sowie Unterbrechung bei Kampf-/Erholungszuständen.
+- Weder FleetCombat noch der Adapter enthalten eine zweite Mining-KI,
+  ein zweites Cargo-System oder eine zweite Miner-Navigationsberechnung.
+- Nachweis: `fleet-career-mining-bridge.test.cjs` führt echte
+  Feldnavigation, Scanphase, Laserarbeit, Erzabbau und Unterbrechung
+  in einer gemeinsamen 3-Schiff-Runtime aus.
+- **Status: FOUNDATION.** Der produktive Kampagnencontroller übergibt
+  seine existierende Feldwelt noch nicht an die FleetCombat-Factory.
+  Die PvP-Szenariooberfläche muss dieselbe Karriere-Feldinstanz nutzen,
+  statt eigenständig abzubildende Mine-Asteroiden oder Minerlogik
+  zu erzeugen. Kampfreaktion/Flucht und Produktions-Save-Resume
+  bleiben offen.
