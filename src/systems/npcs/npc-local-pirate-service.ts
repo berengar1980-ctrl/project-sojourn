@@ -306,7 +306,8 @@ export class LocalPirateTraffic {
         npc.combatMovement ||
         (npc.combatRecoverySeconds ?? 0) > 0 ||
         pirate.awaitingCombat
-      ) continue;
+      )
+        continue;
       const ship = getShipDefinition(npc.shipId);
       if (!ship) continue;
       pirateIds.add(pirate.npcId);
