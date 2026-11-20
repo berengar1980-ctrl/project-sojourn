@@ -109,6 +109,13 @@ function startEmbeddedBoarding(
   });
 }
 
+function shouldHoldCombatExplosion(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot
+): boolean {
+  return !snapshot.boardingInitiator && explosionStillVisible(context, snapshot);
+}
+
 export function resolveControllerCombat(
   context: ControllerRuntimeContext,
   scenes: CombatReturnScenes
@@ -125,7 +132,7 @@ export function resolveControllerCombat(
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
-  if (!snapshot.boardingInitiator && explosionStillVisible(context, snapshot)) return;
+  if (shouldHoldCombatExplosion(context, snapshot)) return;
   recordPlayerCombatHull(context, snapshot);
   if (snapshot.boardingInitiator) return startEmbeddedBoarding(context, snapshot, scenes);
   context.systemLog.write(combatResultMessage(snapshot));
