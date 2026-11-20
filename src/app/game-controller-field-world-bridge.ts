@@ -1,4 +1,10 @@
 import { narrowsSector } from '../data/maps/narrows-sector';
+import {
+  createFleetFieldTickOwnership,
+  type FleetFieldTickOwnership,
+} from '../systems/combat/fleet-field-tick-ownership';
+import { createFleetCombatForCareerField } from '../systems/combat/fleet-career-field-entry';
+import type { FleetCombatParticipant, FleetCombatService } from '../systems/combat/fleet-combat-service';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import {
   AsteroidFieldWorld,
@@ -13,6 +19,59 @@ import { tickFieldPirates, tickFieldSecurity } from './game-controller-security'
 import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
+const fieldFleetOwners = new WeakMap<ControllerRuntimeContext, FleetFieldTickOwnership>();
+
+function fleetOwnersFor(context: ControllerRuntimeContext): FleetFieldTickOwnership {
+  let owners = fieldFleetOwners.get(context);
+  if (!owners) {
+    owners = createFleetFieldTickOwnership();
+    fieldFleetOwners.set(context, owners);
+  }
+  return owners;
+}
+
+/**
+ * Opt-in career handoff: the existing field and miner authority move together.
+ * The ordinary field callback is suspended only for this location. The caller
+ * must still supply real pirate/drone participants and checkpoint integration
+ * before enabling this path in production (FC-33+).
+ */
+export function beginControllerFieldFleet(
+  context: ControllerRuntimeContext,
+  locationId: string,
+  participants: readonly FleetCombatParticipant[]
+): FleetCombatService {
+  const field = fieldWorldFor(context).field(locationId);
+  if (!field) throw new Error('FleetCombat requires an existing career asteroid field');
+  const owners = fleetOwnersFor(context);
+  if (owners.owns(field)) throw new Error('FleetCombat field tick is already owned');
+  if (context.engagements.activePlayerCombat())
+    throw new Error('Cannot transfer field during an existing player duel');
+  if ((context.engagements.activeNpcCombatSnapshots?.() ?? []).some((duel) =>
+    [duel.attacker, duel.defender].some((ship) =>
+      context.economy.sectorNpcs.npcs.some((npc) => npc.id === ship.id && npc.locationId === locationId)
+    )
+  )) throw new Error('Cannot transfer field during an existing NPC duel');
+  const fleet = createFleetCombatForCareerField(
+    field,
+    context.economy.sectorNpcs.npcs,
+    participants
+  );
+  owners.acquire(field, fleet);
+  return fleet;
+}
+
+/** Release exactly the same fleet instance, restoring native campaign ticks. */
+export function endControllerFieldFleet(
+  context: ControllerRuntimeContext,
+  locationId: string,
+  fleet: FleetCombatService
+): void {
+  const field = fieldWorldFor(context).field(locationId);
+  if (!field) throw new Error('Unknown FleetCombat career field');
+  fleetOwnersFor(context).release(field, fleet);
+}
+
 
 /** Install the already staged field authority instead of generating new ore/NPCs. */
 export function bindCareerFieldWorld(
@@ -126,6 +185,9 @@ export function advanceControllerFieldWorld(
       : null;
   const fieldWorld = fieldWorldFor(context);
   fieldWorld.tick(deltaSeconds, localId, (field, seconds) => {
+    // FleetCombat has exclusive ownership of this field's simulation step.
+    // It advances the existing miner service itself; never double-tick it.
+    if (fleetOwnersFor(context).tickIfOwned(field, seconds)) return;
     const activeCombat = field.locationId === localId ? combat : null;
     if (activeCombat) {
       // NPC miners and passing pirates are solid ship bodies inside embedded
