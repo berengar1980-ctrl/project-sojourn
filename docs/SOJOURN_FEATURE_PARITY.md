@@ -1664,3 +1664,15 @@ die kollidierten Schiffe werden getrennt. Piraten planen nach Kontakt eine
 neue Route, statt durch andere Hüllen zu gleiten. Kämpfende Schiffe bleiben
 vollständig unter der bestehenden PvP-/FleetCombat-Kollisionsautorität;
 deren Schadens- und Rammregeln werden nicht verändert.
+
+## Review-Log (2026-11-20): Sicherheitsdrohne – Schildkontakte und Spritemaßstab
+
+**Keine Statusänderung** der historischen Feature-IDs. Die frei patrouillierende
+Sicherheitsdrohne nutzt nach der Routenbewegung nun eine physische, kreisförmige
+Schildkontaktprüfung gegen Schiffshüllen und große, routenblockierende Asteroiden.
+Bei Überschneidungen wird die Drohne auf Abstand versetzt, das optische
+Schildkontaktsignal aktiviert und die Route zurückgesetzt. Kleine Trümmer
+verwenden weiterhin die vorhandene separate Impulsphysik. Im laufenden
+Duell bleibt die native Kampfphysik zuständig. Das Drohnensprite ist von
+18 auf 12 Basispixel verkleinert; Schildradius, Sensorweite und Gameplaywerte
+bleiben unverändert.

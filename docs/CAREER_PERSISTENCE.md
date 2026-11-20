@@ -947,3 +947,12 @@ planen ebenfalls neu. Die bestehenden Karriere-Checkpoints erfassen Position
 und Route bereits. Es gibt weder ein zusätzliches persistentes Feld noch
 eine neue Save-Version. Während des laufenden Kampfes bleibt der
 Kampfsimulator alleinige Autorität über seine Beteiligten.
+
+## Sicherheitsdrohne: lokale Schildkontakte und Darstellungsgröße
+
+Die physische Schildkontaktprüfung nach dem Patrouillentick verändert
+lediglich die bereits gespeicherte Drohnenposition und verwirft bei
+Kontakt eine alte Route; dies wird durch den bestehenden
+Sicherheitsdrohnen-Checkpoint erfasst. Die optische Größe ist reine
+UI-Konfiguration. Keine neue Version oder Felder im Karriere-Save;
+die bisherigen Sicherheits- und Kampfzustände bleiben kompatibel.

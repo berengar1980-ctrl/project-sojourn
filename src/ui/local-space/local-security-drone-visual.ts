@@ -4,7 +4,7 @@ import type { ShieldImpactEffect } from '../../core/shield-types';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
 
 const DRONE_SPRITE_URL = '/drones/security-drone-gc87r8.webp';
-export const DRONE_DIAMETER_PX = 18;
+export const DRONE_DIAMETER_PX = 12;
 export const DRONE_ROTATION_PERIOD_SECONDS = 16;
 let droneSprite: HTMLImageElement | null = null;
 

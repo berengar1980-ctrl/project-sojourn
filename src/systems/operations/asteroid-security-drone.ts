@@ -6,6 +6,7 @@ import {
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { resolveSecurityDroneDebrisContacts } from './security-drone-debris-contact';
+import { resolveSecurityDroneSolidContacts } from './security-drone-solid-contact';
 import {
   stageSecurityDroneCheckpoint,
   type SecurityDroneCheckpoint,
@@ -41,8 +42,8 @@ export class AsteroidSecurityDrone {
   private shieldContactSeconds = 0;
 
   constructor(
-    width: number,
-    height: number,
+    private readonly width: number,
+    private readonly height: number,
     asteroids: readonly LocalAsteroid[],
     private readonly scanRadius = DRONE_SCAN_RADIUS
   ) {
@@ -126,6 +127,16 @@ export class AsteroidSecurityDrone {
     if (!this.operational) return [];
     this.advancePatrolMovement(dt, asteroids, nearbyShips, pursuitTarget);
     this.shieldContactSeconds = Math.max(0, this.shieldContactSeconds - Math.max(0, dt));
+    const solid = resolveSecurityDroneSolidContacts(this.position, asteroids, nearbyShips, {
+      width: this.width,
+      height: this.height,
+    });
+    if (solid.contacts > 0) {
+      this.position = solid.position;
+      this.speed = 0;
+      delete this.routeState;
+      this.shieldContactSeconds = 0.4;
+    }
     const velocity = {
       x: Math.cos(this.headingRadians) * this.speed,
       y: Math.sin(this.headingRadians) * this.speed,
