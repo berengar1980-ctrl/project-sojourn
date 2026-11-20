@@ -10,6 +10,7 @@ import {
   recordNpcAsteroidTheft,
 } from './game-controller-field-miner-events';
 import { tickFieldPirates, tickFieldSecurity } from './game-controller-security';
+import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
 
@@ -97,6 +98,20 @@ function syncNpcDuelFieldPoses(
   }
 }
 
+function syncCombatWreckPoses(
+  field: AsteroidFieldRuntime,
+  bodies: ReadonlyMap<string, CombatVisualAsteroid>
+): void {
+    for (const wreck of field.combatWrecks) {
+      const body = bodies.get(wreck.id);
+      if (!body) continue;
+      wreck.position = { ...body.position };
+      wreck.driftVelocity = { ...body.velocity };
+      wreck.rotation = body.rotation;
+      if (wreck.rotation3d) wreck.rotation3d = { ...wreck.rotation3d, z: body.rotation };
+    }
+}
+
 /** All field operations advance on the campaign clock, not only during local rendering. */
 export function advanceControllerFieldWorld(
   context: ControllerRuntimeContext,
@@ -157,14 +172,7 @@ export function advanceControllerFieldWorld(
         asteroid.physics.velocity = { ...body.velocity };
         asteroid.physics.angularVelocity = body.angularVelocity;
       }
-      for (const wreck of field.combatWrecks) {
-        const body = bodies.get(wreck.id);
-        if (!body) continue;
-        wreck.position = { ...body.position };
-        wreck.driftVelocity = { ...body.velocity };
-        wreck.rotation = body.rotation;
-        if (wreck.rotation3d) wreck.rotation3d = { ...wreck.rotation3d, z: body.rotation };
-      }
+      syncCombatWreckPoses(field, bodies);
       context.state.localSpace?.syncCombatPose(
         activeCombat.attacker.position,
         activeCombat.attacker.headingRadians,
