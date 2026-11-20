@@ -320,6 +320,44 @@ function initializeFleetParticipants(
   return { byId, fleet };
 }
 
+function createFleetTargeting(
+  fleet: readonly FleetShip[],
+  byId: ReadonlyMap<string, FleetShip>
+): {
+  validEnemy: (ship: FleetShip, target: FleetShip | undefined) => boolean;
+  acquire: (ship: FleetShip) => FleetShip | null;
+} {
+const validEnemy = (ship: FleetShip, target: FleetShip | undefined): boolean =>
+  !!target &&
+  target !== ship &&
+  target.active &&
+  target.combatant.hullHp > 0 &&
+  isFleetHostile(ship.factionId, target.factionId);
+
+const acquire = (ship: FleetShip): FleetShip | null => {
+  // A current target is sticky, preventing tick-by-tick oscillation.
+  const current = ship.targetId ? byId.get(ship.targetId) : undefined;
+  if (current && validEnemy(ship, current)) return current;
+  // A neutral worker stays neutral until explicitly assigned a target.
+  if (ship.targetId === null) return null;
+  const candidates = fleet.filter((candidate) => validEnemy(ship, candidate));
+  candidates.sort(
+    (a, b) =>
+      distance(ship.combatant.position, a.combatant.position) -
+        distance(ship.combatant.position, b.combatant.position) ||
+      a.combatant.setup.id.localeCompare(b.combatant.setup.id)
+  );
+  const selected = candidates[0] ?? null;
+  if (selected) ship.targetId = selected.combatant.setup.id;
+  // Preserve an assigned target that is scheduled to arrive later.
+  else if (!current || current.active) ship.targetId = null;
+  return selected;
+};
+
+
+  return { validEnemy, acquire };
+}
+
 /**
  * First independently simulated N-ship combat kernel.
  * Reuses 1vs1's ship construction, flight/obstacle/contact and layered
@@ -343,32 +381,7 @@ export function createFleetCombatService(
     createRng(hashSeed(participants.map((entry) => entry.setup.id).join('|')))
   );
 
-  const validEnemy = (ship: FleetShip, target: FleetShip | undefined): boolean =>
-    !!target &&
-    target !== ship &&
-    target.active &&
-    target.combatant.hullHp > 0 &&
-    isFleetHostile(ship.factionId, target.factionId);
-
-  const acquire = (ship: FleetShip): FleetShip | null => {
-    // A current target is sticky, preventing tick-by-tick oscillation.
-    const current = ship.targetId ? byId.get(ship.targetId) : undefined;
-    if (current && validEnemy(ship, current)) return current;
-    // A neutral worker stays neutral until explicitly assigned a target.
-    if (ship.targetId === null) return null;
-    const candidates = fleet.filter((candidate) => validEnemy(ship, candidate));
-    candidates.sort(
-      (a, b) =>
-        distance(ship.combatant.position, a.combatant.position) -
-          distance(ship.combatant.position, b.combatant.position) ||
-        a.combatant.setup.id.localeCompare(b.combatant.setup.id)
-    );
-    const selected = candidates[0] ?? null;
-    if (selected) ship.targetId = selected.combatant.setup.id;
-    // Preserve an assigned target that is scheduled to arrive later.
-    else if (!current || current.active) ship.targetId = null;
-    return selected;
-  };
+  const { validEnemy, acquire } = createFleetTargeting(fleet, byId);
 
   const view = (): FleetCombatSnapshot =>
     fleetView(
