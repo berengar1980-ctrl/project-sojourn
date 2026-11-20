@@ -62,9 +62,9 @@ try {
   assert.deepEqual(
     calls.draws.map(({ x, y, width, height }) => [x, y, width, height]),
     [
-      [-9, -9, 18, 18],
-      [-9, -9, 18, 18],
-      [-9, -9, 18, 18],
+      [-6, -6, 12, 12],
+      [-6, -6, 12, 12],
+      [-6, -6, 12, 12],
     ]
   );
   assert.equal(calls.draws[0].image.url, '/drones/security-drone-gc87r8.webp');
@@ -72,7 +72,7 @@ try {
   drawLocalSecurityDrone(ctx, camera, drone, 900, 650, 17);
   assert.deepEqual(
     [calls.draws[3].x, calls.draws[3].y, calls.draws[3].width, calls.draws[3].height],
-    [-18, -18, 36, 36],
+    [-12, -12, 24, 24],
     'Sprite must scale with viewport zoom'
   );
   assert(Math.abs(calls.angles[0]) < 1e-9);
@@ -115,4 +115,4 @@ try {
 } finally {
   global.Image = originalImage;
 }
-console.log('PASS shared security drone sprite, 18px diameter, 16-second rotation and shield hits');
+console.log('PASS shared security drone sprite, 12px diameter, 16-second rotation and shield hits');
