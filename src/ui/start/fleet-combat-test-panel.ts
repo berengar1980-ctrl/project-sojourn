@@ -6,77 +6,74 @@ function renderFleetCanvas(
   context: CanvasRenderingContext2D,
   status: HTMLElement
 ): void {
-    const current = combat.getSnapshot();
-    const scale = Math.min(
-      canvas.width / current.arena.width,
-      canvas.height / current.arena.height
+  const current = combat.getSnapshot();
+  const scale = Math.min(canvas.width / current.arena.width, canvas.height / current.arena.height);
+  const xOffset = (canvas.width - current.arena.width * scale) / 2;
+  const yOffset = (canvas.height - current.arena.height * scale) / 2;
+  const x = (value: number): number => value * scale + xOffset;
+  const y = (value: number): number => value * scale + yOffset;
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = '#1b3643';
+  context.strokeRect(x(0), y(0), current.arena.width * scale, current.arena.height * scale);
+  for (const rock of current.arena.obstacles ?? []) {
+    context.strokeStyle = '#4a575e';
+    context.beginPath();
+    context.arc(
+      x(rock.position.x),
+      y(rock.position.y),
+      Math.max(2, rock.radius * scale),
+      0,
+      Math.PI * 2
     );
-    const xOffset = (canvas.width - current.arena.width * scale) / 2;
-    const yOffset = (canvas.height - current.arena.height * scale) / 2;
-    const x = (value: number): number => value * scale + xOffset;
-    const y = (value: number): number => value * scale + yOffset;
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    context.strokeStyle = '#1b3643';
-    context.strokeRect(x(0), y(0), current.arena.width * scale, current.arena.height * scale);
-    for (const rock of current.arena.obstacles ?? []) {
-      context.strokeStyle = '#4a575e';
-      context.beginPath();
-      context.arc(
-        x(rock.position.x),
-        y(rock.position.y),
-        Math.max(2, rock.radius * scale),
-        0,
-        Math.PI * 2
-      );
-      context.stroke();
-    }
-    for (const shot of current.shots) {
-      context.strokeStyle = shot.shieldDamage > 0 ? '#72cce2' : '#f0ad62';
-      context.beginPath();
-      context.moveTo(x(shot.origin.x), y(shot.origin.y));
-      context.lineTo(x(shot.destination.x), y(shot.destination.y));
-      context.stroke();
-    }
-    for (const entry of current.ships) {
-      const ship = entry.ship;
-      const px = x(ship.position.x);
-      const py = y(ship.position.y);
-      const color =
-        entry.factionId === 'player'
-          ? '#72d8a0'
-          : entry.factionId === 'pirate-a'
-            ? '#d46e65'
-            : '#d7b06c';
-      context.save();
-      context.translate(px, py);
-      context.rotate(ship.headingRadians);
-      context.fillStyle = ship.hullHp > 0 ? color : '#58616b';
-      context.beginPath();
-      context.moveTo(11, 0);
-      context.lineTo(-8, -7);
-      context.lineTo(-5, 0);
-      context.lineTo(-8, 7);
-      context.closePath();
-      context.fill();
-      context.restore();
-      context.font = '12px monospace';
-      context.fillStyle = '#d9e0e3';
-      context.fillText(ship.name, px + 12, py - 10);
-      context.fillText(
-        'S ' + Math.ceil(ship.shieldHp) + ' / H ' + Math.ceil(ship.hullHp),
-        px + 12,
-        py + 6
-      );
-    }
-    status.textContent =
-      'Simulationszeit: ' +
-      current.elapsedSeconds.toFixed(1) +
-      ' s · ' +
-      current.ships.filter((entry) => entry.ship.hullHp > 0).length +
-      ' / ' +
-      current.ships.length +
-      ' Schiffe intakt';
+    context.stroke();
   }
+  for (const shot of current.shots) {
+    context.strokeStyle = shot.shieldDamage > 0 ? '#72cce2' : '#f0ad62';
+    context.beginPath();
+    context.moveTo(x(shot.origin.x), y(shot.origin.y));
+    context.lineTo(x(shot.destination.x), y(shot.destination.y));
+    context.stroke();
+  }
+  for (const entry of current.ships) {
+    const ship = entry.ship;
+    const px = x(ship.position.x);
+    const py = y(ship.position.y);
+    const color =
+      entry.factionId === 'player'
+        ? '#72d8a0'
+        : entry.factionId === 'pirate-a'
+          ? '#d46e65'
+          : '#d7b06c';
+    context.save();
+    context.translate(px, py);
+    context.rotate(ship.headingRadians);
+    context.fillStyle = ship.hullHp > 0 ? color : '#58616b';
+    context.beginPath();
+    context.moveTo(11, 0);
+    context.lineTo(-8, -7);
+    context.lineTo(-5, 0);
+    context.lineTo(-8, 7);
+    context.closePath();
+    context.fill();
+    context.restore();
+    context.font = '12px monospace';
+    context.fillStyle = '#d9e0e3';
+    context.fillText(ship.name, px + 12, py - 10);
+    context.fillText(
+      'S ' + Math.ceil(ship.shieldHp) + ' / H ' + Math.ceil(ship.hullHp),
+      px + 12,
+      py + 6
+    );
+  }
+  status.textContent =
+    'Simulationszeit: ' +
+    current.elapsedSeconds.toFixed(1) +
+    ' s · ' +
+    current.ships.filter((entry) => entry.ship.hullHp > 0).length +
+    ' / ' +
+    current.ships.length +
+    ' Schiffe intakt';
+}
 
 /**
  * Minimal instrumentation for the first 2vs1 test. This is intentionally
@@ -113,7 +110,6 @@ export function createFleetCombatTestPanel(
   let destroyed = false;
   let previous = performance.now();
   returnButton.addEventListener('click', onReturn);
-
 
   function tick(now: number): void {
     if (destroyed) return;

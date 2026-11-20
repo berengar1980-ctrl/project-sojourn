@@ -60,7 +60,6 @@ interface FleetShip {
   nextTargetReview: number;
 }
 
-
 function advanceFleetMotion(
   fleet: readonly FleetShip[],
   acquire: (ship: FleetShip) => FleetShip | null,
@@ -75,8 +74,14 @@ function advanceFleetMotion(
     if (target) {
       moveCombatant(actor, target.combatant, 'attacker', dt, arena, []);
     } else {
-      actor.position.x = Math.max(0, Math.min(arena.width, actor.position.x + actor.velocity.x * dt));
-      actor.position.y = Math.max(0, Math.min(arena.height, actor.position.y + actor.velocity.y * dt));
+      actor.position.x = Math.max(
+        0,
+        Math.min(arena.width, actor.position.x + actor.velocity.x * dt)
+      );
+      actor.position.y = Math.max(
+        0,
+        Math.min(arena.height, actor.position.y + actor.velocity.y * dt)
+      );
       resolveArenaObstacles(actor, arena);
     }
   }
@@ -98,7 +103,10 @@ function fleetDirectShot(
   const profile = weapon?.weapon;
   if (!weapon || !profile || actor.cooldowns[index]! > 0) return null;
   if (distance(actor.position, victim.position) > profile.rangeMeters) return null;
-  const toTarget = Math.atan2(victim.position.y - actor.position.y, victim.position.x - actor.position.x);
+  const toTarget = Math.atan2(
+    victim.position.y - actor.position.y,
+    victim.position.x - actor.position.x
+  );
   const angle = Math.atan2(
     Math.sin(toTarget - actor.headingRadians),
     Math.cos(toTarget - actor.headingRadians)
@@ -107,15 +115,19 @@ function fleetDirectShot(
   const facing = mount?.facing ?? 'forward';
   const expected = facing === 'port' ? -Math.PI / 2 : facing === 'starboard' ? Math.PI / 2 : 0;
   const offset = Math.atan2(Math.sin(angle - expected), Math.cos(angle - expected));
-  const arc = profile.mount === 'turret' || profile.mount === 'guided'
-    ? Math.PI * 2
-    : ((mount?.arcDegrees ?? profile.arcDegrees ?? 65) * Math.PI) / 180;
+  const arc =
+    profile.mount === 'turret' || profile.mount === 'guided'
+      ? Math.PI * 2
+      : ((mount?.arcDegrees ?? profile.arcDegrees ?? 65) * Math.PI) / 180;
   if (Math.abs(offset) > arc / 2) return null;
   // Direct-hit prototype only; accurate projectiles, misses and ammunition follow.
   const hit = resolveShipWeaponHit(weapon, victim);
   victim.shieldHp = hit.shieldRemaining;
   victim.hullHp = hit.hullRemaining;
-  actor.cooldowns[index] = Math.max(0.15, profile.cooldownSeconds * actor.setup.cycleTimeMultiplier);
+  actor.cooldowns[index] = Math.max(
+    0.15,
+    profile.cooldownSeconds * actor.setup.cycleTimeMultiplier
+  );
   return {
     sourceId: actor.setup.id,
     targetId: victim.setup.id,

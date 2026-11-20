@@ -163,29 +163,26 @@ function createFleetPrototype(config: FleetTestConfiguration) {
   const arenaSeed = Math.floor(Math.random() * 0x7fffffff);
   const arena = createDuelArena(config.map, arenaSeed);
   const participants = config.ships.map((entry, index) => {
-      if (!entry.draft) throw new Error('The initial 2vs1 test cannot run drone entities');
-      const ship = getShipDefinition(entry.draft.shipId);
-      if (!ship) throw new Error('Missing FleetCombat hull: ' + entry.draft.shipId);
-      const setup = duelCombatant(index, entry.draft, ship);
-      const isPlayer = entry.role === 'player';
-      const distanceFactor = index === 1 ? -1 : 1;
-      return {
-        setup: { ...setup, id: entry.id, name: entry.name },
-        factionId: isPlayer ? 'player' : 'pirate-a',
-        position: {
-          x: arena.width * (isPlayer ? 0.27 : 0.72),
-          y: arena.height * (isPlayer ? 0.5 : 0.5 + distanceFactor * 0.09),
-        },
-        targetId: isPlayer ? 'pirate-a-1' : 'player',
-      };
-    });
+    if (!entry.draft) throw new Error('The initial 2vs1 test cannot run drone entities');
+    const ship = getShipDefinition(entry.draft.shipId);
+    if (!ship) throw new Error('Missing FleetCombat hull: ' + entry.draft.shipId);
+    const setup = duelCombatant(index, entry.draft, ship);
+    const isPlayer = entry.role === 'player';
+    const distanceFactor = index === 1 ? -1 : 1;
+    return {
+      setup: { ...setup, id: entry.id, name: entry.name },
+      factionId: isPlayer ? 'player' : 'pirate-a',
+      position: {
+        x: arena.width * (isPlayer ? 0.27 : 0.72),
+        y: arena.height * (isPlayer ? 0.5 : 0.5 + distanceFactor * 0.09),
+      },
+      targetId: isPlayer ? 'pirate-a-1' : 'player',
+    };
+  });
   return createFleetCombatService(participants, arena);
 }
 
-function renderFleetRoster(
-  roster: HTMLElement,
-  config: FleetTestConfiguration
-): void {
+function renderFleetRoster(roster: HTMLElement, config: FleetTestConfiguration): void {
   roster.replaceChildren();
   for (const [team, label] of [
     ['player', 'Spieler'],
@@ -201,23 +198,23 @@ function renderFleetRoster(
     title.textContent = label + ' (' + entries.length + ')';
     section.append(title);
     for (const ship of entries) {
-    const line = document.createElement('p');
-    if (!ship.draft) {
-      line.textContent = ship.id + ' · ' + ship.name + ' · Kampagnen-KI vorgesehen';
-    } else {
-      const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
-      const equipped = ship.draft.weapons
-      .map((id) => weaponCatalog.find((item) => item.id === id)?.name)
-      .filter(Boolean);
-      const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft?.mines[0]);
-      line.textContent = [
-      ship.id.toUpperCase() + ' · ' + ship.name,
-      equipped.join(', ') || 'Keine kompatiblen Waffenplätze',
-      mine?.name ?? 'Keine Mine',
-      'Reaktor Mk IV',
-      ].join(' | ');
-    }
-    section.append(line);
+      const line = document.createElement('p');
+      if (!ship.draft) {
+        line.textContent = ship.id + ' · ' + ship.name + ' · Kampagnen-KI vorgesehen';
+      } else {
+        const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
+        const equipped = ship.draft.weapons
+          .map((id) => weaponCatalog.find((item) => item.id === id)?.name)
+          .filter(Boolean);
+        const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft?.mines[0]);
+        line.textContent = [
+          ship.id.toUpperCase() + ' · ' + ship.name,
+          equipped.join(', ') || 'Keine kompatiblen Waffenplätze',
+          mine?.name ?? 'Keine Mine',
+          'Reaktor Mk IV',
+        ].join(' | ');
+      }
+      section.append(line);
     }
     roster.append(section);
   }
