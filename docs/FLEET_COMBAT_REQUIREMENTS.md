@@ -381,3 +381,34 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   Rechtliche Konsequenzen, Wrackgenerierung, Markt- und Versicherungs-
   Ereignisse sowie vollständige Waffen-/Projektilphysik sind nicht Teil
   dieses Arbeitsschritts. Produktive Freigabe bleibt gesperrt.
+
+## FC-36 – Kampagnen-Speichersperre während des Kampfes (Entscheidung geändert)
+
+- **Neue verbindliche Nutzerentscheidung:** Laufende Gefechte werden nicht
+  gespeichert. In der Kampagne darf der Spieler während eines 1vs1- oder
+  FleetCombat-Gefechts **nicht speichern**; Laden eines zuvor gespeicherten
+  Spielstands bleibt auch mitten im Gefecht erlaubt und beendet die bisherige
+  Sitzung über den bestehenden vollständigen Controller-Neustart.
+- `controllerCareerSaveBlockReason` führt die Prüfung unmittelbar vor
+  `createCareerSaveStore.save` aus; ein nicht abschließend verrechnetes
+  Spieler-Kampfergebnis (`combatResultPending`) bleibt gesperrt.
+  Die bisherigen Beschränkungen auf ruhenden Orbit/Hafen bleiben bestehen.
+- Das Kampagnen-Einstellungsmenü zeigt den Grund an und deaktiviert
+  **nur** die Schaltfläche Speichern; Laden bleibt unverändert verfügbar.
+  Eine zweite Prüfung beim tatsächlichen Speichern verhindert Umgehungen
+  durch einen zwischenzeitlichen Zustandswechsel.
+- Auch eine aktive exklusive FC-32-Feld-Lease blockiert vorsorglich das
+  Speichern, da weder das laufende Gefecht noch dessen FC-35-Beuteledger
+  im bisherigen Karriere-Checkpoint enthalten sind. Bereits vorhandene
+  **separate NPC-1vs1-Gefechte** lösen keine neue globale Sperre aus.
+  Für rein autonome NPC-Fleet-Gefechte sind konsistente Save-Grenzen
+  später ausdrücklich zu klären; bis dahin bleibt diese Lease-Sperre.
+- Die Speicherfreigabe erfolgt erst nach dem Kampfergebnis und Rückgabe
+  der Fleet-Tick-Autorität. PvP erhält keinen Karriere-Speichermechanismus.
+- Regression `fleet-career-save-policy.test.cjs` prüft 1vs1, eingebettete
+  Kämpfe, Ergebnisphase, Fleet-Lease, normales Speichern und unverändertes
+  Laden; `fleet-field-tick-ownership.test.cjs` prüft die Lease-Freigabe.
+- **Entscheidung ersetzt frühere Save/Resume-Pläne:** Die Anforderung,
+  laufende FleetCombat-Projektile, Schaden, Mitglieder und Beuteledger
+  zu serialisieren, ist gestrichen. Die bereits bestehenden Karriere-
+  Checkpoint-Daten außerhalb eines Gefechts bleiben unverändert.
