@@ -9,6 +9,8 @@ const modules = [
   'src/systems/combat/combat-engagement-manager.ts',
   'src/systems/combat/fleet-faction-policy.ts',
   'src/systems/combat/fleet-security-drone-interceptor.ts',
+  'src/systems/combat/fleet-career-mining-bridge.ts',
+  'src/systems/combat/fleet-combat-lifecycle.ts',
 ];
 
 for (const file of modules) {
