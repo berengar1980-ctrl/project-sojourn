@@ -56,11 +56,13 @@ export function createFleetCombatForCareerField(
       ? createFleetCareerFieldSecurityBridge(field, careerNpcs, reservedIds)
       : null;
   const loot = createFleetCareerLootSettlement(careerNpcs);
-  const registerWrecks = registerCombatWrecks ?? ((wrecks: readonly SalvageWreck[]) => {
-    // The runtime field shares its list with the persisted asteroid-field authority.
-    // Production controllers pass AsteroidFieldWorld.registerCombatWrecks instead.
-    (field.combatWrecks as SalvageWreck[]).push(...wrecks);
-  });
+  const registerWrecks =
+    registerCombatWrecks ??
+    ((wrecks: readonly SalvageWreck[]) => {
+      // The runtime field shares its list with the persisted asteroid-field authority.
+      // Production controllers pass AsteroidFieldWorld.registerCombatWrecks instead.
+      (field.combatWrecks as SalvageWreck[]).push(...wrecks);
+    });
   const wrecks = createFleetCareerWreckSettlement(
     field,
     new Set(careerNpcs.map((npc) => npc.id)),

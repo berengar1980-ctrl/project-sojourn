@@ -433,7 +433,7 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   Verarbeitung, mehrere zerstörte NPCs, verzögerte Verluste und
   Kollisions-/Darstellungsdaten bei neuer Arena-Montage.
 - **Noch nicht produktiv aktiviert:** Dynamischer Eintrag neu entstandener
-  Wracks in die *bereits aktive* Kampfarena und der volle Kampfabschluss
+  Wracks in die _bereits aktive_ Kampfarena und der volle Kampfabschluss
   inklusive Legal-/Reputationsfolgen bleiben offen. Der vorhandene
   1vs1-Wrackgenerator bleibt unangetastet. FC-36 verbietet das Speichern
   während laufender FleetCombat-Gefechte; außerhalb werden diese Wracks

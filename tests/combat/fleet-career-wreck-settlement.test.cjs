@@ -51,11 +51,10 @@ assert.deepEqual(
 );
 assert.equal(recorder.settle(first, 5).length, 0, 'the same death is not registered twice');
 assert.equal(registered.length, 2);
-const later = recorder.settle([
-  ship('pirate-a', 0, 230, 400),
-  ship('pirate-b', 0, 480, 450),
-  ship('miner', 0, 620, 710),
-], 7.2);
+const later = recorder.settle(
+  [ship('pirate-a', 0, 230, 400), ship('pirate-b', 0, 480, 450), ship('miner', 0, 620, 710)],
+  7.2
+);
 assert.equal(later.length, 1, 'another victim can be destroyed in a later tick');
 assert.equal(field.combatWrecks.length, 3);
 assert.equal(recorder.settle([], 8).length, 0);
@@ -65,6 +64,11 @@ for (const wreck of registered) {
   const collider = arena.asteroids.find((body) => body.id === wreck.id);
   assert(collider && collider.combatWreckVariant === wreck.combatWreckVariant);
 }
-assert.equal(registered.some((wreck) => wreck.id.includes('player')), false,
-  'player hull never produces an NPC wreck through the career NPC adapter');
-console.log('PASS FC-37: one recoverable career wreck per destroyed fleet ship, reused salvage factory');
+assert.equal(
+  registered.some((wreck) => wreck.id.includes('player')),
+  false,
+  'player hull never produces an NPC wreck through the career NPC adapter'
+);
+console.log(
+  'PASS FC-37: one recoverable career wreck per destroyed fleet ship, reused salvage factory'
+);

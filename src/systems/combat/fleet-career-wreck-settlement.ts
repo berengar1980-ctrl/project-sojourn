@@ -12,7 +12,10 @@ export function createFleetCareerWreckSettlement(
   registerWrecks: (wrecks: readonly SalvageWreck[]) => void,
   encounterId: string
 ): {
-  settle(ships: readonly FleetCombatShipSnapshot[], elapsedSeconds: number): readonly SalvageWreck[];
+  settle(
+    ships: readonly FleetCombatShipSnapshot[],
+    elapsedSeconds: number
+  ): readonly SalvageWreck[];
 } {
   const finished = new Set<string>();
   const knownIds = new Set(field.combatWrecks.map((wreck) => wreck.id));
