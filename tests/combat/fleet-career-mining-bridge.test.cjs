@@ -16,6 +16,8 @@ const miner = npcs.find((npc) => npc.job === 'miner');
 const pirates = npcs.filter((npc) => npc.job === 'pirate').slice(0, 2);
 assert(miner && pirates.length === 2);
 const locationId = 'copper-crown-field';
+// A cautious but genuinely armed career miner should choose retreat.
+miner.aggression = 0;
 miner.locationId = locationId;
 miner.workLocationId = locationId;
 miner.workResourceIds = ['ferrite'];
@@ -142,7 +144,7 @@ assert.equal(miner.combatMovement?.targetKind, 'npc');
 assert.equal(
   miner.combatMovement?.mode,
   'flee',
-  'unarmed career civilian uses native defensive retreat doctrine'
+  'cautious career miner uses native defensive retreat doctrine'
 );
 assert.equal(
   mining.ships[0].laserActive,
@@ -178,6 +180,23 @@ assert.equal(
   undefined,
   'once the raid ends, the career NPC returns to its normal work authority'
 );
+// The same genuinely equipped miner may defend itself when its career
+// aggression rises; this must reuse the exact same policy and combat flight.
+miner.aggression = 100;
+fleet.setTarget(pirates[0].id, miner.id);
+const defense = fleet.tick(0.08);
+assert.equal(miner.combatMovement?.mode, 'engaged');
+assert.equal(
+  defense.ships.find((item) => item.ship.id === miner.id)?.targetId,
+  pirates[0].id,
+  'armed miner acquires the real pirate as its counterattack target'
+);
+assert.equal(mining.ships[0].laserActive, false,
+  'defending miner must not operate the industrial laser in combat');
+fleet.setTarget(pirates[0].id, null);
+fleet.tick(0.08);
+assert.equal(miner.combatMovement, undefined);
+
 const priorCareerCombat = {
   mode: 'engaged',
   targetKind: 'npc',
