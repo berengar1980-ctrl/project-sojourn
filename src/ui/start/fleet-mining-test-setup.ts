@@ -71,8 +71,8 @@ export function createFleetMiningTestSetup(
     mine: (npc, resourceId, amount) => economy.mineLocal(npc, resourceId, amount),
     depart: (npc) => economy.dispatchLoadedWorker(npc),
   });
-  const entry = seededLocalGate(field.width, field.height, field.seed);
-  const spawnPositions = new Map(entries.map((item) => [item.id, entry] as const));
+  const initialGate = seededLocalGate(field.width, field.height, field.seed);
+  const spawnPositions = new Map(entries.map((item) => [item.id, initialGate] as const));
   const bridge = createFleetCareerMiningBridge(mining, miners, {
     spawnAtSeconds: arrivals,
     spawnPositions,
