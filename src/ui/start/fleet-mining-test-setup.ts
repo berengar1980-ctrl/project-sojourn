@@ -79,6 +79,8 @@ export function createFleetMiningTestSetup(
   });
   let elapsed = 0;
   const world: FleetCombatWorldOptions = {
+    beforeWorldTick: bridge.world.beforeWorldTick,
+    afterCombatTick: bridge.world.afterCombatTick,
     tickWorld(dt) {
       elapsed += dt;
       for (const npc of miners) {
