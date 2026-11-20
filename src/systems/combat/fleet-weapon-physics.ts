@@ -1,4 +1,5 @@
 import type { ShipWeaponFamily } from '../../core/ship-types';
+import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
 import type {
   CombatBeamKind,
   CombatPoint,
@@ -68,8 +69,8 @@ interface PendingProjectile extends FleetWeaponProjectile {
   readonly weaponIndex: number;
   readonly weaponId: string;
   readonly speed: number;
-  readonly shieldDamage: number;
-  readonly hullDamage: number;
+  shieldDamage: number;
+  hullDamage: number;
   readonly critical: boolean;
   readonly subsystem: 'hull' | 'engine' | 'tractor';
   readonly origin: CombatPoint;
@@ -111,7 +112,8 @@ export function createFleetWeaponPhysics(
     hullDamage: number,
     critical: boolean,
     subsystem: 'hull' | 'engine' | 'tractor',
-    shieldHit?: ReturnType<typeof segmentShieldHit>
+    shieldHit?: ReturnType<typeof segmentShieldHit>,
+    sourceKind: 'laser' | 'missile' = 'laser'
   ): FleetWeaponHit | null {
     const previousShield = target.shieldHp;
     const previousHull = target.hullHp;
@@ -123,7 +125,7 @@ export function createFleetWeaponPhysics(
       source,
       critical,
       origin,
-      'laser',
+      sourceKind,
       impactSerial,
       shieldHit ?? undefined,
       subsystem === 'engine' && !engineShotAvailable(source, target) ? 'hull' : subsystem
@@ -154,8 +156,8 @@ export function createFleetWeaponPhysics(
     if (!component || !weapon) return;
     const muzzle = weaponMuzzle(source, index);
     const kind = weaponKind(weapon.family);
-    const hit = random() <= clamp(source.setup.hitChance - target.setup.dodgeChance, 0.2, 0.98);
     const critical = random() < clamp(source.setup.criticalChance, 0, 0.5);
+    const hit = random() <= clamp(source.setup.hitChance - target.setup.dodgeChance, 0.2, 0.98);
     const damage = nativeWeaponDamage(component);
     const subsystem = effectiveTargetSubsystem(source, target);
     if (kind === 'laser' || kind === 'rail') {
@@ -167,7 +169,8 @@ export function createFleetWeaponPhysics(
       activeBeams.push({
         id: ++beamSerial, sourceId: source.setup.id, targetId: target.setup.id,
         kind, family: weapon.family, origin: { ...muzzle },
-        end: { ...(obstacle?.point ?? beamEnd) }, ttlSeconds: kind === 'laser' ? 0.16 : 0.09,
+        end: { ...(obstacle?.point ?? beamEnd) },
+        ttlSeconds: WEAPON_VISUALS[weapon.family].beamSeconds ?? (kind === 'laser' ? 0.16 : 0.09),
       });
       if (hit && !obstacle) {
         const dealt = applyHit(
@@ -227,7 +230,8 @@ export function createFleetWeaponPhysics(
       const dealt = applyHit(
         source, target, projectile.weaponId, projectile.weaponIndex,
         projectile.position, projectile.shieldDamage, projectile.hullDamage,
-        projectile.critical, projectile.subsystem, shieldHit
+        projectile.critical, projectile.subsystem, shieldHit,
+        projectile.kind === 'missile' ? 'missile' : 'laser'
       );
       if (dealt) hits.push(dealt);
       return false;
@@ -246,7 +250,8 @@ export function createFleetWeaponPhysics(
         const dealt = applyHit(
           source, target, projectile.weaponId, projectile.weaponIndex,
           projectile.position, projectile.shieldDamage, projectile.hullDamage,
-          projectile.critical, projectile.subsystem
+          projectile.critical, projectile.subsystem, undefined,
+          projectile.kind === 'missile' ? 'missile' : 'laser'
         );
         if (dealt) hits.push(dealt);
         return false;
@@ -256,6 +261,8 @@ export function createFleetWeaponPhysics(
     if (projectile.kind === 'missile' && !projectile.missed &&
         dx * projectile.direction.x + dy * projectile.direction.y < -55) {
       projectile.missed = true;
+      projectile.shieldDamage = 0;
+      projectile.hullDamage = 0;
       projectile.ttlSeconds = Math.min(projectile.ttlSeconds, 0.65);
     }
     return projectile.ttlSeconds > 0;
