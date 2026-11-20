@@ -14,7 +14,10 @@ import {
 import { advanceShieldImpacts } from '../shields/shield-service';
 import { resolveShipWeaponHit } from './ship-weapon-service';
 import { isFleetHostile } from './fleet-faction-policy';
-import { createCombatEngagementManager, type EngagementSnapshot } from './combat-engagement-manager';
+import {
+  createCombatEngagementManager,
+  type EngagementSnapshot,
+} from './combat-engagement-manager';
 
 /** Fleet factions are identifiers, not hard-coded attacker/defender sides. */
 export interface FleetCombatParticipant {
@@ -305,8 +308,11 @@ export function createFleetCombatService(
     for (const ship of present) {
       if (!ship.targetId || ship.combatant.hullHp <= 0) continue;
       const enemy = byId.get(ship.targetId);
-      if (enemy?.active && enemy.combatant.hullHp > 0 &&
-          isFleetHostile(ship.factionId, enemy.factionId)) {
+      if (
+        enemy?.active &&
+        enemy.combatant.hullHp > 0 &&
+        isFleetHostile(ship.factionId, enemy.factionId)
+      ) {
         engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
       }
     }

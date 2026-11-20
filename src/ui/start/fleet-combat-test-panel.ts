@@ -73,7 +73,9 @@ function renderFleetCanvas(
     ' / ' +
     current.ships.length +
     ' Schiffe intakt · Gefechte: ' +
-    current.engagements.map((entry) => entry.kind === 'fleet' ? 'Fleet (' + entry.memberIds.length + ')' : '1vs1').join(', ') +
+    current.engagements
+      .map((entry) => (entry.kind === 'fleet' ? 'Fleet (' + entry.memberIds.length + ')' : '1vs1'))
+      .join(', ') +
     ' · Wartend: ' +
     current.pendingArrivals.map((entry) => entry.id + ' (+' + entry.atSeconds + ' s)').join(', ') +
     (current.arrivedShipIds.length ? ' · Eingetroffen: ' + current.arrivedShipIds.join(', ') : '');
