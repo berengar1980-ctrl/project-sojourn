@@ -182,6 +182,10 @@
     "src/systems/combat/fleet-faction-policy.ts": {
       "mode": "derived",
       "reason": "Pure FleetCombat hostility predicate over explicit faction IDs; no independent state or checkpoint data; career faction state will remain authoritative at integration."
+    },
+    "src/systems/combat/fleet-security-drone-interceptor.ts": {
+      "mode": "transient",
+      "reason": "PvP-only interceptor coordinates a transient campaign AsteroidSecurityDrone instance; the real drone's authoritative checkpoint remains in its existing career component and no FleetCombat career session is attached yet."
     }
   }
 }
