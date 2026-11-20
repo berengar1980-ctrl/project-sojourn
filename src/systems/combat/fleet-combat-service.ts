@@ -106,6 +106,46 @@ interface FleetShip {
   readonly externalMovement?: FleetCombatParticipant['externalMovement'];
 }
 
+function advanceExternalFleetMotion(
+  ship: FleetShip,
+  fleet: readonly FleetShip[],
+  nearby: readonly FleetCombatShipSnapshot[],
+  arena: StrategicCombatArenaOptions,
+  dt: number
+): void {
+  const actor = ship.combatant;
+  const next = ship.externalMovement?.(dt, nearby);
+  if (!next) return;
+  if (next.active === false) {
+    ship.active = false;
+    ship.departed = true;
+    ship.targetId = null;
+    return;
+  }
+  if (next.combatMotionTargetId) {
+    const enemy = fleet.find((candidate) =>
+      candidate.combatant.setup.id === next.combatMotionTargetId
+    );
+    if (enemy?.active && enemy.combatant.hullHp > 0) {
+      actor.tactic = next.combatTactic ?? actor.tactic;
+      moveCombatant(actor, enemy.combatant, 'attacker', dt, arena, []);
+      ship.combatMotionOwned = true;
+      ship.targetId = next.targetId;
+      next.afterCombatMotion?.(actor.position, actor.headingRadians, actor.speed);
+      return;
+    }
+  }
+  const previous = { ...actor.position };
+  actor.position = { ...next.position };
+  actor.velocity = {
+    x: (next.position.x - previous.x) / dt,
+    y: (next.position.y - previous.y) / dt,
+  };
+  actor.speed = distance(previous, next.position) / dt;
+  actor.headingRadians = next.headingRadians;
+  ship.targetId = next.targetId;
+}
+
 function advanceFleetMotion(
   fleet: readonly FleetShip[],
   acquire: (ship: FleetShip) => FleetShip | null,
@@ -134,35 +174,7 @@ function advanceFleetMotion(
     actor.shieldImpacts = advanceShieldImpacts(actor.shieldImpacts, dt);
     if (actor.hullHp <= 0) continue;
     if (ship.externalMovement) {
-      const next = ship.externalMovement(dt, nearby);
-      if (next.active === false) {
-        ship.active = false;
-        ship.departed = true;
-        ship.targetId = null;
-        continue;
-      }
-      if (next.combatMotionTargetId) {
-        const enemy = fleet.find(
-          (candidate) => candidate.combatant.setup.id === next.combatMotionTargetId
-        );
-        if (enemy?.active && enemy.combatant.hullHp > 0) {
-          actor.tactic = next.combatTactic ?? actor.tactic;
-          moveCombatant(actor, enemy.combatant, 'attacker', dt, arena, []);
-          ship.combatMotionOwned = true;
-          ship.targetId = next.targetId;
-          next.afterCombatMotion?.(actor.position, actor.headingRadians, actor.speed);
-          continue;
-        }
-      }
-      const previous = { ...actor.position };
-      actor.position = { ...next.position };
-      actor.velocity = {
-        x: (next.position.x - previous.x) / dt,
-        y: (next.position.y - previous.y) / dt,
-      };
-      actor.speed = distance(previous, next.position) / dt;
-      actor.headingRadians = next.headingRadians;
-      ship.targetId = next.targetId;
+      advanceExternalFleetMotion(ship, fleet, nearby, arena, dt);
       continue;
     }
     const target = acquire(ship);
@@ -299,6 +311,18 @@ function fleetView(
     })),
     arena,
   };
+}
+
+function reportFleetCombatToWorld(
+  world: FleetCombatWorldOptions,
+  ships: readonly FleetShip[]
+): void {
+  if (!world.afterCombatTick) return;
+  world.afterCombatTick(ships.map((ship) => ({
+    factionId: ship.factionId,
+    targetId: ship.targetId,
+    ship: snapshot(ship.combatant),
+  })));
 }
 
 function activateFleetArrivals(fleet: readonly FleetShip[], elapsedSeconds: number): string[] {
@@ -442,13 +466,7 @@ export function createFleetCombatService(
       }
     }
     shots = advanceFleetFire(remainingShips, acquire, dt);
-    world.afterCombatTick?.(
-      remainingShips.map((ship) => ({
-        factionId: ship.factionId,
-        targetId: ship.targetId,
-        ship: snapshot(ship.combatant),
-      }))
-    );
+    reportFleetCombatToWorld(world, remainingShips);
     for (const ship of remainingShips) {
       if (ship.combatant.hullHp <= 0) {
         engagementManager.disengage(ship.combatant.setup.id);
