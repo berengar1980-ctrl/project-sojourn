@@ -341,15 +341,20 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
     piratesB: Number(piratesB.control.value),
   });
   const setArrival = (id: string, seconds: number): void => {
-    const spawnAtSeconds = seconds === 0 ? 0 : Math.max(1, Math.min(3600, Number.isFinite(seconds) ? Math.floor(seconds) : 30));
+    const spawnAtSeconds =
+      seconds === 0
+        ? 0
+        : Math.max(1, Math.min(3600, Number.isFinite(seconds) ? Math.floor(seconds) : 30));
     config = {
       ...config,
-      ships: config.ships.map((ship) => ship.id === id ? { ...ship, spawnAtSeconds } : ship),
+      ships: config.ships.map((ship) => (ship.id === id ? { ...ship, spawnAtSeconds } : ship)),
     };
     renderFleetRoster(roster, config, setArrival);
   };
   const draw = (): void => {
-    const oldArrivals = new Map((config?.ships ?? []).map((ship) => [ship.id, ship.spawnAtSeconds]));
+    const oldArrivals = new Map(
+      (config?.ships ?? []).map((ship) => [ship.id, ship.spawnAtSeconds])
+    );
     config = createFleetTestScenario(
       map.control.value as DuelMapKind,
       player.control.value,

@@ -189,7 +189,10 @@ export function createFleetCombatService(
     const id = entry.setup.id;
     if (!id || byId.has(id)) throw new Error('Duplicate or empty FleetCombat ship ID: ' + id);
     if (!entry.factionId) throw new Error('Missing FleetCombat faction for ' + id);
-    if (entry.spawnAtSeconds !== undefined && (!Number.isFinite(entry.spawnAtSeconds) || entry.spawnAtSeconds < 0)) {
+    if (
+      entry.spawnAtSeconds !== undefined &&
+      (!Number.isFinite(entry.spawnAtSeconds) || entry.spawnAtSeconds < 0)
+    ) {
       throw new Error('Invalid FleetCombat arrival time for ' + id);
     }
     const combatant = createCombatant(entry.setup, 'attacker', {
@@ -241,15 +244,19 @@ export function createFleetCombatService(
 
   const view = (): FleetCombatSnapshot => ({
     elapsedSeconds,
-    ships: fleet.filter((entry) => entry.active).map((entry) => ({
-      factionId: entry.factionId,
-      targetId: entry.targetId,
-      ship: snapshot(entry.combatant),
-    })),
-    pendingArrivals: fleet.filter((entry) => !entry.active).map((entry) => ({
-      id: entry.combatant.setup.id,
-      atSeconds: entry.spawnAtSeconds,
-    })),
+    ships: fleet
+      .filter((entry) => entry.active)
+      .map((entry) => ({
+        factionId: entry.factionId,
+        targetId: entry.targetId,
+        ship: snapshot(entry.combatant),
+      })),
+    pendingArrivals: fleet
+      .filter((entry) => !entry.active)
+      .map((entry) => ({
+        id: entry.combatant.setup.id,
+        atSeconds: entry.spawnAtSeconds,
+      })),
     arrivedShipIds: arrivedIds.slice(),
     shots: shots.map((shot) => ({
       ...shot,
@@ -281,10 +288,13 @@ export function createFleetCombatService(
       let remaining = Math.min(deltaSeconds, 0.5);
       const arrivals: string[] = [];
       while (remaining > 0.000001) {
-        const nextArrival = fleet.reduce((earliest, ship) =>
-          !ship.active && ship.spawnAtSeconds > elapsedSeconds + 1e-8
-            ? Math.min(earliest, ship.spawnAtSeconds - elapsedSeconds)
-            : earliest, Infinity);
+        const nextArrival = fleet.reduce(
+          (earliest, ship) =>
+            !ship.active && ship.spawnAtSeconds > elapsedSeconds + 1e-8
+              ? Math.min(earliest, ship.spawnAtSeconds - elapsedSeconds)
+              : earliest,
+          Infinity
+        );
         const dt = Math.min(remaining, 0.08, nextArrival);
         if (dt <= 0) break;
         step(dt);

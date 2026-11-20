@@ -140,19 +140,35 @@ try {
   assert.throws(() => staggered.setTarget('late', 'player'), /has not arrived/);
   for (let i = 0; i < 49; i += 1) {
     const state = staggered.tick(0.1);
-    assert.equal(state.ships.some((entry) => entry.ship.id === 'late'), false);
-    assert.equal(state.shots.some((shot) => shot.sourceId === 'late' || shot.targetId === 'late'), false);
+    assert.equal(
+      state.ships.some((entry) => entry.ship.id === 'late'),
+      false
+    );
+    assert.equal(
+      state.shots.some((shot) => shot.sourceId === 'late' || shot.targetId === 'late'),
+      false
+    );
   }
   const arrival = staggered.tick(0.1);
   assert(arrival.arrivedShipIds.includes('late'));
   assert(arrival.ships.some((entry) => entry.ship.id === 'late'));
   assert.equal(arrival.pendingArrivals.length, 0);
-  assert.equal(arrival.shots.some((shot) => shot.sourceId === 'late' || shot.targetId === 'late'), false);
-  assert.throws(() => createFleetCombatService([
-    { setup: combatant('a'), factionId: 'x', position: { x: 1, y: 1 } },
-    { setup: combatant('b'), factionId: 'y', position: { x: 2, y: 2 } },
-    { setup: combatant('c'), factionId: 'y', position: { x: 3, y: 3 }, spawnAtSeconds: -1 },
-  ], arena), /Invalid FleetCombat arrival time/);
+  assert.equal(
+    arrival.shots.some((shot) => shot.sourceId === 'late' || shot.targetId === 'late'),
+    false
+  );
+  assert.throws(
+    () =>
+      createFleetCombatService(
+        [
+          { setup: combatant('a'), factionId: 'x', position: { x: 1, y: 1 } },
+          { setup: combatant('b'), factionId: 'y', position: { x: 2, y: 2 } },
+          { setup: combatant('c'), factionId: 'y', position: { x: 3, y: 3 }, spawnAtSeconds: -1 },
+        ],
+        arena
+      ),
+    /Invalid FleetCombat arrival time/
+  );
   console.log('PASS first 2vs1 fleet kernel: shared world, IDs, movement and layered damage');
 } finally {
   if (previous) require.extensions['.ts'] = previous;
