@@ -956,3 +956,24 @@ Kontakt eine alte Route; dies wird durch den bestehenden
 Sicherheitsdrohnen-Checkpoint erfasst. Die optische Größe ist reine
 UI-Konfiguration. Keine neue Version oder Felder im Karriere-Save;
 die bisherigen Sicherheits- und Kampfzustände bleiben kompatibel.
+
+
+## FleetCombat-Testlabor und verzögerte Schiffsankunft (Feature-Branch)
+
+**Aktueller Career-Persistenz-Effekt: keine Speicheränderung.** Die neuen
+`combat-engagement-manager.ts` und `fleet-combat-service.ts` sind bis zur
+Kampagnenanbindung ausschließlich im PvP-Testlabor tätig. Dort wird pro
+Miner/Pirat ein Eintrittszeitpunkt in Simulationssekunden konfiguriert;
+Spieler und Sicherheitsdrohnen sind von Beginn an vorgesehen. Die
+FleetCombat-Simulation hält ausstehende Teilnehmer getrennt vom aktiven
+Kampfzustand, erzeugt derzeit aber keinen speicherbaren Career-Checkpoint.
+
+Beide neuen Services sind deshalb im Owner-Register ausdrücklich als
+`transient` klassifiziert. **Diese Entscheidung darf nicht auf die
+Kampagnenintegration übertragen werden.** Vor ihrer Freigabe müssen
+Engagement-Mitgliedschaften, lebende Schiffszustände, verzögerte
+Eintritte, Projektil-/Minenzustände und RNG-Fortschritt in einen
+versionierten, gemeinsam validierten Career-Snapshot übernommen werden.
+Ein Save/Load während laufender Verzögerungen muss nach Neustart dieselben
+verbliebenen Eintrittszeiten respektieren, ohne Schiffsduplikate oder
+Teleportation. Der bestehende 1vs1-Checkpoint bleibt unverändert.
