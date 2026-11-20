@@ -47,3 +47,12 @@ Die erste Laufzeit verwendet direkte Treffer statt der vollständigen Projektils
 ## CI-Validierung
 
 Der Teststatus wird erst nach vollständigem CI-Lauf als grün markiert.
+
+## FC-21 – Zeitversetzte Schiffsankunft
+
+- Spieler: immer ab Sekunde 0 auf der Karte; Sicherheitsdrohnen: in der Testkonfiguration immer ab Beginn vorhanden.
+- Jeder Miner und jeder Pirat aus A/B erhält eine eigene Checkbox „Von Beginn an auf der Karte“ und ein Eingabefeld für seine Ankunftszeit (1–3600 Simulationssekunden).
+- Die Zeit bleibt bei Kartenwechsel oder Neuauslosung für gleichbleibende IDs erhalten.
+- Noch nicht eingetroffene Schiffe sind nicht im aktiven Weltsnapshot, können weder navigieren noch schießen, getroffen werden oder als Ziel ausgewählt werden.
+- Der 2vs1-Test nutzt die Zeitsteuerung bereits; Eintritt erfolgt zunächst am Kartenrand. Ein wirklicher Flug von der Sternkarte in die lokale Karte und ein vollständiger Kampagnen-NPC-Join bleiben für die spätere Weltintegration offen.
+- Nachweis: `tests/combat/fleet-combat-service.test.cjs` überprüft Vor-/Nach-Ankunft und Waffenruhe bis zum Eintritt.
