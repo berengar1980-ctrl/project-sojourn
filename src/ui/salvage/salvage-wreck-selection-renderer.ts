@@ -8,7 +8,9 @@ export function drawWreckSelection(
 ): void {
   if (!wreck.isSelected && !wreck.isWorkTarget) return;
   context.save();
-  context.strokeStyle = wreck.isWorkTarget ? 'rgba(232, 184, 96, 0.95)' : 'rgba(130, 206, 224, 0.86)';
+  context.strokeStyle = wreck.isWorkTarget
+    ? 'rgba(232, 184, 96, 0.95)'
+    : 'rgba(130, 206, 224, 0.86)';
   context.lineWidth = 1.5;
   context.setLineDash(wreck.inspected ? [] : [5, 4]);
   context.beginPath();
