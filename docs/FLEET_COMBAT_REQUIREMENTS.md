@@ -412,3 +412,5 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   laufende FleetCombat-Projektile, Schaden, Mitglieder und Beuteledger
   zu serialisieren, ist gestrichen. Die bereits bestehenden Karriere-
   Checkpoint-Daten außerhalb eines Gefechts bleiben unverändert.
+  FC-36 wird nach dem automatischen Formatierungs-Commit im regulären
+  Quality-Gate erneut auf dem unveränderten Laufzeitstand geprüft.
