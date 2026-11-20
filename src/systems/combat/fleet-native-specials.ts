@@ -114,6 +114,25 @@ function captureSpecialImpact(
     output
   );
 }
+function performFleetRam(runtime: StrategicCombatRuntime, now: number): FleetWeaponHit[] {
+  runtime.elapsedSeconds = now;
+  const previous = {
+    aShield: runtime.attacker.shieldHp,
+    aHull: runtime.attacker.hullHp,
+    dShield: runtime.defender.shieldHp,
+    dHull: runtime.defender.hullHp,
+  };
+  applyCombatRamImpact(runtime);
+  const impacts: FleetWeaponHit[] = [];
+  recordDamage(
+    runtime.defender, runtime.attacker, previous.aShield, previous.aHull, 'native-ram', impacts
+  );
+  recordDamage(
+    runtime.attacker, runtime.defender, previous.dShield, previous.dHull, 'native-ram', impacts
+  );
+  return impacts;
+}
+
 /** Mutable pair state persists throughout the encounter, so an in-flight
  * tractor rock or armed mine survives target switches and successive ticks.
  */
@@ -140,33 +159,7 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
   };
   return {
     ram(first, second, now) {
-      const runtime = pairFor(first, second).runtime;
-      runtime.elapsedSeconds = now;
-      const previous = {
-        aShield: runtime.attacker.shieldHp,
-        aHull: runtime.attacker.hullHp,
-        dShield: runtime.defender.shieldHp,
-        dHull: runtime.defender.hullHp,
-      };
-      applyCombatRamImpact(runtime);
-      const impacts: FleetWeaponHit[] = [];
-      recordDamage(
-        runtime.defender,
-        runtime.attacker,
-        previous.aShield,
-        previous.aHull,
-        'native-ram',
-        impacts
-      );
-      recordDamage(
-        runtime.attacker,
-        runtime.defender,
-        previous.dShield,
-        previous.dHull,
-        'native-ram',
-        impacts
-      );
-      return impacts;
+      return performFleetRam(pairFor(first, second).runtime, now);
     },
     tick(dt, now, ships, targetFor) {
       const hits: FleetWeaponHit[] = [];
