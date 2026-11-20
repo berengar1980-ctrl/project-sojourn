@@ -4,6 +4,7 @@ import type {
   StrategicCombatantSnapshot,
 } from './strategic-combat-types';
 import { snapshot } from './strategic-combat-geometry';
+import type { FleetCombatShotSnapshot } from './fleet-combat-service';
 /** Structural contracts avoid an import cycle with the authoritative fleet factory. */
 interface FleetWorldSink {
   readonly afterCombatTick?: (
@@ -11,7 +12,8 @@ interface FleetWorldSink {
       readonly factionId: string;
       readonly targetId: string | null;
       readonly ship: StrategicCombatantSnapshot;
-    }[]
+    }[],
+    shots: readonly FleetCombatShotSnapshot[]
   ) => void;
 }
 
@@ -49,7 +51,8 @@ export function activateFleetArrivals(
 
 export function reportFleetCombatToWorld(
   world: FleetWorldSink,
-  ships: readonly FleetLifecycleShip[]
+  ships: readonly FleetLifecycleShip[],
+  shots: readonly FleetCombatShotSnapshot[] = []
 ): void {
   if (!world.afterCombatTick) return;
   world.afterCombatTick(
@@ -57,6 +60,7 @@ export function reportFleetCombatToWorld(
       factionId: ship.factionId,
       targetId: ship.targetId,
       ship: snapshot(ship.combatant),
-    }))
+    })),
+    shots
   );
 }
