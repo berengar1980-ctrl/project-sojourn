@@ -415,3 +415,26 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   FC-36 ist auf den dedizierten Controller-Settings-Adapter aufgeteilt.
   Der reguläre Quality-Gate überprüft den automatisch formatierten
   Folgecommit einschließlich der Architekturgrenze von 500 Dateizeilen.
+
+## FC-37 – Persistente FleetCombat-Kampfwracks (Grundlage)
+
+- Nach jeder FleetCombat-Schadensrunde registriert ein eigenständiger
+  `createFleetCareerWreckSettlement`-Adapter zerstörte **echte Karriere-NPCs**
+  (keine synthetischen Spieler/Tests-Schiffe). Er verwendet unverändert
+  `addDestroyedShipWreck` aus dem existierenden Kampagnen-Bergungsservice.
+- Pro zerstörtem Schiff entsteht höchstens ein physikalisch darstellbares,
+  bergbares Wrack; mehrere simultane Abschüsse erzeugen mehrere Wracks.
+  Zeitlich spätere Abschüsse werden ebenso verarbeitet.
+- Bei Controller-Handoff wird die Registrierung über das bereits
+  persistierte `AsteroidFieldWorld.registerCombatWrecks` ausgeführt.
+  Die normalen Feld-Checkpoints speichern Wrackpositionen, Varianten und
+  Bergungsressourcen ohne neuen FleetCombat-Speicherstand.
+- Tests: `fleet-career-wreck-settlement.test.cjs` kontrolliert zweimalige
+  Verarbeitung, mehrere zerstörte NPCs, verzögerte Verluste und
+  Kollisions-/Darstellungsdaten bei neuer Arena-Montage.
+- **Noch nicht produktiv aktiviert:** Dynamischer Eintrag neu entstandener
+  Wracks in die *bereits aktive* Kampfarena und der volle Kampfabschluss
+  inklusive Legal-/Reputationsfolgen bleiben offen. Der vorhandene
+  1vs1-Wrackgenerator bleibt unangetastet. FC-36 verbietet das Speichern
+  während laufender FleetCombat-Gefechte; außerhalb werden diese Wracks
+  über das normale Karriere-Feldcheckpoint mitgenommen.
