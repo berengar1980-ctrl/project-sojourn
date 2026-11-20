@@ -38,6 +38,7 @@ if (mainAvailable) {
   const allowed = new Set([
     'src/systems/combat/combat-engagement-manager.ts',
     'src/systems/combat/fleet-combat-service.ts',
+    'src/systems/combat/fleet-faction-policy.ts',
   ]);
   const unexpected = changed.filter((file) => !allowed.has(file));
   assert.deepEqual(
