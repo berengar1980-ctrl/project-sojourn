@@ -1,4 +1,4 @@
-import { AsteroidSecurityDrone } from '../operations/asteroid-security-drone';
+import type { AsteroidSecurityDrone } from '../operations/asteroid-security-drone';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { FieldRouteObstacle } from '../navigation/field-ship-routing';
