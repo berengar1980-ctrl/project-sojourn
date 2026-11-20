@@ -170,6 +170,14 @@
     "src/systems/salvage/combat-destruction-wreck.ts": {
       "mode": "derived",
       "reason": "Pure wreck factory mutating an explicitly passed live salvage field; the field owns its spawned wrecks and this module retains no private state."
+    },
+    "src/systems/combat/combat-engagement-manager.ts": {
+      "mode": "transient",
+      "reason": "FleetCombat development-only topology manager is not attached to the career session; no live career state exists to persist yet. Before campaign integration, promote to persisted with an atomic checkpoint."
+    },
+    "src/systems/combat/fleet-combat-service.ts": {
+      "mode": "transient",
+      "reason": "Isolated PvP FleetCombat laboratory runtime, with delayed arrivals in simulation seconds; not used by career. On campaign integration a versioned encounter and arrival schedule checkpoint will be mandatory."
     }
   }
 }
