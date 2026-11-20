@@ -1,6 +1,9 @@
 import type {
-  CombatPoint, CombatTactic, MutableCombatant,
-  StrategicCombatArenaOptions, StrategicCombatantSnapshot,
+  CombatPoint,
+  CombatTactic,
+  MutableCombatant,
+  StrategicCombatArenaOptions,
+  StrategicCombatantSnapshot,
 } from './strategic-combat-types';
 
 interface FleetCombatShipSnapshot {
@@ -17,7 +20,8 @@ export interface FleetMotionShip {
   departed: boolean;
   combatMotionOwned: boolean;
   readonly externalMovement?: (
-    dt: number, nearby: readonly FleetCombatShipSnapshot[]
+    dt: number,
+    nearby: readonly FleetCombatShipSnapshot[]
   ) => {
     readonly position: CombatPoint;
     readonly headingRadians: number;
@@ -25,9 +29,7 @@ export interface FleetMotionShip {
     readonly active?: boolean;
     readonly combatMotionTargetId?: string;
     readonly combatTactic?: CombatTactic;
-    readonly afterCombatMotion?: (
-      position: CombatPoint, heading: number, speed: number
-    ) => void;
+    readonly afterCombatMotion?: (position: CombatPoint, heading: number, speed: number) => void;
   };
 }
 type FleetShip = FleetMotionShip;
