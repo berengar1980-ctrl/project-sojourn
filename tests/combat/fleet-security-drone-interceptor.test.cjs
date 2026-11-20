@@ -46,8 +46,17 @@ try {
     Math.hypot(state.position.x - start.x, state.position.y - start.y) > 100,
     'drone actually traveled before engaging'
   );
-  assert.equal(interceptor.tick(0.08, contacts.map((ship) => ({ ...ship, operational: false }))).targetId, null);
-  assert.throws(() => createFleetDroneInterceptor(drone, [], 0), /Invalid drone combat engagement range/);
+  assert.equal(
+    interceptor.tick(
+      0.08,
+      contacts.map((ship) => ({ ...ship, operational: false }))
+    ).targetId,
+    null
+  );
+  assert.throws(
+    () => createFleetDroneInterceptor(drone, [], 0),
+    /Invalid drone combat engagement range/
+  );
   console.log('PASS campaign drone sensory pursuit, faction filtering and physical approach');
 } finally {
   if (previous) require.extensions['.ts'] = previous;

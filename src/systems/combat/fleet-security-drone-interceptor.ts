@@ -73,7 +73,8 @@ export function createFleetDroneInterceptor(
       // Only genuine physical movement: the drone approaches its detected
       // pirate through career field-routing and obstacle response.
       drone.tick(dt, asteroids, [], nearbyShips, target?.position);
-      inAttackRange = !!target &&
+      inAttackRange =
+        !!target &&
         Math.hypot(target.position.x - drone.position.x, target.position.y - drone.position.y) <=
           attackRangeMeters;
       return snapshot();
