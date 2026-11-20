@@ -26,6 +26,11 @@ import {
 } from './fleet-weapon-physics';
 import { isFleetHostile } from './fleet-faction-policy';
 import {
+  createFleetNativeSpecials,
+  type FleetSpecialMine,
+  type FleetSpecialThrow,
+} from './fleet-native-specials';
+import {
   activateFleetArrivals,
   reportFleetCombatToWorld,
   validateFleetScenario,
@@ -89,6 +94,8 @@ export interface FleetCombatSnapshot {
   readonly shots: readonly FleetCombatShotSnapshot[];
   readonly projectiles: readonly FleetWeaponProjectile[];
   readonly beams: readonly FleetWeaponBeam[];
+  readonly mines: readonly FleetSpecialMine[];
+  readonly thrownAsteroids: readonly FleetSpecialThrow[];
   readonly pendingArrivals: readonly { id: string; atSeconds: number }[];
   readonly arrivedShipIds: readonly string[];
   readonly engagements: readonly EngagementSnapshot[];
@@ -173,7 +180,8 @@ function advanceFleetMotion(
   arena: StrategicCombatArenaOptions,
   dt: number,
   worldTick?: FleetCombatWorldOptions['tickWorld'],
-  beforeWorldTick?: FleetCombatWorldOptions['beforeWorldTick']
+  beforeWorldTick?: FleetCombatWorldOptions['beforeWorldTick'],
+  onRamContact?: (first: MutableCombatant, second: MutableCombatant) => void
 ): void {
   // Threat decisions precede the field tick: a threatened miner cannot mine.
   beforeWorldTick?.(
@@ -224,7 +232,10 @@ function advanceFleetMotion(
         continue;
       const a = fleet[i]!.combatant;
       const b = fleet[j]!.combatant;
-      if (a.hullHp > 0 && b.hullHp > 0) resolveCombatantCollision(a, b);
+      if (a.hullHp > 0 && b.hullHp > 0) {
+        if (isFleetHostile(fleet[i]!.factionId, fleet[j]!.factionId)) onRamContact?.(a, b);
+        resolveCombatantCollision(a, b);
+      }
     }
   }
 }
@@ -234,6 +245,8 @@ function fleetView(
   shots: readonly FleetCombatShotSnapshot[],
   projectiles: readonly FleetWeaponProjectile[],
   beams: readonly FleetWeaponBeam[],
+  mines: readonly FleetSpecialMine[],
+  thrownAsteroids: readonly FleetSpecialThrow[],
   arrivedIds: readonly string[],
   engagements: readonly EngagementSnapshot[],
   elapsedSeconds: number,
@@ -263,6 +276,8 @@ function fleetView(
     })),
     projectiles,
     beams,
+    mines,
+    thrownAsteroids,
     arena,
   };
 }
@@ -390,6 +405,7 @@ export function createFleetCombatService(
   let shots: FleetCombatShotSnapshot[] = [];
   let arrivedIds: string[] = [];
   const engagementManager = createCombatEngagementManager();
+  const nativeSpecials = createFleetNativeSpecials(arena);
   const weaponPhysics = createFleetWeaponPhysics(
     arena,
     createRng(hashSeed(participants.map((entry) => entry.setup.id).join('|')))
@@ -403,6 +419,8 @@ export function createFleetCombatService(
       shots,
       weaponPhysics.projectiles(),
       weaponPhysics.beams(),
+      nativeSpecials.mines(),
+      nativeSpecials.throws(),
       arrivedIds,
       engagementManager.engagements(),
       elapsedSeconds,
@@ -412,7 +430,11 @@ export function createFleetCombatService(
   const step = (dt: number): void => {
     // Only ships present at the START of this interval may move/fire in it.
     const present = fleet.filter((ship) => ship.active);
-    advanceFleetMotion(present, acquire, arena, dt, world.tickWorld, world.beforeWorldTick);
+    const impactHits: FleetCombatShotSnapshot[] = [];
+    advanceFleetMotion(
+      present, acquire, arena, dt, world.tickWorld, world.beforeWorldTick,
+      (first, second) => impactHits.push(...nativeSpecials.ram(first, second, elapsedSeconds + dt))
+    );
     for (const ship of present) {
       if (ship.departed) engagementManager.disengage(ship.combatant.setup.id);
     }
@@ -428,7 +450,16 @@ export function createFleetCombatService(
         engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
       }
     }
-    shots = weaponPhysics
+    const specialHits = nativeSpecials.tick(
+      dt,
+      elapsedSeconds + dt,
+      remainingShips.map((ship) => ship.combatant),
+      (actor) => {
+        const ship = byId.get(actor.setup.id);
+        return ship ? (acquire(ship)?.combatant ?? null) : null;
+      }
+    );
+    const weaponHits = weaponPhysics
       .tick(
         dt,
         elapsedSeconds + dt,
@@ -439,6 +470,7 @@ export function createFleetCombatService(
         }
       )
       .map((hit) => ({ ...hit }));
+    shots = [...impactHits, ...specialHits, ...weaponHits];
     for (const ship of remainingShips) {
       if (ship.targetId) acquire(ship);
     }
