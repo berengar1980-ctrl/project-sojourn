@@ -102,7 +102,7 @@ try {
   assert.equal(projectileTarget.shieldHp, 100, 'projectile does not teleport damage');
   assert.equal(ballistic.projectiles().length, 1);
   assert.equal(ballistic.projectiles()[0].targetId, 'projectile-target');
-  let actualHits = [];
+  const actualHits = [];
   for (let index = 1; index < 12; index++) {
     actualHits.push(...ballistic.tick(0.08, (index + 1) * 0.08, contacts, targetFor));
   }
