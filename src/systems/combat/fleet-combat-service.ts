@@ -60,6 +60,99 @@ interface FleetShip {
   nextTargetReview: number;
 }
 
+
+function advanceFleetMotion(
+  fleet: readonly FleetShip[],
+  acquire: (ship: FleetShip) => FleetShip | null,
+  arena: StrategicCombatArenaOptions,
+  dt: number
+): void {
+  for (const ship of fleet) {
+    const actor = ship.combatant;
+    actor.shieldImpacts = advanceShieldImpacts(actor.shieldImpacts, dt);
+    if (actor.hullHp <= 0) continue;
+    const target = acquire(ship);
+    if (target) {
+      moveCombatant(actor, target.combatant, 'attacker', dt, arena, []);
+    } else {
+      actor.position.x = Math.max(0, Math.min(arena.width, actor.position.x + actor.velocity.x * dt));
+      actor.position.y = Math.max(0, Math.min(arena.height, actor.position.y + actor.velocity.y * dt));
+      resolveArenaObstacles(actor, arena);
+    }
+  }
+  for (let i = 0; i < fleet.length; i += 1) {
+    for (let j = i + 1; j < fleet.length; j += 1) {
+      const a = fleet[i]!.combatant;
+      const b = fleet[j]!.combatant;
+      if (a.hullHp > 0 && b.hullHp > 0) resolveCombatantCollision(a, b);
+    }
+  }
+}
+
+function fleetDirectShot(
+  actor: MutableCombatant,
+  victim: MutableCombatant,
+  index: number
+): FleetCombatShotSnapshot | null {
+  const weapon = actor.setup.weapons[index];
+  const profile = weapon?.weapon;
+  if (!weapon || !profile || actor.cooldowns[index]! > 0) return null;
+  if (distance(actor.position, victim.position) > profile.rangeMeters) return null;
+  const toTarget = Math.atan2(victim.position.y - actor.position.y, victim.position.x - actor.position.x);
+  const angle = Math.atan2(
+    Math.sin(toTarget - actor.headingRadians),
+    Math.cos(toTarget - actor.headingRadians)
+  );
+  const mount = actor.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
+  const facing = mount?.facing ?? 'forward';
+  const expected = facing === 'port' ? -Math.PI / 2 : facing === 'starboard' ? Math.PI / 2 : 0;
+  const offset = Math.atan2(Math.sin(angle - expected), Math.cos(angle - expected));
+  const arc = profile.mount === 'turret' || profile.mount === 'guided'
+    ? Math.PI * 2
+    : ((mount?.arcDegrees ?? profile.arcDegrees ?? 65) * Math.PI) / 180;
+  if (Math.abs(offset) > arc / 2) return null;
+  // Direct-hit prototype only; accurate projectiles, misses and ammunition follow.
+  const hit = resolveShipWeaponHit(weapon, victim);
+  victim.shieldHp = hit.shieldRemaining;
+  victim.hullHp = hit.hullRemaining;
+  actor.cooldowns[index] = Math.max(0.15, profile.cooldownSeconds * actor.setup.cycleTimeMultiplier);
+  return {
+    sourceId: actor.setup.id,
+    targetId: victim.setup.id,
+    origin: { ...actor.position },
+    destination: { ...victim.position },
+    weaponId: weapon.id,
+    shieldDamage: hit.shieldDamage,
+    hullDamage: hit.hullDamage,
+  };
+}
+
+function advanceFleetFire(
+  fleet: readonly FleetShip[],
+  acquire: (ship: FleetShip) => FleetShip | null,
+  dt: number
+): FleetCombatShotSnapshot[] {
+  const shots: FleetCombatShotSnapshot[] = [];
+  for (const ship of fleet) {
+    const actor = ship.combatant;
+    if (actor.hullHp <= 0) continue;
+    const target = acquire(ship);
+    for (let index = 0; index < actor.cooldowns.length; index += 1) {
+      actor.cooldowns[index] = Math.max(0, actor.cooldowns[index]! - dt);
+    }
+    if (!target) continue;
+    for (let index = 0; index < actor.setup.weapons.length; index += 1) {
+      const shot = fleetDirectShot(actor, target.combatant, index);
+      if (shot) shots.push(shot);
+      if (target.combatant.hullHp <= 0) break;
+    }
+  }
+  for (const ship of fleet) {
+    if (ship.targetId) acquire(ship);
+  }
+  return shots;
+}
+
 /**
  * First independently simulated N-ship combat kernel.
  * Reuses 1vs1's ship construction, flight/obstacle/contact and layered
@@ -139,93 +232,8 @@ export function createFleetCombatService(
 
   const step = (dt: number): void => {
     elapsedSeconds += dt;
-    shots = [];
-    // Physics phase: ships advance exactly once; there is one shared arena.
-    for (const ship of fleet) {
-      const actor = ship.combatant;
-      actor.shieldImpacts = advanceShieldImpacts(actor.shieldImpacts, dt);
-      if (actor.hullHp <= 0) continue;
-      const target = acquire(ship);
-      if (target) {
-        moveCombatant(actor, target.combatant, 'attacker', dt, arena, []);
-      } else {
-        // Unengaged units retain their position/velocity until the local
-        // career worker controller is wired in. No artificial duels.
-        actor.position.x = Math.max(
-          0,
-          Math.min(arena.width, actor.position.x + actor.velocity.x * dt)
-        );
-        actor.position.y = Math.max(
-          0,
-          Math.min(arena.height, actor.position.y + actor.velocity.y * dt)
-        );
-        resolveArenaObstacles(actor, arena);
-      }
-    }
-    for (let i = 0; i < fleet.length; i += 1) {
-      for (let j = i + 1; j < fleet.length; j += 1) {
-        const a = fleet[i]!.combatant;
-        const b = fleet[j]!.combatant;
-        if (a.hullHp > 0 && b.hullHp > 0) resolveCombatantCollision(a, b);
-      }
-    }
-    // Fire phase: source and destination are ship IDs, never fixed sides.
-    for (const ship of fleet) {
-      const actor = ship.combatant;
-      if (actor.hullHp <= 0) continue;
-      const target = acquire(ship);
-      for (let index = 0; index < actor.cooldowns.length; index += 1) {
-        actor.cooldowns[index] = Math.max(0, actor.cooldowns[index]! - dt);
-      }
-      if (!target) continue;
-      const victim = target.combatant;
-      for (let index = 0; index < actor.setup.weapons.length; index += 1) {
-        const weapon = actor.setup.weapons[index]!;
-        const profile = weapon.weapon;
-        if (!profile || actor.cooldowns[index]! > 0) continue;
-        if (distance(actor.position, victim.position) > profile.rangeMeters) continue;
-        const toTarget = Math.atan2(
-          victim.position.y - actor.position.y,
-          victim.position.x - actor.position.x
-        );
-        const angle = Math.atan2(
-          Math.sin(toTarget - actor.headingRadians),
-          Math.cos(toTarget - actor.headingRadians)
-        );
-        const mount = actor.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
-        const facing = mount?.facing ?? 'forward';
-        const expected =
-          facing === 'port' ? -Math.PI / 2 : facing === 'starboard' ? Math.PI / 2 : 0;
-        const offset = Math.atan2(Math.sin(angle - expected), Math.cos(angle - expected));
-        const arc =
-          profile.mount === 'turret' || profile.mount === 'guided'
-            ? Math.PI * 2
-            : ((mount?.arcDegrees ?? profile.arcDegrees ?? 65) * Math.PI) / 180;
-        if (Math.abs(offset) > arc / 2) continue;
-        // Direct-hit prototype. The full 1vs1 accuracy/munition/projectile
-        // mechanics are a later feature gate, never silently approximated.
-        const hit = resolveShipWeaponHit(weapon, victim);
-        victim.shieldHp = hit.shieldRemaining;
-        victim.hullHp = hit.hullRemaining;
-        actor.cooldowns[index] = Math.max(
-          0.15,
-          profile.cooldownSeconds * actor.setup.cycleTimeMultiplier
-        );
-        shots.push({
-          sourceId: actor.setup.id,
-          targetId: victim.setup.id,
-          origin: { ...actor.position },
-          destination: { ...victim.position },
-          weaponId: weapon.id,
-          shieldDamage: hit.shieldDamage,
-          hullDamage: hit.hullDamage,
-        });
-        if (victim.hullHp <= 0) break;
-      }
-    }
-    for (const ship of fleet) {
-      if (ship.targetId) acquire(ship);
-    }
+    advanceFleetMotion(fleet, acquire, arena, dt);
+    shots = advanceFleetFire(fleet, acquire, dt);
   };
 
   return {
