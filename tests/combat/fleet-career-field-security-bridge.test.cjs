@@ -49,7 +49,10 @@ const field = {
 const bridge = createFleetCareerFieldSecurityBridge(field, [...pirates, droneNpc]);
 assert.equal(bridge.participants.length, 3);
 assert.deepEqual(
-  bridge.participants.filter((p) => p.factionId.startsWith('pirate')).map((p) => p.setup.id).sort(),
+  bridge.participants
+    .filter((p) => p.factionId.startsWith('pirate'))
+    .map((p) => p.setup.id)
+    .sort(),
   pirates.map((npc) => npc.id).sort()
 );
 assert.equal(bridge.participants.find((p) => p.factionId === 'security').setup.id, droneNpc.id);
@@ -57,7 +60,10 @@ assert.equal(field.pirates, traffic, 'the native career pirate traffic is retain
 assert.equal(field.drone, drone, 'the native career patrol drone is retained');
 const before = traffic.snapshot(pirates)[0];
 assert(before);
-const near = { x: Math.min(fieldInstance.width - 30, before.position.x + 100), y: before.position.y };
+const near = {
+  x: Math.min(fieldInstance.width - 30, before.position.x + 100),
+  y: before.position.y,
+};
 miners.ships.push({ npcId: 'miner-test', position: near });
 let trafficTicks = 0;
 const originalTick = traffic.tick.bind(traffic);

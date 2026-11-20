@@ -71,9 +71,9 @@ export function createFleetCareerFieldSecurityBridge(
   const droneNpc = npcs.find((npc) => npc.id === 'security-drone:' + field.locationId);
   const droneReady = Boolean(
     droneNpc &&
-      droneNpc.hullHp > 0 &&
-      field.drone.snapshot().operational &&
-      !reservedIds.has(droneNpc.id)
+    droneNpc.hullHp > 0 &&
+    field.drone.snapshot().operational &&
+    !reservedIds.has(droneNpc.id)
   );
   if (droneNpc && droneReady) {
     const position = field.drone.snapshot().position;
@@ -146,8 +146,7 @@ export function createFleetCareerFieldSecurityBridge(
       afterCombatTick(ships) {
         for (const npc of pirates) {
           const combatant = ships.find((entry) => entry.ship.id === npc.id);
-          if (combatant)
-            npc.hullHp = Math.max(0, Math.min(npc.hullMaxHp, combatant.ship.hullHp));
+          if (combatant) npc.hullHp = Math.max(0, Math.min(npc.hullMaxHp, combatant.ship.hullHp));
         }
         if (droneNpc) {
           const combatant = ships.find((entry) => entry.ship.id === droneNpc.id);
