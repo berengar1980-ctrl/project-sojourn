@@ -49,10 +49,7 @@ const scanEffects = fs.readFileSync(
 );
 const controller = readModuleSource(root, 'src/app/game-controller.ts');
 const fieldBridge = readModuleSource(root, 'src/app/game-controller-field-world-bridge.ts');
-const sceneTick = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-scene-tick.ts'),
-  'utf8'
-);
+const sceneTick = fs.readFileSync(path.join(root, 'src/app/game-controller-scene-tick.ts'), 'utf8');
 const localActions = readModuleSource(root, 'src/app/game-controller-local-actions.ts');
 const viewModel = fs.readFileSync(
   path.join(root, 'src/features/local-space/local-space-view-model.ts'),

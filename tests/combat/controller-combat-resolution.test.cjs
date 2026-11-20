@@ -12,7 +12,6 @@ const originalPerformance = globalThis.performance;
 let simulatedMilliseconds = 1000;
 globalThis.performance = { now: () => simulatedMilliseconds };
 
-
 function loadResolver(mocks) {
   const exports = {};
   const code = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
@@ -35,7 +34,11 @@ function scenario(origin, boarding = false) {
   const calls = [];
   let returnFromBoarding;
   let dismissSummary;
-  const field = { id: 'existing-wreck-field', sourceLocationId: 'field', wrecks: [{ id: 'wreck', remaining: 17 }] };
+  const field = {
+    id: 'existing-wreck-field',
+    sourceLocationId: 'field',
+    wrecks: [{ id: 'wreck', remaining: 17 }],
+  };
   const snapshot = {
     winner: 'attacker',
     boardingInitiator: boarding ? 'attacker' : null,
@@ -132,7 +135,11 @@ function scenario(origin, boarding = false) {
 for (const origin of ['local-space', 'salvage-space']) {
   const s = scenario(origin);
   s.resolve();
-  assert.equal(s.calls.filter(([name]) => name === 'finish').length, 0, 'explosion must stay visible');
+  assert.equal(
+    s.calls.filter(([name]) => name === 'finish').length,
+    0,
+    'explosion must stay visible'
+  );
   simulatedMilliseconds += 2201;
   s.resolve();
   assert.equal(s.calls.filter(([name]) => name === 'finish').length, 1);
