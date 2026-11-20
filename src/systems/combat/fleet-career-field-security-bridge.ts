@@ -4,6 +4,7 @@ import type { AsteroidFieldRuntime } from '../operations/asteroid-field-world';
 import { DRONE_SHIELD_RADIUS_METERS } from '../operations/security-drone-debris-contact';
 import { createFleetDroneInterceptor } from './fleet-security-drone-interceptor';
 import { createFleetCareerNpcParticipant } from './fleet-career-npc-adapter';
+import { fleetCareerHostileContacts } from './fleet-career-hostile-contacts';
 import type {
   FleetCombatParticipant,
   FleetCombatShipSnapshot,
@@ -122,6 +123,7 @@ export function createFleetCareerFieldSecurityBridge(
   );
   field.pirates.reconcile(pirates);
   const targets = new Map<string, string>();
+  let fleetContacts: readonly FleetCombatShipSnapshot[] = [];
   const droneNpc = npcs.find((npc) => npc.id === 'security-drone:' + field.locationId);
   const drone = careerDroneParticipant(field, droneNpc, reservedIds);
   const participants = careerPirateParticipants(field, pirates, reservedIds, targets);
@@ -130,6 +132,9 @@ export function createFleetCareerFieldSecurityBridge(
   return {
     participants,
     world: {
+      beforeWorldTick(ships) {
+        fleetContacts = ships;
+      },
       tickWorld(dt) {
         targets.clear();
         field.pirates.reconcile(pirates);
@@ -147,7 +152,16 @@ export function createFleetCareerFieldSecurityBridge(
             targets.set(pirateId, targetId);
             // Use native intercept distance but do not latch the old 1vs1 engine.
             return false;
-          }
+          },
+          undefined,
+          (attacker) =>
+            fleetCareerHostileContacts(
+              attacker.id,
+              attacker.factionId === 'pirates2' ? 'pirate-b' : 'pirate-a',
+              fleetContacts,
+              new Set(field.pirates.snapshot(pirates).map((contact) => contact.npcId)),
+              drone ? drone.setup.id : null
+            )
         );
       },
       afterCombatTick(ships) {
