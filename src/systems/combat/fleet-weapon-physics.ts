@@ -167,33 +167,56 @@ export function createFleetWeaponPhysics(
       const beamEnd = shieldHit?.point ?? end;
       const obstacle = firstObstacleHit(muzzle, beamEnd, arena.obstacles ?? [], arena.asteroids);
       activeBeams.push({
-        id: ++beamSerial, sourceId: source.setup.id, targetId: target.setup.id,
-        kind, family: weapon.family, origin: { ...muzzle },
+        id: ++beamSerial,
+        sourceId: source.setup.id,
+        targetId: target.setup.id,
+        kind,
+        family: weapon.family,
+        origin: { ...muzzle },
         end: { ...(obstacle?.point ?? beamEnd) },
         ttlSeconds: WEAPON_VISUALS[weapon.family].beamSeconds ?? (kind === 'laser' ? 0.16 : 0.09),
       });
       if (hit && !obstacle) {
         const dealt = applyHit(
-          source, target, component.id, index, muzzle,
-          damage.shieldDamage, damage.hullDamage, critical, subsystem, shieldHit
+          source,
+          target,
+          component.id,
+          index,
+          muzzle,
+          damage.shieldDamage,
+          damage.hullDamage,
+          critical,
+          subsystem,
+          shieldHit
         );
         if (dealt) hits.push(dealt);
       }
       return;
     }
     const speed = projectileSpeed(kind);
-    const aim = kind === 'missile'
-      ? target.position
-      : ballisticInterceptPoint(muzzle, target.position, target.velocity, speed);
+    const aim =
+      kind === 'missile'
+        ? target.position
+        : ballisticInterceptPoint(muzzle, target.position, target.velocity, speed);
     const endpoint = hit ? aim : missedShotEnd(muzzle, aim);
     pending.push({
-      id: ++projectileSerial, sourceId: source.setup.id, targetId: target.setup.id,
-      kind, family: weapon.family, position: { ...muzzle },
-      origin: { ...muzzle }, direction: normalize(endpoint.x - muzzle.x, endpoint.y - muzzle.y),
+      id: ++projectileSerial,
+      sourceId: source.setup.id,
+      targetId: target.setup.id,
+      kind,
+      family: weapon.family,
+      position: { ...muzzle },
+      origin: { ...muzzle },
+      direction: normalize(endpoint.x - muzzle.x, endpoint.y - muzzle.y),
       ttlSeconds: Math.max(0.4, distance(muzzle, endpoint) / speed + 0.8),
-      missed: !hit, weaponIndex: index, weaponId: component.id, speed,
+      missed: !hit,
+      weaponIndex: index,
+      weaponId: component.id,
+      speed,
       shieldDamage: hit ? damage.shieldDamage : 0,
-      hullDamage: hit ? damage.hullDamage : 0, critical: hit && critical, subsystem,
+      hullDamage: hit ? damage.hullDamage : 0,
+      critical: hit && critical,
+      subsystem,
     });
   }
 
@@ -223,14 +246,24 @@ export function createFleetWeaponPhysics(
     const harmful = projectile.shieldDamage > 0 || projectile.hullDamage > 0;
     const shieldHit = harmful ? segmentShieldHit(projectile.position, next, target) : null;
     const obstacle = firstObstacleHit(
-      projectile.position, next, arena.obstacles ?? [], arena.asteroids
+      projectile.position,
+      next,
+      arena.obstacles ?? [],
+      arena.asteroids
     );
     if (obstacle && (!shieldHit || obstacle.t < shieldHit.t)) return false;
     if (harmful && shieldHit) {
       const dealt = applyHit(
-        source, target, projectile.weaponId, projectile.weaponIndex,
-        projectile.position, projectile.shieldDamage, projectile.hullDamage,
-        projectile.critical, projectile.subsystem, shieldHit,
+        source,
+        target,
+        projectile.weaponId,
+        projectile.weaponIndex,
+        projectile.position,
+        projectile.shieldDamage,
+        projectile.hullDamage,
+        projectile.critical,
+        projectile.subsystem,
+        shieldHit,
         projectile.kind === 'missile' ? 'missile' : 'laser'
       );
       if (dealt) hits.push(dealt);
@@ -242,15 +275,24 @@ export function createFleetWeaponPhysics(
       const t = clamp(
         ((target.position.x - projectile.position.x) * sx +
           (target.position.y - projectile.position.y) * sy) /
-          Math.max(0.001, sx * sx + sy * sy), 0, 1
+          Math.max(0.001, sx * sx + sy * sy),
+        0,
+        1
       );
       const closest = { x: projectile.position.x + t * sx, y: projectile.position.y + t * sy };
       const radius = Math.max(28, Math.min(45, combatShieldGeometry(target).radiusY));
       if (distance(closest, target.position) <= radius) {
         const dealt = applyHit(
-          source, target, projectile.weaponId, projectile.weaponIndex,
-          projectile.position, projectile.shieldDamage, projectile.hullDamage,
-          projectile.critical, projectile.subsystem, undefined,
+          source,
+          target,
+          projectile.weaponId,
+          projectile.weaponIndex,
+          projectile.position,
+          projectile.shieldDamage,
+          projectile.hullDamage,
+          projectile.critical,
+          projectile.subsystem,
+          undefined,
           projectile.kind === 'missile' ? 'missile' : 'laser'
         );
         if (dealt) hits.push(dealt);
@@ -258,8 +300,11 @@ export function createFleetWeaponPhysics(
       }
     }
     projectile.position = next;
-    if (projectile.kind === 'missile' && !projectile.missed &&
-        dx * projectile.direction.x + dy * projectile.direction.y < -55) {
+    if (
+      projectile.kind === 'missile' &&
+      !projectile.missed &&
+      dx * projectile.direction.x + dy * projectile.direction.y < -55
+    ) {
       projectile.missed = true;
       projectile.shieldDamage = 0;
       projectile.hullDamage = 0;
@@ -288,11 +333,13 @@ export function createFleetWeaponPhysics(
         const candidates = source.setup.weapons
           .map((component, index) => ({ component, index }))
           .filter(({ component, index }) =>
-            Boolean(component?.weapon &&
+            Boolean(
+              component?.weapon &&
               (source.cooldowns[index] ?? 0) <= FIRE_CONTROL_LOOKAHEAD_SECONDS &&
               distance(source.position, target.position) <= component.weapon.rangeMeters &&
               weaponInArc(source, target.position, index, component.weapon) &&
-              hasClearCombatShot(source, target, index, arena))
+              hasClearCombatShot(source, target, index, arena)
+            )
           );
         const volley = selectFireControlVolley(source, target, candidates, now);
         const launched: number[] = [];
@@ -302,7 +349,8 @@ export function createFleetWeaponPhysics(
           if (!component.weapon) continue;
           fire(source, target, index, hits);
           source.cooldowns[index] = weaponCycleSeconds(
-            component.weapon, source.setup.cycleTimeMultiplier
+            component.weapon,
+            source.setup.cycleTimeMultiplier
           );
           recordWeaponFired(source, index, now);
           launched.push(index);
@@ -311,13 +359,30 @@ export function createFleetWeaponPhysics(
       }
       return hits;
     },
-    projectiles: () => pending.map(({ id, sourceId, targetId, kind, family, position,
-      direction, ttlSeconds, missed }) =>
-      ({ id, sourceId, targetId, kind, family, position: { ...position },
-        direction: { ...direction }, ttlSeconds, missed })),
-    beams: () => activeBeams.map(({ id, sourceId, targetId, kind, family, origin,
-      end, ttlSeconds }) =>
-      ({ id, sourceId, targetId, kind, family, origin: { ...origin },
-        end: { ...end }, ttlSeconds })),
+    projectiles: () =>
+      pending.map(
+        ({ id, sourceId, targetId, kind, family, position, direction, ttlSeconds, missed }) => ({
+          id,
+          sourceId,
+          targetId,
+          kind,
+          family,
+          position: { ...position },
+          direction: { ...direction },
+          ttlSeconds,
+          missed,
+        })
+      ),
+    beams: () =>
+      activeBeams.map(({ id, sourceId, targetId, kind, family, origin, end, ttlSeconds }) => ({
+        id,
+        sourceId,
+        targetId,
+        kind,
+        family,
+        origin: { ...origin },
+        end: { ...end },
+        ttlSeconds,
+      })),
   };
 }
