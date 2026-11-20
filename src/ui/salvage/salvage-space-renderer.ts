@@ -348,7 +348,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.context.stroke();
     this.context.restore();
   }
-
   private drawWreckScanCallout(
     wreck: SalvageWreckView,
     point: { x: number; y: number },
@@ -384,7 +383,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.context.restore();
     }
   }
-
   protected drawLongRangeSalvageScan(width: number, height: number, timeSeconds: number): void {
     const progress = this.model.longRangeScanProgress;
     if (progress === null) return;
@@ -397,7 +395,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       height
     );
   }
-
   protected drawPlayerScanCone(width: number, height: number, timeSeconds: number): void {
     if (this.model.phase !== 'inspecting') return;
     const wreck = this.model.wrecks.find((entry) => entry.isWorkTarget);
