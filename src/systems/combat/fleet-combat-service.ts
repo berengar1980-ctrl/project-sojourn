@@ -276,6 +276,83 @@ function setFleetTarget(
   ship.targetId = targetId;
 }
 
+interface FleetStepContext {
+  readonly fleet: readonly FleetShip[];
+  readonly byId: ReadonlyMap<string, FleetShip>;
+  readonly arena: StrategicCombatArenaOptions;
+  readonly world: FleetCombatWorldOptions;
+  readonly engagementManager: ReturnType<typeof createCombatEngagementManager>;
+  readonly nativeSpecials: ReturnType<typeof createFleetNativeSpecials>;
+  readonly weaponPhysics: ReturnType<typeof createFleetWeaponPhysics>;
+  readonly acquire: (ship: FleetShip) => FleetShip | null;
+}
+function advanceFleetStep(
+  context: FleetStepContext,
+  dt: number,
+  now: number
+): { shots: FleetCombatShotSnapshot[]; arrivedIds: string[] } {
+  const { fleet, byId, arena, world, engagementManager, nativeSpecials, weaponPhysics, acquire } =
+    context;
+  // Only ships present at the START of this interval may move/fire in it.
+  const present = fleet.filter((ship) => ship.active);
+  const impactHits: FleetCombatShotSnapshot[] = [];
+  advanceFleetMotion(
+    present,
+    acquire,
+    arena,
+    dt,
+    world.tickWorld,
+    world.beforeWorldTick,
+    (first, second) => impactHits.push(...nativeSpecials.ram(first, second, now))
+  );
+  for (const ship of present) {
+    if (ship.departed) engagementManager.disengage(ship.combatant.setup.id);
+  }
+  const remainingShips = present.filter((ship) => ship.active);
+  for (const ship of remainingShips) {
+    if (!ship.targetId || ship.combatant.hullHp <= 0) continue;
+    const enemy = byId.get(ship.targetId);
+    if (
+      enemy?.active &&
+      enemy.combatant.hullHp > 0 &&
+      isFleetHostile(ship.factionId, enemy.factionId)
+    ) {
+      engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
+    }
+  }
+  const specialHits = nativeSpecials.tick(
+    dt,
+    now,
+    remainingShips.map((ship) => ship.combatant),
+    (actor) => {
+      const ship = byId.get(actor.setup.id);
+      return ship ? (acquire(ship)?.combatant ?? null) : null;
+    }
+  );
+  const weaponHits = weaponPhysics
+    .tick(
+      dt,
+      now,
+      remainingShips.map((ship) => ship.combatant),
+      (actor) => {
+        const ship = byId.get(actor.setup.id);
+        return ship ? (acquire(ship)?.combatant ?? null) : null;
+      }
+    )
+    .map((hit) => ({ ...hit }));
+  const shots: FleetCombatShotSnapshot[] = [...impactHits, ...specialHits, ...weaponHits];
+  for (const ship of remainingShips) {
+    if (ship.targetId) acquire(ship);
+  }
+  reportFleetCombatToWorld(world, remainingShips, shots);
+  for (const ship of remainingShips) {
+    if (ship.combatant.hullHp <= 0) {
+      engagementManager.disengage(ship.combatant.setup.id);
+    }
+  }
+  return { shots, arrivedIds: activateFleetArrivals(fleet, now) };
+}
+
 /**
  * First independently simulated N-ship combat kernel.
  * Reuses 1vs1's ship construction, flight/obstacle/contact and layered
@@ -317,65 +394,13 @@ export function createFleetCombatService(
     );
 
   const step = (dt: number): void => {
-    // Only ships present at the START of this interval may move/fire in it.
-    const present = fleet.filter((ship) => ship.active);
-    const impactHits: FleetCombatShotSnapshot[] = [];
-    advanceFleetMotion(
-      present,
-      acquire,
-      arena,
-      dt,
-      world.tickWorld,
-      world.beforeWorldTick,
-      (first, second) => impactHits.push(...nativeSpecials.ram(first, second, elapsedSeconds + dt))
+    const result = advanceFleetStep(
+      { fleet, byId, arena, world, engagementManager, nativeSpecials, weaponPhysics, acquire },
+      dt, elapsedSeconds + dt
     );
-    for (const ship of present) {
-      if (ship.departed) engagementManager.disengage(ship.combatant.setup.id);
-    }
-    const remainingShips = present.filter((ship) => ship.active);
-    for (const ship of remainingShips) {
-      if (!ship.targetId || ship.combatant.hullHp <= 0) continue;
-      const enemy = byId.get(ship.targetId);
-      if (
-        enemy?.active &&
-        enemy.combatant.hullHp > 0 &&
-        isFleetHostile(ship.factionId, enemy.factionId)
-      ) {
-        engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
-      }
-    }
-    const specialHits = nativeSpecials.tick(
-      dt,
-      elapsedSeconds + dt,
-      remainingShips.map((ship) => ship.combatant),
-      (actor) => {
-        const ship = byId.get(actor.setup.id);
-        return ship ? (acquire(ship)?.combatant ?? null) : null;
-      }
-    );
-    const weaponHits = weaponPhysics
-      .tick(
-        dt,
-        elapsedSeconds + dt,
-        remainingShips.map((ship) => ship.combatant),
-        (actor) => {
-          const ship = byId.get(actor.setup.id);
-          return ship ? (acquire(ship)?.combatant ?? null) : null;
-        }
-      )
-      .map((hit) => ({ ...hit }));
-    shots = [...impactHits, ...specialHits, ...weaponHits];
-    for (const ship of remainingShips) {
-      if (ship.targetId) acquire(ship);
-    }
-    reportFleetCombatToWorld(world, remainingShips, shots);
-    for (const ship of remainingShips) {
-      if (ship.combatant.hullHp <= 0) {
-        engagementManager.disengage(ship.combatant.setup.id);
-      }
-    }
+    shots = result.shots;
+    arrivedIds = result.arrivedIds;
     elapsedSeconds += dt;
-    arrivedIds = activateFleetArrivals(fleet, elapsedSeconds);
   };
 
   return {
