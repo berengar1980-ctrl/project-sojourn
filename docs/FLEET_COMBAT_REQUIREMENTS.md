@@ -63,7 +63,7 @@ Der Teststatus wird erst nach vollständigem CI-Lauf als grün markiert.
 - Beide Fraktionen dürfen sich gegenseitig bekämpfen; Einheiten derselben Fraktion sind nicht feindlich.
 - Spieler, Zivilisten und Sicherheitskräfte sind untereinander verbündet.
 - Die Zeitsteuerung pro Pirat bleibt erhalten; der reale Eintritt erfolgt an der Randzone des lokalen Felds.
-- Bis zur Anbindung der echten Kampagnen-NPC-Logik sind Miner und Drohnen weiterhin im ausführbaren Test gesperrt. Die bisherige direkten Treffer sind kein Ersatz für die vollständige Waffenphysik.
+- Bis zur Anbindung der echten Kampagnen-Minerlogik sind Miner im ausführbaren Test gesperrt; Drohnen dürfen jetzt mit mindestens einem Piraten starten. Die bisherige direkten Treffer sind kein Ersatz für die vollständige Waffenphysik.
 - Nachweis: `fleet-combat-service.test.cjs` prüft mehrere Fraktionen, verbündete Parteien und verzögerten Eintritt.
 
 ## FC-23 – Sicherheitsdrohnen-Interception (Zwischenstand)
@@ -74,6 +74,5 @@ Der Teststatus wird erst nach vollständigem CI-Lauf als grün markiert.
 - Eine Drohne ignoriert Zivilisten und Sicherheitskräfte und sucht sichtbare
   Piraten beider Fraktionen. Ein bereits kämpfender Pirat bleibt Ziel.
 - Eigene Drohnen-Kontakt- und Navigationstests sind hinzugefügt.
-- **Noch offen:** Verbindung zum gemeinsamen FleetCombat-Schadensmodell,
-  tatsächlicher Kampfbeitritt und Anzeige der Drohne im FleetCombat-Testpanel.
-  Vorher darf der Drone-Count den Start im Testlabor weiterhin sperren.
+- **Aktueller Stand:** Die Drohne verwendet ein echtes Mk-III-Kampf-Loadout aus dem vorhandenen Kampagnen-NPC-System. Nur ihre Kampagnen-Drohnenklasse steuert ihre Bewegung; ein externer Steuerungsadapter liefert die Position an die gemeinsame FleetCombat-Simulation. Sobald sie physisch in Angriffsreichweite ist, tritt sie dem laufenden Gefecht bei und kann mit dem derzeit vereinfachten Mehrschiff-Waffenmodell Schaden verursachen und erhalten. Die Testanzeige unterscheidet Drohnen durch runde Markierungen.
+- **Noch offen:** Vollständige Kampfparität (Munition, Projektile, Minen, Traktorwürfe), Produktions-Kampagnenintegration, reale Drohnen-Sprites und die Integration der lokalen NPC-Miner. Die Feature-Branch-Simulation ist noch keine abschließende Karriere-Anbindung.
