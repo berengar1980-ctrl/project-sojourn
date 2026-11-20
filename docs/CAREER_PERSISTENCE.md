@@ -924,3 +924,15 @@ noch im Kampfsimulator gespeichert. Die Größenberechnung des
 Lobby-Containers berücksichtigt die globale Systemkonsole, ohne
 Kampfzustände, persistierte Karrieredaten oder FleetCombat-Konfigurationen
 zu verändern.
+
+## Kampfwracks: gemeinsame Bewegung und Auswahl (PR #376)
+
+Die pro Einsatzort gespeicherten Kampfwracks übernehmen nun auch außerhalb
+der Bergungsszene dieselbe physikalische Drift und 3D-Drehung wie Wracks in
+Bergungsfeldern. Die Feldautorität aktualisiert ihre Positionen und
+`rotation3d`-Werte auf dem Karriere-Tick, sodass der Save-Checkpoint
+unmittelbar die aktuellen Posen erfasst. Während eines aktiven
+Bergungseinsatzes oder eines eingebetteten Kampfes wird der separate Tick
+für diesen Ort unterdrückt; die jeweils aktive Szenenphysik bleibt allein
+zuständig. Minenfeld-Klickauswahl und deren Anzeigekarte sind rein flüchtiger
+UI-Zustand und erweitern die Save-Struktur nicht.
