@@ -336,8 +336,7 @@ export function createSettingsMenu(
   const refreshCareerSave = (): void => {
     const reason = careerSaveBlockReason?.() ?? null;
     save.disabled = !onSaveCareer || reason !== null;
-    saveStatus.textContent =
-      reason ?? 'Speichern im ruhenden Orbit oder Hafen';
+    saveStatus.textContent = reason ?? 'Speichern im ruhenden Orbit oder Hafen';
   };
   refreshCareerSave();
   load.disabled = !onLoadCareer;

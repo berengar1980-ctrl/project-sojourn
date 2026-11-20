@@ -26,20 +26,14 @@ export function careerSaveBlockReason(state: CareerSaveSafetyState): string | nu
     // An active FleetCombat lease cannot yet save its ongoing damage/loot ledger.
     return 'Speichern während eines laufenden FleetCombat-Gefechts ist nicht möglich.';
   }
-  if (
-    !['star-map', 'port'].includes(state.mode) ||
-    state.travelling ||
-    state.fuelJourneyActive
-  ) {
+  if (!['star-map', 'port'].includes(state.mode) || state.travelling || state.fuelJourneyActive) {
     return 'Speichern ist derzeit nur im ruhenden Orbit oder Hafen möglich.';
   }
   return null;
 }
 
 /** Loading the previous valid career slot intentionally has no combat guard. */
-export function controllerCareerSaveBlockReason(
-  context: ControllerRuntimeContext
-): string | null {
+export function controllerCareerSaveBlockReason(context: ControllerRuntimeContext): string | null {
   const { state, navigation, engagements, fuelJourney } = context;
   return careerSaveBlockReason({
     mode: state.mode,
