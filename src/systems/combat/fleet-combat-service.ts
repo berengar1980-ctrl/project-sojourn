@@ -263,7 +263,7 @@ export function createFleetCombatService(
   let shots: FleetCombatShotSnapshot[] = [];
   let arrivedIds: string[] = [];
 
-  const validEnemy = (ship: FleetShip, target: FleetShip | undefined): target is FleetShip =>
+  const validEnemy = (ship: FleetShip, target: FleetShip | undefined): boolean =>
     !!target &&
     target !== ship &&
     target.active &&
@@ -273,7 +273,7 @@ export function createFleetCombatService(
   const acquire = (ship: FleetShip): FleetShip | null => {
     // A current target is sticky, preventing tick-by-tick oscillation.
     const current = ship.targetId ? byId.get(ship.targetId) : undefined;
-    if (validEnemy(ship, current)) return current;
+    if (current && validEnemy(ship, current)) return current;
     // A neutral worker stays neutral until explicitly assigned a target.
     if (ship.targetId === null) return null;
     const candidates = fleet.filter((candidate) => validEnemy(ship, candidate));
