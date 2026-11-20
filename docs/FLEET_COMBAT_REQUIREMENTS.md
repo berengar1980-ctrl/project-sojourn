@@ -352,3 +352,32 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   Zielwahl bleibt entfernungsgesteuert. Dauerhafte Piraten-/Fraktionspolitik,
   geteilte Beute, Save/Resume, vollständige Waffenphysik und automatisierte
   produktive Aktivierung bleiben separat offen.
+
+## FC-35 – Gemeinsame Beute und einmaliger Kampfausgang (Grundlage)
+
+- FleetCombat übergibt je Simulationsschritt tatsächliche Waffentreffer
+  (`sourceId`, `targetId`, Schild-/Hüllenschaden) zusammen mit den
+  Kampfsnapshots an die vorhandene `afterCombatTick`-Weltbrücke.
+- `createFleetCareerLootSettlement` führt einen Schadensbeitrags-Nachweis
+  pro NPC-Ziel, der unabhängig von Piratenfraktions-Zugehörigkeit ist.
+  Nur Piraten mit tatsächlichem Schaden erhalten einen Anteil; bloße
+  Zielwahl, Treffer mit null Schaden und bereits zerstörte Teilnehmer
+  begründen keinen Beuteanspruch.
+- Erst beim bestätigten Hüllentod eines echten Karriere-NPCs werden
+  **insgesamt höchstens zehn Fracht-Einheiten** fair im Umlauf an die
+  überlebenden beteiligten Piraten vergeben. Knappes Ladevolumen wird
+  berücksichtigt. Dafür wird ausschließlich die vorhandene
+  `transferPirateLoot`-Routine verwendet – ohne deren geschützten
+  1vs1-Code zu verändern.
+- Buchungen erfolgen direkt an den bestehenden `SectorNpcState.cargo`-
+  Objekten und `activity`-Feldern; kein eigenes PvP-Wirtschaftssystem.
+  Ein pro Begegnung geführter Abschlussmarker verhindert doppelte
+  Beuteauszahlung bei weiteren Ticks.
+- Regression `fleet-career-loot-settlement.test.cjs` prüft die Aufteilung
+  zwischen feindlichen Piratenfraktionen, Frachterhaltung, Ladegrenzen,
+  Null-Schaden, Einmaligkeit sowie die unveränderte 1vs1-Standardgrenze.
+- **Status: FOUNDATION.** Der Ledger/Abschlussmarker lebt aktuell nur
+  im laufenden FleetCombat und benötigt versionierte Save/Resume-Unterstützung.
+  Rechtliche Konsequenzen, Wrackgenerierung, Markt- und Versicherungs-
+  Ereignisse sowie vollständige Waffen-/Projektilphysik sind nicht Teil
+  dieses Arbeitsschritts. Produktive Freigabe bleibt gesperrt.
