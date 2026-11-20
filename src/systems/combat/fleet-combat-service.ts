@@ -1,5 +1,6 @@
 import type {
   CombatPoint,
+  CombatTactic,
   MutableCombatant,
   StrategicCombatArenaOptions,
   StrategicCombatantSetup,
@@ -51,7 +52,7 @@ export interface FleetCombatParticipant {
     readonly active?: boolean;
     /** Existing combat movement takes ownership while the career miner is threatened. */
     readonly combatMotionTargetId?: string;
-    readonly combatTactic?: 'fight' | 'flee';
+    readonly combatTactic?: CombatTactic;
     readonly afterCombatMotion?: (position: CombatPoint, heading: number, speed: number) => void;
   };
 }
