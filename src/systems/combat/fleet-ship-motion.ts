@@ -85,6 +85,18 @@ function advanceExternalFleetMotion(
   ship.targetId = next.targetId;
 }
 
+function registerNativeRamContact(
+  first: MutableCombatant,
+  second: MutableCombatant,
+  firstFaction: string,
+  secondFaction: string,
+  onContact?: (first: MutableCombatant, second: MutableCombatant) => void
+): void {
+  if (!onContact || !isFleetHostile(firstFaction, secondFaction)) return;
+  const contact = shipContact(first, second);
+  if (contact.distance <= contact.required) onContact(first, second);
+}
+
 export function advanceFleetMotion(
   fleet: readonly FleetShip[],
   acquire: (ship: FleetShip) => FleetShip | null,
@@ -144,10 +156,9 @@ export function advanceFleetMotion(
       const a = fleet[i]!.combatant;
       const b = fleet[j]!.combatant;
       if (a.hullHp > 0 && b.hullHp > 0) {
-        if (isFleetHostile(fleet[i]!.factionId, fleet[j]!.factionId)) {
-          const contact = shipContact(a, b);
-          if (contact.distance <= contact.required) onRamContact?.(a, b);
-        }
+        registerNativeRamContact(
+          a, b, fleet[i]!.factionId, fleet[j]!.factionId, onRamContact
+        );
         resolveCombatantCollision(a, b);
       }
     }
