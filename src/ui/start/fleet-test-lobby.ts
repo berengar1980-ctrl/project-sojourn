@@ -178,7 +178,8 @@ function createFleetPrototype(config: FleetTestConfiguration) {
       setup: { ...setup, id: entry.id, name: entry.name },
       factionId: isPlayer ? 'player' : 'pirate-a',
       position: {
-        x: arena.width * (isPlayer ? 0.27 : 0.72),
+        // Delayed contacts enter near the local map boundary, not at an existing ship.
+        x: entry.spawnAtSeconds > 0 ? arena.width - 180 : arena.width * (isPlayer ? 0.27 : 0.72),
         y: arena.height * (isPlayer ? 0.5 : 0.5 + distanceFactor * 0.09),
       },
       targetId: isPlayer ? 'pirate-a-1' : 'player',
