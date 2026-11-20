@@ -258,6 +258,19 @@ try {
   assert.equal(parallel.getSnapshot().engagements[0].kind, 'fleet');
   assert.equal(new Set(parallel.getSnapshot().engagements[0].memberIds).size, 4);
 
+  // Ships sharing coordinates do not start or merge fights without a target.
+  const nearby = createFleetCombatService(
+    [
+      { setup: combatant('player'), factionId: 'player', position: { x: 1500, y: 2200 } },
+      { setup: combatant('miner'), factionId: 'civilian', position: { x: 1505, y: 2205 } },
+      { setup: combatant('pirate-a'), factionId: 'pirate-a', position: { x: 1510, y: 2210 } },
+    ],
+    arena
+  );
+  nearby.tick(0.08);
+  assert.equal(nearby.getSnapshot().engagements.length, 0);
+  assert.equal(nearby.getSnapshot().shots.length, 0);
+
   const policy = require(path.join(root, 'src/systems/combat/fleet-faction-policy.ts'));
   assert.equal(policy.isFleetHostile('player', 'civilian'), false);
   assert.equal(policy.isFleetHostile('security', 'player'), false);
