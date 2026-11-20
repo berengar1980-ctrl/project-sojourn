@@ -41,7 +41,8 @@ function droneFieldAsteroids(arena: StrategicCombatArenaOptions): LocalAsteroid[
 export function createFleetDronePrototype(
   entry: FleetTestShip,
   index: number,
-  arena: StrategicCombatArenaOptions
+  arena: StrategicCombatArenaOptions,
+  entryPosition?: { readonly x: number; readonly y: number }
 ): FleetCombatParticipant {
   if (entry.role !== 'drone') throw new Error('Fleet drone adapter requires a drone');
   const template = createSectorNpcEconomyStates().find((npc) => npc.job === 'patrol' && !npc.pirate);
@@ -65,8 +66,8 @@ export function createFleetDronePrototype(
   const setup = duelCombatant(index, draft, ship);
   const asteroids = droneFieldAsteroids(arena);
   const drone = new AsteroidSecurityDrone(arena.width, arena.height, asteroids);
-  const position = {
-    x: arena.width * 0.52,
+  const position = entryPosition ?? {
+    x: arena.width * 0.69,
     y: arena.height * (0.3 + 0.1 * (index % 4)),
   };
   drone.restore(position, true);
