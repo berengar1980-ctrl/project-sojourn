@@ -107,6 +107,20 @@ first.registerCombatWrecks(fieldId, [battleWreck]);
 assert.strictEqual(first.field(fieldId).combatWrecks[0], battleWreck);
 first.registerCombatWrecks(fieldId, [battleWreck]);
 assert.equal(first.combatWrecks(fieldId).length, 1, 'same destroyed ship cannot be duplicated');
+const initialPose = {
+  position: { ...battleWreck.position },
+  rotation: { ...battleWreck.rotation3d },
+};
+first.advanceCombatWreckMotion(0.05);
+assert.notDeepEqual(battleWreck.position, initialPose.position, 'combat wrecks must drift');
+assert.notDeepEqual(battleWreck.rotation3d, initialPose.rotation, 'combat wrecks must rotate in 3D');
+const pausedPose = {
+  position: { ...battleWreck.position },
+  rotation: { ...battleWreck.rotation3d },
+};
+first.advanceCombatWreckMotion(0.05, fieldId);
+assert.deepEqual(battleWreck.position, pausedPose.position, 'active salvage/combat owns its own drift');
+assert.deepEqual(battleWreck.rotation3d, pausedPose.rotation, 'skip prevents double integration');
 const combatSave = first.exportState();
 const combatRestore = new AsteroidFieldWorld(
   narrowsSector.locations,
