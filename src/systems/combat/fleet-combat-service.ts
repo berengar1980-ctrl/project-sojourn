@@ -24,6 +24,11 @@ export interface FleetCombatParticipant {
   readonly setup: StrategicCombatantSetup;
   readonly factionId: string;
   readonly position: CombatPoint;
+  /** Preserve an existing campaign combatant as the authoritative mutable state.
+   * No re-creation, re-equipping, HP reset, or cooldown reset is permitted.
+   * Its position must match the supplied world position at handoff.
+   */
+  readonly liveCombatant?: MutableCombatant;
   readonly headingRadians?: number;
   /** An uninvolved worker may remain neutral and can later be engaged. */
   readonly targetId?: string | null;
@@ -258,19 +263,31 @@ function initializeFleetParticipants(
     const id = entry.setup.id;
     if (!id || byId.has(id)) throw new Error('Duplicate or empty FleetCombat ship ID: ' + id);
     if (!entry.factionId) throw new Error('Missing FleetCombat faction for ' + id);
+    if (entry.liveCombatant) {
+      if (entry.liveCombatant.setup.id !== id)
+        throw new Error('FleetCombat live combatant ID mismatch: ' + id);
+      if (
+        !Number.isFinite(entry.liveCombatant.position.x) ||
+        !Number.isFinite(entry.liveCombatant.position.y) ||
+        distance(entry.liveCombatant.position, entry.position) > 0.000001
+      )
+        throw new Error('FleetCombat live combatant position mismatch: ' + id);
+    }
     if (
       entry.spawnAtSeconds !== undefined &&
       (!Number.isFinite(entry.spawnAtSeconds) || entry.spawnAtSeconds < 0)
     ) {
       throw new Error('Invalid FleetCombat arrival time for ' + id);
     }
-    const combatant = createCombatant(entry.setup, 'attacker', {
-      ...arena,
-      attackerPosition: entry.position,
-      ...(entry.headingRadians !== undefined
-        ? { attackerHeadingRadians: entry.headingRadians }
-        : {}),
-    });
+    const combatant =
+      entry.liveCombatant ??
+      createCombatant(entry.setup, 'attacker', {
+        ...arena,
+        attackerPosition: entry.position,
+        ...(entry.headingRadians !== undefined
+          ? { attackerHeadingRadians: entry.headingRadians }
+          : {}),
+      });
     const ship: FleetShip = {
       factionId: entry.factionId,
       combatant,
