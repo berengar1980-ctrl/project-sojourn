@@ -1,43 +1,11 @@
 import type { FleetCombatService } from '../../systems/combat/fleet-combat-service';
 
-/**
- * Minimal instrumentation for the first 2vs1 test. This is intentionally
- * not the finished campaign combat renderer.
- */
-export function createFleetCombatTestPanel(
-  root: HTMLElement,
+function renderFleetCanvas(
   combat: FleetCombatService,
-  onReturn: () => void
-): { destroy(): void } {
-  const shell = document.createElement('section');
-  shell.className = 'harrow-duel harrow-fleet';
-  const heading = document.createElement('h1');
-  heading.textContent = 'FLEETCOMBAT · 2vs1 PROTOTYP';
-  const explanation = document.createElement('p');
-  explanation.textContent =
-    'Gemeinsame Welt, Bewegung und direkte Treffer. KI, Projektile, Minen, Rammen und Traktorwürfe sind noch nicht vollständig integriert.';
-  const returnButton = document.createElement('button');
-  returnButton.textContent = 'Zurück zur FleetCombat-Konfiguration';
-  const canvas = document.createElement('canvas');
-  canvas.width = 1100;
-  canvas.height = 650;
-  canvas.style.display = 'block';
-  canvas.style.width = '100%';
-  canvas.style.maxWidth = '1100px';
-  canvas.style.background = '#03070c';
-  canvas.style.border = '1px solid #5c6b76';
-  const status = document.createElement('p');
-  const context = canvas.getContext('2d');
-  if (!context) throw new Error('FleetCombat test requires Canvas 2D');
-  shell.append(heading, explanation, returnButton, canvas, status);
-  root.replaceChildren(shell);
-  let frame = 0;
-  let destroyed = false;
-  let previous = performance.now();
-  returnButton.addEventListener('click', onReturn);
-
-  function render(): void {
-    if (!context) return;
+  canvas: HTMLCanvasElement,
+  context: CanvasRenderingContext2D,
+  status: HTMLElement
+): void {
     const current = combat.getSnapshot();
     const scale = Math.min(
       canvas.width / current.arena.width,
@@ -109,14 +77,52 @@ export function createFleetCombatTestPanel(
       current.ships.length +
       ' Schiffe intakt';
   }
+
+/**
+ * Minimal instrumentation for the first 2vs1 test. This is intentionally
+ * not the finished campaign combat renderer.
+ */
+export function createFleetCombatTestPanel(
+  root: HTMLElement,
+  combat: FleetCombatService,
+  onReturn: () => void
+): { destroy(): void } {
+  const shell = document.createElement('section');
+  shell.className = 'harrow-duel harrow-fleet';
+  const heading = document.createElement('h1');
+  heading.textContent = 'FLEETCOMBAT · 2vs1 PROTOTYP';
+  const explanation = document.createElement('p');
+  explanation.textContent =
+    'Gemeinsame Welt, Bewegung und direkte Treffer. KI, Projektile, Minen, Rammen und Traktorwürfe sind noch nicht vollständig integriert.';
+  const returnButton = document.createElement('button');
+  returnButton.textContent = 'Zurück zur FleetCombat-Konfiguration';
+  const canvas = document.createElement('canvas');
+  canvas.width = 1100;
+  canvas.height = 650;
+  canvas.style.display = 'block';
+  canvas.style.width = '100%';
+  canvas.style.maxWidth = '1100px';
+  canvas.style.background = '#03070c';
+  canvas.style.border = '1px solid #5c6b76';
+  const status = document.createElement('p');
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('FleetCombat test requires Canvas 2D');
+  shell.append(heading, explanation, returnButton, canvas, status);
+  root.replaceChildren(shell);
+  let frame = 0;
+  let destroyed = false;
+  let previous = performance.now();
+  returnButton.addEventListener('click', onReturn);
+
+
   function tick(now: number): void {
     if (destroyed) return;
     combat.tick(Math.min((now - previous) / 1000, 0.08));
     previous = now;
-    render();
+    renderFleetCanvas(combat, canvas, context, status);
     frame = requestAnimationFrame(tick);
   }
-  render();
+  renderFleetCanvas(combat, canvas, context, status);
   frame = requestAnimationFrame(tick);
   return {
     destroy() {
