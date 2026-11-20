@@ -52,7 +52,10 @@ export function createFleetCombatForCareerField(
       ? createFleetCareerFieldSecurityBridge(field, careerNpcs, reservedIds)
       : null;
   const world = {
-    ...(bridge.world.beforeWorldTick ? { beforeWorldTick: bridge.world.beforeWorldTick } : {}),
+    beforeWorldTick(ships: Parameters<NonNullable<typeof bridge.world.beforeWorldTick>>[0]) {
+      bridge.world.beforeWorldTick?.(ships);
+      security?.world.beforeWorldTick?.(ships);
+    },
     tickWorld(dt: number) {
       bridge.world.tickWorld?.(dt);
       security?.world.tickWorld?.(dt);
