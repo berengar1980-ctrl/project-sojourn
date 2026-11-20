@@ -1,6 +1,17 @@
-import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
+import type {
+  MutableCombatant,
+  StrategicCombatArenaOptions,
+  StrategicCombatantSnapshot,
+} from './strategic-combat-types';
 import { snapshot } from './strategic-combat-geometry';
-import type { FleetCombatParticipant, FleetCombatWorldOptions } from './fleet-combat-service';
+/** Structural contracts avoid an import cycle with the authoritative fleet factory. */
+interface FleetWorldSink {
+  readonly afterCombatTick?: (ships: readonly {
+    readonly factionId: string;
+    readonly targetId: string | null;
+    readonly ship: StrategicCombatantSnapshot;
+  }[]) => void;
+}
 
 interface FleetLifecycleShip {
   readonly factionId: string;
@@ -13,7 +24,7 @@ interface FleetLifecycleShip {
 
 /** World coordination shared by test harnesses and career entrypoints. */
 export function validateFleetScenario(
-  participants: readonly FleetCombatParticipant[],
+  participants: readonly { readonly setup: { readonly id: string } }[],
   arena: StrategicCombatArenaOptions
 ): void {
   if (participants.length < 3) throw new Error('FleetCombat needs at least three ships');
@@ -35,7 +46,7 @@ export function activateFleetArrivals(
 }
 
 export function reportFleetCombatToWorld(
-  world: FleetCombatWorldOptions,
+  world: FleetWorldSink,
   ships: readonly FleetLifecycleShip[]
 ): void {
   if (!world.afterCombatTick) return;
