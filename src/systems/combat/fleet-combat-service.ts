@@ -151,6 +151,7 @@ function advanceFleetMotion(
   }
   for (let i = 0; i < fleet.length; i += 1) {
     for (let j = i + 1; j < fleet.length; j += 1) {
+      if (!fleet[i]!.active || !fleet[j]!.active) continue;
       // The campaign drone already resolves its own physical ship contacts.
       if (fleet[i]!.externalMovement || fleet[j]!.externalMovement) continue;
       const a = fleet[i]!.combatant;
