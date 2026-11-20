@@ -13,7 +13,7 @@ import {
   advanceThrownAsteroids,
 } from './combat-tractor-asteroid-throw';
 import type { FleetWeaponHit } from './fleet-weapon-physics';
-import { firstFleetShipContact } from './fleet-physical-contacts';
+import { firstFleetThrownContact } from './fleet-physical-contacts';
 import { firstObstacleHit } from './strategic-combat-damage';
 
 interface FleetSpecialPair {
@@ -156,7 +156,7 @@ function advanceOneFleetThrow(
     x: rock.position.x + rock.velocity.x * dt,
     y: rock.position.y + rock.velocity.y * dt,
   };
-  const contact = firstFleetShipContact(
+  const contact = firstFleetThrownContact(
     rock.position,
     to,
     ships,
