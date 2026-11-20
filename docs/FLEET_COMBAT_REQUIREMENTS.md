@@ -259,3 +259,29 @@ bleibt die aus der Karriereausrüstung abgeleitete Kampf-Doktrin erhalten.
   Produktivfreigabe angeschlossen werden. Formatierung der FC-31-Dateien
   wurde durch den bestehenden FleetCombat-Prettier-Workflow nachgeführt;
   vollständige Qualitätsprüfung bleibt separat nachzuweisen.
+
+## FC-32 – Exklusive Tick-Autorität der Karriere-Feldwelt (Grundlage)
+
+- Ein eigener `FleetFieldTickOwnership`-Lease schützt jede
+  `AsteroidFieldRuntime`-Instanz gegen zwei gleichzeitige FleetCombat-Besitzer,
+  doppelte Feld-Ticks, eine unberechtigte Freigabe und Reentranz.
+- `beginControllerFieldFleet` übernimmt **die existierende** Feldinstanz über
+  `createFleetCombatForCareerField` und lehnt den Handoff ab, wenn bereits
+  ein Spielerduell oder ein NPC-Duell in diesem Feld aktiv ist.
+- `advanceControllerFieldWorld` leitet während des Leases den Feld-Tick
+  ausschließlich an den gemeinsamen FleetCombat-Service. Der native Miner-Tick
+  erfolgt nur über die FC-28/30-Brücke. Andere nicht übernommene Felder behalten
+  ihren bisherigen Kampagnen-Takt.
+- `endControllerFieldFleet` gibt die Autorität nur an den identischen
+  Besitzer zurück. Die normale Kampagnenwelt übernimmt dann wieder.
+- Regression: `tests/combat/fleet-field-tick-ownership.test.cjs` prüft
+  ausschließliche Tick-Autorität, fremde Felder, Reentranz und Rückgabe.
+- **Status: FOUNDATION; keine automatische Aktivierung in produktiven
+  Kampagnenbegegnungen.** Während eines Leases wird der vollständige
+  bisherige Feld-Callback unterdrückt, also auch der separate native
+  Piraten-/Drohnen-Tick. Die gemeinsame FleetCombat-Laufzeit muss deren
+  echte Kampagnen-Adapter zuerst vollständig übernehmen, bevor dieses
+  Opt-in im Gameplay aktiviert werden darf. Auch aktiver FleetCombat,
+  Eintrittszeiten und Tick-Lease benötigen Save/Resume. Vor FC-33+ bleibt
+  dieser Einstieg ausdrücklich ein Integrationsbaustein, kein fertiges
+  kampagnenspielbares Mehrschiffgefecht.
