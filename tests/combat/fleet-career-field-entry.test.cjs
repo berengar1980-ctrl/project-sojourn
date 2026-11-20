@@ -19,7 +19,10 @@ assert(miner && pirates.length === 2);
 miner.locationId = locationId;
 miner.workLocationId = locationId;
 miner.autonomy = {
-  phase: 'working', secondsRemaining: 0, lastLocationId: locationId, wasTravelling: false,
+  phase: 'working',
+  secondsRemaining: 0,
+  lastLocationId: locationId,
+  wasTravelling: false,
 };
 let ticks = 0;
 const mining = createNpcLocalMiningService({
@@ -29,26 +32,41 @@ const mining = createNpcLocalMiningService({
   height: fieldInstance.height,
   miners: [miner],
   getAsteroids: () => fieldInstance.asteroids,
-  mine() { return 0; },
-  depart() { return true; },
+  mine() {
+    return 0;
+  },
+  depart() {
+    return true;
+  },
 });
 assert.equal(mining.ships.length, 1);
 const originalTick = mining.tick;
-mining.tick = (seconds) => { ticks++; originalTick(seconds); };
-const field = {
-  locationId, instance: fieldInstance, miners: mining, combatWrecks: [],
+mining.tick = (seconds) => {
+  ticks++;
+  originalTick(seconds);
 };
-const opponents = pirates.map((npc, i) => createFleetCareerNpcParticipant(
-  npc,
-  { x: fieldInstance.width * 0.65, y: fieldInstance.height * (0.3 + i * 0.25) },
-  { targetId: null }
-));
+const field = {
+  locationId,
+  instance: fieldInstance,
+  miners: mining,
+  combatWrecks: [],
+};
+const opponents = pirates.map((npc, i) =>
+  createFleetCareerNpcParticipant(
+    npc,
+    { x: fieldInstance.width * 0.65, y: fieldInstance.height * (0.3 + i * 0.25) },
+    { targetId: null }
+  )
+);
 const fleet = createFleetCombatForCareerField(field, [miner], opponents);
 const before = { ...mining.ships[0].position };
 const state = fleet.tick(0.08);
 assert.equal(ticks, 1, 'existing campaign field service ticks once, not once per participant');
 assert.equal(state.ships.length, 3);
-assert.deepEqual(state.ships.find((ship) => ship.ship.id === miner.id).ship.position, mining.ships[0].position);
+assert.deepEqual(
+  state.ships.find((ship) => ship.ship.id === miner.id).ship.position,
+  mining.ships[0].position
+);
 assert.equal(field.miners, mining, 'no replacement mining service was constructed');
 assert.equal(field.instance, fieldInstance, 'no replacement asteroid field was constructed');
 assert.equal(state.arena.width, fieldInstance.width);
