@@ -54,26 +54,26 @@ function restoredCombatWrecks(
 ): Map<string, SalvageWreck[]> {
   const restored = new Map<string, SalvageWreck[]>();
   for (const [id, wrecks] of Object.entries(saved ?? {})) {
-        if (
-          (!locations.some((location) => location.id === id) &&
-            !id.startsWith('salvage-special-') &&
-            !id.startsWith('salvage-distress-')) ||
-          !Array.isArray(wrecks) ||
-          wrecks.length > 512 ||
-          wrecks.some(
-            (wreck) =>
-              !wreck.id.startsWith('combat-wreck-') ||
-              !wreck.combatWreckVariant ||
-              !['miner', 'freighter', 'patrol'].includes(wreck.combatWreckVariant) ||
-              !Number.isFinite(wreck.position.x) ||
-              !Number.isFinite(wreck.position.y) ||
-              !Array.isArray(wreck.resources) ||
-              wreck.resources.some((resource) => !Number.isFinite(resource.remainingAmount))
-          )
-        )
-          throw new Error('Invalid saved combat wreck field');
+    if (
+      (!locations.some((location) => location.id === id) &&
+        !id.startsWith('salvage-special-') &&
+        !id.startsWith('salvage-distress-')) ||
+      !Array.isArray(wrecks) ||
+      wrecks.length > 512 ||
+      wrecks.some(
+        (wreck) =>
+          !wreck.id.startsWith('combat-wreck-') ||
+          !wreck.combatWreckVariant ||
+          !['miner', 'freighter', 'patrol'].includes(wreck.combatWreckVariant) ||
+          !Number.isFinite(wreck.position.x) ||
+          !Number.isFinite(wreck.position.y) ||
+          !Array.isArray(wreck.resources) ||
+          wreck.resources.some((resource) => !Number.isFinite(resource.remainingAmount))
+      )
+    )
+      throw new Error('Invalid saved combat wreck field');
     restored.set(id, cloneCareerJson([...wrecks]));
-      }
+  }
   return restored;
 }
 
@@ -109,7 +109,10 @@ export class AsteroidFieldWorld {
         throw new Error('Asteroid field checkpoint locations mismatch');
       }
       this.backgroundAccumulator = checkpoint.backgroundAccumulator;
-      for (const [id, wrecks] of restoredCombatWrecks(locations, checkpoint.combatWrecksByLocation)) {
+      for (const [id, wrecks] of restoredCombatWrecks(
+        locations,
+        checkpoint.combatWrecksByLocation
+      )) {
         this.combatWrecksByLocation.set(id, wrecks);
       }
     }
