@@ -936,3 +936,14 @@ Bergungseinsatzes oder eines eingebetteten Kampfes wird der separate Tick
 für diesen Ort unterdrückt; die jeweils aktive Szenenphysik bleibt allein
 zuständig. Minenfeld-Klickauswahl und deren Anzeigekarte sind rein flüchtiger
 UI-Zustand und erweitern die Save-Struktur nicht.
+
+## Physische Piratenkontakte im lokalen Bergbaufeld
+
+Die Schildkontaktauflösung erweitert lediglich den vorhandenen, pro Feld
+gespeicherten Live-Zustand der Piratenschiffe und Miner. Nach physischem
+Kontakt werden betroffene Piraten-Routen verworfen, damit keine alte
+Wegpunktliste die Kollisionskorrektur rückgängig macht; Miner mit Kontakt
+planen ebenfalls neu. Die bestehenden Karriere-Checkpoints erfassen Position
+und Route bereits. Es gibt weder ein zusätzliches persistentes Feld noch
+eine neue Save-Version. Während des laufenden Kampfes bleibt der
+Kampfsimulator alleinige Autorität über seine Beteiligten.
