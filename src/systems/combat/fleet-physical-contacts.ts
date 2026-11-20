@@ -38,6 +38,27 @@ function hullSegmentContact(from: CombatPoint, to: CombatPoint, ship: MutableCom
   };
 }
 
+/** Apply the existing accuracy/dodge roll as an actual 2D deviation.
+ * Once launched, a miss still has normal damage potential if its physical
+ * trajectory intersects another ship. No second hit roll is performed.
+ */
+export function scatteredFleetAim(
+  origin: CombatPoint,
+  target: CombatPoint,
+  targetShip: MutableCombatant,
+  side: number
+): CombatPoint {
+  const dx = target.x - origin.x;
+  const dy = target.y - origin.y;
+  const len = Math.max(1, Math.hypot(dx, dy));
+  const shield = combatShieldGeometry(targetShip);
+  const clearance = Math.max(shield.radiusX, shield.radiusY) * 1.6 + 35;
+  return {
+    x: target.x - (dy / len) * clearance * side,
+    y: target.y + (dx / len) * clearance * side,
+  };
+}
+
 export interface FleetPhysicalContact {
   readonly ship: MutableCombatant;
   readonly t: number;
