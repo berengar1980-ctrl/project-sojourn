@@ -53,7 +53,20 @@ export function createFleetCareerLootSettlement(
       let moved = 0;
       for (const pirate of pirates) {
         if (remaining === 0) break;
-        const amount = transferPirateLoot(pirate, victim, 1);
+        // The legacy 1vs1 transfer API has a fixed ten-unit ceiling. A
+        // one-unit view reuses its exact cargo rules without changing that
+        // protected module or mutating the pirate's real capacity.
+        const occupied = Object.values(pirate.cargo).reduce((total, amount) => total + amount, 0);
+        const oneUnit = {
+          ...pirate,
+          cargo: pirate.cargo,
+          cargoCapacity: Math.min(pirate.cargoCapacity, occupied + 1),
+        };
+        const amount = transferPirateLoot(oneUnit, victim);
+        if (amount > 0) {
+          pirate.activityId = oneUnit.activityId;
+          pirate.activity = oneUnit.activity;
+        }
         moved += amount;
         transferred += amount;
         remaining -= amount;
