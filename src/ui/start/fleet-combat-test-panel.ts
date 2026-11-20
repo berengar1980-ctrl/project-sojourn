@@ -114,7 +114,7 @@ export function createFleetCombatTestPanel(
   returnButton.addEventListener('click', onReturn);
 
   function tick(now: number): void {
-    if (destroyed) return;
+    if (destroyed || !context) return;
     combat.tick(Math.min((now - previous) / 1000, 0.08));
     previous = now;
     renderFleetCanvas(combat, canvas, context, status);
