@@ -508,3 +508,12 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   Kampagnenfreigabe. Insbesondere gleichzeitige Mehrfachdetonationen,
   Wechsel von Eigentümern/Zielen und echte grafische Anzeige
   müssen in nachfolgenden N-Schiff-Regressionen abgesichert werden.
+
+
+## FC-41 – Mehrere gleichzeitige native Spezialtreffer
+
+- Ein einzelner 1vs1-Runtime-Schritt überschreibt `lastImpact` beim nächsten Treffer. Der FleetCombat-Adapter wertet daher **jede** im selben Tick vorhandene Mine und jeden geworfenen Gegenstand einzeln über dieselben unveränderten nativen `advanceRuntimeMines`-/`advanceThrownAsteroids`-Funktionen aus.
+- Die tatsächlichen `MutableMine`-/`MutableThrownAsteroid`-Objekte und das native Schadensmodell bleiben erhalten; jedes Detonations-/Trefferereignis erhält einen eigenen Beitrag in `FleetCombatShotSnapshot`. Nicht ausgelöste Objekte verbleiben im laufenden Feld.
+- Schiffs-Cooldowns werden weiterhin höchstens einmal pro aktivem Combatant-Tick dekrementiert. Nicht beteiligte NPCs behalten ihre Werte.
+- Regression in `tests/combat/fleet-native-specials.test.cjs`: zwei gegnerische Minen, beide in derselben Simulationsrunde scharf und ausgelöst; jede Detonation muss gesondert dem korrekten Angreifer und Ziel zugeordnet sein.
+- **Status: implementiert; Quality Gate auf dem aktuellen Commit steht noch aus.** Nachfolgend zu prüfen sind Zielwechsel während aktiver Minen/Würfe, Mehrfachkontakte mit Drittparteien und Renderer-/Kampagnen-Integrationsparität.
