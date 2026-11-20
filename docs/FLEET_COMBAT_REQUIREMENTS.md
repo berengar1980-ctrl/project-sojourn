@@ -132,3 +132,22 @@ wegfallen. Ein grüner Prototyp-Test oder eine unveränderte 1vs1-Engine ist
   es gibt noch keine produktive Übergabe echter Career-NPCs aus dem
   Kampagnen-Controller. Die PvP-Testvorschau erzeugt weiter Testeinheiten.
   Gameplay-Parität (FC-19/FC-25) bleibt OPEN.
+
+## FC-27 – Reale Kampagnen-NPCs an der gemeinsamen Kampfgrenze
+
+- Der neue systems-basierte `createFleetCareerNpcParticipant` nutzt direkt
+  `npcCombatant(npc)` aus dem produktiven Karriere-Kampf: echtes Schiff,
+  installierte Komponenten, Waffen, Minen, Schiffswerte und NPC-Doktrin.
+  Keine zufällige PvP-Testausrüstung und keine zweite NPC-Ausrüstungslogik.
+- Bestehende Karriere-Fraktionen `pirates`/`pirates2` werden auf
+  `pirate-a`/`pirate-b` abgebildet. Miner und sonstige Zivilisten bleiben
+  `civilian`. Sicherheitsdrohnen behalten `security`.
+- Lokale Position, vorgegebene Zielbindung und Ankunftszeit werden übergeben.
+  Der Adapter verändert weder Navigation noch Arbeitszustand der Welt.
+- Regression mit echten `SectorNpcState`-Vorlagen: Miner und Piraten beider
+  Fraktionen, Kampagnen-Waffen/Minen, verzögerter Eintritt und neutrales
+  Verhalten des Miners im gemeinsamen FleetCombat-Service.
+- **Status: FOUNDATION.** Der produktive Kampagnencontroller ruft den Adapter
+  noch nicht auf. NPC-Arbeit, Feldnavigation, Flucht, Kontinuität von Cargo und
+  tatsächlicher Career-Checkpoint müssen weiter integriert werden. FC-19/FC-25
+  bleiben OPEN. Die Testarena ist nicht die Kampagnen-Detailkarte.
