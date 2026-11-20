@@ -210,6 +210,10 @@
     "src/systems/combat/fleet-field-tick-ownership.ts": {
       "mode": "transient",
       "reason": "Exclusive in-memory field-tick lease while FleetCombat owns an existing career field. No independent gameplay state; active fleet encounter and ownership must be checkpointed before enabling production save/resume."
+    },
+    "src/systems/combat/fleet-career-field-security-bridge.ts": {
+      "mode": "transient",
+      "reason": "Adapter advances existing checkpoint-owned LocalPirateTraffic and AsteroidSecurityDrone instances and derives transient interception targets per field tick. No duplicate NPC or patrol authority; the active FleetCombat encounter and target continuity require versioned save/resume before production activation."
     }
   }
 }
