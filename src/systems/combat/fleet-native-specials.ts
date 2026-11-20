@@ -154,6 +154,42 @@ function advanceFleetThrowImpacts(
   runtime.thrownAsteroids.push(...survivors);
 }
 
+/** A deployed mine or in-flight rock remains owned by its original pairing.
+ * Its source may retreat or depart, but the native contact calculation
+ * continues against the originally designated target while that target
+ * remains in the field. If that target leaves, discard stale target-locked
+ * objects instead of freezing them or hitting an off-map ghost.
+ */
+function advanceExistingFleetSpecials(
+  runtime: StrategicCombatRuntime,
+  activeIds: ReadonlySet<string>,
+  now: number,
+  dt: number,
+  hits: FleetWeaponHit[]
+): boolean {
+  const attackerActive = activeIds.has(runtime.attacker.setup.id);
+  const defenderActive = activeIds.has(runtime.defender.setup.id);
+  if (!attackerActive && !defenderActive) return false;
+  runtime.elapsedSeconds = now;
+  runtime.mines.splice(
+    0, runtime.mines.length,
+    ...runtime.mines.filter((mine) =>
+      activeIds.has((mine.owner === 'attacker' ? runtime.defender : runtime.attacker).setup.id)
+    )
+  );
+  runtime.thrownAsteroids.splice(
+    0, runtime.thrownAsteroids.length,
+    ...runtime.thrownAsteroids.filter((rock) =>
+      activeIds.has((rock.owner === 'attacker' ? runtime.defender : runtime.attacker).setup.id)
+    )
+  );
+  // The original native routines still determine arming, pursuit, travel,
+  // impact and damage. The wrapper only manages multi-ship lifetime.
+  if (runtime.mines.length) advanceFleetMineImpacts(runtime, dt, hits);
+  if (runtime.thrownAsteroids.length) advanceFleetThrowImpacts(runtime, dt, hits);
+  return true;
+}
+
 function performFleetRam(runtime: StrategicCombatRuntime, now: number): FleetWeaponHit[] {
   runtime.elapsedSeconds = now;
   const previous = {
@@ -234,10 +270,12 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
         engaged.add(target.setup.id);
       }
       for (const { runtime } of pairs.values()) {
-        if (!active.has(runtime.attacker.setup.id) || !active.has(runtime.defender.setup.id))
-          continue;
-        engaged.add(runtime.attacker.setup.id);
-        engaged.add(runtime.defender.setup.id);
+        // Historic pair records (including old ram contacts) do not create an
+        // indefinite combat engagement when no live ammunition remains.
+        if (!runtime.mines.length && !runtime.thrownAsteroids.length) continue;
+        for (const ship of [runtime.attacker, runtime.defender]) {
+          if (active.has(ship.setup.id)) engaged.add(ship.setup.id);
+        }
       }
       // A neutral career worker retains its authoritative cooldowns. Combat
       // participants advance once, even if targeted by several enemies.
@@ -255,13 +293,10 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
           maybeLaunchTractorAsteroid(runtime, side, source, target);
         }
       }
-      for (const pair of pairs.values()) {
-        const runtime = pair.runtime;
-        if (!active.has(runtime.attacker.setup.id) || !active.has(runtime.defender.setup.id))
-          continue;
-        runtime.elapsedSeconds = now;
-        advanceFleetMineImpacts(runtime, dt, hits);
-        advanceFleetThrowImpacts(runtime, dt, hits);
+      for (const [key, pair] of pairs) {
+        if (!advanceExistingFleetSpecials(pair.runtime, active, now, dt, hits)) {
+          pairs.delete(key);
+        }
       }
       return hits;
     },
