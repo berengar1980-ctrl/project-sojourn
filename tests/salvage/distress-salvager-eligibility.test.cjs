@@ -75,9 +75,11 @@ assert(
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 assert(read('src/app/game-controller.ts').includes("state.activeShip.role !== 'salvage'"));
 assert(
-  read('src/ui/salvage/salvage-space-renderer.ts').includes(
-    "!wreck.id.startsWith('event-wreck-salvage-distress-')"
-  )
+  read('src/ui/salvage/salvage-space-renderer.ts').includes('drawWreckSelection') &&
+    read('src/ui/salvage/salvage-wreck-selection-renderer.ts').includes(
+      "!wreck.id.startsWith('event-wreck-salvage-distress-')"
+    ),
+  'distress wrecks must retain the dedicated bracket selection treatment'
 );
 assert(read('src/systems/npcs/npc-salvage-event-service.ts').includes('contenders[0]?.id'));
 console.log(
