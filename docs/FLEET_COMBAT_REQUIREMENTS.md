@@ -82,3 +82,37 @@ Der Teststatus wird erst nach vollständigem CI-Lauf als grün markiert.
 - Die Drohne fliegt einen Punkt knapp außerhalb des Kollisionsbereichs des Piraten an, nicht dessen blockierten Mittelpunkt.
 - Der Zielpirat bleibt bei der echten Wegplanung und Schildkontaktprüfung ein physisches Hindernis.
 - Der Regressionstest prüft das Abfangen trotz eines soliden Piratenhindernisses und die tatsächliche Flugbewegung vor dem Kampfbeitritt.
+
+## FC-25 – Eine gemeinsame Laufzeit, zwei Einstiegspunkte (verbindliche Architektur)
+
+**Nicht verhandelbar:** Der FleetCombat-Reiter ist ausschließlich Szenarioeditor,
+Teststeuerung und Diagnose-UI. Der Produktionsmodus der Kampagne und das
+PvP-Testlabor müssen dieselbe FleetCombat-Laufzeit und dieselben Services für
+Bewegung, Navigation, Sensoren, Kollisionsauflösung, Kampf-KI, Waffen,
+Schadensberechnung und Zustandsübergänge verwenden.
+
+- Der authoritative FleetCombat-World-/Engagement-Service liegt unter
+  `src/systems/` und importiert keine Module aus `src/ui/` oder `src/app/`.
+- Die PvP-Oberfläche erzeugt lediglich Szenario- und Startparameter und
+  ruft den **gleichen** produktiven FleetCombat-Factory-Einstiegspunkt auf
+  wie die Kampagne; sie besitzt keine eigene NPC-, Bewegungs- oder Kampf-KI.
+- Der Kampagnen-Einstiegspunkt übergibt echte NPC-/Spielerzustände, ohne sie
+  für ein eigenes Testdatenmodell nachbauen zu müssen. Position, Geschwindigkeit,
+  Inventar, Schild/Hülle, Waffen-Cooldowns, Fraktion und aktive Tätigkeiten
+  werden beim Wechsel ohne Reset, Doppel-Tick oder Teleportation übertragen.
+- Wo die heutigen Kampagnenmechaniken nicht direkt für N Schiffe nutzbar sind,
+  wird die **gemeinsame Mechanik** in ein wiederverwendbares `src/systems/`-Modul
+  extrahiert; der alte 1vs1-Einstieg bleibt bytegleich. Kein duplizierter
+  PvP-Ersatz für Projektilphysik, Sensorauswertung, Arbeits-KI oder Kollisionen.
+- Änderungen am gemeinsamen Verhalten wirken bei identischem Weltzustand
+  auf beide Einstiegspunkte. Das muss durch identische Replay-Szenarien sowie
+  einen automatisierten Paritätstest nachgewiesen werden.
+- Kampagnenanbindung, inklusive Wiederaufnahme aus Career-Checkpoint während
+  eines Gefechts und verzögerter Eintritte, ist **vor** der Freigabe des
+  FleetCombat-Features zu testen. Nicht erst nach dem Abschluss der PvP-UI.
+
+**Status: OPEN.** Der derzeitige Mehrschiff-Prototyp benutzt noch eigene
+Direkt-Treffer-Logik, konstruierte Test-Schiffszustände und einen zusätzlichen
+Drohnen-Zielentscheid. Diese Lücken müssen vor einer vollständigen Freigabe
+wegfallen. Ein grüner Prototyp-Test oder eine unveränderte 1vs1-Engine ist
+**kein** Nachweis für Kampagnenparität.
