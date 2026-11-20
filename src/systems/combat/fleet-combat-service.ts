@@ -29,6 +29,11 @@ export interface FleetCombatParticipant {
   readonly targetId?: string | null;
   /** 0 = present from scene start; positive seconds = enter through a map boundary. */
   readonly spawnAtSeconds?: number;
+  /** An external career entity remains the sole owner of movement. */
+  readonly externalMovement?: (
+    dt: number,
+    nearby: readonly FleetCombatShipSnapshot[]
+  ) => { readonly position: CombatPoint; readonly headingRadians: number; readonly targetId: string | null };
 }
 
 export interface FleetCombatShipSnapshot {
@@ -69,6 +74,7 @@ interface FleetShip {
   targetId: string | null;
   readonly spawnAtSeconds: number;
   active: boolean;
+  readonly externalMovement?: FleetCombatParticipant['externalMovement'];
 }
 
 function advanceFleetMotion(
@@ -77,10 +83,28 @@ function advanceFleetMotion(
   arena: StrategicCombatArenaOptions,
   dt: number
 ): void {
+  const nearby = fleet.map((ship) => ({
+    factionId: ship.factionId,
+    targetId: ship.targetId,
+    ship: snapshot(ship.combatant),
+  }));
   for (const ship of fleet) {
     const actor = ship.combatant;
     actor.shieldImpacts = advanceShieldImpacts(actor.shieldImpacts, dt);
     if (actor.hullHp <= 0) continue;
+    if (ship.externalMovement) {
+      const next = ship.externalMovement(dt, nearby);
+      const previous = { ...actor.position };
+      actor.position = { ...next.position };
+      actor.velocity = {
+        x: (next.position.x - previous.x) / dt,
+        y: (next.position.y - previous.y) / dt,
+      };
+      actor.speed = distance(previous, next.position) / dt;
+      actor.headingRadians = next.headingRadians;
+      ship.targetId = next.targetId;
+      continue;
+    }
     const target = acquire(ship);
     if (target) {
       moveCombatant(actor, target.combatant, 'attacker', dt, arena, []);
@@ -247,6 +271,7 @@ function initializeFleetParticipants(
       targetId: entry.targetId ?? null,
       spawnAtSeconds: entry.spawnAtSeconds ?? 0,
       active: (entry.spawnAtSeconds ?? 0) === 0,
+      ...(entry.externalMovement ? { externalMovement: entry.externalMovement } : {}),
     };
     fleet.push(ship);
     byId.set(id, ship);
@@ -305,18 +330,15 @@ export function createFleetCombatService(
   const step = (dt: number): void => {
     // Only ships present at the START of this interval may move/fire in it.
     const present = fleet.filter((ship) => ship.active);
+    advanceFleetMotion(present, acquire, arena, dt);
     for (const ship of present) {
       if (!ship.targetId || ship.combatant.hullHp <= 0) continue;
       const enemy = byId.get(ship.targetId);
-      if (
-        enemy?.active &&
-        enemy.combatant.hullHp > 0 &&
-        isFleetHostile(ship.factionId, enemy.factionId)
-      ) {
+      if (enemy?.active && enemy.combatant.hullHp > 0 &&
+          isFleetHostile(ship.factionId, enemy.factionId)) {
         engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
       }
     }
-    advanceFleetMotion(present, acquire, arena, dt);
     shots = advanceFleetFire(present, acquire, dt);
     for (const ship of present) {
       if (ship.combatant.hullHp <= 0) {
