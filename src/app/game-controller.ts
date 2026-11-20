@@ -1,5 +1,5 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
-import { advanceControllerFieldWorld } from './game-controller-field-world-bridge';
+import { advanceControllerFieldWorld, fieldWorldFor } from './game-controller-field-world-bridge';
 import {
   inspectLegalDockArrival,
   reportLegalDeparture,
@@ -7,9 +7,11 @@ import {
   advanceNpcPenalCustody,
 } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
-import { localMiningCombatArena } from './game-controller-combat';
+import { startPlayerMiningCombat } from './game-controller-mining-combat-action';
 import { toggleControllerAsteroidClaim } from './game-controller-claim-actions';
 import { resolveControllerCombat } from './game-controller-combat-resolution';
+import { recordCareerCombatWrecks } from './game-controller-combat-wrecks';
+import { fieldWithCareerCombatWrecks } from './game-controller-combat-salvage-field';
 import { skipControllerTickForCombatResult } from './game-controller-combat-result-guard';
 import type { SalvageField } from '../core/salvage-types';
 import { snapshotPlayerProfile, withPlayerShipName } from '../core/player-profile';
@@ -60,7 +62,6 @@ import { ensureMiningCombatWorld } from './game-controller-mining-runtime';
 import { createActivePortPanel } from './game-controller-port';
 import { createSalvageScene } from './game-controller-salvage';
 import { salvageSecurityActions } from './game-controller-salvage-security-actions';
-import { generateSectorSalvageEventField } from '../systems/salvage';
 import {
   controllerLocalModel,
   controllerShipRuntimeOptions,
@@ -197,6 +198,16 @@ function mountControllerMining(
   preserveField = false
 ): void {
   const { state } = context;
+  const site = context.navigation.getSnapshot().currentLocationId;
+  if (
+    !preserveField &&
+    site &&
+    state.activeShip.role === 'salvage' &&
+    fieldWorldFor(context)
+      .combatWrecks(site)
+      .some((wreck) => wreck.resources.some((resource) => resource.remainingAmount > 0))
+  )
+    return mountControllerSalvage(context, reuseSeed);
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
   destroyControllerBoarding(context);
@@ -227,35 +238,7 @@ function mountControllerMining(
       state.selectedNpcId = id;
       state.panels.local?.update(controllerLocalModel(context));
     },
-    onAttackNpc: (id) => {
-      state.selectedNpcId = id;
-      const local = state.localSpace?.getSnapshot();
-      const target =
-        state.localNpcMining?.ships.find((entry) => entry.npcId === id) ??
-        context.economy.localPirates
-          .get(local?.instance.sourceLocationId ?? '')
-          ?.snapshot(context.economy.sectorNpcs.npcs)
-          .find((entry) => entry.npcId === id);
-      if (!local || !target) return;
-      const arena = localMiningCombatArena(
-        local.instance,
-        state.localSpace!.getShipWorldVelocity()
-      );
-      const started = context.engagements.engageNpcInArena(id, {
-        ...arena,
-        defenderPosition: { ...target.position },
-        defenderHeadingRadians: target.headingRadians,
-        defenderVelocity: {
-          x: Math.cos(target.headingRadians) * target.speed,
-          y: Math.sin(target.headingRadians) * target.speed,
-        },
-      });
-      if (started) {
-        state.embeddedCombat = 'local-space';
-        context.systemLog.write('COMBAT > GEFECHT IM ASTEROIDENFELD');
-        state.panels.local?.update(controllerLocalModel(context));
-      }
-    },
+    onAttackNpc: (id) => startPlayerMiningCombat(context, id),
     onCombatGrapple: () => {
       context.engagements.activePlayerCombat()?.fireGrapple('attacker');
     },
@@ -285,35 +268,42 @@ function mountControllerSalvage(
     context.systemLog.write('BERGUNG > HILFERUF NUR MIT BERGUNGSSCHIFF VERFÜGBAR');
     return mountControllerStarMap(context);
   }
+  const combatWrecks = currentLocationId
+    ? fieldWorldFor(context).combatWrecks(currentLocationId)
+    : [];
+  const wreckLocation =
+    state.activeShip.role === 'salvage' && combatWrecks.length > 0
+      ? narrowsSector.locations.find((entry) => entry.id === currentLocationId)
+      : undefined;
   const location =
-    salvageLocationById(currentLocationId) ?? sectorEventLocation(context, currentLocationId);
+    salvageLocationById(currentLocationId) ??
+    wreckLocation ??
+    sectorEventLocation(context, currentLocationId);
   if (!location) return mountControllerStarMap(context);
   state.mode = 'salvage-space';
   state.embeddedCombat = null;
   if (!reuseSeed || state.salvageSpaceSeed === 0)
     state.salvageSpaceSeed = localSeed((state.visitCounter += 1));
+  const sceneSeed = economy.wreckClaims.seedFor(
+    location.id,
+    sectorEvent?.fieldSeed ?? state.salvageSpaceSeed
+  );
+  const sceneField = fieldWithCareerCombatWrecks(
+    context,
+    location,
+    sceneSeed,
+    preservedField,
+    sectorEvent
+  );
   state.salvageScene = createSalvageScene({
     root: context.root,
     ship: state.activeShip,
-    seed: economy.wreckClaims.seedFor(
-      location.id,
-      sectorEvent?.fieldSeed ?? state.salvageSpaceSeed
-    ),
+    seed: sceneSeed,
     location,
-    ...(preservedField
-      ? { field: preservedField, ...(sectorEvent ? { sectorEvent } : {}) }
-      : sectorEvent
-        ? {
-            field:
-              state.salvageEventFields.get(sectorEvent.id) ??
-              (() => {
-                const field = generateSectorSalvageEventField(sectorEvent);
-                state.salvageEventFields.set(sectorEvent.id, field);
-                return field;
-              })(),
-            sectorEvent,
-          }
-        : {}),
+    ...(sceneField ? { field: sceneField } : {}),
+    ...(sectorEvent ? { sectorEvent } : {}),
+    onLeaveField: (field) =>
+      fieldWorldFor(context).reconcileCombatWrecks(field.sourceLocationId, field.wrecks),
     economy: economy.salvage,
     npcEconomy: economy.npcs,
     sectorNpcs: economy.sectorNpcs.npcs,
@@ -423,12 +413,16 @@ export function createGameController(options: GameControllerOptions): GameContro
   const fuelJourney = createFuelJourneyService();
   let foreignWorld = () => false;
   let engagementWorld: () => WorldMap = () => narrowsSector;
+  let combatContext: ControllerRuntimeContext | null = null;
   const engagements = createStarMapEngagementService({
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     world: () => engagementWorld(),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
+    onNpcCombatEnded: (snapshot, attacker) => {
+      if (combatContext) recordCareerCombatWrecks(combatContext, snapshot, attacker.locationId);
+    },
     mayInterceptPlayer: () => !state.combatResultPending && state.combatReengageSeconds <= 0,
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
@@ -476,6 +470,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     ...campaignServices,
     state,
   };
+  combatContext = context;
   installControllerCareer(context, options);
   const menu = createSettingsMenu(
     context.audio,

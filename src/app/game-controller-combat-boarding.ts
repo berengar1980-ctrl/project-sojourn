@@ -14,6 +14,7 @@ import { boardingAfterAction } from '../systems/boarding/boarding-afteraction';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
 import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
+import { recordCareerCombatWrecks } from './game-controller-combat-wrecks';
 
 function prepareShipBoardingScene(context: ControllerRuntimeContext): void {
   const { state } = context;
@@ -154,6 +155,12 @@ export function returnFromCombat(
     startCombatBoarding(context, snapshot, returnToMap);
     return;
   }
+  recordCareerCombatWrecks(
+    context,
+    snapshot,
+    context.engagements.activePlayerEnemy()?.locationId ??
+      context.navigation.getSnapshot().currentLocationId
+  );
   emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
   context.state.combatResultPending = true;

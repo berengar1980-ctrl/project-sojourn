@@ -15,6 +15,7 @@ import { createSystemLogService } from '../systems/system-log/system-log-service
 import { runSceneZoomTransition } from '../ui/scene-transition';
 
 import { createControllerStarModel } from './game-controller-star-map';
+import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { forecastPlayerFuelRoute, fuelPerTravelUnit } from './game-controller-fuel-forecast';
 import { assessRouteRisk } from '../systems/navigation/route-safety';
 import { pirateThreatStrength } from '../systems/npcs/npc-pirate-classes';
@@ -248,6 +249,7 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
     selectedAsteroidClaimOwner: owner,
     npcShips: [...model.npcShips, ...pirateShips],
     npcCombats: localNpcCombatSnapshots(context, locationId),
+    combatWrecks: locationId ? fieldWorldFor(context).combatWrecks(locationId) : [],
     asteroids,
     selectedAsteroid: asteroids.find((asteroid) => asteroid.isSelected) ?? null,
     miningTarget: asteroids.find((asteroid) => asteroid.isMiningTarget) ?? null,

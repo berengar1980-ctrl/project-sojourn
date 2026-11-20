@@ -897,3 +897,19 @@ noch nicht garantiert. Für einen vollständigen Restore muss die erzeugte
 Wrackliste samt abgebauten Mengen, IDs, Positionen und Varianten in den
 Feld-Checkpoint aufgenommen werden. NPC-gegen-NPC-Gefechte und Kämpfe in
 Minenfeldern erhalten noch keine entsprechende autoritative Wrackablage.
+
+## Kampfruinen aus Minenfeldern und NPC-Gefechten (PR #374)
+
+Die Career-Feldautorität verwaltet jetzt pro Sektor-Einsatzort dauerhaft
+`combatWrecksByLocation`. Auch ein NPC-gegen-NPC-Gefecht im Hintergrund sowie ein
+Spielerkampf in einem Minenfeld oder auf der Sternkarte kann ein Wrack hinterlassen.
+Die `SalvageWreck`-Objekte werden von der Bergungsszene wiederverwendet und enthalten
+stabile Kennungen, 3D-Varianten, Positionen und verbliebene Rohstoffmengen.
+Bei Verlassen einer Bergungsszene werden abgebaute oder entfernte Kampfwracks
+mit der Feldautorität abgeglichen.
+
+Der optionale Checkpoint-Abschnitt ist rückwärtskompatibel mit älteren Saves.
+Beim Laden wird die Wrackliste je Ort vor der Freigabe geprüft und geklont;
+invaliden Koordinaten, unbekannten Varianten und übergroßen Listen wird
+der Restore verweigert. Bergungsschiffe können ein vorhandenes Wrackfeld
+auch an zuvor reinen Bergbaustandorten betreten.

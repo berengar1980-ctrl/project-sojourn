@@ -55,22 +55,25 @@ assert.equal(first.speed, Math.hypot(-23, 41));
 const defaults = geometry.createCombatant(attacker, 'attacker', prepared);
 assert.deepEqual(defaults.position, options.attackerPosition);
 const campaign = read('src/app/game-controller.ts');
+assert(campaign.includes('startPlayerMiningCombat(context, id)'));
+
 const campaignArena = read('src/systems/combat/field-combat-arena.ts');
+const miningCombatAction = read('src/app/game-controller-mining-combat-action.ts');
 const campaignEntry = read('src/app/game-controller-combat.ts');
 assert(
-  /localMiningCombatArena\s*\(\s*local\.instance\s*,\s*state\.localSpace!\.getShipWorldVelocity\(\)\s*\)/.test(
-    campaign
+  /localMiningCombatArena\s*\(\s*local\.instance\s*,\s*state\.localSpace!\.getShipWorldVelocity\(\)\s*,/.test(
+    miningCombatAction
   ),
   'campaign delegates arena setup using full local inertial velocity'
 );
 assert(
-  campaignArena.includes('asteroids: instance.asteroids.map(') &&
+  campaignArena.includes('...instance.asteroids.map(') &&
     campaignEntry.includes('miningFieldCombatArena as localMiningCombatArena'),
   'mining arena preserves moving asteroid bodies'
 );
 assert(
-  campaign.includes('defenderHeadingRadians: target.headingRadians') &&
-    campaign.includes('defenderVelocity: {'),
+  miningCombatAction.includes('defenderHeadingRadians: target.headingRadians') &&
+    miningCombatAction.includes('defenderVelocity: {'),
   'mining combat also inherits the target ship motion'
 );
 assert(

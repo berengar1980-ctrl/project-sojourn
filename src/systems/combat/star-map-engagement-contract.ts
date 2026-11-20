@@ -36,6 +36,11 @@ export interface StarMapEngagementOptions {
   readonly protectsNpc?: (attacker: SectorNpcState, defender: SectorNpcState) => boolean;
   readonly onPlayerAttack?: (npc: SectorNpcState) => void;
   readonly onPlayerVictory?: (id: string) => void;
+  readonly onNpcCombatEnded?: (
+    snapshot: StrategicCombatSnapshot,
+    attacker: SectorNpcState,
+    defender: SectorNpcState
+  ) => void;
   readonly navigation: NavigationService;
   readonly world?: () => WorldMap;
   readonly isPlayerInCampaignSystem?: () => boolean;

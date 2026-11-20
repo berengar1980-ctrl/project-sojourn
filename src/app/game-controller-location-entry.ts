@@ -1,6 +1,7 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { enteredMiningLocation, enteredSalvageLocation } from './game-controller-models';
 import { runSceneZoomTransition } from '../ui/scene-transition';
+import { fieldWorldFor } from './game-controller-field-world-bridge';
 
 /** Route sector arrivals into existing local scenes without coupling to the controller module. */
 export function handleControllerLocationEntry(
@@ -10,6 +11,18 @@ export function handleControllerLocationEntry(
   mountSalvage: () => void
 ): void {
   const { state, economy } = context;
+  if (
+    state.mode === 'star-map' &&
+    state.previousLocationId !== currentLocationId &&
+    currentLocationId &&
+    state.activeShip.role === 'salvage' &&
+    fieldWorldFor(context)
+      .combatWrecks(currentLocationId)
+      .some((wreck) => wreck.resources.some((resource) => resource.remainingAmount > 0))
+  ) {
+    runSceneZoomTransition(context.root, mountSalvage);
+    return;
+  }
   if (enteredMiningLocation(state.mode, state.previousLocationId, currentLocationId)) {
     runSceneZoomTransition(context.root, mountMining);
     return;

@@ -12,6 +12,7 @@ import type {
   MiningPhase,
 } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { SalvageWreck } from '../../core/salvage-types';
 import { miningResourceById } from '../../data/resources/mining-resources';
 
 export interface LocalAsteroidDepositView {
@@ -104,6 +105,7 @@ export interface LocalSpaceViewModel {
   readonly ship: LocalShipView;
   readonly npcShips: readonly LocalNpcShipView[];
   readonly asteroids: readonly LocalAsteroidView[];
+  readonly combatWrecks?: readonly SalvageWreck[];
   readonly chunks: readonly LocalChunkView[];
   readonly selectedAsteroid: LocalAsteroidView | null;
   readonly miningTarget: LocalAsteroidView | null;

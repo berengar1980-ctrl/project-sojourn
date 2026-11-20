@@ -107,6 +107,7 @@ export interface SalvageSceneOptions {
   ) => boolean;
   readonly onCombatBystanders?: (bystanders: readonly StrategicCombatBystander[]) => void;
   readonly field?: SalvageField;
+  readonly onLeaveField?: (field: SalvageField) => void;
   readonly sectorEvent?: SectorSalvageEvent | null;
   readonly onDiagnoseDistress?: (eventId: string) => void;
   readonly onBoardWreck?: (wreckId: string) => void;
@@ -481,6 +482,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       tickSalvageScene(context, deltaSeconds);
     },
     destroy() {
+      options.onLeaveField?.(field);
       options.wreckClaims.rememberField(field, context.drone.exportState());
       context.state.panel?.destroy();
       context.state.panel = null;

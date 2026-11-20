@@ -8,6 +8,9 @@ const ts = require('typescript');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const filename = path.join(root, 'src/app/game-controller-combat-resolution.ts');
+const originalPerformance = globalThis.performance;
+let simulatedMilliseconds = 1000;
+globalThis.performance = { now: () => simulatedMilliseconds };
 
 function loadResolver(mocks) {
   const exports = {};
@@ -31,7 +34,11 @@ function scenario(origin, boarding = false) {
   const calls = [];
   let returnFromBoarding;
   let dismissSummary;
-  const field = { id: 'existing-wreck-field', wrecks: [{ id: 'wreck', remaining: 17 }] };
+  const field = {
+    id: 'existing-wreck-field',
+    sourceLocationId: 'field',
+    wrecks: [{ id: 'wreck', remaining: 17 }],
+  };
   const snapshot = {
     winner: 'attacker',
     boardingInitiator: boarding ? 'attacker' : null,
@@ -84,6 +91,12 @@ function scenario(origin, boarding = false) {
   };
   // Replace scene/UI boundaries; execute the production combat resolver and event emitter.
   const mocks = {
+    './game-controller-combat-wrecks': {
+      recordCareerCombatWrecks: (_, result, id) => {
+        calls.push(['wrecks', id]);
+        return [];
+      },
+    },
     './game-controller-combat-scene': { mountCombatScene: () => calls.push(['mount-combat']) },
     './game-controller-ship-service': {
       recordPlayerCombatHull: (_, result) => calls.push(['hull', result.attacker.hullHp]),
@@ -122,6 +135,12 @@ function scenario(origin, boarding = false) {
 for (const origin of ['local-space', 'salvage-space']) {
   const s = scenario(origin);
   s.resolve();
+  assert.equal(
+    s.calls.filter(([name]) => name === 'finish').length,
+    0,
+    'explosion must stay visible'
+  );
+  simulatedMilliseconds += 2201;
   s.resolve();
   assert.equal(s.calls.filter(([name]) => name === 'finish').length, 1);
   assert.equal(s.calls.filter(([name]) => name === 'summary').length, 1);
@@ -178,6 +197,10 @@ for (const origin of ['local-space', 'salvage-space']) {
 const defeat = scenario('salvage-space');
 defeat.snapshot.attacker.hullHp = 0;
 defeat.resolve();
+assert.equal(defeat.calls.filter(([name]) => name === 'finish').length, 0);
+simulatedMilliseconds += 2201;
+defeat.resolve();
 defeat.dismiss();
 assert.deepEqual(defeat.calls.at(-1), ['starMap']);
-console.log('PASS combat events, once-only resolution, boarding continuity and defeat return');
+globalThis.performance = originalPerformance;
+console.log('PASS combat events, explosion grace, boarding continuity and defeat return');

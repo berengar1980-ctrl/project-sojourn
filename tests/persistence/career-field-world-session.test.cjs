@@ -87,4 +87,48 @@ assert.equal(
   deposit.oreRemaining,
   'mined ore must not reappear after restore'
 );
+const { addDestroyedShipWreck } = load('src/systems/salvage/combat-destruction-wreck.ts');
+const combatField = {
+  id: 'battle-' + fieldId,
+  sourceLocationId: fieldId,
+  seed: originalField.instance.seed,
+  width: originalField.instance.width,
+  height: originalField.instance.height,
+  wrecks: [],
+};
+const battleWreck = addDestroyedShipWreck(
+  combatField,
+  { id: 'destroyed-npc', position: { x: 500, y: 500 }, hullHp: 0 },
+  'battle-15',
+  22
+);
+assert(battleWreck);
+first.registerCombatWrecks(fieldId, [battleWreck]);
+assert.strictEqual(first.field(fieldId).combatWrecks[0], battleWreck);
+first.registerCombatWrecks(fieldId, [battleWreck]);
+assert.equal(first.combatWrecks(fieldId).length, 1, 'same destroyed ship cannot be duplicated');
+const combatSave = first.exportState();
+const combatRestore = new AsteroidFieldWorld(
+  narrowsSector.locations,
+  freshClaims,
+  factory,
+  JSON.parse(JSON.stringify(combatSave)),
+  []
+);
+assert.deepEqual(combatRestore.exportState(), combatSave);
+const restoredWreck = combatRestore.combatWrecks(fieldId)[0];
+assert.equal(restoredWreck.combatWreckVariant, battleWreck.combatWreckVariant);
+restoredWreck.resources[0].remainingAmount -= 1;
+assert.notEqual(
+  restoredWreck.resources[0].remainingAmount,
+  battleWreck.resources[0].remainingAmount
+);
+combatRestore.reconcileCombatWrecks(fieldId, []);
+assert.equal(combatRestore.combatWrecks(fieldId).length, 0);
+const invalidWreckSave = JSON.parse(JSON.stringify(combatSave));
+invalidWreckSave.combatWrecksByLocation[fieldId][0].position.x = Infinity;
+assert.throws(
+  () => new AsteroidFieldWorld(narrowsSector.locations, freshClaims, factory, invalidWreckSave, []),
+  /Invalid saved combat wreck field/
+);
 console.log('PASS local field session: all fields staged, miner/drone/pirate state isolated');

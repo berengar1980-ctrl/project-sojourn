@@ -5,7 +5,7 @@ import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
 import { mountCombatScene } from './game-controller-combat-scene';
 import { recordPlayerCombatHull } from './game-controller-ship-service';
-import { addDestroyedShipWreck } from '../systems/salvage/combat-destruction-wreck';
+import { recordCareerCombatWrecks } from './game-controller-combat-wrecks';
 import { startCombatBoarding } from './game-controller-combat-boarding';
 import { emitCampaignCombatEnded } from './game-controller-campaign-events';
 
@@ -65,19 +65,55 @@ function synchronizeLocalDefender(
     defender.speed
   );
 }
-function registerDestroyedWrecks(
+const combatExplosionStart = new WeakMap<ControllerRuntimeContext, number>();
+
+/** Hold the native fight snapshot on screen until the explosion has played. */
+function explosionStillVisible(
   context: ControllerRuntimeContext,
   snapshot: StrategicCombatSnapshot
-): void {
-  if (context.state.embeddedCombat !== 'salvage-space') return;
-  const field = context.state.salvageScene?.getField();
-  if (!field) return;
-  const encounterId = `${field.seed}-${field.wrecks.length}-${Math.round(snapshot.elapsedSeconds * 1000)}`;
-  for (const ship of [snapshot.attacker, snapshot.defender]) {
-    if (ship.hullHp > 0 || ship.id.startsWith('security-drone:')) continue;
-    const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
-    if (wreck) context.systemLog.write(`BERGUNG > NEUES WRACK: ${wreck.name}`);
+): boolean {
+  if (snapshot.attacker.hullHp > 0 && snapshot.defender.hullHp > 0) return false;
+  const now = performance.now();
+  const start = combatExplosionStart.get(context);
+  if (start === undefined) {
+    combatExplosionStart.set(context, now);
+    return true;
   }
+  if (now - start < 2200) return true;
+  combatExplosionStart.delete(context);
+  return false;
+}
+
+function startEmbeddedBoarding(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot,
+  scenes: CombatReturnScenes
+): void {
+  const { state } = context;
+  const origin = state.embeddedCombat;
+  const preservedSalvageField =
+    origin === 'salvage-space' ? state.salvageScene?.getField() : undefined;
+  if (origin === 'local-space') {
+    state.localSpace?.syncCombatPose(
+      snapshot.attacker.position,
+      snapshot.attacker.headingRadians,
+      snapshot.attacker.speed
+    );
+    synchronizeLocalDefender(context, snapshot.defender);
+  }
+  startCombatBoarding(context, snapshot, (boardingOutcome) => {
+    if (boardingOutcome === 'enemy_win') return scenes.starMap();
+    if (origin === 'local-space') scenes.mining(true, true);
+    else if (origin === 'salvage-space') scenes.salvage(true, preservedSalvageField, snapshot);
+    else scenes.starMap();
+  });
+}
+
+function shouldHoldCombatExplosion(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot
+): boolean {
+  return !snapshot.boardingInitiator && explosionStillVisible(context, snapshot);
 }
 
 export function resolveControllerCombat(
@@ -96,29 +132,15 @@ export function resolveControllerCombat(
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
+  if (shouldHoldCombatExplosion(context, snapshot)) return;
   recordPlayerCombatHull(context, snapshot);
-  if (snapshot.boardingInitiator) {
-    const origin = state.embeddedCombat;
-    const preservedSalvageField =
-      origin === 'salvage-space' ? state.salvageScene?.getField() : undefined;
-    if (origin === 'local-space') {
-      state.localSpace?.syncCombatPose(
-        snapshot.attacker.position,
-        snapshot.attacker.headingRadians,
-        snapshot.attacker.speed
-      );
-      synchronizeLocalDefender(context, snapshot.defender);
-    }
-    startCombatBoarding(context, snapshot, (boardingOutcome) => {
-      if (boardingOutcome === 'enemy_win') return scenes.starMap();
-      if (origin === 'local-space') scenes.mining(true, true);
-      else if (origin === 'salvage-space') scenes.salvage(true, preservedSalvageField, snapshot);
-      else scenes.starMap();
-    });
-    return;
-  }
+  if (snapshot.boardingInitiator) return startEmbeddedBoarding(context, snapshot, scenes);
   context.systemLog.write(combatResultMessage(snapshot));
   context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
+  const originLocationId =
+    state.embeddedCombat === 'local-space'
+      ? state.localSpace?.getSnapshot().instance.sourceLocationId
+      : state.salvageScene?.getField().sourceLocationId;
   if (state.embeddedCombat === 'local-space') {
     state.localSpace?.syncCombatPose(
       snapshot.attacker.position,
@@ -128,8 +150,8 @@ export function resolveControllerCombat(
     synchronizeLocalDefender(context, snapshot.defender);
   } else {
     state.salvageScene?.finishCombat(snapshot);
-    registerDestroyedWrecks(context, snapshot);
   }
+  recordCareerCombatWrecks(context, snapshot, originLocationId ?? null);
   emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
   if (snapshot.defender.id.startsWith('security-drone:') && snapshot.defender.hullHp > 0) {

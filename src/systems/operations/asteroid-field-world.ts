@@ -1,4 +1,5 @@
 import type { LocalSpaceInstance } from '../../core/local-space-types';
+import type { SalvageWreck } from '../../core/salvage-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalMinerCheckpoint } from '../npcs/npc-mining-targets';
 import { cloneCareerJson } from '../persistence/career-save-contract';
@@ -15,6 +16,7 @@ import type { AsteroidClaimRegistry } from './asteroid-claim-registry';
 export interface AsteroidFieldRuntime {
   readonly locationId: string;
   readonly instance: LocalSpaceInstance;
+  readonly combatWrecks: readonly SalvageWreck[];
   readonly miners: NpcLocalMiningService;
   readonly pirates: LocalPirateTraffic;
   readonly drone: AsteroidSecurityDrone;
@@ -29,6 +31,7 @@ export type CareerMinerFactory = (
 export interface CareerAsteroidFieldCheckpoint {
   readonly version: 1;
   readonly backgroundAccumulator: number;
+  readonly combatWrecksByLocation?: Readonly<Record<string, readonly SalvageWreck[]>>;
   readonly fields: Readonly<
     Record<
       string,
@@ -45,9 +48,42 @@ export interface CareerAsteroidFieldCheckpoint {
  * One authoritative local world per mining location. Scene mounts reference the
  * same instance and NPC services; they never create an alternate field economy.
  */
+function restoredCombatWrecks(
+  locations: readonly WorldLocation[],
+  saved: CareerAsteroidFieldCheckpoint['combatWrecksByLocation']
+): Map<string, SalvageWreck[]> {
+  const restored = new Map<string, SalvageWreck[]>();
+  for (const [id, wrecks] of Object.entries(saved ?? {})) {
+    if (
+      (!locations.some((location) => location.id === id) &&
+        !id.startsWith('salvage-special-') &&
+        !id.startsWith('salvage-distress-')) ||
+      !Array.isArray(wrecks) ||
+      wrecks.length > 512 ||
+      wrecks.some(
+        (wreck) =>
+          !wreck.id.startsWith('combat-wreck-') ||
+          !wreck.combatWreckVariant ||
+          !['miner', 'freighter', 'patrol'].includes(wreck.combatWreckVariant) ||
+          !Number.isFinite(wreck.position.x) ||
+          !Number.isFinite(wreck.position.y) ||
+          !Array.isArray(wreck.resources) ||
+          wreck.resources.some(
+            (resource: SalvageWreck['resources'][number]) =>
+              !Number.isFinite(resource.remainingAmount)
+          )
+      )
+    )
+      throw new Error('Invalid saved combat wreck field');
+    restored.set(id, cloneCareerJson([...wrecks]));
+  }
+  return restored;
+}
+
 export class AsteroidFieldWorld {
   private readonly fields = new Map<string, AsteroidFieldRuntime>();
   private backgroundAccumulator = 0;
+  private readonly combatWrecksByLocation = new Map<string, SalvageWreck[]>();
 
   constructor(
     locations: readonly WorldLocation[],
@@ -76,6 +112,12 @@ export class AsteroidFieldWorld {
         throw new Error('Asteroid field checkpoint locations mismatch');
       }
       this.backgroundAccumulator = checkpoint.backgroundAccumulator;
+      for (const [id, wrecks] of restoredCombatWrecks(
+        locations,
+        checkpoint.combatWrecksByLocation
+      )) {
+        this.combatWrecksByLocation.set(id, wrecks);
+      }
     }
     for (const location of locations) {
       if (!location.activities.mine) continue;
@@ -83,7 +125,10 @@ export class AsteroidFieldWorld {
       const instance = generateMiningSpace(location.id, seed, location.minedResourceIds);
       claims.restoreField(location.id, instance.asteroids);
       const saved = checkpoint?.fields[location.id];
+      if (!this.combatWrecksByLocation.has(location.id))
+        this.combatWrecksByLocation.set(location.id, []);
       this.fields.set(location.id, {
+        combatWrecks: this.combatWrecksByLocation.get(location.id)!,
         locationId: location.id,
         instance,
         miners: miners(location, instance, saved?.miners),
@@ -121,8 +166,34 @@ export class AsteroidFieldWorld {
     return cloneCareerJson({
       version: 1 as const,
       backgroundAccumulator: this.backgroundAccumulator,
+      combatWrecksByLocation: Object.fromEntries(this.combatWrecksByLocation),
       fields,
     });
+  }
+
+  combatWrecks(locationId: string): SalvageWreck[] {
+    return this.combatWrecksByLocation.get(locationId) ?? [];
+  }
+
+  registerCombatWrecks(locationId: string, wrecks: readonly SalvageWreck[]): void {
+    const existing = this.combatWrecksByLocation.get(locationId) ?? [];
+    const ids = new Set(existing.map((wreck) => wreck.id));
+    for (const wreck of wrecks) {
+      if (!wreck.combatWreckVariant || ids.has(wreck.id)) continue;
+      existing.push(wreck);
+      ids.add(wreck.id);
+    }
+    if (existing.length) this.combatWrecksByLocation.set(locationId, existing);
+  }
+
+  reconcileCombatWrecks(locationId: string, wrecks: readonly SalvageWreck[]): void {
+    const recorded = this.combatWrecksByLocation.get(locationId) ?? [];
+    recorded.splice(
+      0,
+      recorded.length,
+      ...wrecks.filter((wreck) => wreck.combatWreckVariant !== undefined)
+    );
+    this.combatWrecksByLocation.set(locationId, recorded);
   }
 
   field(locationId: string): AsteroidFieldRuntime | null {

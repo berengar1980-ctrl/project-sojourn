@@ -1616,3 +1616,16 @@ Schiffssprite während der Explosion.
 Minenfeld-Kämpfe und feldübergreifende Career-Persistenz generierter
 Schiffswracks gehören noch nicht zu diesem PR. Keine Änderung an
 Trefferberechnung, Wirtschaftssimulation oder Kampfschadenslogik.
+
+## Review-Log (2026-11-20): Vollständigerer Kampfwrack-Lebenszyklus und kompakte Ergebnisanzeige
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Zerstörte Schiffe erzeugen jetzt unabhängig von der ursprünglichen Schiffsklasse
+eine von drei physischen, verwertbaren Wrackvarianten. Der Wrackbestand wird
+je Sektorort gehalten und über Career-Checkpoints geladen, auch nach
+NPC-gegen-NPC-Gefechten und Kämpfen in Minenfeldern. Die gemeinsame Bergungsansicht
+kann diese Wracks bearbeiten; im Minenfeld sind sie zusätzlich sichtbar.
+Die bisherigen kompletten Sieg-/Niederlage-Overlays wurden durch eine
+kleine Statusmeldung rechts unten ersetzt. Explosionsdarstellungen bleiben
+mindestens etwa 2,2 Sekunden sichtbar, bevor eine notwendige Rückkehr
+zur Sternkarte ausgeführt wird. Kampfphysik und Schadenswerte bleiben gleich.

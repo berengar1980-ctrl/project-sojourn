@@ -323,6 +323,7 @@ function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: numb
     if (!model.winner) continue;
     entry.first.hullHp = Math.round(model.attacker.hullHp);
     entry.second.hullHp = Math.round(model.defender.hullHp);
+    runtime.options.onNpcCombatEnded?.(model, entry.first, entry.second);
     settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
     runtime.options.sectorNpcs.recoverFromCombat(entry.first, 'Nach Gefecht');
     runtime.options.sectorNpcs.recoverFromCombat(entry.second, 'Nach Gefecht');

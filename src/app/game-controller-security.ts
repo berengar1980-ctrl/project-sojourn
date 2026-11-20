@@ -62,7 +62,8 @@ export function tickFieldPirates(
       if (!pirate) return false;
       const arena = localMiningCombatArena(
         field.instance,
-        space?.getShipWorldVelocity() ?? { x: 0, y: 0 }
+        space?.getShipWorldVelocity() ?? { x: 0, y: 0 },
+        field.combatWrecks
       );
       if (targetId === 'player') {
         if (!space || context.engagements.activePlayerCombat()) return false;
@@ -238,6 +239,7 @@ export function tickFieldSecurity(
 
 function handlePlayerDroneFine(
   context: ControllerRuntimeContext,
+  field: AsteroidFieldRuntime,
   locationId: string,
   shipId: string,
   day: number
@@ -254,7 +256,8 @@ function handlePlayerDroneFine(
     if (!defender || defender.hullHp <= 0 || !drone?.snapshot().operational || !space) return;
     const arena = localMiningCombatArena(
       space.getSnapshot().instance,
-      space.getShipWorldVelocity()
+      space.getShipWorldVelocity(),
+      field.combatWrecks
     );
     if (
       !context.engagements.engageNpcInArena(defender.id, {
@@ -335,6 +338,6 @@ function processDroneContact(
   );
   if (previouslyWanted) return;
   if (shipId === context.state.activeShip.id)
-    handlePlayerDroneFine(context, locationId, shipId, day);
+    handlePlayerDroneFine(context, runtime, locationId, shipId, day);
   else handleNpcDroneFine(context, locationId, shipId, day);
 }
