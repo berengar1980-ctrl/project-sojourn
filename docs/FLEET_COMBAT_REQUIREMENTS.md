@@ -322,3 +322,5 @@ Drohnenmeldungen, Nachzügler und kontinuierliche Karriere-Speicherung müssen
 vor produktiver Aktivierung ergänzt werden. Außerdem basiert die
 Fleet-Waffenlaufzeit noch auf vereinfachten Direkt-Treffern, nicht auf der
 vollständigen Kampagnen-Physik. Die alten 1vs1-Module bleiben geschützt.
+Der dedizierte FleetCombat-Branch-Workflow formatiert die neuen Dateien;
+CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
