@@ -24,6 +24,14 @@ import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-ty
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
 const fieldFleetOwners = new WeakMap<ControllerRuntimeContext, FleetFieldTickOwnership>();
 
+function shouldTickFieldSecurity(
+  defenderId: string | undefined,
+  droneId: string,
+  droneFightingNpc: boolean
+): boolean {
+  return defenderId !== droneId && !droneFightingNpc;
+}
+
 function fleetOwnersFor(context: ControllerRuntimeContext): FleetFieldTickOwnership {
   let owners = fieldFleetOwners.get(context);
   if (!owners) {
@@ -271,7 +279,7 @@ export function advanceControllerFieldWorld(
     const droneFightingNpc = (context.engagements.activeNpcCombatSnapshots?.() ?? []).some(
       (duel) => duel.attacker.id === droneId || duel.defender.id === droneId
     );
-    if (activeCombat?.defender.id !== droneId && !droneFightingNpc) {
+    if (shouldTickFieldSecurity(activeCombat?.defender.id, droneId, droneFightingNpc)) {
       tickFieldSecurity(context, seconds, field);
     }
   });
