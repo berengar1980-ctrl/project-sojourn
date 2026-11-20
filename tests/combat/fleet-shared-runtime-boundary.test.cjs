@@ -30,7 +30,9 @@ assert(
   'PvP scenario UI must use the same systems-level FleetCombat factory as career'
 );
 assert(
-  !/createFleetCombatService\s*\(/.test(fleet.slice(0, fleet.indexOf('export function createFleetCombatService('))),
+  !/createFleetCombatService\s*\(/.test(
+    fleet.slice(0, fleet.indexOf('export function createFleetCombatService('))
+  ),
   'Do not instantiate duplicate combat services within the shared runtime'
 );
 
