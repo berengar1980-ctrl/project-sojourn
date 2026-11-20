@@ -43,6 +43,7 @@ import {
 } from './strategic-combat-movement';
 import { advanceShieldImpacts } from '../shields/shield-service';
 import { isFleetHostile } from './fleet-faction-policy';
+import { shipContact } from './combat-ship-contact-geometry';
 
 function advanceExternalFleetMotion(
   ship: FleetShip,
@@ -143,7 +144,10 @@ export function advanceFleetMotion(
       const a = fleet[i]!.combatant;
       const b = fleet[j]!.combatant;
       if (a.hullHp > 0 && b.hullHp > 0) {
-        if (isFleetHostile(fleet[i]!.factionId, fleet[j]!.factionId)) onRamContact?.(a, b);
+        if (isFleetHostile(fleet[i]!.factionId, fleet[j]!.factionId)) {
+          const contact = shipContact(a, b);
+          if (contact.distance <= contact.required) onRamContact?.(a, b);
+        }
         resolveCombatantCollision(a, b);
       }
     }
