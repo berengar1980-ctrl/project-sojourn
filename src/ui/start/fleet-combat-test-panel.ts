@@ -53,7 +53,13 @@ export function createFleetCombatTestPanel(
     for (const rock of current.arena.obstacles ?? []) {
       context.strokeStyle = '#4a575e';
       context.beginPath();
-      context.arc(x(rock.position.x), y(rock.position.y), Math.max(2, rock.radius * scale), 0, Math.PI * 2);
+      context.arc(
+        x(rock.position.x),
+        y(rock.position.y),
+        Math.max(2, rock.radius * scale),
+        0,
+        Math.PI * 2
+      );
       context.stroke();
     }
     for (const shot of current.shots) {
@@ -67,8 +73,12 @@ export function createFleetCombatTestPanel(
       const ship = entry.ship;
       const px = x(ship.position.x);
       const py = y(ship.position.y);
-      const color = entry.factionId === 'player' ? '#72d8a0' :
-        entry.factionId === 'pirate-a' ? '#d46e65' : '#d7b06c';
+      const color =
+        entry.factionId === 'player'
+          ? '#72d8a0'
+          : entry.factionId === 'pirate-a'
+            ? '#d46e65'
+            : '#d7b06c';
       context.save();
       context.translate(px, py);
       context.rotate(ship.headingRadians);
@@ -86,12 +96,18 @@ export function createFleetCombatTestPanel(
       context.fillText(ship.name, px + 12, py - 10);
       context.fillText(
         'S ' + Math.ceil(ship.shieldHp) + ' / H ' + Math.ceil(ship.hullHp),
-        px + 12, py + 6
+        px + 12,
+        py + 6
       );
     }
-    status.textContent = 'Simulationszeit: ' + current.elapsedSeconds.toFixed(1) +
-      ' s · ' + current.ships.filter((entry) => entry.ship.hullHp > 0).length +
-      ' / ' + current.ships.length + ' Schiffe intakt';
+    status.textContent =
+      'Simulationszeit: ' +
+      current.elapsedSeconds.toFixed(1) +
+      ' s · ' +
+      current.ships.filter((entry) => entry.ship.hullHp > 0).length +
+      ' / ' +
+      current.ships.length +
+      ' Schiffe intakt';
   }
   function tick(now: number): void {
     if (destroyed) return;

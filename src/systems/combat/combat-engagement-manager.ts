@@ -54,10 +54,7 @@ export function createCombatEngagementManager(): CombatEngagementManager {
     if (engagement.members.size > 2) engagement.kind = 'fleet';
   };
 
-  const combine = (
-    target: MutableEngagement,
-    source: MutableEngagement
-  ): void => {
+  const combine = (target: MutableEngagement, source: MutableEngagement): void => {
     for (const shipId of source.members) {
       source.members.delete(shipId);
       shipOwner.delete(shipId);

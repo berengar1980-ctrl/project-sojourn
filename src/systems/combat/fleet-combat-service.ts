@@ -5,11 +5,7 @@ import type {
   StrategicCombatantSetup,
   StrategicCombatantSnapshot,
 } from './strategic-combat-types';
-import {
-  createCombatant,
-  distance,
-  snapshot,
-} from './strategic-combat-geometry';
+import { createCombatant, distance, snapshot } from './strategic-combat-geometry';
 import {
   moveCombatant,
   resolveCombatantCollision,
@@ -155,8 +151,14 @@ export function createFleetCombatService(
       } else {
         // Unengaged units retain their position/velocity until the local
         // career worker controller is wired in. No artificial duels.
-        actor.position.x = Math.max(0, Math.min(arena.width, actor.position.x + actor.velocity.x * dt));
-        actor.position.y = Math.max(0, Math.min(arena.height, actor.position.y + actor.velocity.y * dt));
+        actor.position.x = Math.max(
+          0,
+          Math.min(arena.width, actor.position.x + actor.velocity.x * dt)
+        );
+        actor.position.y = Math.max(
+          0,
+          Math.min(arena.height, actor.position.y + actor.velocity.y * dt)
+        );
         resolveArenaObstacles(actor, arena);
       }
     }
@@ -192,11 +194,13 @@ export function createFleetCombatService(
         );
         const mount = actor.setup.weaponMounts?.find((entry) => entry.slotIndex === index);
         const facing = mount?.facing ?? 'forward';
-        const expected = facing === 'port' ? -Math.PI / 2 : facing === 'starboard' ? Math.PI / 2 : 0;
+        const expected =
+          facing === 'port' ? -Math.PI / 2 : facing === 'starboard' ? Math.PI / 2 : 0;
         const offset = Math.atan2(Math.sin(angle - expected), Math.cos(angle - expected));
-        const arc = profile.mount === 'turret' || profile.mount === 'guided'
-          ? Math.PI * 2
-          : ((mount?.arcDegrees ?? profile.arcDegrees ?? 65) * Math.PI) / 180;
+        const arc =
+          profile.mount === 'turret' || profile.mount === 'guided'
+            ? Math.PI * 2
+            : ((mount?.arcDegrees ?? profile.arcDegrees ?? 65) * Math.PI) / 180;
         if (Math.abs(offset) > arc / 2) continue;
         // Direct-hit prototype. The full 1vs1 accuracy/munition/projectile
         // mechanics are a later feature gate, never silently approximated.

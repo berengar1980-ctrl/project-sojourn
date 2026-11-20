@@ -91,7 +91,13 @@ export function createFleetTestScenario(
     piratesB: boundedCount(counts.piratesB),
   };
   const roster: FleetTestShip[] = [
-    { id: 'player', team: 'player', role: 'player', name: player.name, draft: previewDraft(player) },
+    {
+      id: 'player',
+      team: 'player',
+      role: 'player',
+      name: player.name,
+      draft: previewDraft(player),
+    },
   ];
   const addShips = (
     role: 'miner' | 'pirate-a' | 'pirate-b',
@@ -173,8 +179,12 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   const options = document.createElement('div');
   options.className = 'harrow-fleet__options';
   options.append(
-    map.wrapper, player.wrapper, miners.wrapper, drones.wrapper,
-    piratesA.wrapper, piratesB.wrapper
+    map.wrapper,
+    player.wrapper,
+    miners.wrapper,
+    drones.wrapper,
+    piratesA.wrapper,
+    piratesB.wrapper
   );
   const capabilities = document.createElement('p');
   capabilities.className = 'harrow-fleet__capabilities';
@@ -249,11 +259,18 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
     piratesB: Number(piratesB.control.value),
   });
   const draw = (): void => {
-    config = createFleetTestScenario(map.control.value as DuelMapKind, player.control.value, counts());
+    config = createFleetTestScenario(
+      map.control.value as DuelMapKind,
+      player.control.value,
+      counts()
+    );
     roster.replaceChildren();
     for (const [team, label] of [
-      ['player', 'Spieler'], ['civilian', 'Miner'], ['security', 'Sicherheitsdrohnen'],
-      ['pirate-a', 'Piraten · Fraktion A'], ['pirate-b', 'Piraten · Fraktion B'],
+      ['player', 'Spieler'],
+      ['civilian', 'Miner'],
+      ['security', 'Sicherheitsdrohnen'],
+      ['pirate-a', 'Piraten · Fraktion A'],
+      ['pirate-b', 'Piraten · Fraktion B'],
     ] as const) {
       const section = document.createElement('section');
       section.className = 'harrow-duel__card';
@@ -286,9 +303,19 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   };
   shuffle.addEventListener('click', draw);
   for (const select of [
-    map.control, player.control, miners.control, drones.control,
-    piratesA.control, piratesB.control,
-  ]) select.addEventListener('change', draw);
+    map.control,
+    player.control,
+    miners.control,
+    drones.control,
+    piratesA.control,
+    piratesB.control,
+  ])
+    select.addEventListener('change', draw);
   draw();
-  return { destroy: () => { activePanel?.destroy(); shell.remove(); } };
+  return {
+    destroy: () => {
+      activePanel?.destroy();
+      shell.remove();
+    },
+  };
 }
