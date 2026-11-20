@@ -76,3 +76,9 @@ Der Teststatus wird erst nach vollständigem CI-Lauf als grün markiert.
 - Eigene Drohnen-Kontakt- und Navigationstests sind hinzugefügt.
 - **Aktueller Stand:** Die Drohne verwendet ein echtes Mk-III-Kampf-Loadout aus dem vorhandenen Kampagnen-NPC-System. Nur ihre Kampagnen-Drohnenklasse steuert ihre Bewegung; ein externer Steuerungsadapter liefert die Position an die gemeinsame FleetCombat-Simulation. Sobald sie physisch in Angriffsreichweite ist, tritt sie dem laufenden Gefecht bei und kann mit dem derzeit vereinfachten Mehrschiff-Waffenmodell Schaden verursachen und erhalten. Die Testanzeige unterscheidet Drohnen durch runde Markierungen.
 - **Noch offen:** Vollständige Kampfparität (Munition, Projektile, Minen, Traktorwürfe), Produktions-Kampagnenintegration, reale Drohnen-Sprites und die Integration der lokalen NPC-Miner. Die Feature-Branch-Simulation ist noch keine abschließende Karriere-Anbindung.
+
+## FC-24 – Drohnenanflug gegen physische Schiffshindernisse
+
+- Die Drohne fliegt einen Punkt knapp außerhalb des Kollisionsbereichs des Piraten an, nicht dessen blockierten Mittelpunkt.
+- Der Zielpirat bleibt bei der echten Wegplanung und Schildkontaktprüfung ein physisches Hindernis.
+- Der Regressionstest prüft das Abfangen trotz eines soliden Piratenhindernisses und die tatsächliche Flugbewegung vor dem Kampfbeitritt.
