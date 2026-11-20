@@ -22,7 +22,7 @@ const protectedFiles = {
 };
 for (const [file, expected] of Object.entries(protectedFiles)) {
   const data = fs.readFileSync(path.join(root, file));
-  const hash = crypto
+  const hash = nodeCrypto
     .createHash('sha1')
     .update('blob ' + data.length + '\0')
     .update(data)
