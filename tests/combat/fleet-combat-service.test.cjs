@@ -283,8 +283,8 @@ try {
   let externalTicks = 0;
   const droneWorld = createFleetCombatService(
     [
-      { setup: combatant('player'), factionId: 'player', position: { x: 1000, y: 2400 }, targetId: 'pirate' },
-      { setup: combatant('pirate'), factionId: 'pirate-a', position: { x: 1650, y: 2400 }, targetId: 'player' },
+      { setup: { ...combatant('player'), shieldHp: 1000, hullHp: 1000 }, factionId: 'player', position: { x: 1000, y: 2400 }, targetId: 'pirate' },
+      { setup: { ...combatant('pirate'), shieldHp: 1000, hullHp: 1000 }, factionId: 'pirate-a', position: { x: 1650, y: 2400 }, targetId: 'player' },
       {
         setup: combatant('drone'),
         factionId: 'security',
@@ -294,7 +294,7 @@ try {
           externalTicks++;
           assert.equal(contacts.length, 3);
           const pirate = contacts.find((entry) => entry.ship.id === 'pirate');
-          const x = Math.max(pirate.ship.position.x + 70, 2300 - externalTicks * 12);
+          const x = Math.max(pirate.ship.position.x + 70, 2300 - externalTicks * 80);
           return {
             position: { x, y: 2400 },
             headingRadians: Math.PI,
