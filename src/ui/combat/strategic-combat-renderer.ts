@@ -37,9 +37,7 @@ import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
 import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatDamagePair } from './combat-damage-visual';
-import { drawShipDestruction } from './ship-destruction-visual';
-import { drawCombatWreck3d } from '../salvage/combat-wreck-mesh';
-import { combatWreckVariantFor } from '../../core/combat-wreck-variant';
+import { drawDestroyedCombatant } from './combat-wreck-destruction-renderer';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
@@ -291,28 +289,14 @@ export class StrategicCombatRenderer {
       if (loser.hullHp <= 0) {
         const geometry = this.shipGeometry(loser, width, height);
         const age = timeSeconds - this.destructionStartedAt;
-        if (age >= 0.28 && !loser.id.startsWith('security-drone:')) {
-          const variant = combatWreckVariantFor(
-            this.model.arena.backdropSeed ?? 0,
-            loser.id,
-            this.model.elapsedSeconds
-          );
-          this.context.save();
-          this.context.translate(geometry.center.x, geometry.center.y);
-          this.context.globalAlpha = Math.min(1, (age - 0.28) * 3);
-          drawCombatWreck3d(
-            this.context,
-            variant,
-            Math.max(geometry.width, geometry.height) * 0.65,
-            { x: 0.19, y: 0.16, z: loser.headingRadians }
-          );
-          this.context.restore();
-        }
-        drawShipDestruction(
+        drawDestroyedCombatant(
           this.context,
-          geometry.center.x,
-          geometry.center.y,
-          Math.max(geometry.width, geometry.height) * 0.6,
+          geometry.center,
+          Math.max(geometry.width, geometry.height),
+          loser.headingRadians,
+          loser.id,
+          this.model.arena.backdropSeed ?? 0,
+          this.model.elapsedSeconds,
           age
         );
       }
