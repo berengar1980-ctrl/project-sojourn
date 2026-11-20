@@ -26,6 +26,14 @@ const fleet = fs.readFileSync(
   'utf8'
 );
 const lobby = fs.readFileSync(path.join(root, 'src/ui/start/fleet-test-lobby.ts'), 'utf8');
+const lifecycle = fs.readFileSync(
+  path.join(root, 'src/systems/combat/fleet-combat-lifecycle.ts'),
+  'utf8'
+);
+assert(
+  !lifecycle.includes("from './fleet-combat-service'"),
+  'shared lifecycle module cannot depend on its FleetCombat consumer'
+);
 assert(fleet.includes('export function createFleetCombatService('));
 assert(
   lobby.includes("from '../../systems/combat/fleet-combat-service'"),
