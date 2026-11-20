@@ -80,6 +80,20 @@ import {
   servicedPlayerCombatant,
 } from './game-controller-ship-service';
 export type { GameController } from './game-controller-types';
+function createControllerSettingsMenu(
+  context: ControllerRuntimeContext,
+  options: GameControllerOptions
+): ReturnType<typeof createSettingsMenu> {
+  return createSettingsMenu(
+    context.audio,
+    options.onReturnToMainMenu,
+    context.state.playerProfile,
+    () => saveControllerCareer(context),
+    options.onLoadCareer,
+    () => controllerCareerSaveBlockReason(context)
+  );
+}
+
 function mountControllerSwitcher(context: ControllerRuntimeContext): void {
   mountControllerShipSwitcher(context, (mode) => {
     if (mode === 'local-space') mountControllerMining(context, true);
@@ -473,14 +487,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   };
   combatContext = context;
   installControllerCareer(context, options);
-  const menu = createSettingsMenu(
-    context.audio,
-    options.onReturnToMainMenu,
-    state.playerProfile,
-    () => saveControllerCareer(context),
-    options.onLoadCareer,
-    () => controllerCareerSaveBlockReason(context)
-  );
+  const menu = createControllerSettingsMenu(context, options);
   mountControllerStarMap(context);
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
