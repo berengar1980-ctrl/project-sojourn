@@ -191,8 +191,11 @@ assert.equal(
   pirates[0].id,
   'armed miner acquires the real pirate as its counterattack target'
 );
-assert.equal(mining.ships[0].laserActive, false,
-  'defending miner must not operate the industrial laser in combat');
+assert.equal(
+  mining.ships[0].laserActive,
+  false,
+  'defending miner must not operate the industrial laser in combat'
+);
 fleet.setTarget(pirates[0].id, null);
 fleet.tick(0.08);
 assert.equal(miner.combatMovement, undefined);
