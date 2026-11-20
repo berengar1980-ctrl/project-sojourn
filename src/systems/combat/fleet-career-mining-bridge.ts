@@ -27,7 +27,14 @@ export function createFleetCareerMiningBridge(
       ...participant,
       externalMovement(_dt: number) {
         const ship = mining.ships.find((entry) => entry.npcId === npc.id);
-        if (!ship) throw new Error('Career miner left the active field: ' + npc.id);
+        if (!ship) {
+          return {
+            position: { ...local.position },
+            headingRadians: local.headingRadians,
+            targetId: null,
+            active: false,
+          };
+        }
         return {
           position: { ...ship.position },
           headingRadians: ship.headingRadians,
