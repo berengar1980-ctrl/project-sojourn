@@ -6,11 +6,13 @@ import type {
 import { snapshot } from './strategic-combat-geometry';
 /** Structural contracts avoid an import cycle with the authoritative fleet factory. */
 interface FleetWorldSink {
-  readonly afterCombatTick?: (ships: readonly {
-    readonly factionId: string;
-    readonly targetId: string | null;
-    readonly ship: StrategicCombatantSnapshot;
-  }[]) => void;
+  readonly afterCombatTick?: (
+    ships: readonly {
+      readonly factionId: string;
+      readonly targetId: string | null;
+      readonly ship: StrategicCombatantSnapshot;
+    }[]
+  ) => void;
 }
 
 interface FleetLifecycleShip {
