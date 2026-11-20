@@ -143,6 +143,19 @@ function performFleetRam(runtime: StrategicCombatRuntime, now: number): FleetWea
   return impacts;
 }
 
+function selectSpecialTargets(
+  ships: readonly MutableCombatant[],
+  targetFor: (ship: MutableCombatant) => MutableCombatant | null
+): Map<MutableCombatant, MutableCombatant> {
+  const selected = new Map<MutableCombatant, MutableCombatant>();
+  for (const source of ships) {
+    if (source.hullHp <= 0) continue;
+    const target = targetFor(source);
+    if (target && target.hullHp > 0) selected.set(source, target);
+  }
+  return selected;
+}
+
 /** Mutable pair state persists throughout the encounter, so an in-flight
  * tractor rock or armed mine survives target switches and successive ticks.
  */
@@ -174,16 +187,26 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
     tick(dt, now, ships, targetFor) {
       const hits: FleetWeaponHit[] = [];
       const active = new Set(ships.map((ship) => ship.setup.id));
-      // The 1vs1 functions decrement cooldowns internally. In an N-ship
-      // engagement, do that once per actual ship, not once per opponent.
+      const selected = selectSpecialTargets(ships, targetFor);
+      const engaged = new Set<string>();
+      for (const [source, target] of selected) {
+        engaged.add(source.setup.id);
+        engaged.add(target.setup.id);
+      }
+      for (const { runtime } of pairs.values()) {
+        if (!active.has(runtime.attacker.setup.id) || !active.has(runtime.defender.setup.id))
+          continue;
+        engaged.add(runtime.attacker.setup.id);
+        engaged.add(runtime.defender.setup.id);
+      }
+      // A neutral career worker retains its authoritative cooldowns. Combat
+      // participants advance once, even if targeted by several enemies.
       for (const ship of ships) {
+        if (!engaged.has(ship.setup.id)) continue;
         ship.mineCooldown = Math.max(0, ship.mineCooldown - dt);
         ship.tractorThrowCooldown = Math.max(0, (ship.tractorThrowCooldown ?? 0) - dt);
       }
-      for (const source of ships) {
-        if (source.hullHp <= 0) continue;
-        const target = targetFor(source);
-        if (!target || target.hullHp <= 0) continue;
+      for (const [source, target] of selected) {
         const runtime = pairFor(source, target).runtime;
         runtime.elapsedSeconds = now;
         const side = sideFor(runtime, source);
