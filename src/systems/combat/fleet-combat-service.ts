@@ -233,7 +233,9 @@ export function createFleetCombatService(
         a.combatant.setup.id.localeCompare(b.combatant.setup.id)
     );
     const selected = candidates[0] ?? null;
-    ship.targetId = selected?.combatant.setup.id ?? null;
+    if (selected) ship.targetId = selected.combatant.setup.id;
+    // Preserve an assigned target that is scheduled to arrive later.
+    else if (!current || current.active) ship.targetId = null;
     return selected;
   };
 
@@ -258,6 +260,10 @@ export function createFleetCombatService(
   });
 
   const step = (dt: number): void => {
+    // Only ships present at the START of this interval may move/fire in it.
+    const present = fleet.filter((ship) => ship.active);
+    advanceFleetMotion(present, acquire, arena, dt);
+    shots = advanceFleetFire(present, acquire, dt);
     elapsedSeconds += dt;
     arrivedIds = [];
     for (const ship of fleet) {
@@ -266,9 +272,6 @@ export function createFleetCombatService(
         arrivedIds.push(ship.combatant.setup.id);
       }
     }
-    const present = fleet.filter((ship) => ship.active);
-    advanceFleetMotion(present, acquire, arena, dt);
-    shots = advanceFleetFire(present, acquire, dt);
   };
 
   return {
