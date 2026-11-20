@@ -4,7 +4,7 @@ import { combatShieldCenter, combatShieldGeometry, segmentShieldHit } from './st
 /** Intersection with the oriented hull envelope, using the same inset (0.88)
  * as the native contact geometry. This is a raycast, not a probability roll.
  */
-function hullSegmentContact(from: CombatPoint, to: CombatPoint, ship: MutableCombatant): {
+function hullSegmentContact(from: CombatPoint, to: CombatPoint, ship: MutableCombatant, padding: number): {
   readonly t: number;
   readonly point: CombatPoint;
 } | null {
@@ -20,8 +20,8 @@ function hullSegmentContact(from: CombatPoint, to: CombatPoint, ship: MutableCom
   const finish = rotate(to);
   const dx = finish.x - start.x;
   const dy = finish.y - start.y;
-  const rx = Math.max(5, hull.radiusX * 0.88);
-  const ry = Math.max(4, hull.radiusY * 0.88);
+  const rx = Math.max(5, hull.radiusX * 0.88 + padding);
+  const ry = Math.max(4, hull.radiusY * 0.88 + padding);
   const a = (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry);
   if (a < 1e-9) return null;
   const b = 2 * ((start.x * dx) / (rx * rx) + (start.y * dy) / (ry * ry));
@@ -73,7 +73,8 @@ export function firstFleetShipContact(
   from: CombatPoint,
   to: CombatPoint,
   ships: readonly MutableCombatant[],
-  sourceId: string
+  sourceId: string,
+  padding = 0
 ): FleetPhysicalContact | null {
   let nearest: FleetPhysicalContact | null = null;
   for (const ship of ships) {
@@ -85,7 +86,7 @@ export function firstFleetShipContact(
     if (!nearest || contact.t < nearest.t - 1e-9 ||
         (Math.abs(contact.t - nearest.t) < 1e-9 &&
           ship.setup.id.localeCompare(nearest.ship.setup.id) < 0)) {
-      nearest = { ship, t: contact.t, point: contact.point, shieldHit: shield };
+      nearest = { ship, t: contact.t, point: contact.point, shieldHit: useHull ? null : shield };
     }
   }
   return nearest;
