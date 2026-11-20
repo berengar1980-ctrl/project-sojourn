@@ -284,4 +284,6 @@ bleibt die aus der Karriereausrüstung abgeleitete Kampf-Doktrin erhalten.
   Opt-in im Gameplay aktiviert werden darf. Auch aktiver FleetCombat,
   Eintrittszeiten und Tick-Lease benötigen Save/Resume. Vor FC-33+ bleibt
   dieser Einstieg ausdrücklich ein Integrationsbaustein, kein fertiges
-  kampagnenspielbares Mehrschiffgefecht.
+  kampagnenspielbares Mehrschiffgefecht. Die Formatierung der FC-32-Dateien
+  erfolgt über den dedizierten FleetCombat-Branch-Workflow; CI prüft den
+  formatierten Folgecommit erneut.
