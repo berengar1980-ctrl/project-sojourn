@@ -77,10 +77,12 @@ assert.throws(
   /Duplicate external participant/
 );
 assert.throws(
-  () => createFleetCombatForCareerField(field, [miner], [
-    ...opponents,
-    { ...opponents[0], setup: { ...opponents[0].setup, id: miner.id } },
-  ]),
+  () =>
+    createFleetCombatForCareerField(
+      field,
+      [miner],
+      [...opponents, { ...opponents[0], setup: { ...opponents[0].setup, id: miner.id } }]
+    ),
   /second combat movement owner/
 );
 assert(before && state, 'live career state is used');

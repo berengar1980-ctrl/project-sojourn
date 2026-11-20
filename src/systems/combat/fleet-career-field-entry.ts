@@ -29,10 +29,7 @@ export function createFleetCombatForCareerField(
 ): FleetCombatService {
   const localMinerIds = new Set(field.miners.ships.map((ship) => ship.npcId));
   const miners = careerNpcs.filter(
-    (npc) =>
-      npc.job === 'miner' &&
-      npc.locationId === field.locationId &&
-      localMinerIds.has(npc.id)
+    (npc) => npc.job === 'miner' && npc.locationId === field.locationId && localMinerIds.has(npc.id)
   );
   if (new Set(careerNpcs.map((npc) => npc.id)).size !== careerNpcs.length)
     throw new Error('Duplicate career NPC identity in FleetCombat field handoff');
