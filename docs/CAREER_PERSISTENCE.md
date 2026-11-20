@@ -967,8 +967,10 @@ Spieler und Sicherheitsdrohnen sind von Beginn an vorgesehen. Die
 FleetCombat-Simulation hält ausstehende Teilnehmer getrennt vom aktiven
 Kampfzustand, erzeugt derzeit aber keinen speicherbaren Career-Checkpoint.
 
-Beide neuen Services sind deshalb im Owner-Register ausdrücklich als
-`transient` klassifiziert. **Diese Entscheidung darf nicht auf die
+Die FleetCombat- und Engagement-Services sind deshalb im Owner-Register
+ausdrücklich als `transient` klassifiziert. Der neue Drohneninterceptor
+benutzt die bestehende Kampagnen-Drohnenklasse für Sensorik und Navigation,
+ist aber nur ein transienter PvP-Adapter ohne eigenen Career-Save. **Diese Entscheidung darf nicht auf die
 Kampagnenintegration übertragen werden.** Vor ihrer Freigabe müssen
 Engagement-Mitgliedschaften, lebende Schiffszustände, verzögerte
 Eintritte, Projektil-/Minenzustände und RNG-Fortschritt in einen
