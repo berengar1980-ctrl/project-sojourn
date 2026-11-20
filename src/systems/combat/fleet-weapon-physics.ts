@@ -13,7 +13,6 @@ import {
   combatShieldCenter,
   firstObstacleHit,
   projectileSpeed,
-  segmentShieldHit,
 } from './strategic-combat-damage';
 import { nativeWeaponDamage } from './combat-native-damage';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
@@ -29,6 +28,7 @@ import {
 import { effectiveTargetSubsystem, engineShotAvailable } from './combat-subsystem-targeting';
 import { recordWeaponDamage, recordWeaponFired } from './combat-weapon-telemetry';
 import { firstFleetShipContact, scatteredFleetAim } from './fleet-physical-contacts';
+import type { segmentShieldHit } from './strategic-combat-damage';
 
 export interface FleetWeaponHit {
   readonly sourceId: string;
