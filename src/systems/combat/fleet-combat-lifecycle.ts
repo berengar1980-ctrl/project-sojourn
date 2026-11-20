@@ -1,9 +1,6 @@
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
 import { snapshot } from './strategic-combat-geometry';
-import type {
-  FleetCombatParticipant,
-  FleetCombatWorldOptions,
-} from './fleet-combat-service';
+import type { FleetCombatParticipant, FleetCombatWorldOptions } from './fleet-combat-service';
 
 interface FleetLifecycleShip {
   readonly factionId: string;
@@ -42,9 +39,11 @@ export function reportFleetCombatToWorld(
   ships: readonly FleetLifecycleShip[]
 ): void {
   if (!world.afterCombatTick) return;
-  world.afterCombatTick(ships.map((ship) => ({
-    factionId: ship.factionId,
-    targetId: ship.targetId,
-    ship: snapshot(ship.combatant),
-  })));
+  world.afterCombatTick(
+    ships.map((ship) => ({
+      factionId: ship.factionId,
+      targetId: ship.targetId,
+      ship: snapshot(ship.combatant),
+    }))
+  );
 }

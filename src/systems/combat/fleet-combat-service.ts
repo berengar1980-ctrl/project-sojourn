@@ -14,7 +14,11 @@ import {
 import { advanceShieldImpacts } from '../shields/shield-service';
 import { resolveShipWeaponHit } from './ship-weapon-service';
 import { isFleetHostile } from './fleet-faction-policy';
-import { activateFleetArrivals, reportFleetCombatToWorld, validateFleetScenario } from './fleet-combat-lifecycle';
+import {
+  activateFleetArrivals,
+  reportFleetCombatToWorld,
+  validateFleetScenario,
+} from './fleet-combat-lifecycle';
 import {
   createCombatEngagementManager,
   type EngagementSnapshot,
