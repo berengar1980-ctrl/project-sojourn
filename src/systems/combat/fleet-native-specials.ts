@@ -114,6 +114,46 @@ function captureSpecialImpact(
     output
   );
 }
+/** Resolve each native mine separately, because the duel runtime reports only its
+ * most recent impact. FleetCombat needs an individual contribution for every
+ * simultaneous detonation; the original native damage calculation is reused.
+ */
+function advanceFleetMineImpacts(
+  runtime: StrategicCombatRuntime,
+  dt: number,
+  hits: FleetWeaponHit[]
+): void {
+  const queued = runtime.mines.splice(0);
+  const survivors: MutableMine[] = [];
+  for (const mine of queued) {
+    runtime.mines.push(mine);
+    captureSpecialImpact(runtime, () => advanceRuntimeMines(runtime, dt), hits);
+    survivors.push(...runtime.mines.splice(0));
+  }
+  runtime.mines.push(...survivors);
+}
+
+function advanceFleetThrowImpacts(
+  runtime: StrategicCombatRuntime,
+  dt: number,
+  hits: FleetWeaponHit[]
+): void {
+  const queued = runtime.thrownAsteroids.splice(0);
+  const survivors: MutableThrownAsteroid[] = [];
+  // The native throw routine also decrements tractor cooldown for both ships.
+  // The FleetCombat owner has already advanced each ship exactly once.
+  const aCooldown = runtime.attacker.tractorThrowCooldown ?? 0;
+  const dCooldown = runtime.defender.tractorThrowCooldown ?? 0;
+  for (const rock of queued) {
+    runtime.thrownAsteroids.push(rock);
+    captureSpecialImpact(runtime, () => advanceThrownAsteroids(runtime, dt), hits);
+    survivors.push(...runtime.thrownAsteroids.splice(0));
+    runtime.attacker.tractorThrowCooldown = aCooldown;
+    runtime.defender.tractorThrowCooldown = dCooldown;
+  }
+  runtime.thrownAsteroids.push(...survivors);
+}
+
 function performFleetRam(runtime: StrategicCombatRuntime, now: number): FleetWeaponHit[] {
   runtime.elapsedSeconds = now;
   const previous = {
@@ -220,14 +260,8 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
         if (!active.has(runtime.attacker.setup.id) || !active.has(runtime.defender.setup.id))
           continue;
         runtime.elapsedSeconds = now;
-        captureSpecialImpact(runtime, () => advanceRuntimeMines(runtime, dt), hits);
-        // Native throw physics also decrements the two ship cooldowns;
-        // restore the already-once-updated values after its physical step.
-        const aCooldown = runtime.attacker.tractorThrowCooldown ?? 0;
-        const dCooldown = runtime.defender.tractorThrowCooldown ?? 0;
-        captureSpecialImpact(runtime, () => advanceThrownAsteroids(runtime, dt), hits);
-        runtime.attacker.tractorThrowCooldown = aCooldown;
-        runtime.defender.tractorThrowCooldown = dCooldown;
+        advanceFleetMineImpacts(runtime, dt, hits);
+        advanceFleetThrowImpacts(runtime, dt, hits);
       }
       return hits;
     },
