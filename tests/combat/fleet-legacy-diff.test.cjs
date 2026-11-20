@@ -44,6 +44,7 @@ if (mainAvailable) {
     'src/systems/combat/fleet-career-mining-bridge.ts',
     'src/systems/combat/fleet-career-field-entry.ts',
     'src/systems/combat/fleet-career-field-security-bridge.ts',
+    'src/systems/combat/fleet-career-hostile-contacts.ts',
     'src/systems/combat/fleet-field-tick-ownership.ts',
     'src/systems/combat/fleet-combat-lifecycle.ts',
   ]);
