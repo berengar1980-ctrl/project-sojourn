@@ -178,8 +178,18 @@ function createFleetPrototype(config: FleetTestConfiguration) {
     (entry) => entry.role === 'pirate-a' || entry.role === 'pirate-b'
   );
   const shipCount = config.ships.length - 1;
+  const pirateIndices = config.ships.flatMap((ship, position) =>
+    ship.role === 'pirate-a' || ship.role === 'pirate-b' ? [position] : []
+  );
   const participants = config.ships.map((entry, index) => {
-    if (entry.role === 'drone') return createFleetDronePrototype(entry, index, arena);
+    if (entry.role === 'drone') {
+      const pirateIndex = pirateIndices[(index - 1) % pirateIndices.length] ?? 1;
+      const lane = 0.15 + (0.7 * (pirateIndex - 0.5)) / shipCount;
+      return createFleetDronePrototype(entry, index, arena, {
+        x: arena.width * 0.69 - 20 * (index % 3),
+        y: arena.height * lane,
+      });
+    }
     if (!entry.draft) throw new Error('Missing fleet ship loadout');
     const ship = getShipDefinition(entry.draft.shipId);
     if (!ship) throw new Error('Missing FleetCombat hull: ' + entry.draft.shipId);
