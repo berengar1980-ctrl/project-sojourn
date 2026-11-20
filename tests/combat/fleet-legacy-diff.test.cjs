@@ -60,7 +60,9 @@ if (mainAvailable) {
     [],
     'FleetCombat must NOT modify any existing 1vs1 combat, renderer or setup modules'
   );
-  console.log('PASS 1vs1 combat and renderer modules protected; reviewed FleetCombat arena additions allowed');
+  console.log(
+    'PASS 1vs1 combat and renderer modules protected; reviewed FleetCombat arena additions allowed'
+  );
 } else {
   // The fixed-SHA guard still executes via fleet-legacy-baseline.test.cjs.
   console.log(
