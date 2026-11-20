@@ -12,6 +12,8 @@ export interface FleetFieldTickOwnership {
   release(field: AsteroidFieldRuntime, fleet: FleetCombatService): void;
   tickIfOwned(field: AsteroidFieldRuntime, seconds: number): boolean;
   owns(field: AsteroidFieldRuntime): boolean;
+  /** Prevent uncheckpointed fleet state or loot from entering a career save. */
+  hasActiveFleet(): boolean;
 }
 
 export function createFleetFieldTickOwnership(): FleetFieldTickOwnership {
@@ -43,6 +45,9 @@ export function createFleetFieldTickOwnership(): FleetFieldTickOwnership {
     },
     owns(field) {
       return owners.has(field);
+    },
+    hasActiveFleet() {
+      return owners.size > 0;
     },
   };
 }
