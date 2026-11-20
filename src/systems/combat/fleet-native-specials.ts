@@ -125,10 +125,20 @@ function performFleetRam(runtime: StrategicCombatRuntime, now: number): FleetWea
   applyCombatRamImpact(runtime);
   const impacts: FleetWeaponHit[] = [];
   recordDamage(
-    runtime.defender, runtime.attacker, previous.aShield, previous.aHull, 'native-ram', impacts
+    runtime.defender,
+    runtime.attacker,
+    previous.aShield,
+    previous.aHull,
+    'native-ram',
+    impacts
   );
   recordDamage(
-    runtime.attacker, runtime.defender, previous.dShield, previous.dHull, 'native-ram', impacts
+    runtime.attacker,
+    runtime.defender,
+    previous.dShield,
+    previous.dHull,
+    'native-ram',
+    impacts
   );
   return impacts;
 }

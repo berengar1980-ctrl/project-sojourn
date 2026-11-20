@@ -481,7 +481,6 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   getestet. Der geschützte 1vs1-Quellkern bleibt unverändert; die produktive
   automatische Kampagnenaktivierung ist weiterhin gesperrt.
 
-
 ## FC-40 – Native Minen, Rammen und Traktor-Asteroiden in FleetCombat (Integrationsstand)
 
 - `fleet-native-specials.ts` ruft die **unveränderten** Kampagnen-Module
