@@ -1,5 +1,5 @@
 import type { SectorNpcState } from '../../core/npc-types';
-import type { NpcInstalledComponents } from '../core/npc-types';
+import type { NpcInstalledComponents } from '../../core/npc-types';
 import {
   defaultInstalledShipComponents,
   fitsWeaponHardpoint,
