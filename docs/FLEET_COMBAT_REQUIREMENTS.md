@@ -116,3 +116,19 @@ Direkt-Treffer-Logik, konstruierte Test-Schiffszustände und einen zusätzlichen
 Drohnen-Zielentscheid. Diese Lücken müssen vor einer vollständigen Freigabe
 wegfallen. Ein grüner Prototyp-Test oder eine unveränderte 1vs1-Engine ist
 **kein** Nachweis für Kampagnenparität.
+
+## FC-26 – Live-Kampagnenzustände ohne Neuinitialisierung übernehmen
+
+- Der gemeinsame `createFleetCombatService` akzeptiert optional einen bereits
+  existierenden `MutableCombatant` aus dem produktiven Kampfsystem statt
+  über `createCombatant` eine neue Entität zu erzeugen.
+- Die Identität der übergebenen Entität und die Weltposition werden geprüft.
+  Fehlerhafte Übergaben werden abgewiesen, nicht stillschweigend teleportiert.
+- Vorhandene Werte wie Position, Geschwindigkeit, Ausrichtung, Hülle, Schild,
+  Subsystemzustände, Taktik und interne Waffen-/Minen-Cooldowns bleiben erhalten.
+  Der ursprüngliche mutable Zustand bleibt die Autorität der Runtime.
+- Nachweis: `tests/combat/fleet-career-state-handoff.test.cjs`.
+- **Status: FOUNDATION.** Der Handoff ist ein Schritt zur gemeinsamen Laufzeit;
+  es gibt noch keine produktive Übergabe echter Career-NPCs aus dem
+  Kampagnen-Controller. Die PvP-Testvorschau erzeugt weiter Testeinheiten.
+  Gameplay-Parität (FC-19/FC-25) bleibt OPEN.
