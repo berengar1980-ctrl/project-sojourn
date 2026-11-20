@@ -13,6 +13,8 @@ import {
   advanceThrownAsteroids,
 } from './combat-tractor-asteroid-throw';
 import type { FleetWeaponHit } from './fleet-weapon-physics';
+import { firstFleetShipContact } from './fleet-physical-contacts';
+import { firstObstacleHit } from './strategic-combat-damage';
 
 interface FleetSpecialPair {
   readonly runtime: StrategicCombatRuntime;
@@ -133,20 +135,73 @@ function advanceFleetMineImpacts(
   runtime.mines.push(...survivors);
 }
 
+/** The native tractor routine owns phases and damage. The FleetCombat adapter
+ * selects the first physical collision on a flight segment before delegating
+ * the impact, so its two-sided runtime can apply the existing damage to the
+ * actual ship (including a friendly or an uninvolved miner).
+ */
+function advanceOneFleetThrow(
+  runtime: StrategicCombatRuntime,
+  rock: MutableThrownAsteroid,
+  dt: number,
+  ships: readonly MutableCombatant[],
+  hits: FleetWeaponHit[]
+): void {
+  if (rock.phase !== 'flight') {
+    captureSpecialImpact(runtime, () => advanceThrownAsteroids(runtime, dt), hits);
+    return;
+  }
+  const owner = rock.owner === 'attacker' ? runtime.attacker : runtime.defender;
+  const to = {
+    x: rock.position.x + rock.velocity.x * dt,
+    y: rock.position.y + rock.velocity.y * dt,
+  };
+  const contact = firstFleetShipContact(
+    rock.position, to, ships, owner.setup.id, rock.collisionRadius ?? rock.radius
+  );
+  const obstacle = firstObstacleHit(
+    rock.position, to, runtime.arena.obstacles ?? [], runtime.arena.asteroids
+  );
+  if (obstacle && (!contact || obstacle.t <= contact.t)) {
+    runtime.thrownAsteroids.splice(runtime.thrownAsteroids.indexOf(rock), 1);
+    return;
+  }
+  if (!contact) {
+    captureSpecialImpact(runtime, () => advanceThrownAsteroids(runtime, dt), hits);
+    return;
+  }
+  const strikeRuntime: StrategicCombatRuntime = {
+    ...runtime,
+    ...(rock.owner === 'attacker'
+      ? { defender: contact.ship }
+      : { attacker: contact.ship }),
+  };
+  // Step exactly to the earliest physical impact. The native throw routine
+  // then checks its own rock+shield radius and applies the original damage.
+  const contactStep = Math.max(0.00001, dt * contact.t);
+  captureSpecialImpact(
+    strikeRuntime,
+    () => advanceThrownAsteroids(strikeRuntime, contactStep),
+    hits
+  );
+  runtime.impactSerial = strikeRuntime.impactSerial;
+  runtime.lastImpact = strikeRuntime.lastImpact;
+  runtime.lastEvent = strikeRuntime.lastEvent;
+}
+
 function advanceFleetThrowImpacts(
   runtime: StrategicCombatRuntime,
   dt: number,
+  ships: readonly MutableCombatant[],
   hits: FleetWeaponHit[]
 ): void {
   const queued = runtime.thrownAsteroids.splice(0);
   const survivors: MutableThrownAsteroid[] = [];
-  // The native throw routine also decrements tractor cooldown for both ships.
-  // The FleetCombat owner has already advanced each ship exactly once.
   const aCooldown = runtime.attacker.tractorThrowCooldown ?? 0;
   const dCooldown = runtime.defender.tractorThrowCooldown ?? 0;
   for (const rock of queued) {
     runtime.thrownAsteroids.push(rock);
-    captureSpecialImpact(runtime, () => advanceThrownAsteroids(runtime, dt), hits);
+    advanceOneFleetThrow(runtime, rock, dt, ships, hits);
     survivors.push(...runtime.thrownAsteroids.splice(0));
     runtime.attacker.tractorThrowCooldown = aCooldown;
     runtime.defender.tractorThrowCooldown = dCooldown;
@@ -163,6 +218,7 @@ function advanceFleetThrowImpacts(
 function advanceExistingFleetSpecials(
   runtime: StrategicCombatRuntime,
   activeIds: ReadonlySet<string>,
+  ships: readonly MutableCombatant[],
   now: number,
   dt: number,
   hits: FleetWeaponHit[]
@@ -188,7 +244,7 @@ function advanceExistingFleetSpecials(
   // The original native routines still determine arming, pursuit, travel,
   // impact and damage. The wrapper only manages multi-ship lifetime.
   if (runtime.mines.length) advanceFleetMineImpacts(runtime, dt, hits);
-  if (runtime.thrownAsteroids.length) advanceFleetThrowImpacts(runtime, dt, hits);
+  if (runtime.thrownAsteroids.length) advanceFleetThrowImpacts(runtime, dt, ships, hits);
   return true;
 }
 
@@ -296,7 +352,7 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
         }
       }
       for (const [key, pair] of pairs) {
-        if (!advanceExistingFleetSpecials(pair.runtime, active, now, dt, hits)) {
+        if (!advanceExistingFleetSpecials(pair.runtime, active, ships, now, dt, hits)) {
           pairs.delete(key);
         }
       }
