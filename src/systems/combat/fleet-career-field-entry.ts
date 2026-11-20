@@ -4,6 +4,7 @@ import type { AsteroidFieldRuntime } from '../operations/asteroid-field-world';
 import { miningFieldCombatArena } from './field-combat-arena';
 import { createFleetCareerMiningBridge } from './fleet-career-mining-bridge';
 import { createFleetCareerFieldSecurityBridge } from './fleet-career-field-security-bridge';
+import { createFleetCareerLootSettlement } from './fleet-career-loot-settlement';
 import {
   createFleetCombatService,
   type FleetCombatParticipant,
@@ -51,6 +52,7 @@ export function createFleetCombatForCareerField(
     field.pirates && field.drone
       ? createFleetCareerFieldSecurityBridge(field, careerNpcs, reservedIds)
       : null;
+  const loot = createFleetCareerLootSettlement(careerNpcs);
   const world = {
     beforeWorldTick(ships: Parameters<NonNullable<typeof bridge.world.beforeWorldTick>>[0]) {
       bridge.world.beforeWorldTick?.(ships);
@@ -60,9 +62,13 @@ export function createFleetCombatForCareerField(
       bridge.world.tickWorld?.(dt);
       security?.world.tickWorld?.(dt);
     },
-    afterCombatTick(ships: Parameters<NonNullable<typeof bridge.world.afterCombatTick>>[0]) {
-      bridge.world.afterCombatTick?.(ships);
-      security?.world.afterCombatTick?.(ships);
+    afterCombatTick(
+      ships: Parameters<NonNullable<typeof bridge.world.afterCombatTick>>[0],
+      shots: Parameters<NonNullable<typeof bridge.world.afterCombatTick>>[1]
+    ) {
+      bridge.world.afterCombatTick?.(ships, shots);
+      security?.world.afterCombatTick?.(ships, shots);
+      loot.settle(ships, shots);
     },
   };
   const arena = miningFieldCombatArena(field.instance, playerVelocity, field.combatWrecks);
