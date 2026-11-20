@@ -28,6 +28,7 @@ import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
 import { captureControllerCareer } from './game-controller-career-capture';
+import { controllerCareerSaveBlockReason } from './game-controller-career-save-policy';
 import {
   installControllerCareer,
   saveControllerCareer,
@@ -477,7 +478,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     options.onReturnToMainMenu,
     state.playerProfile,
     () => saveControllerCareer(context),
-    options.onLoadCareer
+    options.onLoadCareer,
+    () => controllerCareerSaveBlockReason(context)
   );
   mountControllerStarMap(context);
   return {
