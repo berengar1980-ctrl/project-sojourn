@@ -28,10 +28,7 @@ import { createControllerEconomy } from './game-controller-economy';
 import { createControllerSettingsMenu } from './game-controller-settings';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
 import { captureControllerCareer } from './game-controller-career-capture';
-import {
-  installControllerCareer,
-  rememberMiningField,
-} from './game-controller-career-install';
+import { installControllerCareer, rememberMiningField } from './game-controller-career-install';
 import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
