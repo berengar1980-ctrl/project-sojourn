@@ -38,6 +38,11 @@ const b = createFleetCareerNpcParticipant(
   }
 );
 assert.equal(minerParticipant.factionId, 'civilian');
+const security = createFleetCareerNpcParticipant(
+  { ...miner, id: 'security-drone:field-01', job: 'patrol' },
+  { x: 430, y: 320 }
+);
+assert.equal(security.factionId, 'security', 'real career drone ID maps to security faction');
 assert.equal(a.factionId, 'pirate-a');
 assert.equal(b.factionId, 'pirate-b');
 assert.equal(b.spawnAtSeconds, 9);
