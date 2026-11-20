@@ -324,3 +324,31 @@ Fleet-Waffenlaufzeit noch auf vereinfachten Direkt-Treffern, nicht auf der
 vollständigen Kampagnen-Physik. Die alten 1vs1-Module bleiben geschützt.
 Der dedizierte FleetCombat-Branch-Workflow formatiert die neuen Dateien;
 CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
+
+## FC-34 – Fraktionsübergreifende Piraten-Zielwahl und Kampfbeitritt
+
+- `LocalPirateTraffic.tick` verwendet weiterhin die **originale** Kampagnen-
+  Route, A*-Hindernisbehandlung, Zielabstände und Intercept-Callback. Der
+  neue optionale `additionalTargets`-Eingang erlaubt zusätzliche **bereits
+  existierende** feindliche Schiffe; bisherige Kampagnen-Aufrufstellen
+  behalten unverändertes Verhalten.
+- Die pure Projektion `fleetCareerHostileContacts` verwendet das bereits
+  gemeinsame `isFleetHostile` und die aktuellen FleetCombat-Snapshots.
+  Pirat A und B sind gegenseitig feindlich, Verbündete bleiben ausgenommen,
+  und bereits engagierte Piraten sind weiterhin angreifbar.
+- Abwesende und zerstörte Piraten sowie eine nicht verfügbare
+  Sicherheitsdrohne werden nicht als Phantomziele angeboten. Normale
+  Miner/Spieler-Ziele bleiben beim bisherigen Karriere-Piratenverkehr.
+- Über `beforeWorldTick` erhält derselbe Karriere-Service den aktuellen
+  Kampfzustand vor der nächsten Zielfindung, einschließlich der aktuellen
+  Positionen. Bei Nahkontakt kann ein zweiter Pirat dem Gefecht beitreten;
+  die existierende `CombatEngagementManager`-Topologie bildet daraus
+  ein Mehrschiffgefecht, ohne den 1vs1-Kern zu verändern.
+- Regressionen: `fleet-career-hostile-contacts.test.cjs` prüft Feindschaft,
+  aktives Gefecht, Tod und Abwesenheit; `fleet-career-pirate-crossfaction.test.cjs`
+  prüft das Zusammenführen zweier A-Piraten und eines bereits bekämpften
+  B-Piraten in dieselbe Fleet-Begegnung.
+- **Status: FC-34-Implementierung, CI ausstehend.** Die bestehende native
+  Zielwahl bleibt entfernungsgesteuert. Dauerhafte Piraten-/Fraktionspolitik,
+  geteilte Beute, Save/Resume, vollständige Waffenphysik und automatisierte
+  produktive Aktivierung bleiben separat offen.
