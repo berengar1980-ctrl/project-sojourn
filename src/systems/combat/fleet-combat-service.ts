@@ -219,6 +219,7 @@ export function createFleetCombatService(
   const validEnemy = (ship: FleetShip, target: FleetShip | undefined): target is FleetShip =>
     !!target &&
     target !== ship &&
+    target.active &&
     target.combatant.hullHp > 0 &&
     target.factionId !== ship.factionId;
 
