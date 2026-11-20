@@ -4,6 +4,7 @@ import { createFleetTestLobby } from './fleet-test-lobby';
 /** Only the test UI is shared. The existing 1vs1 runtime stays untouched. */
 export function createCombatTestTabs(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const container = document.createElement('div');
+  container.className = 'harrow-combat-tests';
   const tabs = document.createElement('nav');
   tabs.className = 'harrow-combat-tabs';
   tabs.setAttribute('aria-label', 'Kampf-Testmodus');
@@ -17,12 +18,19 @@ export function createCombatTestTabs(root: HTMLElement, onBack: () => void): { d
   container.append(tabs, content);
   root.replaceChildren(container);
   let current: { destroy(): void } | null = null;
+  const setCombatActive = (active: boolean): void => {
+    container.classList.toggle('is-combat-active', active);
+    tabs.hidden = active;
+  };
   const show = (mode: 'duel' | 'fleet'): void => {
+    setCombatActive(false);
     current?.destroy();
     duelTab.setAttribute('aria-current', mode === 'duel' ? 'page' : 'false');
     fleetTab.setAttribute('aria-current', mode === 'fleet' ? 'page' : 'false');
     current =
-      mode === 'duel' ? createDuelLobby(content, onBack) : createFleetTestLobby(content, onBack);
+      mode === 'duel'
+        ? createDuelLobby(content, onBack, setCombatActive)
+        : createFleetTestLobby(content, onBack);
   };
   duelTab.addEventListener('click', () => show('duel'));
   fleetTab.addEventListener('click', () => show('fleet'));
@@ -30,6 +38,7 @@ export function createCombatTestTabs(root: HTMLElement, onBack: () => void): { d
   return {
     destroy() {
       current?.destroy();
+      setCombatActive(false);
       container.remove();
     },
   };
