@@ -309,6 +309,17 @@ function bindSettingsAudio(audio: GameAudioService, shell: HTMLDivElement): () =
   };
 }
 
+function refreshCareerSaveAvailability(
+  save: HTMLButtonElement,
+  status: HTMLElement,
+  onSaveCareer?: () => void,
+  careerSaveBlockReason?: () => string | null
+): void {
+  const reason = careerSaveBlockReason?.() ?? null;
+  save.disabled = !onSaveCareer || reason !== null;
+  status.textContent = reason ?? 'Speichern im ruhenden Orbit oder Hafen';
+}
+
 export function createSettingsMenu(
   audio: GameAudioService,
   onReturnToMainMenu: () => void,
@@ -333,11 +344,8 @@ export function createSettingsMenu(
   const load = shell.querySelector<HTMLButtonElement>('[data-career-load]')!;
   const saveStatus = shell.querySelector<HTMLElement>('[data-career-status]')!;
   const confirmation = createSettingsConfirmation(shell);
-  const refreshCareerSave = (): void => {
-    const reason = careerSaveBlockReason?.() ?? null;
-    save.disabled = !onSaveCareer || reason !== null;
-    saveStatus.textContent = reason ?? 'Speichern im ruhenden Orbit oder Hafen';
-  };
+  const refreshCareerSave = (): void =>
+    refreshCareerSaveAvailability(save, saveStatus, onSaveCareer, careerSaveBlockReason);
   refreshCareerSave();
   load.disabled = !onLoadCareer;
   let detachAudio: (() => void) | null = null;
