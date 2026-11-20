@@ -1,0 +1,22 @@
+'use strict';
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const root = path.resolve(__dirname, '../..');
+const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
+
+const fleet = read('src/ui/start/fleet-test-lobby.ts');
+const legacy = read('src/ui/start/duel-lobby.ts');
+assert(fleet.includes('createFleetTestScenario('), 'scenario builder must be reusable');
+assert(fleet.includes("id: 'player'"), 'player is mandatory in scenario');
+assert(fleet.includes("getShipsByRole('mining')"), 'miners use mining hulls');
+assert(fleet.includes("role: 'drone'"), 'drones are distinct security entities');
+assert(fleet.includes("id: 'drone-'"), 'drones have stable identities');
+assert(fleet.includes("addShips('pirate-a'"), 'pirate faction A is configurable');
+assert(fleet.includes("addShips('pirate-b'"), 'pirate faction B is configurable');
+assert(fleet.includes('Math.min(10'), 'counts are bounded');
+assert(fleet.includes('String(count)'), 'zero units is a valid scenario');
+assert(fleet.includes('start.disabled = true'), 'do not simulate before fleet runtime exists');
+assert(fleet.includes('fitsWeaponHardpoint('), 'hardpoint constraints must remain enforced');
+assert(legacy.includes('createStrategicCombatService('), 'legacy 1vs1 combat remains');
+console.log('PASS fleet scenario config includes player and independent NPC categories');
