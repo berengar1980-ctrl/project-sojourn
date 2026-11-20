@@ -43,17 +43,18 @@ function campaignDroneDraft(
   shipId: string,
   installed: NpcInstalledComponents | undefined
 ): DuelDraft {
+  const parts = installed ?? {};
   return {
     shipId,
-    weapons: [...(installed?.weapon ?? [])],
+    weapons: [...(parts.weapon ?? [])],
     mines: [],
     crewId: crewDefinitions[0]!.id,
-    reactorId: installed?.reactor?.[0] ?? 'reactor3',
-    engineId: installed?.engine?.[0] ?? 'engine1',
-    shieldId: installed?.shield?.[0] ?? 'shield3',
-    hullId: installed?.hull?.[0] ?? 'hull3',
-    sensorId: installed?.sensor?.[0] ?? 'sensor1',
-    tractorId: installed?.tractor?.[0] ?? 'tractor1',
+    reactorId: parts.reactor?.[0] ?? 'reactor3',
+    engineId: parts.engine?.[0] ?? 'engine1',
+    shieldId: parts.shield?.[0] ?? 'shield3',
+    hullId: parts.hull?.[0] ?? 'hull3',
+    sensorId: parts.sensor?.[0] ?? 'sensor1',
+    tractorId: parts.tractor?.[0] ?? 'tractor1',
   };
 }
 
