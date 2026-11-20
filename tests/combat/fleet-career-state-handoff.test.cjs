@@ -99,4 +99,17 @@ assert.throws(
   /ID mismatch/,
   'invalid handoffs cannot silently replace an existing career entity'
 );
+assert.throws(
+  () =>
+    createFleetCombatService(
+      [
+        { ...handoff, setup: { ...existing.setup } },
+        { setup: setup('player'), factionId: 'player', position: { x: 150, y: 150 } },
+        { setup: setup('pirate'), factionId: 'pirate-a', position: { x: 2600, y: 1500 } },
+      ],
+      arena
+    ),
+  /loadout authority mismatch/,
+  'a copied PvP loadout must not override the live campaign loadout'
+);
 console.log('PASS FleetCombat adopts live career combatants without state reset or teleport');
