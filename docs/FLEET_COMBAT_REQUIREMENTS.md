@@ -256,4 +256,6 @@ bleibt die aus der Karriereausrüstung abgeleitete Kampf-Doktrin erhalten.
   und nach dem Ende zurücknehmen. Die derzeitige reguläre
   `advanceControllerFieldWorld`-Schleife darf nicht parallel laufen.
   Piraten-/Drohnen-Lebenszyklus und Persistenz müssen ebenfalls vor
-  Produktivfreigabe angeschlossen werden. Kein CI-/Build-Erfolg behauptet.
+  Produktivfreigabe angeschlossen werden. Formatierung der FC-31-Dateien
+  wurde durch den bestehenden FleetCombat-Prettier-Workflow nachgeführt;
+  vollständige Qualitätsprüfung bleibt separat nachzuweisen.
