@@ -101,10 +101,10 @@ export function createFleetCombatTestPanel(
   const shell = document.createElement('section');
   shell.className = 'harrow-duel harrow-fleet';
   const heading = document.createElement('h1');
-  heading.textContent = 'FLEETCOMBAT · 2vs1 PROTOTYP';
+  heading.textContent = 'FLEETCOMBAT · MEHRSCHIFF-PROTOTYP';
   const explanation = document.createElement('p');
   explanation.textContent =
-    'Gemeinsame Welt, Bewegung und direkte Treffer. KI, Projektile, Minen, Rammen und Traktorwürfe sind noch nicht vollständig integriert.';
+    'Gemeinsame Karte für Piraten und Sicherheitsdrohnen. Drohnen fliegen mit Kampagnen-Sensorik und Navigation. Vollständige Waffenphysik, Minen, Rammen und Traktorwürfe folgen.';
   const returnButton = document.createElement('button');
   returnButton.textContent = 'Zurück zur FleetCombat-Konfiguration';
   const canvas = document.createElement('canvas');
