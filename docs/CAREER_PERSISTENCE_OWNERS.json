@@ -183,6 +183,10 @@
       "mode": "derived",
       "reason": "Stateless shared combat movement delegation over existing career combatants, field authority and native collision solvers; it owns no independent checkpoint."
     },
+    "src/systems/combat/fleet-physical-contacts.ts": {
+      "mode": "derived",
+      "reason": "Pure physical swept segment-contact raycast for currently present combat ships; no persisted career state, entity ownership or checkpoint authority."
+    },
     "src/systems/combat/fleet-native-specials.ts": {
       "mode": "transient",
       "reason": "Encounter-scoped native mine, kinetic ram and tractor-throw state. The campaign save gate prohibits active FleetCombat checkpoints; released encounters have no private persisted authority."
