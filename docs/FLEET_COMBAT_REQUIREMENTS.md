@@ -65,3 +65,15 @@ Der Teststatus wird erst nach vollständigem CI-Lauf als grün markiert.
 - Die Zeitsteuerung pro Pirat bleibt erhalten; der reale Eintritt erfolgt an der Randzone des lokalen Felds.
 - Bis zur Anbindung der echten Kampagnen-NPC-Logik sind Miner und Drohnen weiterhin im ausführbaren Test gesperrt. Die bisherige direkten Treffer sind kein Ersatz für die vollständige Waffenphysik.
 - Nachweis: `fleet-combat-service.test.cjs` prüft mehrere Fraktionen, verbündete Parteien und verzögerten Eintritt.
+
+## FC-23 – Sicherheitsdrohnen-Interception (Zwischenstand)
+
+- Eine neue Interceptor-Komponente verwendet direkt die vorhandene
+  `AsteroidSecurityDrone`: Sensorreichweite, verdeckte Sicht durch Asteroiden,
+  Patrouillenbewegung, Kursplanung und physische Annäherung.
+- Eine Drohne ignoriert Zivilisten und Sicherheitskräfte und sucht sichtbare
+  Piraten beider Fraktionen. Ein bereits kämpfender Pirat bleibt Ziel.
+- Eigene Drohnen-Kontakt- und Navigationstests sind hinzugefügt.
+- **Noch offen:** Verbindung zum gemeinsamen FleetCombat-Schadensmodell,
+  tatsächlicher Kampfbeitritt und Anzeige der Drohne im FleetCombat-Testpanel.
+  Vorher darf der Drone-Count den Start im Testlabor weiterhin sperren.
