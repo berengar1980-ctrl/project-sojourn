@@ -170,19 +170,10 @@ function advanceFleetFire(
   return shots;
 }
 
-/**
- * First independently simulated N-ship combat kernel.
- * Reuses 1vs1's ship construction, flight/obstacle/contact and layered
- * damage rules. Does not instantiate overlapping StrategicCombatService
- * duels or change its runtime. Unsupported weapons effects, mines, rams
- * and tractor throws are not advertised as implemented here.
- */
-export function createFleetCombatService(
+function initializeFleetParticipants(
   participants: readonly FleetCombatParticipant[],
   arena: StrategicCombatArenaOptions
-): FleetCombatService {
-  if (participants.length < 3) throw new Error('FleetCombat needs at least three ships');
-  if (!(arena.width > 0 && arena.height > 0)) throw new Error('Invalid FleetCombat arena');
+): { byId: Map<string, FleetShip>; fleet: FleetShip[] } {
   const byId = new Map<string, FleetShip>();
   const fleet: FleetShip[] = [];
   for (const entry of participants) {
@@ -212,6 +203,23 @@ export function createFleetCombatService(
     fleet.push(ship);
     byId.set(id, ship);
   }
+  return { byId, fleet };
+}
+
+/**
+ * First independently simulated N-ship combat kernel.
+ * Reuses 1vs1's ship construction, flight/obstacle/contact and layered
+ * damage rules. Does not instantiate overlapping StrategicCombatService
+ * duels or change its runtime. Unsupported weapons effects, mines, rams
+ * and tractor throws are not advertised as implemented here.
+ */
+export function createFleetCombatService(
+  participants: readonly FleetCombatParticipant[],
+  arena: StrategicCombatArenaOptions
+): FleetCombatService {
+  if (participants.length < 3) throw new Error('FleetCombat needs at least three ships');
+  if (!(arena.width > 0 && arena.height > 0)) throw new Error('Invalid FleetCombat arena');
+  const { byId, fleet } = initializeFleetParticipants(participants, arena);
   let elapsedSeconds = 0;
   let shots: FleetCombatShotSnapshot[] = [];
   let arrivedIds: string[] = [];
