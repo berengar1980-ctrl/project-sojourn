@@ -170,6 +170,38 @@ function advanceFleetFire(
   return shots;
 }
 
+function fleetView(
+  fleet: readonly FleetShip[],
+  shots: readonly FleetCombatShotSnapshot[],
+  arrivedIds: readonly string[],
+  elapsedSeconds: number,
+  arena: StrategicCombatArenaOptions
+): FleetCombatSnapshot {
+  return {
+    elapsedSeconds,
+    ships: fleet
+      .filter((entry) => entry.active)
+      .map((entry) => ({
+        factionId: entry.factionId,
+        targetId: entry.targetId,
+        ship: snapshot(entry.combatant),
+      })),
+    pendingArrivals: fleet
+      .filter((entry) => !entry.active)
+      .map((entry) => ({
+        id: entry.combatant.setup.id,
+        atSeconds: entry.spawnAtSeconds,
+      })),
+    arrivedShipIds: arrivedIds.slice(),
+    shots: shots.map((shot) => ({
+      ...shot,
+      origin: { ...shot.origin },
+      destination: { ...shot.destination },
+    })),
+    arena,
+  };
+}
+
 function validateFleetScenario(
   participants: readonly FleetCombatParticipant[],
   arena: StrategicCombatArenaOptions
@@ -258,29 +290,7 @@ export function createFleetCombatService(
     return selected;
   };
 
-  const view = (): FleetCombatSnapshot => ({
-    elapsedSeconds,
-    ships: fleet
-      .filter((entry) => entry.active)
-      .map((entry) => ({
-        factionId: entry.factionId,
-        targetId: entry.targetId,
-        ship: snapshot(entry.combatant),
-      })),
-    pendingArrivals: fleet
-      .filter((entry) => !entry.active)
-      .map((entry) => ({
-        id: entry.combatant.setup.id,
-        atSeconds: entry.spawnAtSeconds,
-      })),
-    arrivedShipIds: arrivedIds.slice(),
-    shots: shots.map((shot) => ({
-      ...shot,
-      origin: { ...shot.origin },
-      destination: { ...shot.destination },
-    })),
-    arena,
-  });
+  const view = (): FleetCombatSnapshot => fleetView(fleet, shots, arrivedIds, elapsedSeconds, arena);
 
   const step = (dt: number): void => {
     // Only ships present at the START of this interval may move/fire in it.
