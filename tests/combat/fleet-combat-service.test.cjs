@@ -169,6 +169,61 @@ try {
       ),
     /Invalid FleetCombat arrival time/
   );
+  // Two hostile pirate factions can join one world without attacking allies.
+  const multiFaction = createFleetCombatService(
+    [
+      {
+        setup: combatant('player'),
+        factionId: 'player',
+        position: { x: 1500, y: 2500 },
+        targetId: 'pirate-a-1',
+      },
+      {
+        setup: combatant('pirate-a-1'),
+        factionId: 'pirate-a',
+        position: { x: 2500, y: 2100 },
+        targetId: 'player',
+      },
+      {
+        setup: combatant('pirate-a-2'),
+        factionId: 'pirate-a',
+        position: { x: 2600, y: 2700 },
+        targetId: 'player',
+        spawnAtSeconds: 1,
+      },
+      {
+        setup: combatant('pirate-b-1'),
+        factionId: 'pirate-b',
+        position: { x: 3000, y: 2200 },
+        targetId: 'pirate-a-1',
+      },
+      {
+        setup: combatant('pirate-b-2'),
+        factionId: 'pirate-b',
+        position: { x: 3200, y: 3000 },
+        targetId: 'pirate-a-1',
+        spawnAtSeconds: 2,
+      },
+    ],
+    arena
+  );
+  assert.equal(multiFaction.getSnapshot().ships.length, 3);
+  assert.throws(() => multiFaction.setTarget('pirate-a-1', 'pirate-a-2'), /Invalid FleetCombat target/);
+  multiFaction.tick(0.5);
+  assert.equal(multiFaction.getSnapshot().ships.length, 3);
+  multiFaction.tick(0.5);
+  assert.equal(multiFaction.getSnapshot().ships.length, 4);
+  multiFaction.tick(0.5);
+  multiFaction.tick(0.5);
+  assert.equal(multiFaction.getSnapshot().ships.length, 5);
+
+  const policy = require(path.join(root, 'src/systems/combat/fleet-faction-policy.ts'));
+  assert.equal(policy.isFleetHostile('player', 'civilian'), false);
+  assert.equal(policy.isFleetHostile('security', 'player'), false);
+  assert.equal(policy.isFleetHostile('security', 'civilian'), false);
+  assert.equal(policy.isFleetHostile('pirate-a', 'pirate-a'), false);
+  assert.equal(policy.isFleetHostile('pirate-a', 'pirate-b'), true);
+  assert.equal(policy.isFleetHostile('pirate-b', 'civilian'), true);
   console.log('PASS first 2vs1 fleet kernel: shared world, IDs, movement and layered damage');
 } finally {
   if (previous) require.extensions['.ts'] = previous;
