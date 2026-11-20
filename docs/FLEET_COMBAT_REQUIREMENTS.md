@@ -503,7 +503,7 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Regression `tests/combat/fleet-native-specials.test.cjs` prüft
   native Ramm-Sperrzeit, Inventarverbrauch, Minenzündung und
   echten Traktor-Asteroidenwurf ohne künstlichen Soforttreffer.
-- **Status: Implementiert und automatisch formatiert; vollständige CI und Szenario-/Renderer-Parität noch
+- **Status: Native Mechaniken eingebunden, nach Quellcode-Refaktorierung erneut automatisch formatiert; vollständige CI und Szenario-/Renderer-Parität noch
   nachzuweisen.** Diese Integrationsstufe ist keine produktive
   Kampagnenfreigabe. Insbesondere gleichzeitige Mehrfachdetonationen,
   Wechsel von Eigentümern/Zielen und echte grafische Anzeige
