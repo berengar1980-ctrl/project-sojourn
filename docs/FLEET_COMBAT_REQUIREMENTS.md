@@ -38,7 +38,7 @@ Status: **DONE** = im Code umgesetzt und durch eigene Tests abgedeckt (CI weiter
 5. Anforderungen in diesem Register nachführen und nur bei belegtem Verhalten als abgeschlossen markieren.
 6. Für die Freigabe: fünf Karten; 0/1/viele Einheiten jeder Kategorie; 2 unabhängige Duelle; 2vs1; 3vs3; Drohnen-Abfang; Flucht; Join/Leave; Minen; Rammen; Traktor-Asteroiden; zivile Tätigkeit; Kampagnenparität.
 
-**Aktueller Testumfang:** Der 2vs1-Prototyp startet nur mit 0 Minern, 0 Drohnen, 2 Piraten A und 0 Piraten B. Er zeigt die drei Schiffe auf einer gemeinsamen Arena mit Bewegung, Kollision und direkten Waffen-Treffern. Das Diagnose-Canvas ist nicht der finale Renderer. Die vollständige Trefferchance, Munition, Geschosse, Minen, Rammen, Traktorwürfe, NPC-Arbeit und Kampagnen-KI sind **nicht** implementiert. Der vorhandene 1vs1-Modus bleibt bytegleich.
+**Aktueller Testumfang:** Der Mehrschiff-Prototyp startet mit 0 Minern, 0 Drohnen und insgesamt mindestens 2 Piraten aus A und/oder B (je 0–10). Er zeigt alle aktiv eingetroffenen Schiffe auf einer gemeinsamen Arena mit Bewegung, Kollision und direkten Waffen-Treffern. Das Diagnose-Canvas ist nicht der finale Renderer. Die vollständige Trefferchance, Munition, Geschosse, Minen, Rammen, Traktorwürfe, NPC-Arbeit und Kampagnen-KI sind **nicht** implementiert. Der vorhandene 1vs1-Modus bleibt bytegleich.
 
 ## Prototyp-Grenzen
 
@@ -56,3 +56,12 @@ Der Teststatus wird erst nach vollständigem CI-Lauf als grün markiert.
 - Noch nicht eingetroffene Schiffe sind nicht im aktiven Weltsnapshot, können weder navigieren noch schießen, getroffen werden oder als Ziel ausgewählt werden.
 - Der 2vs1-Test nutzt die Zeitsteuerung bereits; Eintritt erfolgt zunächst am Kartenrand. Ein wirklicher Flug von der Sternkarte in die lokale Karte und ein vollständiger Kampagnen-NPC-Join bleiben für die spätere Weltintegration offen.
 - Nachweis: `tests/combat/fleet-combat-service.test.cjs` überprüft Vor-/Nach-Ankunft und Waffenruhe bis zum Eintritt.
+
+## FC-22 – Testbare Mehrfraktionen-Konfiguration
+
+- Der FleetCombat-Reiter unterstützt mehrere Piraten beider Fraktionen gleichzeitig.
+- Beide Fraktionen dürfen sich gegenseitig bekämpfen; Einheiten derselben Fraktion sind nicht feindlich.
+- Spieler, Zivilisten und Sicherheitskräfte sind untereinander verbündet.
+- Die Zeitsteuerung pro Pirat bleibt erhalten; der reale Eintritt erfolgt an der Randzone des lokalen Felds.
+- Bis zur Anbindung der echten Kampagnen-NPC-Logik sind Miner und Drohnen weiterhin im ausführbaren Test gesperrt. Die bisherige direkten Treffer sind kein Ersatz für die vollständige Waffenphysik.
+- Nachweis: `fleet-combat-service.test.cjs` prüft mehrere Fraktionen, verbündete Parteien und verzögerten Eintritt.
