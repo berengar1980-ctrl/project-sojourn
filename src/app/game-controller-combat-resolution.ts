@@ -84,6 +84,31 @@ function explosionStillVisible(
   return false;
 }
 
+function startEmbeddedBoarding(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot,
+  scenes: CombatReturnScenes
+): void {
+  const { state } = context;
+  const origin = state.embeddedCombat;
+  const preservedSalvageField =
+    origin === 'salvage-space' ? state.salvageScene?.getField() : undefined;
+  if (origin === 'local-space') {
+    state.localSpace?.syncCombatPose(
+      snapshot.attacker.position,
+      snapshot.attacker.headingRadians,
+      snapshot.attacker.speed
+    );
+    synchronizeLocalDefender(context, snapshot.defender);
+  }
+  startCombatBoarding(context, snapshot, (boardingOutcome) => {
+    if (boardingOutcome === 'enemy_win') return scenes.starMap();
+    if (origin === 'local-space') scenes.mining(true, true);
+    else if (origin === 'salvage-space') scenes.salvage(true, preservedSalvageField, snapshot);
+    else scenes.starMap();
+  });
+}
+
 export function resolveControllerCombat(
   context: ControllerRuntimeContext,
   scenes: CombatReturnScenes
@@ -102,26 +127,7 @@ export function resolveControllerCombat(
   const snapshot = activeCombat.getSnapshot();
   if (!snapshot.boardingInitiator && explosionStillVisible(context, snapshot)) return;
   recordPlayerCombatHull(context, snapshot);
-  if (snapshot.boardingInitiator) {
-    const origin = state.embeddedCombat;
-    const preservedSalvageField =
-      origin === 'salvage-space' ? state.salvageScene?.getField() : undefined;
-    if (origin === 'local-space') {
-      state.localSpace?.syncCombatPose(
-        snapshot.attacker.position,
-        snapshot.attacker.headingRadians,
-        snapshot.attacker.speed
-      );
-      synchronizeLocalDefender(context, snapshot.defender);
-    }
-    startCombatBoarding(context, snapshot, (boardingOutcome) => {
-      if (boardingOutcome === 'enemy_win') return scenes.starMap();
-      if (origin === 'local-space') scenes.mining(true, true);
-      else if (origin === 'salvage-space') scenes.salvage(true, preservedSalvageField, snapshot);
-      else scenes.starMap();
-    });
-    return;
-  }
+  if (snapshot.boardingInitiator) return startEmbeddedBoarding(context, snapshot, scenes);
   context.systemLog.write(combatResultMessage(snapshot));
   context.systemLog.write('COMBAT > ' + snapshot.lastEvent.toUpperCase());
   const originLocationId =
