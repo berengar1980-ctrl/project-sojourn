@@ -70,5 +70,5 @@ assert.throws(
   /Invalid career NPC local position/
 );
 assert.equal(miner.job, 'miner');
-assert.equal(miner.activityId, miner.activityId, 'adapter does not simulate or replace mining');
+assert.equal(minerParticipant.setup.aiControlled, true, 'same campaign NPC AI setup flag');
 console.log('PASS real career miner and two pirate factions use shared NPC combatant equipment and fleet arrival');
