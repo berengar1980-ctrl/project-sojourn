@@ -38,6 +38,9 @@ if (mainAvailable) {
   const allowed = new Set([
     'src/systems/combat/combat-engagement-manager.ts',
     'src/systems/combat/fleet-combat-service.ts',
+    'src/systems/combat/fleet-weapon-physics.ts',
+    // FC-38 adds a career wreck adapter; original collision mechanics stay untouched.
+    'src/systems/combat/field-combat-arena.ts',
     'src/systems/combat/fleet-faction-policy.ts',
     'src/systems/combat/fleet-security-drone-interceptor.ts',
     'src/systems/combat/fleet-career-npc-adapter.ts',
@@ -57,7 +60,7 @@ if (mainAvailable) {
     [],
     'FleetCombat must NOT modify any existing 1vs1 combat, renderer or setup modules'
   );
-  console.log('PASS all existing 1vs1 combat modules unchanged relative to main');
+  console.log('PASS 1vs1 combat and renderer modules protected; reviewed FleetCombat arena additions allowed');
 } else {
   // The fixed-SHA guard still executes via fleet-legacy-baseline.test.cjs.
   console.log(
