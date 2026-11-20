@@ -222,10 +222,6 @@
     "src/systems/combat/fleet-career-loot-settlement.ts": {
       "mode": "transient",
       "reason": "The shared FleetCombat encounter keeps a per-victim damage-contributor ledger and exactly-once settlement flags in memory, while all awarded cargo and pirate activity changes are made to checkpoint-owned SectorNpcState. Active fleet checkpoint/recovery must preserve contributor ledger and settlement flags before productive activation."
-    },
-    "src/app/game-controller-career-save-policy.ts": {
-      "mode": "derived",
-      "reason": "Pure career save-eligibility gate derived from player duel, pending settlement, navigation and transient FleetCombat lease. Prevents writing uncheckpointed battle state; read/load action remains separate."
     }
   }
 }
