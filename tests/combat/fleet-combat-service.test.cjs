@@ -278,6 +278,44 @@ try {
   assert.equal(policy.isFleetHostile('pirate-a', 'pirate-a'), false);
   assert.equal(policy.isFleetHostile('pirate-a', 'pirate-b'), true);
   assert.equal(policy.isFleetHostile('pirate-b', 'civilian'), true);
+  // A career-owned drone moves exactly once per substep and enters only
+  // when its independent sensor/pursuit controller reaches firing range.
+  let externalTicks = 0;
+  const droneWorld = createFleetCombatService(
+    [
+      { setup: combatant('player'), factionId: 'player', position: { x: 1000, y: 2400 }, targetId: 'pirate' },
+      { setup: combatant('pirate'), factionId: 'pirate-a', position: { x: 1650, y: 2400 }, targetId: 'player' },
+      {
+        setup: combatant('drone'),
+        factionId: 'security',
+        position: { x: 2300, y: 2400 },
+        targetId: null,
+        externalMovement(dt, contacts) {
+          externalTicks++;
+          assert.equal(contacts.length, 3);
+          const pirate = contacts.find((entry) => entry.ship.id === 'pirate');
+          const x = Math.max(pirate.ship.position.x + 70, 2300 - externalTicks * 12);
+          return {
+            position: { x, y: 2400 },
+            headingRadians: Math.PI,
+            targetId: x - pirate.ship.position.x <= 110 ? 'pirate' : null,
+          };
+        },
+      },
+    ],
+    arena
+  );
+  assert.equal(droneWorld.getSnapshot().engagements.length, 0);
+  for (let index = 0; index < 20; index++) droneWorld.tick(0.08);
+  assert.equal(externalTicks, 20, 'external owner advances once, never a second fleet movement');
+  assert.equal(droneWorld.getSnapshot().ships.length, 3);
+  assert(
+    droneWorld.getSnapshot().engagements.some((entry) => entry.kind === 'fleet' && entry.memberIds.includes('drone')),
+    'the drone joins the already-running pirate fight when it physically reaches firing range'
+  );
+  assert(
+    droneWorld.getSnapshot().ships.find((entry) => entry.ship.id === 'drone').targetId === 'pirate'
+  );
   console.log('PASS first 2vs1 fleet kernel: shared world, IDs, movement and layered damage');
 } finally {
   if (previous) require.extensions['.ts'] = previous;
