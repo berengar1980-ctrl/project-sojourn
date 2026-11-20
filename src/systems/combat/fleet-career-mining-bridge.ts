@@ -1,12 +1,7 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { NpcLocalMiningService } from '../npcs/npc-local-mining-service';
-import {
-  createFleetCareerNpcParticipant,
-} from './fleet-career-npc-adapter';
-import type {
-  FleetCombatParticipant,
-  FleetCombatWorldOptions,
-} from './fleet-combat-service';
+import { createFleetCareerNpcParticipant } from './fleet-career-npc-adapter';
+import type { FleetCombatParticipant, FleetCombatWorldOptions } from './fleet-combat-service';
 
 /** Attach the actual campaign local-miner world, not a PvP mining simulation.
  * The career world remains the sole movement, navigation, scanning, ore,
