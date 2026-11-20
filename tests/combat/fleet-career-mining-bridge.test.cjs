@@ -130,6 +130,32 @@ assert.equal(
   'career service ticks exactly once per fleet interval, not per ship'
 );
 
+// A pirate selecting a working miner is a combat threat. The career defense
+// policy must interrupt the real mining world before its next extraction tick.
+const poseBeforeRaid = { ...mining.ships[0].position };
+fleet.setTarget(pirates[0].id, miner.id);
+let raid = fleet.tick(0.08);
+assert.equal(miner.combatMovement?.targetId, pirates[0].id);
+assert.equal(miner.combatMovement?.targetKind, 'npc');
+assert.equal(miner.combatMovement?.mode, 'flee',
+  'unarmed career civilian uses native defensive retreat doctrine');
+assert.equal(mining.ships[0].laserActive, false,
+  'the career mining service must stop the laser when the raid begins');
+assert.equal(raid.ships.find((item) => item.ship.id === miner.id)?.targetId, null,
+  'fleeing miner must not shoot back');
+const cargoAtRaid = miner.cargo.ferrite;
+for (let index = 0; index < 24; index++) raid = fleet.tick(0.08);
+assert.equal(miner.cargo.ferrite, cargoAtRaid,
+  'no hidden extraction continues while a pirate is attacking');
+const flightPose = raid.ships.find((item) => item.ship.id === miner.id).ship.position;
+assert(Math.hypot(flightPose.x - poseBeforeRaid.x, flightPose.y - poseBeforeRaid.y) > 0.1,
+  'shared strategic combat steering must physically move the fleeing miner');
+assert.deepEqual(mining.ships[0].position, flightPose,
+  'campaign miner pose must stay synchronized with the shared combat flight');
+fleet.setTarget(pirates[0].id, null);
+fleet.tick(0.08);
+assert.equal(miner.combatMovement, undefined,
+  'once the raid ends, the career NPC returns to its normal work authority');
 const cargoBefore = miner.cargo.ferrite;
 miner.combatRecoverySeconds = 5;
 fleet.tick(0.08);
