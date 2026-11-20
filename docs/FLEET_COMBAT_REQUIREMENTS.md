@@ -43,3 +43,7 @@ Status: **DONE** = im Code umgesetzt und durch eigene Tests abgedeckt (CI weiter
 ## Prototyp-Grenzen
 
 Die erste Laufzeit verwendet direkte Treffer statt der vollständigen Projektilsimulation. Vor jeder Freigabe müssen Waffenreichweite, Trefferchance, Laufzeiten, Munition, Rammen, Minen und Traktorwürfe auf das Kampagnenniveau gebracht werden. Ein erfolgreicher 2vs1-Test allein erfüllt FC-08 daher nicht.
+
+## CI-Validierung
+
+Der Teststatus wird erst nach vollständigem CI-Lauf als grün markiert.
