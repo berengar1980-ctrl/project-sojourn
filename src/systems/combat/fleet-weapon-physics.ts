@@ -19,7 +19,6 @@ import { nativeWeaponDamage } from './combat-native-damage';
 import { weaponInArc, weaponMuzzle } from './combat-weapon-geometry';
 import { hasClearCombatShot } from './combat-line-of-sight';
 import { ballisticInterceptPoint } from './combat-weapon-aim';
-import { missedShotEnd } from './combat-miss-depth';
 import {
   advanceWeaponCooldowns,
   commitFireControlVolley,
@@ -29,7 +28,7 @@ import {
 } from './combat-weapon-fire-control';
 import { effectiveTargetSubsystem, engineShotAvailable } from './combat-subsystem-targeting';
 import { recordWeaponDamage, recordWeaponFired } from './combat-weapon-telemetry';
-import { firstFleetShipContact } from './fleet-physical-contacts';
+import { firstFleetShipContact, scatteredFleetAim } from './fleet-physical-contacts';
 
 export interface FleetWeaponHit {
   readonly sourceId: string;
@@ -155,7 +154,9 @@ function fireFleetBeam(
   const kind = weaponKind(weapon.family);
   if (kind !== 'laser' && kind !== 'rail') return;
   const aim = target.shieldHp > 0 ? combatShieldCenter(target) : target.position;
-  const scatteredAim = hit ? aim : missedShotEnd(muzzle, aim);
+  const scatteredAim = hit ? aim : scatteredFleetAim(
+    muzzle, aim, target, state.random() < 0.5 ? -1 : 1
+  );
   const direction = normalize(scatteredAim.x - muzzle.x, scatteredAim.y - muzzle.y);
   const end = {
     x: muzzle.x + direction.x * weapon.rangeMeters,
@@ -196,7 +197,9 @@ function fireFleetProjectile(state: FleetPhysicsState, launch: FleetLaunch): voi
     kind === 'missile'
       ? target.position
       : ballisticInterceptPoint(muzzle, target.position, target.velocity, speed);
-  const endpoint = hit ? aim : missedShotEnd(muzzle, aim);
+  const endpoint = hit ? aim : scatteredFleetAim(
+    muzzle, aim, target, state.random() < 0.5 ? -1 : 1
+  );
   const damage = nativeWeaponDamage(component);
   state.pending.push({
     id: ++state.projectileSerial,
