@@ -9,7 +9,9 @@ const { generateMiningSpace } = load('src/systems/local-space/local-space-genera
 const { createFleetCareerWreckSettlement } = load(
   'src/systems/combat/fleet-career-wreck-settlement.ts'
 );
-const { miningFieldCombatArena, appendCombatWrecksToArena } = load('src/systems/combat/field-combat-arena.ts');
+const { miningFieldCombatArena, appendCombatWrecksToArena } = load(
+  'src/systems/combat/field-combat-arena.ts'
+);
 
 const field = {
   locationId: 'fleet-wreck-field',

@@ -441,7 +441,6 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   Die FC-37-Qualitätsprüfung erfolgt nach der automatischen Formatierung
   erneut auf dem formatierten Feature-Branch.
 
-
 ## FC-38 – Neue Wracks sofort in der aktiven FleetCombat-Arena (Implementierung)
 
 - Der FC-37-Adapter erzeugt und persistiert Wracks weiterhin ausschließlich über die bestehende Kampagnen-Bergungsfabrik und die Feldwelt.
