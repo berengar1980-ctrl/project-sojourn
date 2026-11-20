@@ -180,7 +180,7 @@ wegfallen. Ein grüner Prototyp-Test oder eine unveränderte 1vs1-Engine ist
 - Der Launcher lässt Miner nun in `scattered` und `asteroid_field` starten.
   Die Ausgangskarte wird mit `generateMiningSpace` und
   `miningFieldCombatArena` aus den echten Kampagnen-Generatoren erstellt.
-- Die Testumgebung erzeugt isolierte *Kopien* der Karriere-Miner-Vorlagen,
+- Die Testumgebung erzeugt isolierte _Kopien_ der Karriere-Miner-Vorlagen,
   kombiniert sie mit `createNpcLocalMiningService` und bucht gefördertes Erz
   mittels der produktiven `NpcEconomyService.mineLocal`-Funktion. Kein
   zweiter Mining-Zyklus, keine eigene Navigation und keine zweite
