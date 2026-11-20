@@ -154,16 +154,21 @@ function fireFleetBeam(
   const kind = weaponKind(weapon.family);
   if (kind !== 'laser' && kind !== 'rail') return;
   const aim = target.shieldHp > 0 ? combatShieldCenter(target) : target.position;
-  const scatteredAim = hit ? aim : scatteredFleetAim(
-    muzzle, aim, target, state.random() < 0.5 ? -1 : 1
-  );
+  const scatteredAim = hit
+    ? aim
+    : scatteredFleetAim(muzzle, aim, target, state.random() < 0.5 ? -1 : 1);
   const direction = normalize(scatteredAim.x - muzzle.x, scatteredAim.y - muzzle.y);
   const end = {
     x: muzzle.x + direction.x * weapon.rangeMeters,
     y: muzzle.y + direction.y * weapon.rangeMeters,
   };
   const shipHit = firstFleetShipContact(muzzle, end, ships, source.setup.id);
-  const obstacle = firstObstacleHit(muzzle, end, state.arena.obstacles ?? [], state.arena.asteroids);
+  const obstacle = firstObstacleHit(
+    muzzle,
+    end,
+    state.arena.obstacles ?? [],
+    state.arena.asteroids
+  );
   const physicalHit = shipHit && (!obstacle || shipHit.t < obstacle.t) ? shipHit : null;
   const beamEnd = physicalHit?.point ?? obstacle?.point ?? end;
   state.beams.push({
@@ -179,8 +184,15 @@ function fireFleetBeam(
   if (!physicalHit) return;
   const damage = nativeWeaponDamage(component);
   const dealt = applyFleetHit(
-    state, source, physicalHit.ship, component.id, index, muzzle,
-    damage.shieldDamage, damage.hullDamage, critical,
+    state,
+    source,
+    physicalHit.ship,
+    component.id,
+    index,
+    muzzle,
+    damage.shieldDamage,
+    damage.hullDamage,
+    critical,
     physicalHit.ship === target ? subsystem : 'hull',
     physicalHit.shieldHit
   );
@@ -197,9 +209,9 @@ function fireFleetProjectile(state: FleetPhysicsState, launch: FleetLaunch): voi
     kind === 'missile'
       ? target.position
       : ballisticInterceptPoint(muzzle, target.position, target.velocity, speed);
-  const endpoint = hit ? aim : scatteredFleetAim(
-    muzzle, aim, target, state.random() < 0.5 ? -1 : 1
-  );
+  const endpoint = hit
+    ? aim
+    : scatteredFleetAim(muzzle, aim, target, state.random() < 0.5 ? -1 : 1);
   const damage = nativeWeaponDamage(component);
   state.pending.push({
     id: ++state.projectileSerial,
@@ -271,19 +283,26 @@ function resolveFleetProjectileContact(
   ships: readonly MutableCombatant[],
   hits: FleetWeaponHit[]
 ): boolean {
-  const contact = firstFleetShipContact(
-    projectile.position, next, ships, projectile.sourceId
-  );
+  const contact = firstFleetShipContact(projectile.position, next, ships, projectile.sourceId);
   const obstacle = firstObstacleHit(
-    projectile.position, next, state.arena.obstacles ?? [], state.arena.asteroids
+    projectile.position,
+    next,
+    state.arena.obstacles ?? [],
+    state.arena.asteroids
   );
   if (obstacle && (!contact || obstacle.t <= contact.t)) return true;
   if (!contact) return false;
   const dealt = applyFleetHit(
-    state, projectile.source, contact.ship, projectile.weaponId, projectile.weaponIndex,
-    projectile.position, projectile.shieldDamage, projectile.hullDamage,
-    projectile.critical, contact.ship.setup.id === projectile.targetId
-      ? projectile.subsystem : 'hull',
+    state,
+    projectile.source,
+    contact.ship,
+    projectile.weaponId,
+    projectile.weaponIndex,
+    projectile.position,
+    projectile.shieldDamage,
+    projectile.hullDamage,
+    projectile.critical,
+    contact.ship.setup.id === projectile.targetId ? projectile.subsystem : 'hull',
     contact.shieldHit ?? undefined,
     projectile.kind === 'missile' ? 'missile' : 'laser'
   );
@@ -307,10 +326,15 @@ function advanceFleetProjectile(
   projectile.ttlSeconds -= dt;
   if (resolveFleetProjectileContact(state, projectile, next, ships, hits)) return false;
   projectile.position = next;
-  if (target && target.hullHp > 0 && projectile.kind === 'missile' &&
-      !projectile.missed &&
-      (target.position.x - projectile.position.x) * projectile.direction.x +
-      (target.position.y - projectile.position.y) * projectile.direction.y < -55) {
+  if (
+    target &&
+    target.hullHp > 0 &&
+    projectile.kind === 'missile' &&
+    !projectile.missed &&
+    (target.position.x - projectile.position.x) * projectile.direction.x +
+      (target.position.y - projectile.position.y) * projectile.direction.y <
+      -55
+  ) {
     projectile.missed = true;
     projectile.ttlSeconds = Math.min(projectile.ttlSeconds, 0.65);
   }

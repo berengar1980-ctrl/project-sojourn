@@ -526,7 +526,6 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Regression in `tests/combat/fleet-native-specials.test.cjs`: Zielwechsel vor Minenexplosion, Abgang des Minenlegers, Abgang und Rückkehr des ursprünglichen Ziels, Zielwechsel vor Traktorwurf-Treffer, Abgang des Werfers sowie Eingriff eines dritten Schiffs ohne nachträgliche Projektil-Umlenkung.
 - **Status: implementiert, automatische Formatierung abgeschlossen; vollständige Qualitätsprüfung auf dem formatierten Stand erforderlich.** Mehrpartei-Kollateralschaden auf fremde Schiffe, Besitzerwechsel bei Bergung und vollständige visuelle Integration bleiben separate offene Anforderungen.
 
-
 ## FC-43 – Physische Kollateraltreffer, echte Fehlschüsse und Friendly Fire
 
 - Für FleetCombat werden Laser/Rail und fliegende Geschosse über eine **gemeinsame geometrische Segmentprüfung** auf alle anwesenden Schiffe (Feind, Verbündeter, Zivilist) gegen die native Schildkontur bzw. das eingerückte Rumpfprofil geprüft. Der zeitlich erste Kontakt gewinnt; die vorhandenen `segmentShieldHit`, `firstObstacleHit`, `applyDamage`, Feuerleit- und Waffenwerte bleiben die Schadens- und Hindernisautorität.

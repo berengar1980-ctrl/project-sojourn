@@ -157,10 +157,17 @@ function advanceOneFleetThrow(
     y: rock.position.y + rock.velocity.y * dt,
   };
   const contact = firstFleetShipContact(
-    rock.position, to, ships, owner.setup.id, rock.collisionRadius ?? rock.radius
+    rock.position,
+    to,
+    ships,
+    owner.setup.id,
+    rock.collisionRadius ?? rock.radius
   );
   const obstacle = firstObstacleHit(
-    rock.position, to, runtime.arena.obstacles ?? [], runtime.arena.asteroids
+    rock.position,
+    to,
+    runtime.arena.obstacles ?? [],
+    runtime.arena.asteroids
   );
   if (obstacle && (!contact || obstacle.t <= contact.t)) {
     runtime.thrownAsteroids.splice(runtime.thrownAsteroids.indexOf(rock), 1);
@@ -172,9 +179,7 @@ function advanceOneFleetThrow(
   }
   const strikeRuntime: StrategicCombatRuntime = {
     ...runtime,
-    ...(rock.owner === 'attacker'
-      ? { defender: contact.ship }
-      : { attacker: contact.ship }),
+    ...(rock.owner === 'attacker' ? { defender: contact.ship } : { attacker: contact.ship }),
   };
   // Step exactly to the earliest physical impact. The native throw routine
   // then checks its own rock+shield radius and applies the original damage.

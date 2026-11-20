@@ -1,10 +1,19 @@
 import type { CombatPoint, MutableCombatant } from './strategic-combat-types';
-import { combatShieldCenter, combatShieldGeometry, segmentShieldHit } from './strategic-combat-damage';
+import {
+  combatShieldCenter,
+  combatShieldGeometry,
+  segmentShieldHit,
+} from './strategic-combat-damage';
 
 /** Intersection with the oriented hull envelope, using the same inset (0.88)
  * as the native contact geometry. This is a raycast, not a probability roll.
  */
-function hullSegmentContact(from: CombatPoint, to: CombatPoint, ship: MutableCombatant, padding: number): {
+function hullSegmentContact(
+  from: CombatPoint,
+  to: CombatPoint,
+  ship: MutableCombatant,
+  padding: number
+): {
   readonly t: number;
   readonly point: CombatPoint;
 } | null {
@@ -32,10 +41,12 @@ function hullSegmentContact(from: CombatPoint, to: CombatPoint, ship: MutableCom
   const t = [(-b - root) / (2 * a), (-b + root) / (2 * a)]
     .filter((candidate) => candidate >= 0 && candidate <= 1)
     .sort((first, second) => first - second)[0];
-  return t === undefined ? null : {
-    t,
-    point: { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t },
-  };
+  return t === undefined
+    ? null
+    : {
+        t,
+        point: { x: from.x + (to.x - from.x) * t, y: from.y + (to.y - from.y) * t },
+      };
 }
 
 /** Apply the existing accuracy/dodge roll as an actual 2D deviation.
@@ -83,9 +94,12 @@ export function firstFleetShipContact(
     const hull = shield ? null : hullSegmentContact(from, to, ship);
     const contact = shield ?? hull;
     if (!contact) continue;
-    if (!nearest || contact.t < nearest.t - 1e-9 ||
-        (Math.abs(contact.t - nearest.t) < 1e-9 &&
-          ship.setup.id.localeCompare(nearest.ship.setup.id) < 0)) {
+    if (
+      !nearest ||
+      contact.t < nearest.t - 1e-9 ||
+      (Math.abs(contact.t - nearest.t) < 1e-9 &&
+        ship.setup.id.localeCompare(nearest.ship.setup.id) < 0)
+    ) {
       nearest = { ship, t: contact.t, point: contact.point, shieldHit: useHull ? null : shield };
     }
   }

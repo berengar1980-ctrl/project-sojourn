@@ -136,8 +136,9 @@ try {
   const beamSource = actor('beam-source', 'pulse_laser', 1000, 1000);
   const beamAlly = actor('beam-ally', null, 1200, 1000);
   const beamEnemy = actor('beam-enemy', null, 1500, 1000);
-  const friendlyHits = beamWorld.tick(0.08, 0.08,
-    [beamSource, beamAlly, beamEnemy], (ship) => ship === beamSource ? beamEnemy : null);
+  const friendlyHits = beamWorld.tick(0.08, 0.08, [beamSource, beamAlly, beamEnemy], (ship) =>
+    ship === beamSource ? beamEnemy : null
+  );
   assert.equal(friendlyHits.length, 1, 'one beam resolves only the first ship');
   assert.equal(friendlyHits[0].targetId, 'beam-ally', 'friendly ship physically intercepts laser');
   assert.equal(beamEnemy.shieldHp, 100, 'no piercing past friendly ship');
@@ -150,8 +151,12 @@ try {
   const coverShooter = actor('cover-shooter', 'railgun', 1000, 1000);
   const coverFriend = actor('cover-friend', null, 1300, 1000);
   const coverEnemy = actor('cover-enemy', null, 1450, 1000);
-  assert.equal(rockBlocked.tick(0.08, 0.08, [coverShooter, coverFriend, coverEnemy],
-    (ship) => ship === coverShooter ? coverEnemy : null).length, 0);
+  assert.equal(
+    rockBlocked.tick(0.08, 0.08, [coverShooter, coverFriend, coverEnemy], (ship) =>
+      ship === coverShooter ? coverEnemy : null
+    ).length,
+    0
+  );
   assert.equal(coverFriend.shieldHp, 100);
 
   // A low accuracy roll creates genuine lateral dispersion. Even then,
@@ -161,17 +166,26 @@ try {
   const missShooter = actor('miss-shooter', 'autocannon', 1000, 1000);
   const missEnemy = actor('miss-enemy', null, 1600, 1000);
   const accidental = actor('accidental-civilian', null, 1400, 1074);
-  assert.equal(drifting.tick(0.08, 0.08, [missShooter, missEnemy, accidental],
-    (ship) => ship === missShooter ? missEnemy : null).length, 0);
+  assert.equal(
+    drifting.tick(0.08, 0.08, [missShooter, missEnemy, accidental], (ship) =>
+      ship === missShooter ? missEnemy : null
+    ).length,
+    0
+  );
   assert.equal(drifting.projectiles().length, 1);
   assert.equal(drifting.projectiles()[0].missed, true, 'accuracy roll missed original aim');
   assert(drifting.projectiles()[0].direction.y > 0.08, 'miss is a real angular trajectory');
   const missHits = [];
-  for (let tick = 1; tick < 15; tick++) missHits.push(...drifting.tick(
-    0.08, 0.08 * (tick + 1), [missShooter, missEnemy, accidental], () => null
-  ));
-  assert(missHits.some((shot) => shot.targetId === 'accidental-civilian' &&
-    shot.sourceId === 'miss-shooter'), 'miss can still strike an innocent ship');
+  for (let tick = 1; tick < 15; tick++)
+    missHits.push(
+      ...drifting.tick(0.08, 0.08 * (tick + 1), [missShooter, missEnemy, accidental], () => null)
+    );
+  assert(
+    missHits.some(
+      (shot) => shot.targetId === 'accidental-civilian' && shot.sourceId === 'miss-shooter'
+    ),
+    'miss can still strike an innocent ship'
+  );
   assert.equal(missEnemy.shieldHp, 100, 'miss does not damage the original target');
 
   // Move into the actual trajectory after launch: dynamic contacts must be
@@ -180,17 +194,23 @@ try {
   const movingShooter = actor('moving-shooter', 'autocannon', 1000, 1000);
   const movingEnemy = actor('moving-enemy', null, 1600, 1000);
   const movingAlly = actor('moving-ally', null, 1350, 1200);
-  moving.tick(0.08, 0.08, [movingShooter, movingEnemy, movingAlly],
-    (ship) => ship === movingShooter ? movingEnemy : null);
+  moving.tick(0.08, 0.08, [movingShooter, movingEnemy, movingAlly], (ship) =>
+    ship === movingShooter ? movingEnemy : null
+  );
   movingAlly.position.y = 1000;
   const movingHits = [];
-  for (let tick = 1; tick < 12; tick++) movingHits.push(...moving.tick(
-    0.08, 0.08 * (tick + 1), [movingShooter, movingEnemy, movingAlly], () => null
-  ));
-  assert(movingHits.some((hit) => hit.targetId === 'moving-ally'),
-    'a moving friendly can enter the path after launch');
+  for (let tick = 1; tick < 12; tick++)
+    movingHits.push(
+      ...moving.tick(0.08, 0.08 * (tick + 1), [movingShooter, movingEnemy, movingAlly], () => null)
+    );
+  assert(
+    movingHits.some((hit) => hit.targetId === 'moving-ally'),
+    'a moving friendly can enter the path after launch'
+  );
   assert.equal(movingEnemy.shieldHp, 100);
-  console.log('PASS FleetCombat native fire control, line of sight, ballistics, shield, cover and physical collateral');
+  console.log(
+    'PASS FleetCombat native fire control, line of sight, ballistics, shield, cover and physical collateral'
+  );
 } finally {
   if (previous) require.extensions['.ts'] = previous;
   else delete require.extensions['.ts'];
