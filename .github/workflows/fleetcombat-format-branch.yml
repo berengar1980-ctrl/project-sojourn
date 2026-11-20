@@ -41,6 +41,10 @@ jobs:
             src/systems/npcs/npc-local-pirate-service.ts \
             src/systems/combat/fleet-field-tick-ownership.ts \
             src/app/game-controller-field-world-bridge.ts \
+            src/app/game-controller-career-save-policy.ts \
+            src/app/game-controller-career-install.ts \
+            src/app/game-controller.ts \
+            src/ui/settings/settings-menu.ts \
             src/systems/combat/fleet-combat-lifecycle.ts \
             src/systems/ships/security-drone-loadout.ts \
             src/app/game-controller-security-drone-loadout.ts \
@@ -61,6 +65,7 @@ jobs:
             tests/combat/fleet-career-loot-settlement.test.cjs \
             tests/combat/fleet-career-pirate-crossfaction.test.cjs \
             tests/combat/fleet-field-tick-ownership.test.cjs \
+            tests/combat/fleet-career-save-policy.test.cjs \
             tests/combat/fleet-mining-test-setup.test.cjs \
             tests/combat/fleet-legacy-baseline.test.cjs \
             tests/combat/fleet-legacy-diff.test.cjs
@@ -72,6 +77,6 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/FLEET_COMBAT_REQUIREMENTS.md docs/CAREER_PERSISTENCE.md docs/SOJOURN_FEATURE_PARITY.md src/systems/combat/combat-engagement-manager.ts src/systems/combat/fleet-combat-service.ts src/systems/combat/fleet-faction-policy.ts src/systems/combat/fleet-security-drone-interceptor.ts src/systems/combat/fleet-career-npc-adapter.ts src/systems/combat/fleet-career-mining-bridge.ts src/systems/combat/fleet-career-field-entry.ts src/systems/combat/fleet-career-field-security-bridge.ts src/systems/combat/fleet-career-hostile-contacts.ts src/systems/combat/fleet-career-loot-settlement.ts src/systems/npcs/npc-local-pirate-service.ts src/systems/combat/fleet-field-tick-ownership.ts src/app/game-controller-field-world-bridge.ts src/systems/combat/fleet-combat-lifecycle.ts src/systems/ships/security-drone-loadout.ts src/app/game-controller-security-drone-loadout.ts src/ui/start/fleet-combat-test-panel.ts src/ui/start/fleet-drone-prototype.ts src/ui/start/fleet-test-lobby.ts src/ui/start/fleet-mining-test-setup.ts tests/combat/fleet-combat-service.test.cjs tests/combat/fleet-security-drone-interceptor.test.cjs tests/combat/fleet-drone-prototype.test.cjs tests/combat/fleet-shared-runtime-boundary.test.cjs tests/combat/fleet-career-state-handoff.test.cjs tests/combat/fleet-career-npc-adapter.test.cjs tests/combat/fleet-career-mining-bridge.test.cjs tests/combat/fleet-career-field-entry.test.cjs tests/combat/fleet-career-field-security-bridge.test.cjs tests/combat/fleet-career-hostile-contacts.test.cjs tests/combat/fleet-career-loot-settlement.test.cjs tests/combat/fleet-career-pirate-crossfaction.test.cjs tests/combat/fleet-field-tick-ownership.test.cjs tests/combat/fleet-mining-test-setup.test.cjs tests/combat/fleet-legacy-baseline.test.cjs tests/combat/fleet-legacy-diff.test.cjs
+          git add docs/FLEET_COMBAT_REQUIREMENTS.md docs/CAREER_PERSISTENCE.md docs/SOJOURN_FEATURE_PARITY.md src/systems/combat/combat-engagement-manager.ts src/systems/combat/fleet-combat-service.ts src/systems/combat/fleet-faction-policy.ts src/systems/combat/fleet-security-drone-interceptor.ts src/systems/combat/fleet-career-npc-adapter.ts src/systems/combat/fleet-career-mining-bridge.ts src/systems/combat/fleet-career-field-entry.ts src/systems/combat/fleet-career-field-security-bridge.ts src/systems/combat/fleet-career-hostile-contacts.ts src/systems/combat/fleet-career-loot-settlement.ts src/systems/npcs/npc-local-pirate-service.ts src/systems/combat/fleet-field-tick-ownership.ts src/app/game-controller-field-world-bridge.ts src/app/game-controller-career-save-policy.ts src/app/game-controller-career-install.ts src/app/game-controller.ts src/ui/settings/settings-menu.ts src/systems/combat/fleet-combat-lifecycle.ts src/systems/ships/security-drone-loadout.ts src/app/game-controller-security-drone-loadout.ts src/ui/start/fleet-combat-test-panel.ts src/ui/start/fleet-drone-prototype.ts src/ui/start/fleet-test-lobby.ts src/ui/start/fleet-mining-test-setup.ts tests/combat/fleet-combat-service.test.cjs tests/combat/fleet-security-drone-interceptor.test.cjs tests/combat/fleet-drone-prototype.test.cjs tests/combat/fleet-shared-runtime-boundary.test.cjs tests/combat/fleet-career-state-handoff.test.cjs tests/combat/fleet-career-npc-adapter.test.cjs tests/combat/fleet-career-mining-bridge.test.cjs tests/combat/fleet-career-field-entry.test.cjs tests/combat/fleet-career-field-security-bridge.test.cjs tests/combat/fleet-career-hostile-contacts.test.cjs tests/combat/fleet-career-loot-settlement.test.cjs tests/combat/fleet-career-pirate-crossfaction.test.cjs tests/combat/fleet-field-tick-ownership.test.cjs tests/combat/fleet-career-save-policy.test.cjs tests/combat/fleet-mining-test-setup.test.cjs tests/combat/fleet-legacy-baseline.test.cjs tests/combat/fleet-legacy-diff.test.cjs
           git commit -m "style(fleet): apply repository Prettier formatting"
           git push origin HEAD:feature/fleetcombat-scenario-lab
