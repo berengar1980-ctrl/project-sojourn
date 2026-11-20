@@ -260,7 +260,7 @@ function renderFleetRoster(
   }
 }
 
-export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
+function createFleetLobbyElements(onBack: () => void) {
   const shell = document.createElement('section');
   shell.className = 'harrow-duel harrow-fleet';
   const heading = document.createElement('h1');
@@ -309,6 +309,12 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   back.addEventListener('click', onBack);
   actions.append(back, shuffle, start);
   shell.append(heading, description, options, capabilities, actions, roster);
+  return { shell, map, player, miners, drones, piratesA, piratesB, roster, start, shuffle };
+}
+
+export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
+  const { shell, map, player, miners, drones, piratesA, piratesB, roster, start, shuffle } =
+    createFleetLobbyElements(onBack);
   root.replaceChildren(shell);
 
   let config: FleetTestConfiguration;
