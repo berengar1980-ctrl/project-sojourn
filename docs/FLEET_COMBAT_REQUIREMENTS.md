@@ -509,7 +509,6 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
   Wechsel von Eigentümern/Zielen und echte grafische Anzeige
   müssen in nachfolgenden N-Schiff-Regressionen abgesichert werden.
 
-
 ## FC-41 – Mehrere gleichzeitige native Spezialtreffer
 
 - Ein einzelner 1vs1-Runtime-Schritt überschreibt `lastImpact` beim nächsten Treffer. Der FleetCombat-Adapter wertet daher **jede** im selben Tick vorhandene Mine und jeden geworfenen Gegenstand einzeln über dieselben unveränderten nativen `advanceRuntimeMines`-/`advanceThrownAsteroids`-Funktionen aus.
