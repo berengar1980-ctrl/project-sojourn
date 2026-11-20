@@ -92,7 +92,10 @@ export interface FleetCombatWorldOptions {
   /** Resolve threats before the native worker ticks, preventing parallel mining. */
   readonly beforeWorldTick?: (ships: readonly FleetCombatShipSnapshot[]) => void;
   /** Reconcile combat damage to campaign NPCs after weapon processing. */
-  readonly afterCombatTick?: (ships: readonly FleetCombatShipSnapshot[]) => void;
+  readonly afterCombatTick?: (
+    ships: readonly FleetCombatShipSnapshot[],
+    shots: readonly FleetCombatShotSnapshot[]
+  ) => void;
 }
 
 export interface FleetCombatService {
@@ -441,7 +444,7 @@ export function createFleetCombatService(
       }
     }
     shots = advanceFleetFire(remainingShips, acquire, dt);
-    reportFleetCombatToWorld(world, remainingShips);
+    reportFleetCombatToWorld(world, remainingShips, shots);
     for (const ship of remainingShips) {
       if (ship.combatant.hullHp <= 0) {
         engagementManager.disengage(ship.combatant.setup.id);
