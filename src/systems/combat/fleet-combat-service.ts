@@ -101,8 +101,11 @@ function advanceFleetMotion(
   fleet: readonly FleetShip[],
   acquire: (ship: FleetShip) => FleetShip | null,
   arena: StrategicCombatArenaOptions,
-  dt: number
+  dt: number,
+  worldTick?: FleetCombatWorldOptions['tickWorld']
 ): void {
+  // The existing campaign field owns and advances all local NPCs exactly once.
+  worldTick?.(dt);
   const nearby = fleet.map((ship) => ({
     factionId: ship.factionId,
     targetId: ship.targetId,
@@ -372,12 +375,9 @@ export function createFleetCombatService(
     fleetView(fleet, shots, arrivedIds, engagementManager.engagements(), elapsedSeconds, arena);
 
   const step = (dt: number): void => {
-    // The campaign's own miner/NPC world advances once, BEFORE fleet reads
-    // its authoritative poses. Never run the same world tick in each ship.
-    world.tickWorld?.(dt);
     // Only ships present at the START of this interval may move/fire in it.
     const present = fleet.filter((ship) => ship.active);
-    advanceFleetMotion(present, acquire, arena, dt);
+    advanceFleetMotion(present, acquire, arena, dt, world.tickWorld);
     for (const ship of present) {
       if (ship.departed) engagementManager.disengage(ship.combatant.setup.id);
     }
