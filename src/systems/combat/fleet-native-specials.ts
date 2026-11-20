@@ -200,8 +200,8 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
         captureSpecialImpact(runtime, () => advanceRuntimeMines(runtime, dt), hits);
         // Native throw physics also decrements the two ship cooldowns;
         // restore the already-once-updated values after its physical step.
-        const aCooldown = runtime.attacker.tractorThrowCooldown;
-        const dCooldown = runtime.defender.tractorThrowCooldown;
+        const aCooldown = runtime.attacker.tractorThrowCooldown ?? 0;
+        const dCooldown = runtime.defender.tractorThrowCooldown ?? 0;
         captureSpecialImpact(runtime, () => advanceThrownAsteroids(runtime, dt), hits);
         runtime.attacker.tractorThrowCooldown = aCooldown;
         runtime.defender.tractorThrowCooldown = dCooldown;
