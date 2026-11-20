@@ -913,3 +913,14 @@ Beim Laden wird die Wrackliste je Ort vor der Freigabe geprüft und geklont;
 invaliden Koordinaten, unbekannten Varianten und übergroßen Listen wird
 der Restore verweigert. Bergungsschiffe können ein vorhandenes Wrackfeld
 auch an zuvor reinen Bergbaustandorten betreten.
+
+## PvP-Testnavigation und Vollbilddarstellung (PR #375)
+
+Die Modus-Auswahlleiste `1vs1 · PvP / FleetCombat · Test` ist reine
+Darstellungslogik des Startmenüs. Beim Beginn eines Duells wird sie
+ausgeblendet, nach Rückkehr zur Konfiguration wieder eingeblendet.
+Der Zustand ist absichtlich flüchtig und wird weder im Karriere-Checkpoint
+noch im Kampfsimulator gespeichert. Die Größenberechnung des
+Lobby-Containers berücksichtigt die globale Systemkonsole, ohne
+Kampfzustände, persistierte Karrieredaten oder FleetCombat-Konfigurationen
+zu verändern.
