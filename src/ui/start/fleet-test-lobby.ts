@@ -240,9 +240,7 @@ function createFleetPrototype(config: FleetTestConfiguration) {
               : arena.width * 0.72,
           y: arena.height * lane,
         },
-        targetId: isPlayer
-        ? (firstPirate?.id ?? null)
-        : (rival ?? firstMiner?.id ?? 'player'),
+        targetId: isPlayer ? (firstPirate?.id ?? null) : (rival ?? firstMiner?.id ?? 'player'),
         spawnAtSeconds: entry.spawnAtSeconds,
       },
     ];

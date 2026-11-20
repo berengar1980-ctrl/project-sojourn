@@ -25,16 +25,20 @@ export function createFleetCareerMiningBridge(
   const threatenedBy = (npc: SectorNpcState, ships: readonly FleetCombatShipSnapshot[]) => {
     const local = mining.ships.find((ship) => ship.npcId === npc.id);
     if (!local || npc.hullHp <= 0) return null;
-    return ships
-      .filter((entry) =>
-        (entry.factionId === 'pirate-a' || entry.factionId === 'pirate-b') &&
-        entry.ship.hullHp > 0 &&
-        entry.targetId === npc.id
-      )
-      .sort((a, b) =>
-        Math.hypot(a.ship.position.x - local.position.x, a.ship.position.y - local.position.y) -
-          Math.hypot(b.ship.position.x - local.position.x, b.ship.position.y - local.position.y)
-      )[0] ?? null;
+    return (
+      ships
+        .filter(
+          (entry) =>
+            (entry.factionId === 'pirate-a' || entry.factionId === 'pirate-b') &&
+            entry.ship.hullHp > 0 &&
+            entry.targetId === npc.id
+        )
+        .sort(
+          (a, b) =>
+            Math.hypot(a.ship.position.x - local.position.x, a.ship.position.y - local.position.y) -
+            Math.hypot(b.ship.position.x - local.position.x, b.ship.position.y - local.position.y)
+        )[0] ?? null
+    );
   };
   const beginDefense = (npc: SectorNpcState, ships: readonly FleetCombatShipSnapshot[]) => {
     const pirate = threatenedBy(npc, ships);
@@ -49,8 +53,7 @@ export function createFleetCareerMiningBridge(
     if (!setup) return;
     // The career combat policy (including armed/unarmed civilian doctrine) is
     // authoritative. FleetCombat only notices the existing hostile target lock.
-    const canFight = setup.preferredTactic !== 'flee' &&
-      npcDefenseReaction(npc) === 'fight';
+    const canFight = setup.preferredTactic !== 'flee' && npcDefenseReaction(npc) === 'fight';
     const mode = canFight ? 'engaged' : 'flee';
     npc.combatMovement = {
       mode,
@@ -101,7 +104,7 @@ export function createFleetCareerMiningBridge(
             headingRadians: lastHeading,
             targetId: defending ? battle.targetId : null,
             combatMotionTargetId: battle.targetId,
-            combatTactic: defending ? 'fight' as const : 'flee' as const,
+            combatTactic: defending ? ('fight' as const) : ('flee' as const),
             afterCombatMotion(position: WorldPoint, heading: number, speed: number) {
               mining.syncCombatPose(npc.id, position, heading, speed);
               if (!npc.combatMovement) return;

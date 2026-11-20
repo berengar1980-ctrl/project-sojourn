@@ -115,11 +115,13 @@ function advanceFleetMotion(
   beforeWorldTick?: FleetCombatWorldOptions['beforeWorldTick']
 ): void {
   // Threat decisions precede the field tick: a threatened miner cannot mine.
-  beforeWorldTick?.(fleet.map((entry) => ({
-    factionId: entry.factionId,
-    targetId: entry.targetId,
-    ship: snapshot(entry.combatant),
-  })));
+  beforeWorldTick?.(
+    fleet.map((entry) => ({
+      factionId: entry.factionId,
+      targetId: entry.targetId,
+      ship: snapshot(entry.combatant),
+    }))
+  );
   worldTick?.(dt);
   const nearby = fleet.map((ship) => ({
     factionId: ship.factionId,
@@ -140,8 +142,8 @@ function advanceFleetMotion(
         continue;
       }
       if (next.combatMotionTargetId) {
-        const enemy = fleet.find((candidate) =>
-          candidate.combatant.setup.id === next.combatMotionTargetId
+        const enemy = fleet.find(
+          (candidate) => candidate.combatant.setup.id === next.combatMotionTargetId
         );
         if (enemy?.active && enemy.combatant.hullHp > 0) {
           actor.tactic = next.combatTactic ?? actor.tactic;
@@ -185,7 +187,8 @@ function advanceFleetMotion(
       if (
         (fleet[i]!.externalMovement && !fleet[i]!.combatMotionOwned) ||
         (fleet[j]!.externalMovement && !fleet[j]!.combatMotionOwned)
-      ) continue;
+      )
+        continue;
       const a = fleet[i]!.combatant;
       const b = fleet[j]!.combatant;
       if (a.hullHp > 0 && b.hullHp > 0) resolveCombatantCollision(a, b);
@@ -439,11 +442,13 @@ export function createFleetCombatService(
       }
     }
     shots = advanceFleetFire(remainingShips, acquire, dt);
-    world.afterCombatTick?.(remainingShips.map((ship) => ({
-      factionId: ship.factionId,
-      targetId: ship.targetId,
-      ship: snapshot(ship.combatant),
-    })));
+    world.afterCombatTick?.(
+      remainingShips.map((ship) => ({
+        factionId: ship.factionId,
+        targetId: ship.targetId,
+        ship: snapshot(ship.combatant),
+      }))
+    );
     for (const ship of remainingShips) {
       if (ship.combatant.hullHp <= 0) {
         engagementManager.disengage(ship.combatant.setup.id);
