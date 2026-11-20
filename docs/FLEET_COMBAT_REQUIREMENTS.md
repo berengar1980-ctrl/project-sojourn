@@ -174,3 +174,30 @@ wegfallen. Ein grüner Prototyp-Test oder eine unveränderte 1vs1-Engine ist
   statt eigenständig abzubildende Mine-Asteroiden oder Minerlogik
   zu erzeugen. Kampfreaktion/Flucht und Produktions-Save-Resume
   bleiben offen.
+
+## FC-29 – NPC-Miner im ausführbaren PvP-FleetCombat-Testlabor
+
+- Der Launcher lässt Miner nun in `scattered` und `asteroid_field` starten.
+  Die Ausgangskarte wird mit `generateMiningSpace` und
+  `miningFieldCombatArena` aus den echten Kampagnen-Generatoren erstellt.
+- Die Testumgebung erzeugt isolierte *Kopien* der Karriere-Miner-Vorlagen,
+  kombiniert sie mit `createNpcLocalMiningService` und bucht gefördertes Erz
+  mittels der produktiven `NpcEconomyService.mineLocal`-Funktion. Kein
+  zweiter Mining-Zyklus, keine eigene Navigation und keine zweite
+  Frachtkapazitätsberechnung.
+- Beginn und verzögerte Ankunft folgen der FleetCombat-Konfiguration. Der
+  Feldservice ist Besitzer der Bewegungs- und Abbauzyklen und wird nur einmal
+  pro FleetCombat-Step aktualisiert. Voll beladene Miner verlassen physisch
+  das Feld und verschwinden dann aus dem Fleet-Snapshot.
+- Der PvP-Simulationsmodus verwendet zur Probenahme einen unlimitierten
+  Ressourcenallokator, aber **die echte Kampagne** behält die
+  ressourcenbegrenzte Wirtschafts- und Feldzustandsinstanz als Autorität.
+  Das ist ein Test-Setup, keine alternative Spielökonomie.
+- Nachweise: `fleet-career-mining-bridge.test.cjs` (Navigation, Scan, Erz,
+  Unterbrechung) und `fleet-mining-test-setup.test.cjs` (PvP-Feldinstanz,
+  Late-Join, tatsächlicher Miner-Tick).
+- **Status: FOUNDATION.** Piratenangriffe führen noch nicht automatisch
+  zur echten Karriere-Flucht-/Gegenwehrentscheidung. Die Laufzeit-Synchronisierung
+  mit dem produktiven Kampagnencontroller und die Darstellung der
+  Abbaulasereffekte bleiben offen; 1vs1 und vollständige Waffenparität
+  sind unverändert bzw. weiterhin ausstehend.
