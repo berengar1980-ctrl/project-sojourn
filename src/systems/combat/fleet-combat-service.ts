@@ -6,7 +6,13 @@ import type {
   StrategicCombatantSetup,
   StrategicCombatantSnapshot,
 } from './strategic-combat-types';
-import { createCombatant, createRng, distance, hashSeed, snapshot } from './strategic-combat-geometry';
+import {
+  createCombatant,
+  createRng,
+  distance,
+  hashSeed,
+  snapshot,
+} from './strategic-combat-geometry';
 import {
   moveCombatant,
   resolveCombatantCollision,
@@ -366,8 +372,14 @@ export function createFleetCombatService(
 
   const view = (): FleetCombatSnapshot =>
     fleetView(
-      fleet, shots, weaponPhysics.projectiles(), weaponPhysics.beams(), arrivedIds,
-      engagementManager.engagements(), elapsedSeconds, arena
+      fleet,
+      shots,
+      weaponPhysics.projectiles(),
+      weaponPhysics.beams(),
+      arrivedIds,
+      engagementManager.engagements(),
+      elapsedSeconds,
+      arena
     );
 
   const step = (dt: number): void => {
@@ -389,15 +401,17 @@ export function createFleetCombatService(
         engagementManager.engage(ship.combatant.setup.id, enemy.combatant.setup.id);
       }
     }
-    shots = weaponPhysics.tick(
-      dt,
-      elapsedSeconds + dt,
-      remainingShips.map((ship) => ship.combatant),
-      (actor) => {
-        const ship = byId.get(actor.setup.id);
-        return ship ? acquire(ship)?.combatant ?? null : null;
-      }
-    ).map((hit) => ({ ...hit }));
+    shots = weaponPhysics
+      .tick(
+        dt,
+        elapsedSeconds + dt,
+        remainingShips.map((ship) => ship.combatant),
+        (actor) => {
+          const ship = byId.get(actor.setup.id);
+          return ship ? (acquire(ship)?.combatant ?? null) : null;
+        }
+      )
+      .map((hit) => ({ ...hit }));
     for (const ship of remainingShips) {
       if (ship.targetId) acquire(ship);
     }

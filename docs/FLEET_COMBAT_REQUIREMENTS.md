@@ -450,7 +450,6 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Regression: `tests/combat/fleet-career-wreck-settlement.test.cjs` prüft sofortige Einfügung, Kollisions-/Navigationskörper, native Kontaktgeometrie, idempotente Wiederholung und nachfolgende Abschüsse.
 - **Status: Implementiert, noch nicht als CI-grün bestätigt.** Automatische Kampagnenaktivierung und vollständige Waffen-/Renderer-Parität bleiben offen; der geschützte 1vs1-Kern bleibt unverändert.
 
-
 ## FC-39 – Native Waffensteuerung und Geschossflug für N Schiffe (Implementierung)
 
 - Die vereinfachte `fleetDirectShot`-Soforttrefferfunktion wurde entfernt. Die gemeinsame
