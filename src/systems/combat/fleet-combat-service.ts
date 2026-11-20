@@ -432,7 +432,12 @@ export function createFleetCombatService(
     const present = fleet.filter((ship) => ship.active);
     const impactHits: FleetCombatShotSnapshot[] = [];
     advanceFleetMotion(
-      present, acquire, arena, dt, world.tickWorld, world.beforeWorldTick,
+      present,
+      acquire,
+      arena,
+      dt,
+      world.tickWorld,
+      world.beforeWorldTick,
       (first, second) => impactHits.push(...nativeSpecials.ram(first, second, elapsedSeconds + dt))
     );
     for (const ship of present) {

@@ -93,8 +93,10 @@ function captureSpecialImpact(
 ): void {
   const { attacker, defender } = runtime;
   const before = {
-    aShield: attacker.shieldHp, aHull: attacker.hullHp,
-    dShield: defender.shieldHp, dHull: defender.hullHp,
+    aShield: attacker.shieldHp,
+    aHull: attacker.hullHp,
+    dShield: defender.shieldHp,
+    dHull: defender.hullHp,
   };
   const serial = runtime.impactSerial;
   action();
@@ -104,10 +106,12 @@ function captureSpecialImpact(
   const struck = runtime.lastImpact.target === 'attacker' ? attacker : defender;
   const source = struck === attacker ? defender : attacker;
   recordDamage(
-    source, struck,
+    source,
+    struck,
     struck === attacker ? before.aShield : before.dShield,
     struck === attacker ? before.aHull : before.dHull,
-    'native-special-impact', output
+    'native-special-impact',
+    output
   );
 }
 /** Mutable pair state persists throughout the encounter, so an in-flight
@@ -139,18 +143,28 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
       const runtime = pairFor(first, second).runtime;
       runtime.elapsedSeconds = now;
       const previous = {
-        aShield: runtime.attacker.shieldHp, aHull: runtime.attacker.hullHp,
-        dShield: runtime.defender.shieldHp, dHull: runtime.defender.hullHp,
+        aShield: runtime.attacker.shieldHp,
+        aHull: runtime.attacker.hullHp,
+        dShield: runtime.defender.shieldHp,
+        dHull: runtime.defender.hullHp,
       };
       applyCombatRamImpact(runtime);
       const impacts: FleetWeaponHit[] = [];
       recordDamage(
-        runtime.defender, runtime.attacker,
-        previous.aShield, previous.aHull, 'native-ram', impacts
+        runtime.defender,
+        runtime.attacker,
+        previous.aShield,
+        previous.aHull,
+        'native-ram',
+        impacts
       );
       recordDamage(
-        runtime.attacker, runtime.defender,
-        previous.dShield, previous.dHull, 'native-ram', impacts
+        runtime.attacker,
+        runtime.defender,
+        previous.dShield,
+        previous.dHull,
+        'native-ram',
+        impacts
       );
       return impacts;
     },
@@ -177,8 +191,8 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
       }
       for (const pair of pairs.values()) {
         const runtime = pair.runtime;
-        if (!active.has(runtime.attacker.setup.id) ||
-            !active.has(runtime.defender.setup.id)) continue;
+        if (!active.has(runtime.attacker.setup.id) || !active.has(runtime.defender.setup.id))
+          continue;
         runtime.elapsedSeconds = now;
         captureSpecialImpact(runtime, () => advanceRuntimeMines(runtime, dt), hits);
         // Native throw physics also decrements the two ship cooldowns;
@@ -191,20 +205,25 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
       }
       return hits;
     },
-    mines: () => [...pairs.values()].flatMap(({ runtime }) =>
-      runtime.mines.map((mine) => ({
-        id: mine.id, ownerId: (mine.owner === 'attacker'
-          ? runtime.attacker : runtime.defender).setup.id,
-        position: { ...mine.position }, kind: mine.definition.kind,
-        armed: mine.armedSeconds <= 0, radius: mine.definition.triggerRadiusMeters,
-      }))
-    ),
-    throws: () => [...pairs.values()].flatMap(({ runtime }) =>
-      runtime.thrownAsteroids.map((rock) => ({
-        ownerId: (rock.owner === 'attacker'
-          ? runtime.attacker : runtime.defender).setup.id,
-        asteroidId: rock.asteroidId, position: { ...rock.position }, phase: rock.phase,
-      }))
-    ),
+    mines: () =>
+      [...pairs.values()].flatMap(({ runtime }) =>
+        runtime.mines.map((mine) => ({
+          id: mine.id,
+          ownerId: (mine.owner === 'attacker' ? runtime.attacker : runtime.defender).setup.id,
+          position: { ...mine.position },
+          kind: mine.definition.kind,
+          armed: mine.armedSeconds <= 0,
+          radius: mine.definition.triggerRadiusMeters,
+        }))
+      ),
+    throws: () =>
+      [...pairs.values()].flatMap(({ runtime }) =>
+        runtime.thrownAsteroids.map((rock) => ({
+          ownerId: (rock.owner === 'attacker' ? runtime.attacker : runtime.defender).setup.id,
+          asteroidId: rock.asteroidId,
+          position: { ...rock.position },
+          phase: rock.phase,
+        }))
+      ),
   };
 }
