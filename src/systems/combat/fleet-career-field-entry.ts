@@ -44,5 +44,9 @@ export function createFleetCombatForCareerField(
     throw new Error('Career player cannot arrive after the field handoff');
   const bridge = createFleetCareerMiningBridge(field.miners, miners);
   const arena = miningFieldCombatArena(field.instance, playerVelocity, field.combatWrecks);
-  return createFleetCombatService([...otherParticipants, ...bridge.participants], arena, bridge.world);
+  return createFleetCombatService(
+    [...otherParticipants, ...bridge.participants],
+    arena,
+    bridge.world
+  );
 }
