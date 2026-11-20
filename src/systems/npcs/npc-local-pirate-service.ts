@@ -1,6 +1,12 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { getShipDefinition } from '../ships';
+import {
+  resolveShipShieldCollisions,
+  type LocalShieldShipBody,
+  type ShipShieldCollision,
+} from '../local-space/ship-shield-collision';
 import { edgePoint, hashId } from './npc-mining-targets';
 import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
 import {
@@ -280,6 +286,51 @@ export class LocalPirateTraffic {
         y: Math.max(0, Math.min(this.height, pirate.position.y)),
       };
     }
+  }
+
+  /** Resolve solid pirate-to-ship shields after route movement. The duel owns
+   * combatant poses, so only free-flying pirates participate.
+   */
+  resolveShipContacts(
+    npcs: readonly SectorNpcState[],
+    otherShips: readonly LocalShieldShipBody[]
+  ): readonly ShipShieldCollision[] {
+    const byId = new Map(npcs.map((npc) => [npc.id, npc]));
+    const pirateIds = new Set<string>();
+    const pirates: LocalShieldShipBody[] = [];
+    for (const pirate of this.ships.values()) {
+      const npc = byId.get(pirate.npcId);
+      if (
+        !npc ||
+        npc.hullHp <= 0 ||
+        npc.combatMovement ||
+        (npc.combatRecoverySeconds ?? 0) > 0 ||
+        pirate.awaitingCombat
+      )
+        continue;
+      const ship = getShipDefinition(npc.shipId);
+      if (!ship) continue;
+      pirateIds.add(pirate.npcId);
+      pirates.push({ id: pirate.npcId, ship, state: pirate, pushWeight: 1 });
+    }
+    if (pirates.length === 0) return [];
+    const impacts = resolveShipShieldCollisions(
+      [...pirates, ...otherShips],
+      (first, second) => pirateIds.has(first) || pirateIds.has(second)
+    );
+    for (const impact of impacts) {
+      for (const id of [impact.firstId, impact.secondId]) {
+        const pirate = this.ships.get(id);
+        if (!pirate || !pirateIds.has(id)) continue;
+        delete pirate.routeState;
+        pirate.speed = 0;
+        pirate.position = {
+          x: Math.max(0, Math.min(this.width, pirate.position.x)),
+          y: Math.max(0, Math.min(this.height, pirate.position.y)),
+        };
+      }
+    }
+    return impacts;
   }
 
   syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number): void {

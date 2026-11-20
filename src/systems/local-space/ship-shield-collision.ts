@@ -68,7 +68,8 @@ function collisionPoint(
 }
 
 export function resolveShipShieldCollisions(
-  bodies: readonly LocalShieldShipBody[]
+  bodies: readonly LocalShieldShipBody[],
+  shouldCollide: (firstId: string, secondId: string) => boolean = () => true
 ): readonly ShipShieldCollision[] {
   const impacts: ShipShieldCollision[] = [];
 
@@ -76,6 +77,7 @@ export function resolveShipShieldCollisions(
     for (let secondIndex = firstIndex + 1; secondIndex < bodies.length; secondIndex += 1) {
       const first = bodies[firstIndex]!;
       const second = bodies[secondIndex]!;
+      if (!shouldCollide(first.id, second.id)) continue;
       const firstCenter = shieldCenter(first);
       const secondCenter = shieldCenter(second);
       const dx = secondCenter.x - firstCenter.x;

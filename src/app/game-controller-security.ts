@@ -10,6 +10,7 @@ import type { AsteroidFieldRuntime } from '../systems/operations/asteroid-field-
 import { dispatchPatrolToReport } from './game-controller-law-enforcement';
 import { localMiningCombatArena } from './game-controller-combat';
 import { settleLegalDebt } from './game-controller-legal-ledger';
+import { resolvePirateFieldShipContacts } from './game-controller-pirate-ship-contacts';
 import { offerLegalDemand } from './game-controller-legal-decisions';
 
 function canLocalPiratesTargetPlayer(context: ControllerRuntimeContext): boolean {
@@ -119,6 +120,7 @@ export function tickFieldPirates(
     },
     combatantId
   );
+  resolvePirateFieldShipContacts(context, field);
   const drone = field.drone;
   const defender = economy.sectorNpcs.npcs.find((npc) => npc.id === 'security-drone:' + locationId);
   if (drone && defender && defender.hullHp <= 0 && drone.snapshot().operational) {

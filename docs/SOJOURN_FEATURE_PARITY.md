@@ -1652,3 +1652,15 @@ Dieselben Wracks nutzen außerhalb des Bergungsfelds nun die bereits
 bestehende Impuls-, Drift- und 3D-Rotationsphysik. Doppelte Integration
 während eines aktiven Kampfes oder Bergungseinsatzes ist ausgeschlossen.
 Schadensberechnung, 1vs1-Kampflogik und Bergungsausbeute bleiben unverändert.
+
+## Review-Log (2026-11-20): Piraten-Schiffskollisionen außerhalb des Kampfes
+
+**Keine Änderung der historischen Feature-IDs.** Die bisherige lokale Piratenbewegung
+verwendet weiterhin den vorhandenen Hindernis-Routenplaner; anschließend
+werden nun physische Schildkontakte zu anderen frei fliegenden Piraten,
+NPC-Minern, Sicherheitsdrohnen und dem anwesenden Spielerschiff aufgelöst.
+Dazu wird die vorhandene orientierte Schiffsschild-Geometrie benutzt und
+die kollidierten Schiffe werden getrennt. Piraten planen nach Kontakt eine
+neue Route, statt durch andere Hüllen zu gleiten. Kämpfende Schiffe bleiben
+vollständig unter der bestehenden PvP-/FleetCombat-Kollisionsautorität;
+deren Schadens- und Rammregeln werden nicht verändert.
