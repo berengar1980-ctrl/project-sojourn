@@ -507,3 +507,37 @@ body.app-has-system-bar .harrow-combat-tests {
     grid-template-columns: 1fr;
   }
 }
+
+/* Per-ship arrival controls in the FleetCombat test laboratory. */
+.harrow-fleet__arrival {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 8px 0 16px;
+  padding: 8px 12px;
+  background: rgba(15, 27, 34, 0.8);
+  border: 1px solid rgba(126, 155, 169, 0.32);
+}
+.harrow-fleet__arrival label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.harrow-fleet__arrival input[type='checkbox'] {
+  width: 17px;
+  height: 17px;
+  accent-color: #d8bc52;
+}
+.harrow-fleet__arrival input[type='number'] {
+  width: 90px;
+  padding: 6px;
+  color: #e5e7e4;
+  background: #121c24;
+  border: 1px solid #4a5662;
+}
+.harrow-fleet__arrival input:disabled {
+  opacity: 0.55;
+}
