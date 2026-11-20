@@ -4,7 +4,10 @@ import {
   type FleetFieldTickOwnership,
 } from '../systems/combat/fleet-field-tick-ownership';
 import { createFleetCombatForCareerField } from '../systems/combat/fleet-career-field-entry';
-import type { FleetCombatParticipant, FleetCombatService } from '../systems/combat/fleet-combat-service';
+import type {
+  FleetCombatParticipant,
+  FleetCombatService,
+} from '../systems/combat/fleet-combat-service';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import {
   AsteroidFieldWorld,
@@ -47,11 +50,16 @@ export function beginControllerFieldFleet(
   if (owners.owns(field)) throw new Error('FleetCombat field tick is already owned');
   if (context.engagements.activePlayerCombat())
     throw new Error('Cannot transfer field during an existing player duel');
-  if ((context.engagements.activeNpcCombatSnapshots?.() ?? []).some((duel) =>
-    [duel.attacker, duel.defender].some((ship) =>
-      context.economy.sectorNpcs.npcs.some((npc) => npc.id === ship.id && npc.locationId === locationId)
+  if (
+    (context.engagements.activeNpcCombatSnapshots?.() ?? []).some((duel) =>
+      [duel.attacker, duel.defender].some((ship) =>
+        context.economy.sectorNpcs.npcs.some(
+          (npc) => npc.id === ship.id && npc.locationId === locationId
+        )
+      )
     )
-  )) throw new Error('Cannot transfer field during an existing NPC duel');
+  )
+    throw new Error('Cannot transfer field during an existing NPC duel');
   const fleet = createFleetCombatForCareerField(
     field,
     context.economy.sectorNpcs.npcs,
@@ -71,7 +79,6 @@ export function endControllerFieldFleet(
   if (!field) throw new Error('Unknown FleetCombat career field');
   fleetOwnersFor(context).release(field, fleet);
 }
-
 
 /** Install the already staged field authority instead of generating new ore/NPCs. */
 export function bindCareerFieldWorld(
