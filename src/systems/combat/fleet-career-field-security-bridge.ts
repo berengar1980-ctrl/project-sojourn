@@ -10,27 +10,14 @@ import type {
   FleetCombatWorldOptions,
 } from './fleet-combat-service';
 
-/**
- * Bridges native campaign pirate traffic and the existing field security drone
- * to the shared fleet combat runtime. No independent traffic/sensor/navigation
- * implementation is created here. The controller must transfer exclusive field
- * tick ownership before using this adapter.
- */
-export function createFleetCareerFieldSecurityBridge(
+function careerPirateParticipants(
   field: AsteroidFieldRuntime,
-  npcs: readonly SectorNpcState[],
-  reservedIds: ReadonlySet<string> = new Set()
-): {
-  readonly participants: readonly FleetCombatParticipant[];
-  readonly world: FleetCombatWorldOptions;
-} {
-  const pirates = npcs.filter(
-    (npc) => npc.pirate && npc.locationId === field.locationId && npc.hullHp > 0
-  );
-  field.pirates.reconcile(pirates);
-  const localPirates = field.pirates.snapshot(pirates);
-  const activeTargets = new Map<string, string>();
-  const participants: FleetCombatParticipant[] = localPirates
+  pirates: readonly SectorNpcState[],
+  reservedIds: ReadonlySet<string>,
+  targets: ReadonlyMap<string, string>
+): FleetCombatParticipant[] {
+  return field.pirates
+    .snapshot(pirates)
     .filter((ship) => !reservedIds.has(ship.npcId))
     .map((ship) => {
       const npc = pirates.find((entry) => entry.id === ship.npcId)!;
@@ -49,7 +36,7 @@ export function createFleetCareerFieldSecurityBridge(
               targetId: null,
               active: false,
             };
-          const targetId = activeTargets.get(npc.id) ?? null;
+          const targetId = targets.get(npc.id) ?? null;
           return {
             position: { ...local.position },
             headingRadians: local.headingRadians,
@@ -57,7 +44,7 @@ export function createFleetCareerFieldSecurityBridge(
             ...(targetId
               ? {
                   combatMotionTargetId: targetId,
-                  combatTactic: participant.setup.preferredTactic,
+                  combatTactic: participant.setup.preferredTactic ?? 'fight',
                   afterCombatMotion(position: WorldPoint, heading: number) {
                     field.pirates.syncCombatPose(npc.id, position, heading);
                   },
@@ -67,62 +54,84 @@ export function createFleetCareerFieldSecurityBridge(
         },
       };
     });
+}
 
-  const droneNpc = npcs.find((npc) => npc.id === 'security-drone:' + field.locationId);
-  const droneReady = Boolean(
-    droneNpc &&
-    droneNpc.hullHp > 0 &&
-    field.drone.snapshot().operational &&
-    !reservedIds.has(droneNpc.id)
-  );
-  if (droneNpc && droneReady) {
-    const position = field.drone.snapshot().position;
-    const participant = createFleetCareerNpcParticipant(droneNpc, position, {
-      headingRadians: field.drone.headingRadians,
-      targetId: null,
-    });
-    const interceptor = createFleetDroneInterceptor(field.drone, field.instance.asteroids);
-    participants.push({
-      ...participant,
-      setup: {
-        ...participant.setup,
-        shieldGeometry: {
-          centerOffset: { x: 0, y: 0 },
-          radiusX: DRONE_SHIELD_RADIUS_METERS,
-          radiusY: DRONE_SHIELD_RADIUS_METERS,
-          modifier: 1,
-        },
+function careerDroneParticipant(
+  field: AsteroidFieldRuntime,
+  npc: SectorNpcState | undefined,
+  reservedIds: ReadonlySet<string>
+): FleetCombatParticipant | null {
+  if (!npc || npc.hullHp <= 0 || !field.drone.snapshot().operational || reservedIds.has(npc.id))
+    return null;
+  const position = field.drone.snapshot().position;
+  const participant = createFleetCareerNpcParticipant(npc, position, {
+    headingRadians: field.drone.headingRadians,
+    targetId: null,
+  });
+  const interceptor = createFleetDroneInterceptor(field.drone, field.instance.asteroids);
+  return {
+    ...participant,
+    setup: {
+      ...participant.setup,
+      shieldGeometry: {
+        centerOffset: { x: 0, y: 0 },
+        radiusX: DRONE_SHIELD_RADIUS_METERS,
+        radiusY: DRONE_SHIELD_RADIUS_METERS,
+        modifier: 1,
       },
-      externalMovement(dt: number, nearby: readonly FleetCombatShipSnapshot[]) {
-        const contacts = nearby.map((entry) => ({
+    },
+    externalMovement(dt: number, nearby: readonly FleetCombatShipSnapshot[]) {
+      const contacts = nearby.map((entry) => ({
+        id: entry.ship.id,
+        factionId: entry.factionId,
+        position: entry.ship.position,
+        operational: entry.ship.hullHp > 0,
+      }));
+      const obstacles = nearby
+        .filter((entry) => entry.ship.id !== npc.id && entry.ship.hullHp > 0)
+        .map((entry) => ({
           id: entry.ship.id,
-          factionId: entry.factionId,
           position: entry.ship.position,
-          operational: entry.ship.hullHp > 0,
+          radius: 35,
         }));
-        const obstacles = nearby
-          .filter((entry) => entry.ship.id !== droneNpc.id && entry.ship.hullHp > 0)
-          .map((entry) => ({
-            id: entry.ship.id,
-            position: entry.ship.position,
-            radius: 35,
-          }));
-        const result = interceptor.tick(dt, contacts, obstacles);
-        return {
-          position: result.position,
-          headingRadians: field.drone.headingRadians,
-          targetId: result.inAttackRange ? result.targetId : null,
-          active: field.drone.snapshot().operational,
-        };
-      },
-    });
-  }
+      const result = interceptor.tick(dt, contacts, obstacles);
+      return {
+        position: result.position,
+        headingRadians: field.drone.headingRadians,
+        targetId: result.inAttackRange ? result.targetId : null,
+        active: field.drone.snapshot().operational,
+      };
+    },
+  };
+}
+
+/** Reuses existing checkpointed pirate traffic and the campaign drone.
+ * No alternate PvP route planner, sensor evaluator or NPC factory is created.
+ * FC-32 transfers the field tick to the shared FleetCombat service.
+ */
+export function createFleetCareerFieldSecurityBridge(
+  field: AsteroidFieldRuntime,
+  npcs: readonly SectorNpcState[],
+  reservedIds: ReadonlySet<string> = new Set()
+): {
+  readonly participants: readonly FleetCombatParticipant[];
+  readonly world: FleetCombatWorldOptions;
+} {
+  const pirates = npcs.filter(
+    (npc) => npc.pirate && npc.locationId === field.locationId && npc.hullHp > 0
+  );
+  field.pirates.reconcile(pirates);
+  const targets = new Map<string, string>();
+  const droneNpc = npcs.find((npc) => npc.id === 'security-drone:' + field.locationId);
+  const drone = careerDroneParticipant(field, droneNpc, reservedIds);
+  const participants = careerPirateParticipants(field, pirates, reservedIds, targets);
+  if (drone) participants.push(drone);
 
   return {
     participants,
     world: {
       tickWorld(dt) {
-        activeTargets.clear();
+        targets.clear();
         field.pirates.reconcile(pirates);
         field.pirates.tick(
           dt,
@@ -135,10 +144,8 @@ export function createFleetCareerFieldSecurityBridge(
           })),
           field.instance.asteroids,
           (pirateId, targetId) => {
-            activeTargets.set(pirateId, targetId);
-            // Native traffic stays in control until interception. Returning
-            // false avoids its legacy 1vs1 engagement latch; shared FleetCombat
-            // takes over flight only at the existing interception threshold.
+            targets.set(pirateId, targetId);
+            // Use native intercept distance but do not latch the old 1vs1 engine.
             return false;
           }
         );
