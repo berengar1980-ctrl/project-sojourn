@@ -10,6 +10,7 @@ const modules = [
   'src/systems/combat/fleet-faction-policy.ts',
   'src/systems/combat/fleet-security-drone-interceptor.ts',
   'src/systems/combat/fleet-career-mining-bridge.ts',
+  'src/systems/combat/fleet-career-field-security-bridge.ts',
   'src/systems/combat/fleet-combat-lifecycle.ts',
 ];
 
