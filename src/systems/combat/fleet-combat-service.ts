@@ -71,6 +71,14 @@ export interface FleetCombatSnapshot {
   readonly arena: StrategicCombatArenaOptions;
 }
 
+/** Career world services are advanced exactly once per shared FleetCombat step.
+ * The PvP test does not provide this hook and cannot replace campaign AI.
+ * The caller must transfer exclusive tick ownership for the duration.
+ */
+export interface FleetCombatWorldOptions {
+  readonly tickWorld?: (dt: number) => void;
+}
+
 export interface FleetCombatService {
   tick(deltaSeconds: number): FleetCombatSnapshot;
   getSnapshot(): FleetCombatSnapshot;
@@ -313,7 +321,8 @@ function initializeFleetParticipants(
  */
 export function createFleetCombatService(
   participants: readonly FleetCombatParticipant[],
-  arena: StrategicCombatArenaOptions
+  arena: StrategicCombatArenaOptions,
+  world: FleetCombatWorldOptions = {}
 ): FleetCombatService {
   validateFleetScenario(participants, arena);
   const { byId, fleet } = initializeFleetParticipants(participants, arena);
@@ -353,6 +362,9 @@ export function createFleetCombatService(
     fleetView(fleet, shots, arrivedIds, engagementManager.engagements(), elapsedSeconds, arena);
 
   const step = (dt: number): void => {
+    // The campaign's own miner/NPC world advances once, BEFORE fleet reads
+    // its authoritative poses. Never run the same world tick in each ship.
+    world.tickWorld?.(dt);
     // Only ships present at the START of this interval may move/fire in it.
     const present = fleet.filter((ship) => ship.active);
     advanceFleetMotion(present, acquire, arena, dt);
