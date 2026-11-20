@@ -27,15 +27,19 @@ try {
     { id: 'pirate-b', factionId: 'pirate-b', position: { x: 900, y: 500 }, operational: true },
     { id: 'far-pirate', factionId: 'pirate-b', position: { x: 1800, y: 1800 }, operational: true },
   ];
+  const solidShips = [
+    { id: 'pirate-a', position: { x: 800, y: 500 }, radius: 35 },
+    { id: 'pirate-b', position: { x: 900, y: 500 }, radius: 35 },
+  ];
   assert.equal(interceptor.snapshot().targetId, null);
-  let state = interceptor.tick(0.08, contacts);
+  let state = interceptor.tick(0.08, contacts, solidShips);
   assert.equal(state.targetId, 'pirate-a');
   assert.deepEqual(state.detectedPirateIds, ['pirate-a', 'pirate-b']);
   assert.equal(state.inAttackRange, false);
   const start = { ...state.position };
   let reached = false;
   for (let i = 0; i < 250; i += 1) {
-    state = interceptor.tick(0.08, contacts);
+    state = interceptor.tick(0.08, contacts, solidShips);
     if (state.inAttackRange) {
       reached = true;
       break;
