@@ -189,10 +189,14 @@ function createFleetPrototype(config: FleetTestConfiguration) {
       setup: { ...setup, id: entry.id, name: entry.name },
       factionId: entry.team,
       position: {
-        x: isPlayer ? arena.width * 0.25 : entry.spawnAtSeconds > 0 ? arena.width - 180 : arena.width * 0.72,
+        x: isPlayer
+          ? arena.width * 0.25
+          : entry.spawnAtSeconds > 0
+            ? arena.width - 180
+            : arena.width * 0.72,
         y: arena.height * lane,
       },
-      targetId: isPlayer ? (firstPirate?.id ?? null) : rival ?? 'player',
+      targetId: isPlayer ? (firstPirate?.id ?? null) : (rival ?? 'player'),
       spawnAtSeconds: entry.spawnAtSeconds,
     };
   });
@@ -312,7 +316,8 @@ function createFleetLobbyElements(onBack: () => void) {
   start.type = 'button';
   start.textContent = 'FleetCombat-Prototyp starten';
   start.disabled = true;
-  start.title = 'Gemeinsame Karte mit Spieler und mindestens zwei Piraten; Miner und Drohnen folgen';
+  start.title =
+    'Gemeinsame Karte mit Spieler und mindestens zwei Piraten; Miner und Drohnen folgen';
   const back = document.createElement('button');
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';

@@ -208,7 +208,10 @@ try {
     arena
   );
   assert.equal(multiFaction.getSnapshot().ships.length, 3);
-  assert.throws(() => multiFaction.setTarget('pirate-a-1', 'pirate-a-2'), /Invalid FleetCombat target/);
+  assert.throws(
+    () => multiFaction.setTarget('pirate-a-1', 'pirate-a-2'),
+    /Invalid FleetCombat target/
+  );
   multiFaction.tick(0.5);
   assert.equal(multiFaction.getSnapshot().ships.length, 3);
   multiFaction.tick(0.5);
