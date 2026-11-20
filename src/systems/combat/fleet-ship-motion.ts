@@ -1,10 +1,14 @@
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
 import type {
-  FleetShip, FleetCombatShipSnapshot, FleetCombatWorldOptions,
+  FleetShip,
+  FleetCombatShipSnapshot,
+  FleetCombatWorldOptions,
 } from './fleet-combat-service';
 import { distance, snapshot } from './strategic-combat-geometry';
 import {
-  moveCombatant, resolveCombatantCollision, resolveArenaObstacles,
+  moveCombatant,
+  resolveCombatantCollision,
+  resolveArenaObstacles,
 } from './strategic-combat-movement';
 import { advanceShieldImpacts } from '../shields/shield-service';
 import { isFleetHostile } from './fleet-faction-policy';
@@ -114,4 +118,3 @@ export function advanceFleetMotion(
     }
   }
 }
-

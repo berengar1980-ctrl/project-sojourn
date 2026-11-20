@@ -396,7 +396,8 @@ export function createFleetCombatService(
   const step = (dt: number): void => {
     const result = advanceFleetStep(
       { fleet, byId, arena, world, engagementManager, nativeSpecials, weaponPhysics, acquire },
-      dt, elapsedSeconds + dt
+      dt,
+      elapsedSeconds + dt
     );
     shots = result.shots;
     arrivedIds = result.arrivedIds;
