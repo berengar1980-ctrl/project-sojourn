@@ -159,6 +159,70 @@ function countSelect(label: string, initial: number) {
   return field;
 }
 
+function createFleetPrototype(config: FleetTestConfiguration) {
+  const arenaSeed = Math.floor(Math.random() * 0x7fffffff);
+  const arena = createDuelArena(config.map, arenaSeed);
+  const participants = config.ships.map((entry, index) => {
+      if (!entry.draft) throw new Error('The initial 2vs1 test cannot run drone entities');
+      const ship = getShipDefinition(entry.draft.shipId);
+      if (!ship) throw new Error('Missing FleetCombat hull: ' + entry.draft.shipId);
+      const setup = duelCombatant(index, entry.draft, ship);
+      const isPlayer = entry.role === 'player';
+      const distanceFactor = index === 1 ? -1 : 1;
+      return {
+        setup: { ...setup, id: entry.id, name: entry.name },
+        factionId: isPlayer ? 'player' : 'pirate-a',
+        position: {
+          x: arena.width * (isPlayer ? 0.27 : 0.72),
+          y: arena.height * (isPlayer ? 0.5 : 0.5 + distanceFactor * 0.09),
+        },
+        targetId: isPlayer ? 'pirate-a-1' : 'player',
+      };
+    });
+  return createFleetCombatService(participants, arena);
+}
+
+function renderFleetRoster(
+  roster: HTMLElement,
+  config: FleetTestConfiguration
+): void {
+  roster.replaceChildren();
+  for (const [team, label] of [
+    ['player', 'Spieler'],
+    ['civilian', 'Miner'],
+    ['security', 'Sicherheitsdrohnen'],
+    ['pirate-a', 'Piraten · Fraktion A'],
+    ['pirate-b', 'Piraten · Fraktion B'],
+  ] as const) {
+    const section = document.createElement('section');
+    section.className = 'harrow-duel__card';
+    const title = document.createElement('h2');
+    const entries = config.ships.filter((entry) => entry.team === team);
+    title.textContent = label + ' (' + entries.length + ')';
+    section.append(title);
+    for (const ship of entries) {
+    const line = document.createElement('p');
+    if (!ship.draft) {
+      line.textContent = ship.id + ' · ' + ship.name + ' · Kampagnen-KI vorgesehen';
+    } else {
+      const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
+      const equipped = ship.draft.weapons
+      .map((id) => weaponCatalog.find((item) => item.id === id)?.name)
+      .filter(Boolean);
+      const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft?.mines[0]);
+      line.textContent = [
+      ship.id.toUpperCase() + ' · ' + ship.name,
+      equipped.join(', ') || 'Keine kompatiblen Waffenplätze',
+      mine?.name ?? 'Keine Mine',
+      'Reaktor Mk IV',
+      ].join(' | ');
+    }
+    section.append(line);
+    }
+    roster.append(section);
+  }
+}
+
 export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
   const shell = document.createElement('section');
   shell.className = 'harrow-duel harrow-fleet';
@@ -225,26 +289,7 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   };
   start.addEventListener('click', () => {
     if (!canLaunch()) return;
-    const arenaSeed = Math.floor(Math.random() * 0x7fffffff);
-    const arena = createDuelArena(config.map, arenaSeed);
-    const participants = config.ships.map((entry, index) => {
-      if (!entry.draft) throw new Error('The initial 2vs1 test cannot run drone entities');
-      const ship = getShipDefinition(entry.draft.shipId);
-      if (!ship) throw new Error('Missing FleetCombat hull: ' + entry.draft.shipId);
-      const setup = duelCombatant(index, entry.draft, ship);
-      const isPlayer = entry.role === 'player';
-      const distanceFactor = index === 1 ? -1 : 1;
-      return {
-        setup: { ...setup, id: entry.id, name: entry.name },
-        factionId: isPlayer ? 'player' : 'pirate-a',
-        position: {
-          x: arena.width * (isPlayer ? 0.27 : 0.72),
-          y: arena.height * (isPlayer ? 0.5 : 0.5 + distanceFactor * 0.09),
-        },
-        targetId: isPlayer ? 'pirate-a-1' : 'player',
-      };
-    });
-    const combat = createFleetCombatService(participants, arena);
+    const combat = createFleetPrototype(config);
     activePanel?.destroy();
     activePanel = createFleetCombatTestPanel(root, combat, () => {
       activePanel?.destroy();
@@ -264,41 +309,7 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
       player.control.value,
       counts()
     );
-    roster.replaceChildren();
-    for (const [team, label] of [
-      ['player', 'Spieler'],
-      ['civilian', 'Miner'],
-      ['security', 'Sicherheitsdrohnen'],
-      ['pirate-a', 'Piraten · Fraktion A'],
-      ['pirate-b', 'Piraten · Fraktion B'],
-    ] as const) {
-      const section = document.createElement('section');
-      section.className = 'harrow-duel__card';
-      const title = document.createElement('h2');
-      const entries = config.ships.filter((entry) => entry.team === team);
-      title.textContent = label + ' (' + entries.length + ')';
-      section.append(title);
-      for (const ship of entries) {
-        const line = document.createElement('p');
-        if (!ship.draft) {
-          line.textContent = ship.id + ' · ' + ship.name + ' · Kampagnen-KI vorgesehen';
-        } else {
-          const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
-          const equipped = ship.draft.weapons
-            .map((id) => weaponCatalog.find((item) => item.id === id)?.name)
-            .filter(Boolean);
-          const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft?.mines[0]);
-          line.textContent = [
-            ship.id.toUpperCase() + ' · ' + ship.name,
-            equipped.join(', ') || 'Keine kompatiblen Waffenplätze',
-            mine?.name ?? 'Keine Mine',
-            'Reaktor Mk IV',
-          ].join(' | ');
-        }
-        section.append(line);
-      }
-      roster.append(section);
-    }
+    renderFleetRoster(roster, config);
     updateLaunch();
   };
   shuffle.addEventListener('click', draw);
