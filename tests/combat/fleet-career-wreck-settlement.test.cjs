@@ -9,7 +9,7 @@ const { generateMiningSpace } = load('src/systems/local-space/local-space-genera
 const { createFleetCareerWreckSettlement } = load(
   'src/systems/combat/fleet-career-wreck-settlement.ts'
 );
-const { miningFieldCombatArena } = load('src/systems/combat/field-combat-arena.ts');
+const { miningFieldCombatArena, appendCombatWrecksToArena } = load('src/systems/combat/field-combat-arena.ts');
 
 const field = {
   locationId: 'fleet-wreck-field',
@@ -64,11 +64,34 @@ for (const wreck of registered) {
   const collider = arena.asteroids.find((body) => body.id === wreck.id);
   assert(collider && collider.combatWreckVariant === wreck.combatWreckVariant);
 }
+// FC-38: the very same arena object must gain fresh physical bodies immediately,
+// without rebuilding the scene or duplicating bodies on later settlement ticks.
+const liveArena = miningFieldCombatArena(field.instance, { x: 0, y: 0 }, []);
+const initialBodyCount = liveArena.asteroids.length;
+const initialObstacleCount = liveArena.obstacles.length;
+appendCombatWrecksToArena(liveArena, created);
+assert.equal(liveArena.asteroids.length, initialBodyCount + 2);
+assert.equal(liveArena.obstacles.length, initialObstacleCount + 2);
+for (const wreck of created) {
+  const body = liveArena.asteroids.find((entry) => entry.id === wreck.id);
+  const obstacle = liveArena.obstacles.find((entry) => entry.id === wreck.id);
+  assert(body && obstacle, 'new wreck is immediately visible to physics and navigation');
+  assert.equal(body.combatWreckVariant, wreck.combatWreckVariant);
+  assert.deepEqual(body.position, wreck.position);
+  assert.equal(obstacle.radius, wreck.radius * 0.5, 'native wreck navigation clearance');
+  assert.equal(body.collisionRadius > 0, true, 'native silhouette collider is preserved');
+}
+appendCombatWrecksToArena(liveArena, created);
+assert.equal(liveArena.asteroids.length, initialBodyCount + 2, 'replay cannot double-spawn');
+assert.equal(liveArena.obstacles.length, initialObstacleCount + 2);
+appendCombatWrecksToArena(liveArena, later);
+assert.equal(liveArena.asteroids.length, initialBodyCount + 3, 'later kills join the live arena');
+assert.equal(liveArena.obstacles.length, initialObstacleCount + 3);
 assert.equal(
   registered.some((wreck) => wreck.id.includes('player')),
   false,
   'player hull never produces an NPC wreck through the career NPC adapter'
 );
 console.log(
-  'PASS FC-37: one recoverable career wreck per destroyed fleet ship, reused salvage factory'
+  'PASS FC-37/38: recoverable career wrecks immediately join the live fleet collision arena'
 );
