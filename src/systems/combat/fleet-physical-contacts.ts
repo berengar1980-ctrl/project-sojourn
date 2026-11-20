@@ -106,3 +106,45 @@ export function firstFleetShipContact(
   }
   return nearest;
 }
+
+/** Swept sphere matching the ORIGINAL tractor throw damage threshold:
+ * thrown object's collision radius + target's native shield size (30m
+ * fallback). Using this contact radius ensures the unmodified native
+ * hitThrownAsteroid routine actually applies damage at the reported impact.
+ */
+export function firstFleetThrownContact(
+  from: CombatPoint,
+  to: CombatPoint,
+  ships: readonly MutableCombatant[],
+  sourceId: string,
+  rockRadius: number
+): FleetPhysicalContact | null {
+  let nearest: FleetPhysicalContact | null = null;
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const a = dx * dx + dy * dy;
+  if (a <= 1e-9) return null;
+  for (const ship of ships) {
+    if (ship.setup.id === sourceId || ship.hullHp <= 0) continue;
+    const radius = rockRadius +
+      Math.max(ship.setup.shieldGeometry?.radiusX ?? 30, ship.setup.shieldGeometry?.radiusY ?? 20);
+    const fx = from.x - ship.position.x;
+    const fy = from.y - ship.position.y;
+    const b = 2 * (fx * dx + fy * dy);
+    const d = fx * fx + fy * fy - radius * radius;
+    const discriminant = b * b - 4 * a * d;
+    if (discriminant < 0) continue;
+    const t = d <= 0 ? 0 : (-b - Math.sqrt(discriminant)) / (2 * a);
+    if (t < 0 || t > 1) continue;
+    if (!nearest || t < nearest.t - 1e-9 ||
+        (Math.abs(t - nearest.t) <= 1e-9 &&
+          ship.setup.id.localeCompare(nearest.ship.setup.id) < 0)) {
+      nearest = {
+        ship, t,
+        point: { x: from.x + dx * t, y: from.y + dy * t },
+        shieldHit: null,
+      };
+    }
+  }
+  return nearest;
+}
