@@ -18,25 +18,30 @@ export function miningFieldCombatArena(
     attackerPosition: { ...instance.ship.position },
     attackerHeadingRadians: instance.ship.headingRadians,
     attackerVelocity: { ...velocity },
-    asteroids: [...instance.asteroids.map((asteroid) => ({
-      id: asteroid.id,
-      kind: asteroid.kind,
-      position: { ...asteroid.position },
-      velocity: { ...asteroid.physics.velocity },
-      angularVelocity: asteroid.physics.angularVelocity,
-      physics: { ...asteroid.physics, velocity: { ...asteroid.physics.velocity } },
-      radius: asteroid.radius,
-      ...(asteroid.collisionRadius !== undefined
-        ? { collisionRadius: asteroid.collisionRadius }
-        : {}),
-      rotation: asteroid.rotation,
-    })), ...wrecks.map(wreckCombatBody)],
-    obstacles: [
-      ...instance.asteroids.filter((asteroid) => asteroid.kind === 'resource').map((asteroid) => ({
+    asteroids: [
+      ...instance.asteroids.map((asteroid) => ({
         id: asteroid.id,
+        kind: asteroid.kind,
         position: { ...asteroid.position },
-        radius: asteroid.collisionRadius ?? asteroid.radius,
+        velocity: { ...asteroid.physics.velocity },
+        angularVelocity: asteroid.physics.angularVelocity,
+        physics: { ...asteroid.physics, velocity: { ...asteroid.physics.velocity } },
+        radius: asteroid.radius,
+        ...(asteroid.collisionRadius !== undefined
+          ? { collisionRadius: asteroid.collisionRadius }
+          : {}),
+        rotation: asteroid.rotation,
       })),
+      ...wrecks.map(wreckCombatBody),
+    ],
+    obstacles: [
+      ...instance.asteroids
+        .filter((asteroid) => asteroid.kind === 'resource')
+        .map((asteroid) => ({
+          id: asteroid.id,
+          position: { ...asteroid.position },
+          radius: asteroid.collisionRadius ?? asteroid.radius,
+        })),
       ...wrecks.map((wreck) => ({
         id: wreck.id,
         position: { ...wreck.position },

@@ -68,7 +68,10 @@ function synchronizeLocalDefender(
 const combatExplosionStart = new WeakMap<ControllerRuntimeContext, number>();
 
 /** Hold the native fight snapshot on screen until the explosion has played. */
-function explosionStillVisible(context: ControllerRuntimeContext, snapshot: StrategicCombatSnapshot): boolean {
+function explosionStillVisible(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot
+): boolean {
   if (snapshot.attacker.hullHp > 0 && snapshot.defender.hullHp > 0) return false;
   const now = performance.now();
   const start = combatExplosionStart.get(context);

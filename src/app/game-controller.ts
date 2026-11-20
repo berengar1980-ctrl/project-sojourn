@@ -203,10 +203,11 @@ function mountControllerMining(
     !preserveField &&
     site &&
     state.activeShip.role === 'salvage' &&
-    fieldWorldFor(context).combatWrecks(site).some(
-      (wreck) => wreck.resources.some((resource) => resource.remainingAmount > 0)
-    )
-  ) return mountControllerSalvage(context, reuseSeed);
+    fieldWorldFor(context)
+      .combatWrecks(site)
+      .some((wreck) => wreck.resources.some((resource) => resource.remainingAmount > 0))
+  )
+    return mountControllerSalvage(context, reuseSeed);
   destroyControllerSalvage(context);
   destroyControllerCombat(context);
   destroyControllerBoarding(context);

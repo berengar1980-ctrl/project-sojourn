@@ -26,9 +26,15 @@ export function showCampaignCombatSummary(
   heading.style.display = 'block';
   const details = document.createElement('span');
   details.textContent =
-    'Gegner: ' + result.enemy +
-    ' · Eigene Hülle: ' + result.playerHull + '/' + result.playerHullMax +
-    ' · Dauer: ' + result.duration + ' s';
+    'Gegner: ' +
+    result.enemy +
+    ' · Eigene Hülle: ' +
+    result.playerHull +
+    '/' +
+    result.playerHullMax +
+    ' · Dauer: ' +
+    result.duration +
+    ' s';
   const loot = document.createElement('small');
   loot.style.cssText = 'display:block;color:#9fadb3;margin-top:5px;';
   loot.textContent = boardingOutcome

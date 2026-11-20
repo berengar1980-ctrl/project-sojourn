@@ -19,11 +19,13 @@ export function drawMiningCombatWrecks(
       point.x > width + radius * 2 ||
       point.y < -radius * 2 ||
       point.y > height + radius * 2
-    ) continue;
+    )
+      continue;
     context.save();
     context.translate(point.x, point.y);
     context.globalAlpha = wreck.resources.every((resource) => resource.remainingAmount <= 0)
-      ? 0.45 : 0.95;
+      ? 0.45
+      : 0.95;
     drawCombatWreck3d(
       context,
       wreck.combatWreckVariant,

@@ -97,7 +97,8 @@ export class AsteroidFieldWorld {
               !Array.isArray(wreck.resources) ||
               wreck.resources.some((resource) => !Number.isFinite(resource.remainingAmount))
           )
-        ) throw new Error('Invalid saved combat wreck field');
+        )
+          throw new Error('Invalid saved combat wreck field');
         this.combatWrecksByLocation.set(id, cloneCareerJson(wrecks));
       }
     }
@@ -107,7 +108,8 @@ export class AsteroidFieldWorld {
       const instance = generateMiningSpace(location.id, seed, location.minedResourceIds);
       claims.restoreField(location.id, instance.asteroids);
       const saved = checkpoint?.fields[location.id];
-      if (!this.combatWrecksByLocation.has(location.id)) this.combatWrecksByLocation.set(location.id, []);
+      if (!this.combatWrecksByLocation.has(location.id))
+        this.combatWrecksByLocation.set(location.id, []);
       this.fields.set(location.id, {
         combatWrecks: this.combatWrecksByLocation.get(location.id)!,
         locationId: location.id,
@@ -169,7 +171,11 @@ export class AsteroidFieldWorld {
 
   reconcileCombatWrecks(locationId: string, wrecks: readonly SalvageWreck[]): void {
     const recorded = this.combatWrecksByLocation.get(locationId) ?? [];
-    recorded.splice(0, recorded.length, ...wrecks.filter((wreck) => wreck.combatWreckVariant !== undefined));
+    recorded.splice(
+      0,
+      recorded.length,
+      ...wrecks.filter((wreck) => wreck.combatWreckVariant !== undefined)
+    );
     this.combatWrecksByLocation.set(locationId, recorded);
   }
 

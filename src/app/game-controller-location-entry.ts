@@ -16,9 +16,9 @@ export function handleControllerLocationEntry(
     state.previousLocationId !== currentLocationId &&
     currentLocationId &&
     state.activeShip.role === 'salvage' &&
-    fieldWorldFor(context).combatWrecks(currentLocationId).some(
-      (wreck) => wreck.resources.some((resource) => resource.remainingAmount > 0)
-    )
+    fieldWorldFor(context)
+      .combatWrecks(currentLocationId)
+      .some((wreck) => wreck.resources.some((resource) => resource.remainingAmount > 0))
   ) {
     runSceneZoomTransition(context.root, mountSalvage);
     return;

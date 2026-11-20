@@ -119,7 +119,10 @@ assert.deepEqual(combatRestore.exportState(), combatSave);
 const restoredWreck = combatRestore.combatWrecks(fieldId)[0];
 assert.equal(restoredWreck.combatWreckVariant, battleWreck.combatWreckVariant);
 restoredWreck.resources[0].remainingAmount -= 1;
-assert.notEqual(restoredWreck.resources[0].remainingAmount, battleWreck.resources[0].remainingAmount);
+assert.notEqual(
+  restoredWreck.resources[0].remainingAmount,
+  battleWreck.resources[0].remainingAmount
+);
 combatRestore.reconcileCombatWrecks(fieldId, []);
 assert.equal(combatRestore.combatWrecks(fieldId).length, 0);
 const invalidWreckSave = JSON.parse(JSON.stringify(combatSave));
