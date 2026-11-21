@@ -7,8 +7,9 @@ import {
 } from '../systems/campaigns/campaign-selection';
 import { createCharacterEditor } from '../ui/start/character-editor';
 import { createCampaignLoadingScreen } from '../ui/start/campaign-loading';
-import { withPlayerShipName, type PlayerProfile } from '../core/player-profile';
+import { createPlayerProfile, withPlayerShipName, type PlayerProfile } from '../core/player-profile';
 import { createCombatTestTabs } from '../ui/start/combat-test-tabs';
+import type { FleetTestConfiguration } from '../ui/start/fleet-test-lobby';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNavigationService } from '../systems/navigation';
@@ -30,10 +31,11 @@ function launchCampaign(
   root: HTMLElement,
   profile: PlayerProfile,
   selection: CampaignSelection,
-  restored?: PreparedControllerCareer
+  restored?: PreparedControllerCareer,
+  fleetTest?: FleetTestConfiguration
 ): void {
   const ship = getShipDefinition(
-    restored?.session.commerce.ships.activeShipId ?? 'salvage-100m-variant-01'
+    restored?.session.commerce.ships.activeShipId ?? fleetTest?.playerShipId ?? 'salvage-100m-variant-01'
   );
   if (!ship) throw new Error('SOJOURN starting ship is missing.');
 
@@ -57,7 +59,7 @@ function launchCampaign(
         restored?.session.navigationWorld.navigation ??
         createNavigationService(
           narrowsSector,
-          narrowsSector.startLocationId,
+          fleetTest ? 'greyrock-belt' : narrowsSector.startLocationId,
           ship.navigation.cruiseSpeed
         );
       game = createGameController({
@@ -68,6 +70,7 @@ function launchCampaign(
         playerProfile: profile,
         navigation,
         campaignSelection: selection.snapshot(),
+        ...(fleetTest ? { fleetTest } : {}),
         ...(restored
           ? {
               restoredSession: restored.session,
@@ -154,10 +157,27 @@ function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {
         () => navigate('campaign')
       );
     } else if (action === 'pvp') {
-      current = createCombatTestTabs(root, () => {
-        current?.destroy();
-        showMainMenu(root, selection);
-      });
+      current = createCombatTestTabs(
+        root,
+        () => {
+          current?.destroy();
+          showMainMenu(root, selection);
+        },
+        (scenario) => {
+          current?.destroy();
+          launchCampaign(
+            root,
+            createPlayerProfile({
+              portraitId: 1,
+              captainName: 'Fleet-Testpilot',
+              shipName: 'Fleet-Testschiff',
+            }),
+            selection,
+            undefined,
+            scenario
+          );
+        }
+      );
     } else if (action === 'options') {
       showStartOptions(root, () => showMainMenu(root, selection));
     } else {
