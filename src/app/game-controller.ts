@@ -1,4 +1,5 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
+import { advanceFleetCareerTest, installFleetCareerTest } from './game-controller-fleet-test-session';
 import { advanceControllerFieldWorld, fieldWorldFor } from './game-controller-field-world-bridge';
 import {
   inspectLegalDockArrival,
@@ -361,6 +362,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.campaignNavigation.observe(navigationSnapshot);
   inspectPatrolTravel(context, deltaSeconds);
   context.engagements.tick(deltaSeconds);
+  advanceFleetCareerTest(context, deltaSeconds);
   advanceControllerFleetIntegration(context, () => mountControllerStarMap(context));
   advanceControllerFieldWorld(context, deltaSeconds);
   resolveControllerCombat(context, {
@@ -475,8 +477,10 @@ export function createGameController(options: GameControllerOptions): GameContro
   };
   combatContext = context;
   installControllerCareer(context, options);
+  if (options.fleetTest) installFleetCareerTest(context, options.fleetTest);
   const menu = createControllerSettingsMenu(context, options);
-  mountControllerStarMap(context);
+  if (options.fleetTest) mountControllerMining(context);
+  else mountControllerStarMap(context);
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
     careerSnapshot: () => captureControllerCareer(context),
