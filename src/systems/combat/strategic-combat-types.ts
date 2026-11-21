@@ -332,6 +332,8 @@ export interface StrategicCombatService {
   resumeAfterBoarding(): boolean;
   /** Transient PvP coordinator access: never serialize this mutable actor. */
   getParallelActor?(side: StrategicCombatSide): MutableCombatant;
+  /** Fleet-only: resume one surviving ship against another already-live opponent. */
+  retargetParallelSurvivor?(side: StrategicCombatSide, opponent: MutableCombatant): boolean;
 }
 
 export interface MutableCombatant {
