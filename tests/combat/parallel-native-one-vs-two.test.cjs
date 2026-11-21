@@ -76,18 +76,17 @@ assert.equal(
 const survivorTime = primary.getSnapshot().elapsedSeconds;
 oneVsTwo.tick(0.08);
 assert(primary.getSnapshot().elapsedSeconds > survivorTime, 'original survivor continues moving');
-assert.equal(
-  secondOpponent.tractorThrowCooldown,
-  2 - 0.08 * 3,
+assert(
+  Math.abs(secondOpponent.tractorThrowCooldown - (2 - 0.08 * 3)) < 1e-9,
   'support fighter cooldown must not be ticked twice after retarget'
 );
 secondOpponent.hullHp = 0;
 oneVsTwo.tick(0.08);
 assert.equal(oneVsTwo.getSnapshot().finished, true);
 assert.equal(
-  oneVsTwo.getSnapshot().duels[0].arena.asteroids.filter((rock) =>
-    rock.id.startsWith('fleet-wreck:')
-  ).length,
+  oneVsTwo
+    .getSnapshot()
+    .duels[0].arena.asteroids.filter((rock) => rock.id.startsWith('fleet-wreck:')).length,
   2,
   'both defeated attackers each leave one physical wreck'
 );
@@ -118,6 +117,7 @@ const pulse = {
 };
 const extraGunner = ship('gunner', 'b');
 extraGunner.setup.weapons = [pulse];
+extraGunner.setup.hitChance = 1;
 const liveFire = createParallelNativeDuels(
   [ship('victim', 'a'), ship('unarmed', 'b'), extraGunner],
   arena(),
