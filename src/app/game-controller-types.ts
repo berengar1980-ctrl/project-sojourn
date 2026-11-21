@@ -5,12 +5,15 @@ import type { NavigationService } from '../systems/navigation';
 import type { StagedFullCareerSession } from '../systems/persistence/career-full-session';
 import type { CareerSnapshot } from '../systems/persistence/career-save-contract';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import type { FleetTestConfiguration } from '../ui/start/fleet-test-lobby';
 
 export interface GameControllerOptions {
   readonly root: HTMLElement;
   readonly ship: ShipDefinition;
   readonly playerProfile: PlayerProfile;
   readonly navigation: NavigationService;
+  /** Isolated PvP test launched through the original campaign field renderer. */
+  readonly fleetTest?: FleetTestConfiguration;
   readonly onReturnToMainMenu: () => void;
   /** Reload the single Career slot using an entirely fresh controller. */
   readonly onLoadCareer?: () => void;
