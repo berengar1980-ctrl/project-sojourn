@@ -179,17 +179,18 @@ function endFinishedFleet(
   const defeated = !activePlayer;
   const player = ships.find((entry) => entry.ship.id === 'player')?.ship;
   endControllerFieldFleet(context, locationId, fleet);
-  if (defeated && player) {
+  context.state.combatReengageSeconds = 8;
+  context.systemLog.write(
+    defeated
+      ? 'FLEETCOMBAT > EIGENES SCHIFF ZERSTÖRT'
+      : 'FLEETCOMBAT > FELD-AUTORITÄT AN KAMPAGNE ZURÜCKGEGEBEN'
+  );
+  if (player) {
     context.state.combatResultPending = true;
-    context.systemLog.write('FLEETCOMBAT > EIGENES SCHIFF ZERSTÖRT');
-    showFleetCombatResult(context.root, false, player.hullHp, player.hullMaxHp, () => {
-      context.state.combatReengageSeconds = 8;
-      returnToStarMap();
+    showFleetCombatResult(context.root, !defeated, player.hullHp, player.hullMaxHp, () => {
+      if (defeated) returnToStarMap();
       context.state.combatResultPending = false;
     });
-  } else {
-    context.state.combatReengageSeconds = 8;
-    context.systemLog.write('FLEETCOMBAT > FELD-AUTORITÄT AN KAMPAGNE ZURÜCKGEGEBEN');
   }
   return true;
 }
