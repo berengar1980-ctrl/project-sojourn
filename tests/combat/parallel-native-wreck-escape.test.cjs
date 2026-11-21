@@ -104,7 +104,8 @@ const remainingDistance = Math.hypot(
   routeShip.position.y - routeGate.y
 );
 assert(
-  remainingDistance < startDistance - 150 || routeFleet.getSnapshot().escapedShipIds.includes('a-1'),
+  remainingDistance < startDistance - 150 ||
+    routeFleet.getSnapshot().escapedShipIds.includes('a-1'),
   'fleeing ships must actually fly toward the real shared exit rather than following a hidden gate'
 );
 
