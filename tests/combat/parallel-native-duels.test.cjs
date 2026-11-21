@@ -121,6 +121,13 @@ for (const [countA, countB] of [
     );
   }
   fleet.tick(0.08);
+  for (const support of fleet.supporters) {
+    const ownTargetId = support.getParallelActor('defender').setup.id;
+    assert(
+      !support.getSnapshot().arena.obstacles.some((rock) => rock.id === 'ship:' + ownTargetId),
+      'the real shooting target may not be a fake route/laser obstacle'
+    );
+  }
   const active = fleet.getSnapshot();
   assert.equal(active.duels.length, Math.min(countA, countB));
   assert.equal(active.supporters.length, Math.abs(countA - countB));
