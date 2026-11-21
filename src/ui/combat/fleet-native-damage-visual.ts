@@ -3,27 +3,47 @@ import type { DistressDamageParticles } from '../salvage/distress-damage-particl
 import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { drawCombatDamageParticles } from './combat-damage-visual';
 
-/** Fleet-only damage filter. The original 1vs1 particle renderer is unchanged. */
+type Fighter = StrategicCombatSnapshot['attacker'];
+
+/** Fleet-only particle filter. Shared ships must emit damage effects once. */
+export function drawFleetCombatDamageShip(
+  context: CanvasRenderingContext2D,
+  fighter: Fighter,
+  geometry: (fighter: Fighter) => ShipScreenGeometry,
+  particles: Map<string, DistressDamageParticles>,
+  now: number,
+  width: number,
+  height: number,
+  hidden: ReadonlySet<string>,
+  painted: Set<string>
+): void {
+  if (hidden.has(fighter.id) || painted.has(fighter.id)) return;
+  painted.add(fighter.id);
+  drawCombatDamageParticles(context, fighter, geometry(fighter), particles, now, width, height);
+}
+
 export function drawFleetCombatDamagePair(
   context: CanvasRenderingContext2D,
-  combatants: readonly [StrategicCombatSnapshot['attacker'], StrategicCombatSnapshot['defender']],
-  geometryFor: (combatant: StrategicCombatSnapshot['attacker']) => ShipScreenGeometry,
+  combatants: readonly [Fighter, Fighter],
+  geometryFor: (combatant: Fighter) => ShipScreenGeometry,
   particlesById: Map<string, DistressDamageParticles>,
   now: number,
   width: number,
   height: number,
-  hiddenIds: ReadonlySet<string> = new Set()
+  hiddenIds: ReadonlySet<string> = new Set(),
+  paintedIds: Set<string> = new Set()
 ): void {
-  for (const combatant of combatants) {
-    if (hiddenIds.has(combatant.id)) continue;
-    drawCombatDamageParticles(
+  for (const fighter of combatants) {
+    drawFleetCombatDamageShip(
       context,
-      combatant,
-      geometryFor(combatant),
+      fighter,
+      geometryFor,
       particlesById,
       now,
       width,
-      height
+      height,
+      hiddenIds,
+      paintedIds
     );
   }
 }
