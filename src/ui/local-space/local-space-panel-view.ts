@@ -275,7 +275,13 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
 
   renderLocalSelection(context, eventActive, miningActive);
   if (fleetActive) {
-    for (const button of [claimButton, longScanButton, cancelButton,
-      controls.mineButton, controls.shortScanButton]) button.disabled = true;
+    for (const button of [
+      claimButton,
+      longScanButton,
+      cancelButton,
+      controls.mineButton,
+      controls.shortScanButton,
+    ])
+      button.disabled = true;
   }
 }

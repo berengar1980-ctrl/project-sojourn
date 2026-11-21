@@ -12,14 +12,20 @@ import type { FleetCombatParticipant } from '../systems/combat/fleet-combat-serv
 /** Testing override uses the normal running career field; it spawns no ships and
  * creates no PvP map. Natural multi-pirate encounters work without this flag. */
 function fleetPreviewEnabled(): boolean {
-  return typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).get('fleet') === '1';
+  return (
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('fleet') === '1'
+  );
 }
 
 function currentCareerField(context: ControllerRuntimeContext) {
   const local = context.state.localSpace?.getSnapshot();
-  if (context.state.mode !== 'local-space' || !local ||
-      context.state.embeddedCombat !== null || context.engagements.activePlayerCombat()) {
+  if (
+    context.state.mode !== 'local-space' ||
+    !local ||
+    context.state.embeddedCombat !== null ||
+    context.engagements.activePlayerCombat()
+  ) {
     return null;
   }
   const locationId = local.instance.sourceLocationId;
@@ -32,16 +38,21 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
   const current = currentCareerField(context);
   if (!current) return;
   const { field, local, locationId } = current;
-  if (context.engagements.activeNpcCombatSnapshots?.().some((duel) =>
-    [duel.attacker.id, duel.defender.id].some((id) =>
-      context.economy.sectorNpcs.npcs.some((npc) =>
-        npc.id === id && npc.locationId === locationId
+  if (
+    context.engagements
+      .activeNpcCombatSnapshots?.()
+      .some((duel) =>
+        [duel.attacker.id, duel.defender.id].some((id) =>
+          context.economy.sectorNpcs.npcs.some(
+            (npc) => npc.id === id && npc.locationId === locationId
+          )
+        )
       )
-    )
-  )) return;
+  )
+    return;
   const npcs = context.economy.sectorNpcs.npcs;
-  const localPirates = npcs.filter((npc) =>
-    npc.pirate && npc.locationId === locationId && npc.hullHp > 0
+  const localPirates = npcs.filter(
+    (npc) => npc.pirate && npc.locationId === locationId && npc.hullHp > 0
   );
   field.pirates.reconcile(localPirates);
   const presentPirates = field.pirates.snapshot(localPirates);
@@ -49,9 +60,9 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
   const miners = field.miners.ships.filter((entry) =>
     npcs.some((npc) => npc.id === entry.npcId && npc.hullHp > 0 && npc.locationId === locationId)
   );
-  const drone = npcs.some((npc) =>
-    npc.id === 'security-drone:' + locationId && npc.hullHp > 0
-  ) && field.drone.snapshot().operational;
+  const drone =
+    npcs.some((npc) => npc.id === 'security-drone:' + locationId && npc.hullHp > 0) &&
+    field.drone.snapshot().operational;
   if (1 + presentPirates.length + miners.length + Number(drone) < 3) return;
 
   const setup = servicedPlayerCombatant(
@@ -73,8 +84,7 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
   };
   const fleet = beginControllerFieldFleet(context, locationId, [player]);
   context.systemLog.write(
-    'FLEETCOMBAT > ' + fleet.getSnapshot().ships.length +
-    ' SCHIFFE · BESTEHENDES ASTEROIDENFELD'
+    'FLEETCOMBAT > ' + fleet.getSnapshot().ships.length + ' SCHIFFE · BESTEHENDES ASTEROIDENFELD'
   );
 }
 
@@ -82,8 +92,9 @@ function endFinishedFleet(context: ControllerRuntimeContext, locationId: string)
   const fleet = controllerFieldFleetFor(context, locationId);
   if (!fleet) return false;
   const ships = fleet.getSnapshot().ships;
-  const activePirates = ships.some((entry) =>
-    entry.ship.hullHp > 0 && (entry.factionId === 'pirate-a' || entry.factionId === 'pirate-b')
+  const activePirates = ships.some(
+    (entry) =>
+      entry.ship.hullHp > 0 && (entry.factionId === 'pirate-a' || entry.factionId === 'pirate-b')
   );
   if (activePirates && currentCareerField(context)?.locationId === locationId) return false;
   endControllerFieldFleet(context, locationId, fleet);

@@ -8,7 +8,10 @@ import {
 } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { startPlayerMiningCombat } from './game-controller-mining-combat-action';
-import { advanceControllerFleetIntegration, targetControllerFleetShip } from './game-controller-fleet-integration';
+import {
+  advanceControllerFleetIntegration,
+  targetControllerFleetShip,
+} from './game-controller-fleet-integration';
 import { toggleControllerAsteroidClaim } from './game-controller-claim-actions';
 import { resolveControllerCombat } from './game-controller-combat-resolution';
 import { recordCareerCombatWrecks } from './game-controller-combat-wrecks';

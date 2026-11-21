@@ -38,25 +38,39 @@ function drawFleetEffects(
     camera.worldToScreen(position, width, height);
   for (const beam of fleet.beams) {
     if (beam.ttlSeconds <= 0) continue;
-    const duration = WEAPON_VISUALS[beam.family].beamSeconds ??
-      (beam.kind === 'laser' ? 0.16 : 0.09);
-    drawCombatBeamVisual(context, {
-      id: beam.id,
-      owner: 'attacker',
-      kind: beam.kind,
-      family: beam.family,
-      origin: beam.origin,
-      end: beam.end,
-      weaponIndex: 0,
-      ttlSeconds: beam.ttlSeconds,
-      maxTtlSeconds: duration,
-    }, screen(beam.origin), screen(beam.end));
+    const duration =
+      WEAPON_VISUALS[beam.family].beamSeconds ?? (beam.kind === 'laser' ? 0.16 : 0.09);
+    drawCombatBeamVisual(
+      context,
+      {
+        id: beam.id,
+        owner: 'attacker',
+        kind: beam.kind,
+        family: beam.family,
+        origin: beam.origin,
+        end: beam.end,
+        weaponIndex: 0,
+        ttlSeconds: beam.ttlSeconds,
+        maxTtlSeconds: duration,
+      },
+      screen(beam.origin),
+      screen(beam.end)
+    );
   }
   for (const projectile of fleet.projectiles) {
     if (projectile.ttlSeconds <= 0) continue;
     const point = screen(projectile.position);
-    if (drawVisionProjectile(context, projectile.family, point, projectile.direction,
-      fleet.elapsedSeconds, projectile.id)) continue;
+    if (
+      drawVisionProjectile(
+        context,
+        projectile.family,
+        point,
+        projectile.direction,
+        fleet.elapsedSeconds,
+        projectile.id
+      )
+    )
+      continue;
     context.save();
     context.fillStyle = 'rgba(245, 211, 156, .95)';
     context.beginPath();
@@ -65,14 +79,18 @@ function drawFleetEffects(
     context.restore();
   }
   for (const mine of fleet.mines) {
-    drawCombatMineMarker(context, {
-      ...mine,
-      owner: 'attacker',
-      mineId: String(mine.id),
-      name: mine.kind,
-      tier: 1,
-      detection: 'identified',
-    }, screen(mine.position));
+    drawCombatMineMarker(
+      context,
+      {
+        ...mine,
+        owner: 'attacker',
+        mineId: String(mine.id),
+        name: mine.kind,
+        tier: 1,
+        detection: 'identified',
+      },
+      screen(mine.position)
+    );
   }
   drawTractorThrows(
     context,
@@ -83,8 +101,14 @@ function drawFleetEffects(
   );
   for (const shot of fleet.shots) {
     if (shot.shieldDamage + shot.hullDamage <= 0) continue;
-    drawVisionWeaponImpact(context, 'autocannon', screen(shot.destination),
-      0.04, shot.weaponId.length + shot.sourceId.length, shot.shieldDamage > 0);
+    drawVisionWeaponImpact(
+      context,
+      'autocannon',
+      screen(shot.destination),
+      0.04,
+      shot.weaponId.length + shot.sourceId.length,
+      shot.shieldDamage > 0
+    );
   }
   for (const entry of fleet.ships) {
     const ship = entry.ship;

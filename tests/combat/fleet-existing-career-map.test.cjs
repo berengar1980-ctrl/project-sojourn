@@ -37,8 +37,11 @@ scene.syncCombatIntegrity(31, 19);
 const updated = scene.tickCombatEnvironment(0.08);
 assert.equal(updated.instance, instance, 'existing local map is never regenerated');
 assert.equal(updated.instance.asteroids, originalAsteroids, 'field bodies retain identity');
-assert.deepEqual(updated.instance.asteroids[0].position, firstAsteroid,
-  'local scene must not double-integrate asteroids under FleetCombat authority');
+assert.deepEqual(
+  updated.instance.asteroids[0].position,
+  firstAsteroid,
+  'local scene must not double-integrate asteroids under FleetCombat authority'
+);
 assert.deepEqual(updated.instance.ship.position, target, 'native-map player pose follows combat');
 assert.equal(updated.instance.ship.headingRadians, 0.42);
 assert.equal(updated.shield.currentHp, 31, 'combat damage transfers into original shield state');
@@ -52,16 +55,25 @@ const entry = read('src/app/game-controller-fleet-integration.ts');
 const bridge = read('src/app/game-controller-field-world-bridge.ts');
 assert(controller.includes('advanceControllerFleetIntegration(context)'));
 assert(controller.includes('targetControllerFleetShip(context, id)'));
-assert(sceneTick.includes('hasControllerActiveFieldFleet(context)'),
-  'local map must not integrate native asteroids twice while FleetCombat owns the field');
-assert(map.includes('this.model.fleetCombat'),
-  'existing LocalSpaceRenderer, not a replacement scene, must display FleetCombat');
-assert(fx.includes('drawCombatBeamVisual(') && fx.includes('drawVisionProjectile('),
-  'reuse native strategic combat weapon painters');
+assert(
+  sceneTick.includes('hasControllerActiveFieldFleet(context)'),
+  'local map must not integrate native asteroids twice while FleetCombat owns the field'
+);
+assert(
+  map.includes('this.model.fleetCombat'),
+  'existing LocalSpaceRenderer, not a replacement scene, must display FleetCombat'
+);
+assert(
+  fx.includes('drawCombatBeamVisual(') && fx.includes('drawVisionProjectile('),
+  'reuse native strategic combat weapon painters'
+);
 assert(entry.includes('beginControllerFieldFleet(context, locationId, [player])'));
 assert(bridge.includes('syncFleetFieldBodies(field, bodies)'));
 for (const obsolete of [
   'src/ui/start/fleet-combat-test-panel.ts',
   'src/ui/start/fleet-combat-map-renderer.ts',
-]) assert(!fs.existsSync(path.join(root, obsolete)), 'no parallel FleetCombat map: ' + obsolete);
-console.log('PASS FleetCombat uses actual career field instance, existing map renderer and live ship HP');
+])
+  assert(!fs.existsSync(path.join(root, obsolete)), 'no parallel FleetCombat map: ' + obsolete);
+console.log(
+  'PASS FleetCombat uses actual career field instance, existing map renderer and live ship HP'
+);
