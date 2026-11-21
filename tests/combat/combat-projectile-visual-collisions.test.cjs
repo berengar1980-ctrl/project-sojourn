@@ -68,12 +68,17 @@ assert(
 );
 
 assert(impactRenderer.includes("impact.layer === 'shield'"), 'shield hit gets an impact flash');
+const nativeWeaponPainters = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-native-weapon-painters.ts'),
+  'utf8'
+);
 const torpedoRenderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/combat-torpedo-renderer.ts'),
   'utf8'
 );
 assert(
-  renderer.includes('drawCombatTorpedo(this.context)'),
+  renderer.includes('paintNativeProjectile(') &&
+    nativeWeaponPainters.includes('drawCombatTorpedo(context)'),
   'combat renderer uses torpedo silhouette'
 );
 assert(torpedoRenderer.includes("context.fillStyle = '#343a40'"), 'torpedo has dark-grey hull');
