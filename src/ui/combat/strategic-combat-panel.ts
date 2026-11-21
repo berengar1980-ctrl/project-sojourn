@@ -264,9 +264,36 @@ function updateCombatReturnButton(
       : 'TEST BEENDEN'
     : combatReturnLabel(model);
   button.disabled =
-    !options.spectator &&
-    defeatStartedAt !== null &&
-    performance.now() - defeatStartedAt < 2200;
+    !options.spectator && defeatStartedAt !== null && performance.now() - defeatStartedAt < 2200;
+}
+
+function updateCombatActionButtons(
+  grappleButton: HTMLButtonElement | null,
+  fleeButton: HTMLButtonElement | null,
+  surrenderButton: HTMLButtonElement | null,
+  model: StrategicCombatSnapshot
+): void {
+  if (grappleButton) {
+    grappleButton.disabled =
+      model.winner !== null ||
+      model.grapple !== null ||
+      model.grappleUsed.attacker ||
+      model.defender.shieldHp > 0 ||
+      Math.hypot(
+        model.attacker.position.x - model.defender.position.x,
+        model.attacker.position.y - model.defender.position.y
+      ) > 900;
+    grappleButton.textContent = model.grappleUsed.attacker
+      ? 'GREIFHAKEN VERBRAUCHT'
+      : 'GREIFHAKEN ABSCHIESSEN';
+  }
+  if (fleeButton) {
+    const fleeing = model.attacker.tactic === 'flee';
+    fleeButton.textContent = fleeing ? 'KAMPF AUFNEHMEN' : 'FLIEHEN';
+    fleeButton.classList.toggle('is-active', fleeing);
+    fleeButton.disabled = model.winner !== null;
+  }
+  if (surrenderButton) surrenderButton.disabled = model.winner !== null;
 }
 
 export function createStrategicCombatPanel(
@@ -328,27 +355,7 @@ export function createStrategicCombatPanel(
         String(seconds % 60).padStart(2, '0');
     }
     updateCombatReturnButton(returnButton, options, model, defeatReturnStartedAt);
-    if (grappleButton) {
-      grappleButton.disabled =
-        model.winner !== null ||
-        model.grapple !== null ||
-        model.grappleUsed.attacker ||
-        model.defender.shieldHp > 0 ||
-        Math.hypot(
-          model.attacker.position.x - model.defender.position.x,
-          model.attacker.position.y - model.defender.position.y
-        ) > 900;
-      grappleButton.textContent = model.grappleUsed.attacker
-        ? 'GREIFHAKEN VERBRAUCHT'
-        : 'GREIFHAKEN ABSCHIESSEN';
-    }
-    if (fleeButton) {
-      const fleeing = model.attacker.tactic === 'flee';
-      fleeButton.textContent = fleeing ? 'KAMPF AUFNEHMEN' : 'FLIEHEN';
-      fleeButton.classList.toggle('is-active', fleeing);
-      fleeButton.disabled = model.winner !== null;
-    }
-    if (surrenderButton) surrenderButton.disabled = model.winner !== null;
+    updateCombatActionButtons(grappleButton, fleeButton, surrenderButton, model);
   };
 
   returnButton.addEventListener('click', () => {
