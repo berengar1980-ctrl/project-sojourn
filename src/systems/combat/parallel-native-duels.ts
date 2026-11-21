@@ -183,6 +183,11 @@ function retargetSingletonSurvivor(
   if (next) duel.retargetParallelSurvivor?.(singletonSide, next);
 }
 
+function nativeFootprintRadius(actor: MutableCombatant): number {
+  const shield = actor.setup.shieldGeometry;
+  return Math.max(18, Math.max(shield?.radiusX ?? 35, shield?.radiusY ?? 24) * 0.85);
+}
+
 export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
@@ -232,16 +237,7 @@ export function createParallelNativeDuels(
   let elapsed = 0;
   let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
   const radiusById = new Map(
-    actors.map((actor) => [
-      actor.setup.id,
-      Math.max(
-        18,
-        Math.max(
-          actor.setup.shieldGeometry?.radiusX ?? 35,
-          actor.setup.shieldGeometry?.radiusY ?? 24
-        ) * 0.85
-      ),
-    ])
+    actors.map((actor) => [actor.setup.id, nativeFootprintRadius(actor)] as const)
   );
   const getSnapshot = (): ParallelNativeDuelSnapshot => {
     if (cachedSnapshot) return cachedSnapshot;
