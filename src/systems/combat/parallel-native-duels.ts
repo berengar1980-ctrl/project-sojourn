@@ -226,8 +226,7 @@ export function createParallelNativeDuels(
       finished: states.every(
         (state, index) =>
           state.winner !== null ||
-          (index >= pairs.length &&
-            escaped.has(nativeActor(services[index]!, 'defender').setup.id))
+          (index >= pairs.length && escaped.has(nativeActor(services[index]!, 'defender').setup.id))
       ),
     };
     return cachedSnapshot;
