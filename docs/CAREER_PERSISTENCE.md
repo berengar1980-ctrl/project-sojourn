@@ -956,3 +956,21 @@ Kontakt eine alte Route; dies wird durch den bestehenden
 Sicherheitsdrohnen-Checkpoint erfasst. Die optische Größe ist reine
 UI-Konfiguration. Keine neue Version oder Felder im Karriere-Save;
 die bisherigen Sicherheits- und Kampfzustände bleiben kompatibel.
+
+## Parallele native 1vs1-Duelle im PvP-Test (PR #381)
+
+Der neue Zweifraktions-Test im FleetCombat-Reiter verwendet zwei unveränderte
+`StrategicCombatService`-Duelle auf einer einzigen, gemeinsam integrierten
+Arena. Die Testkoordinator-Instanz `parallel-native-duels.ts` hält den
+flüchtigen Zeitpunkt und die Bystander-/Kollisionssicht, integriert Asteroiden
+nur einmal pro Tick und reicht die Originalkampf-Snapshots an den vorhandenen
+Renderer weiter. Keiner dieser Werte gelangt in den Karriere-Speicherpfad.
+
+Die Standard-1vs1-Engine behält das bisherige Checkpointformat und den
+normalen eigenen Asteroiden-Tick; die neue Option `sharedArenaPhysics` ist
+standardmäßig deaktiviert und wird ausschließlich durch den PvP-Koordinator
+aktiviert. Keine Änderung am Save-Schema, keine Datenmigration.
+
+Die Erweiterung auf 2 gegen 1 ist absichtlich noch nicht freigeschaltet:
+Ein gemeinsamer Verteidiger darf später unter keinen Umständen zwei
+Bewegungs-/Waffen-/Persistenzautoritäten bekommen.
