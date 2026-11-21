@@ -2,6 +2,7 @@ import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import {
   paintParallelNativeDuels,
   updateParallelNativeImpacts,
+  updateParallelAutocannonBursts,
 } from './parallel-native-duel-overlay';
 import {
   paintNativeProjectile,
@@ -31,7 +32,6 @@ import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-rend
 import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-renderer';
 import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
-import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
 import { drawCombatBeamVisual } from './combat-beam-visual';
@@ -109,25 +109,7 @@ export class StrategicCombatRenderer {
     const allFinished =
       model.winner !== null && parallelDuels.every((duel) => duel.winner !== null);
     this.effectClock.update(sharedElapsed, allFinished, performance.now() / 1000);
-    for (const [duelIndex, duel] of [model, ...parallelDuels].entries()) {
-      for (const projectile of duel.projectiles) {
-        const id = duelIndex + ':' + projectile.id;
-        if (projectile.kind !== 'autocannon' || this.autocannonBursts.has(id)) continue;
-        const origin = projectile.origin;
-        const target = projectile.target;
-        const travel = Math.hypot(target.x - origin.x, target.y - origin.y);
-        this.autocannonBursts.set(id, {
-          origin: { ...origin },
-          target: { ...target },
-          spawnedAt: duel.elapsedSeconds,
-          flightSeconds: Math.max(0.12, travel / 900),
-        });
-      }
-    }
-    for (const [id, burst] of this.autocannonBursts) {
-      const lifetime = burst.flightSeconds + (AUTOCANNON_ROUNDS - 1) * AUTOCANNON_ROUND_INTERVAL;
-      if (sharedElapsed - burst.spawnedAt >= lifetime) this.autocannonBursts.delete(id);
-    }
+    updateParallelAutocannonBursts([model, ...parallelDuels], this.autocannonBursts, sharedElapsed);
     const recentImpacts = model.recentImpacts ?? [];
     const finalImpact = model.lastImpact ? [model.lastImpact] : [];
     const unseen = [...recentImpacts, ...finalImpact]
