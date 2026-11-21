@@ -27,7 +27,7 @@ function pick<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]!;
 }
 
-/** Preview-only loadouts. The FleetCombat runtime must consume these later, not the 1vs1 service. */
+/** Random native 1vs1 loadouts used directly by the parallel duel test. */
 export function createFleetTestRoster(countA: number, countB: number): FleetTestShip[] {
   const ships = getAllShipDefinitions();
   const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? []).filter((item) => item.tier === 1);
@@ -151,6 +151,33 @@ function createParallelDuelLauncher(
   };
 }
 
+function renderFleetRoster(roster: HTMLElement, config: FleetTestConfiguration): void {
+  roster.replaceChildren();
+  for (const team of ['a', 'b'] as const) {
+    const section = document.createElement('section');
+    section.className = 'harrow-duel__card';
+    const title = document.createElement('h2');
+    title.textContent = 'Fraktion ' + team.toUpperCase();
+    section.append(title);
+    for (const ship of config.ships.filter((entry) => entry.team === team)) {
+      const line = document.createElement('p');
+      const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
+      const equipped = ship.draft.weapons
+        .map((id) => weaponCatalog.find((item) => item.id === id)?.name)
+        .filter(Boolean);
+      const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft.mines[0]);
+      line.textContent = [
+        ship.id.toUpperCase() + ' · ' + ship.name,
+        equipped.join(', ') || 'Keine kompatiblen Waffenplätze',
+        mine?.name ?? 'Keine Mine',
+        'Reaktor Mk IV',
+      ].join(' | ');
+      section.append(line);
+    }
+    roster.append(section);
+  }
+}
+
 export function createFleetTestLobby(
   root: HTMLElement,
   onBack: () => void,
@@ -210,30 +237,7 @@ export function createFleetTestLobby(
     capabilities.textContent = supported
       ? '2 vs 2: zwei native Duelle, eine Karte, gemeinsame Kollisionen.'
       : 'Diese Konstellation folgt nach dem ersten erfolgreichen 2-vs-2-Test.';
-    roster.replaceChildren();
-    for (const team of ['a', 'b'] as const) {
-      const section = document.createElement('section');
-      section.className = 'harrow-duel__card';
-      const title = document.createElement('h2');
-      title.textContent = 'Fraktion ' + team.toUpperCase();
-      section.append(title);
-      for (const ship of config.ships.filter((entry) => entry.team === team)) {
-        const line = document.createElement('p');
-        const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
-        const equipped = ship.draft.weapons
-          .map((id) => weaponCatalog.find((item) => item.id === id)?.name)
-          .filter(Boolean);
-        const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft.mines[0]);
-        line.textContent = [
-          ship.id.toUpperCase() + ' · ' + ship.name,
-          equipped.join(', ') || 'Keine kompatiblen Waffenplätze',
-          mine?.name ?? 'Keine Mine',
-          'Reaktor Mk IV',
-        ].join(' | ');
-        section.append(line);
-      }
-      roster.append(section);
-    }
+    renderFleetRoster(roster, config);
   };
   start.addEventListener('click', () => {
     if (!start.disabled) launcher.start(config);
