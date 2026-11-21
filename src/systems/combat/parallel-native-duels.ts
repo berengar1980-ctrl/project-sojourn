@@ -178,7 +178,7 @@ export function createParallelNativeDuels(
   const fleetArena: StrategicCombatArenaOptions = {
     ...arena,
     asteroids: [...(arena.asteroids ?? [])],
-    exitPoint: buildCombatArena(first[0]!.setup, second[0]!.setup, seed, arena).exitPoint,
+    exitPoint: buildCombatArena(first[0]!.setup, second[0]!.setup, seed, arena).exitPoint!,
   };
   const asteroidWorld = fleetArena.asteroids as CombatVisualAsteroid[];
   const baseObstacles = fleetArena.obstacles ?? [];
