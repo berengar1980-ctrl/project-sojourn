@@ -1695,3 +1695,19 @@ Funktionen. Der Fall 2 gegen 1 (gemeinsamer Verteidiger) und dynamische
 Zusammenschlüsse bleiben gesperrt, bis das 2-gegen-2-Verhalten praktisch
 verifiziert ist. Schüsse auf Drittparteien und echte Cross-Pair-Kollateralschäden
 sind nicht als abgeschlossen zu betrachten.
+
+## Review-Log (2026-11-21): FleetCombat-Testflotten von 1 bis 5 Schiffen
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Im FleetCombat-PvP-Test können beide Fraktionen unabhängig zwischen einem
+und fünf Schiffen wählen. Für jede Kombination entstehen die passenden
+Original-1vs1-Duelle und zusätzliche native Angreifer auf der gemeinsamen
+vorhandenen Karte. Unterstützer führen die vorhandene Kampf-KI, Flugphysik,
+Waffensteuerung und Effekte aus, ohne ihren bereits existierenden Gegner
+noch einmal als eigenständigen Verteidiger zu bewegen. Die Kampfansicht
+zeichnet gemeinsam genutzte Zielschiffe nur einmal.
+
+Die vollständige dynamische Zielneuzuordnung nach Gefechtsende sowie
+Cross-Pair-Kollateraltreffer bleiben gesonderte Ausbaustufen und werden
+nicht als abgeschlossen bezeichnet. Karriere, Speicherschema und reguläres
+1vs1-PvP bleiben unverändert.
