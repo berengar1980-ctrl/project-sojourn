@@ -1,8 +1,7 @@
-import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { clearCombatSpawn } from './combat-field-spawns';
 import { createStrategicCombatService } from './strategic-combat-service';
 import { buildCombatArena } from './strategic-combat-arena';
-import { materializeNativeFleetWrecks } from './native-fleet-wrecks';
+import { advanceNativeFleetFrame, escapedNativeFleetShips } from './native-fleet-advance';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -160,18 +159,6 @@ function createNativeDuelServices(
   return { pairs, supporters };
 }
 
-/** A completed escape removes the actual vessel, not its pursuing opponent. */
-function escapedFleetShips(services: readonly StrategicCombatService[]): Set<string> {
-  const escaped = new Set<string>();
-  for (const service of services) {
-    const state = service.getSnapshot();
-    if (state.outcomeReason !== 'escape') continue;
-    if (state.winner === 'defender') escaped.add(state.attacker.id);
-    else if (state.winner === 'attacker') escaped.add(state.defender.id);
-  }
-  return escaped;
-}
-
 export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
@@ -230,7 +217,7 @@ export function createParallelNativeDuels(
     const duels = pairs.map((service) => service.getSnapshot());
     const additional = supporters.map((service) => service.getSnapshot());
     const states = [...duels, ...additional];
-    const escaped = escapedFleetShips(services);
+    const escaped = escapedNativeFleetShips(services);
     cachedSnapshot = {
       duels,
       supporters: additional,
@@ -255,58 +242,20 @@ export function createParallelNativeDuels(
       const dt = Math.min(seconds, 0.08);
       cachedSnapshot = null;
       elapsed += dt;
-      if (!services.every((service) => service.getSnapshot().winner !== null)) {
-        advanceCombatAsteroids(fleetArena, dt);
-      }
-      materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
-      const escaped = escapedFleetShips(services);
-      for (const [index, service] of services.entries()) {
-        if (escaped.has(nativeActor(service, 'attacker').setup.id)) continue;
-        if (index >= pairs.length && escaped.has(nativeActor(service, 'defender').setup.id)) {
-          continue;
-        }
-        // Both the own actor and its actual target must be omitted from
-        // bystander blockers. Otherwise a supporting ship shoots into the
-        // target's fake obstacle instead of hitting the real shield/hull.
-        const duelIds = new Set([
-          nativeActor(service, 'attacker').setup.id,
-          nativeActor(service, 'defender').setup.id,
-        ]);
-        const others = actors
-          .filter(
-            (actor) =>
-              !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)
-          )
-          .map((actor) => ({
-            id: actor.setup.id,
-            shipId: actor.setup.shipId,
-            position: actor.position,
-            headingRadians: actor.headingRadians,
-          }));
-        const blockers = allObstacles[index]!;
-        blockers.splice(baseObstacles.length);
-        blockers.push(
-          ...asteroidWorld
-            .filter((rock) => rock.id.startsWith('fleet-wreck:'))
-            .map((rock) => ({
-              id: rock.id,
-              position: rock.position,
-              radius: rock.collisionRadius ?? rock.radius,
-            })),
-          ...others.map((ship) => ({
-            id: 'ship:' + ship.id,
-            position: ship.position,
-            radius: radiusById.get(ship.id) ?? 35,
-          }))
-        );
-        service.setBystanders(others);
-        const result = service.tick(dt);
-        if (result.outcomeReason === 'escape') {
-          if (result.winner === 'defender') escaped.add(result.attacker.id);
-          else if (result.winner === 'attacker') escaped.add(result.defender.id);
-        }
-        materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
-      }
+      advanceNativeFleetFrame({
+        services,
+        pairCount: pairs.length,
+        actors,
+        baseObstacles,
+        allObstacles,
+        asteroidWorld,
+        arena: fleetArena,
+        recordedWrecks,
+        radiusById,
+        seed,
+        elapsed,
+        dt,
+      });
       return getSnapshot();
     },
   };
