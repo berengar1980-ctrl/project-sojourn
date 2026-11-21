@@ -92,6 +92,54 @@ assert.equal(
   'both defeated attackers each leave one physical wreck'
 );
 
+// The additional ship must really fire on the shared hull using the EXISTING
+// native weapon engine, not merely appear as a second ship on the screen.
+const pulse = {
+  id: 'weapon1',
+  type: 'weapon',
+  name: 'Pulse Laser Mk I',
+  tier: 1,
+  power: 5,
+  cost: 0,
+  weapon: {
+    family: 'pulse_laser',
+    role: 'balanced',
+    shieldDamage: 15,
+    hullDamage: 15,
+    combatShieldDamage: 20,
+    combatHullDamage: 20,
+    rangeMeters: 4200,
+    cooldownSeconds: 0.7,
+    heat: 0,
+    ammoPerShot: 0,
+    mount: 'turret',
+    arcDegrees: 360,
+  },
+};
+const extraGunner = ship('gunner', 'b');
+extraGunner.setup.weapons = [pulse];
+const liveFire = createParallelNativeDuels(
+  [ship('victim', 'a'), ship('unarmed', 'b'), extraGunner],
+  arena(),
+  719
+);
+const sharedVictim = liveFire.duels[0].getParallelActor('attacker');
+const shooter = liveFire.supporters[0].getParallelActor('attacker');
+sharedVictim.position = { x: 2100, y: 1600 };
+shooter.position = { x: 2800, y: 1600 };
+shooter.cooldowns[0] = 0;
+const startingShield = sharedVictim.shieldHp;
+for (let i = 0; i < 30; i += 1) liveFire.tick(0.08);
+assert(
+  shooter.weaponTelemetry[0].shotsFired > 0,
+  'native extra attacker must actually fire real weapons'
+);
+assert(
+  sharedVictim.shieldHp < startingShield,
+  'extra attacker must damage the SAME real ship owned by the original duel'
+);
+assert.strictEqual(liveFire.supporters[0].getParallelActor('defender'), sharedVictim);
+
 // Reverse ownership: now the one defending ship must survive the first of
 // TWO incoming attackers. This exercises a defender-only continuation tick.
 const twoVsOne = createParallelNativeDuels(
