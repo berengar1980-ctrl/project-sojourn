@@ -72,12 +72,17 @@ const nativeWeaponPainters = fs.readFileSync(
   path.join(root, 'src/ui/combat/combat-native-weapon-painters.ts'),
   'utf8'
 );
+const fleetRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/combat/fleet-native-combat-renderer.ts'),
+  'utf8'
+);
 const torpedoRenderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/combat-torpedo-renderer.ts'),
   'utf8'
 );
 assert(
-  renderer.includes('paintNativeProjectile(') &&
+  renderer.includes('drawCombatTorpedo(this.context)') &&
+    fleetRenderer.includes('paintNativeProjectile(') &&
     nativeWeaponPainters.includes('drawCombatTorpedo(context)'),
   'combat renderer uses torpedo silhouette'
 );
