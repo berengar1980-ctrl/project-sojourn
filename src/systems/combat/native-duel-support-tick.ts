@@ -29,6 +29,12 @@ export function tickNativeSupportingAttacker(
   const dt = Math.min(seconds, 0.08);
   const source = runtime.attacker;
   const target = runtime.defender;
+  // The shared defender may already have been destroyed by its primary duel
+  // or another supporter. Never move or damage that ship again.
+  if (source.hullHp <= 0 || target.hullHp <= 0) {
+    resolveRuntimeWinner(runtime);
+    return;
+  }
   runtime.elapsedSeconds += dt;
   advanceCombatPower(source, dt);
   source.shieldImpacts = advanceShieldImpacts(source.shieldImpacts, dt);
