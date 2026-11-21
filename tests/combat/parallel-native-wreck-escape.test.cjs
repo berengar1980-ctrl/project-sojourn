@@ -53,9 +53,9 @@ function nearGate(actor, gate) {
 const fleet = createParallelNativeDuels(roster(5, 5), emptyArena(), 881);
 const marker = fleet.getSnapshot().duels[0].exitPoint;
 assert(
-  fleet.getSnapshot().duels.every((duel) => 
-    duel.exitPoint.x === marker.x && duel.exitPoint.y === marker.y
-  ),
+  fleet
+    .getSnapshot()
+    .duels.every((duel) => duel.exitPoint.x === marker.x && duel.exitPoint.y === marker.y),
   'every 5v5 ship must fly to the same marker that the renderer displays'
 );
 const dead = fleet.duels[1].getParallelActor('defender');
@@ -76,10 +76,14 @@ const visibility = nativeFleetVisibility(
   [...state.duels.slice(1), ...state.supporters],
   state.escapedShipIds
 );
-assert(visibility.damageHidden.has('b-2'), 'the original dead ship no longer emits duplicate smoke');
+assert(
+  visibility.damageHidden.has('b-2'),
+  'the original dead ship no longer emits duplicate smoke'
+);
 for (let i = 0; i < 12; i++) fleet.tick(0.08);
 assert.equal(
-  fleet.getSnapshot().duels[0].arena.asteroids.filter((rock) => rock.id === 'fleet-wreck:b-2').length,
+  fleet.getSnapshot().duels[0].arena.asteroids.filter((rock) => rock.id === 'fleet-wreck:b-2')
+    .length,
   1,
   'a wreck persists and can never be generated twice after the original duel freezes'
 );
@@ -137,6 +141,9 @@ const smoke = fs.readFileSync(
   path.join(root, 'src/ui/combat/combat-fleet-wreck-effects.ts'),
   'utf8'
 );
-assert(overlay.includes('fleetWreckEffects.draw('), 'every combat map paints the real wreck effects');
+assert(
+  overlay.includes('fleetWreckEffects.draw('),
+  'every combat map paints the real wreck effects'
+);
 assert(smoke.includes('new DistressDamageParticles()'), 'wrecks use real smoke and fire emitters');
 console.log('PASS 5v5 physical wrecks, persistent fire, shared exit, 5v5 and 1v5 escape removal');
