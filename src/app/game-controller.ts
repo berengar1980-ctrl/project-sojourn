@@ -361,7 +361,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.campaignNavigation.observe(navigationSnapshot);
   inspectPatrolTravel(context, deltaSeconds);
   context.engagements.tick(deltaSeconds);
-  advanceControllerFleetIntegration(context);
+  advanceControllerFleetIntegration(context, () => mountControllerStarMap(context));
   advanceControllerFieldWorld(context, deltaSeconds);
   resolveControllerCombat(context, {
     starMap: () => mountControllerStarMap(context),
