@@ -974,3 +974,14 @@ aktiviert. Keine Änderung am Save-Schema, keine Datenmigration.
 Die Erweiterung auf 2 gegen 1 ist absichtlich noch nicht freigeschaltet:
 Ein gemeinsamer Verteidiger darf später unter keinen Umständen zwei
 Bewegungs-/Waffen-/Persistenzautoritäten bekommen.
+
+### Variables Testflottenverhältnis (1–5 je Fraktion)
+
+Der PvP-Koordinator erzeugt für jedes Schiff genau einen simulationsführenden
+Kampfteilnehmer. Reguläre 1vs1-Paarungen verwenden die unveränderte Duelllogik;
+überzählige Angreifer verwenden denselben Planungs-, Bewegungs- und Waffenpfad,
+aber referenzieren den echten Verteidiger aus der Paarung. Dessen Zustand
+wird nicht unabhängig kopiert oder ein zweites Mal als AI-Schiff getickt.
+Der Unterstützer-Tick (`native-duel-support-tick.ts`) ist ausschließlich
+flüchtige PvP-Testlogik. Keiner dieser Laufzeitverweise wird gespeichert;
+Speicherformat, Wiederherstellung und Karriere-Autorität bleiben unverändert.
