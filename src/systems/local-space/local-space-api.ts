@@ -21,6 +21,8 @@ export interface LocalSpaceService {
   resolveMiningEvent(choiceId: string): MiningEventResolution | null;
   cancelMining(): LocalSpaceSnapshot;
   syncCombatPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot;
+  /** Receive native combat integrity without a second damage calculation. */
+  syncCombatIntegrity(shieldHp: number, hullHp: number): LocalSpaceSnapshot;
   tickCombatEnvironment(deltaSeconds: number): LocalSpaceSnapshot;
   tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
