@@ -128,7 +128,7 @@ export function createFleetCareerFieldSecurityBridge(
   const drone = careerDroneParticipant(field, droneNpc, reservedIds);
   const participants = careerPirateParticipants(field, pirates, reservedIds, targets);
   if (drone) participants.push(drone);
-  const knownIds = new Set(participants.map((entry) => entry.setup.id));
+  const knownIds = new Set([...reservedIds, ...participants.map((entry) => entry.setup.id)]);
 
   return {
     participants,
