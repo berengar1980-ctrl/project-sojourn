@@ -25,6 +25,7 @@ export interface ParallelNativeDuelSnapshot {
   readonly finished: boolean;
 }
 export interface ParallelNativeDuels {
+  readonly duels: readonly StrategicCombatService[];
   tick(dt: number): ParallelNativeDuelSnapshot;
   getSnapshot(): ParallelNativeDuelSnapshot;
 }
@@ -87,6 +88,7 @@ export function createParallelNativeDuels(
   };
 
   return {
+    duels: pairs,
     getSnapshot,
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
