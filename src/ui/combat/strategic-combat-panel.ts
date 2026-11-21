@@ -17,12 +17,6 @@ interface StrategicCombatPanelOptions {
   readonly combat: StrategicCombatService;
   readonly onReturn: () => void;
   readonly encounterName?: string;
-  /** Additional native 1vs1 snapshots sharing the same existing map renderer. */
-  readonly parallelDuels?: () => readonly StrategicCombatSnapshot[];
-  readonly parallelSupportStartIndex?: number;
-  readonly parallelEscapedShipIds?: () => readonly string[];
-  readonly spectator?: boolean;
-  readonly isComplete?: () => boolean;
 }
 
 function percent(current: number, maximum: number): number {
@@ -212,98 +206,10 @@ function combatReturnLabel(model: StrategicCombatSnapshot): string {
   return model.boardingInitiator ? 'ENTERKAMPF STARTEN' : 'ZUR STERNKARTE';
 }
 
-function prepareParallelDuelPanel(
-  shell: HTMLElement,
-  options: StrategicCombatPanelOptions
-): HTMLElement | null {
-  if (options.spectator) {
-    shell.querySelector<HTMLElement>('.combat-tactics')?.remove();
-    shell.querySelector<HTMLElement>('.strategic-combat-grapple')?.remove();
-  }
-  if (!options.parallelDuels) return null;
-  const status = document.createElement('aside');
-  status.className = 'combat-parallel-duels-status';
-  status.style.cssText =
-    'position:absolute;top:50px;left:14px;z-index:3;padding:8px 11px;' +
-    'background:rgba(10,20,27,.88);border:1px solid #556973;' +
-    'color:#d8e7ee;font:12px ui-monospace,monospace;pointer-events:none;';
-  shell.append(status);
-  return status;
-}
-
-function updateParallelDuelStatus(
-  status: HTMLElement | null,
-  primary: StrategicCombatSnapshot,
-  others: readonly StrategicCombatSnapshot[],
-  supportStartIndex = Number.POSITIVE_INFINITY
-): void {
-  if (!status) return;
-  status.textContent = [primary, ...others]
-    .map(
-      (duel, i) =>
-        (i > supportStartIndex ? 'UNTERSTÜTZER ' : 'DUELL ') +
-        (i + 1) +
-        ' · ' +
-        Math.max(0, Math.round(duel.attacker.hullHp)) +
-        ' / ' +
-        Math.max(0, Math.round(duel.defender.hullHp)) +
-        ' HP · ' +
-        (duel.winner ? 'BEENDET' : 'AKTIV')
-    )
-    .join('   |   ');
-}
-
-function updateCombatReturnButton(
-  button: HTMLButtonElement,
-  options: StrategicCombatPanelOptions,
-  model: StrategicCombatSnapshot,
-  defeatStartedAt: number | null
-): void {
-  const complete = options.isComplete?.() ?? model.winner !== null;
-  button.hidden = options.spectator ? false : !complete;
-  button.textContent = options.spectator
-    ? complete
-      ? 'ZUM TESTLABOR'
-      : 'TEST BEENDEN'
-    : combatReturnLabel(model);
-  button.disabled =
-    !options.spectator && defeatStartedAt !== null && performance.now() - defeatStartedAt < 2200;
-}
-
-function updateCombatActionButtons(
-  grappleButton: HTMLButtonElement | null,
-  fleeButton: HTMLButtonElement | null,
-  surrenderButton: HTMLButtonElement | null,
-  model: StrategicCombatSnapshot
-): void {
-  if (grappleButton) {
-    grappleButton.disabled =
-      model.winner !== null ||
-      model.grapple !== null ||
-      model.grappleUsed.attacker ||
-      model.defender.shieldHp > 0 ||
-      Math.hypot(
-        model.attacker.position.x - model.defender.position.x,
-        model.attacker.position.y - model.defender.position.y
-      ) > 900;
-    grappleButton.textContent = model.grappleUsed.attacker
-      ? 'GREIFHAKEN VERBRAUCHT'
-      : 'GREIFHAKEN ABSCHIESSEN';
-  }
-  if (fleeButton) {
-    const fleeing = model.attacker.tactic === 'flee';
-    fleeButton.textContent = fleeing ? 'KAMPF AUFNEHMEN' : 'FLIEHEN';
-    fleeButton.classList.toggle('is-active', fleeing);
-    fleeButton.disabled = model.winner !== null;
-  }
-  if (surrenderButton) surrenderButton.disabled = model.winner !== null;
-}
-
 export function createStrategicCombatPanel(
   options: StrategicCombatPanelOptions
 ): StrategicCombatPanel {
   const shell = makeCombatShell(options.root);
-  const parallelStatus = prepareParallelDuelPanel(shell, options);
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
@@ -329,24 +235,8 @@ export function createStrategicCombatPanel(
   let defeatReturnStartedAt: number | null = null;
   const render = (): void => {
     const model = options.combat.getSnapshot();
-    renderer.update(
-      model,
-      options.parallelDuels?.() ?? [],
-      options.parallelSupportStartIndex,
-      options.parallelEscapedShipIds?.() ?? []
-    );
-    updateParallelDuelStatus(
-      parallelStatus,
-      model,
-      options.parallelDuels?.() ?? [],
-      options.parallelSupportStartIndex
-    );
-    if (
-      !options.spectator &&
-      model.winner !== null &&
-      model.attacker.hullHp <= 0 &&
-      defeatReturnTimer === null
-    ) {
+    renderer.update(model);
+    if (model.winner !== null && model.attacker.hullHp <= 0 && defeatReturnTimer === null) {
       defeatReturnStartedAt = performance.now();
       defeatReturnTimer = setTimeout(() => options.onReturn(), 2200);
     }
@@ -367,15 +257,38 @@ export function createStrategicCombatPanel(
         ':' +
         String(seconds % 60).padStart(2, '0');
     }
-    updateCombatReturnButton(returnButton, options, model, defeatReturnStartedAt);
-    updateCombatActionButtons(grappleButton, fleeButton, surrenderButton, model);
+    returnButton.hidden = model.winner === null;
+    returnButton.textContent = combatReturnLabel(model);
+    returnButton.disabled =
+      defeatReturnStartedAt !== null && performance.now() - defeatReturnStartedAt < 2200;
+    if (grappleButton) {
+      grappleButton.disabled =
+        model.winner !== null ||
+        model.grapple !== null ||
+        model.grappleUsed.attacker ||
+        model.defender.shieldHp > 0 ||
+        Math.hypot(
+          model.attacker.position.x - model.defender.position.x,
+          model.attacker.position.y - model.defender.position.y
+        ) > 900;
+      grappleButton.textContent = model.grappleUsed.attacker
+        ? 'GREIFHAKEN VERBRAUCHT'
+        : 'GREIFHAKEN ABSCHIESSEN';
+    }
+    if (fleeButton) {
+      const fleeing = model.attacker.tactic === 'flee';
+      fleeButton.textContent = fleeing ? 'KAMPF AUFNEHMEN' : 'FLIEHEN';
+      fleeButton.classList.toggle('is-active', fleeing);
+      fleeButton.disabled = model.winner !== null;
+    }
+    if (surrenderButton) surrenderButton.disabled = model.winner !== null;
   };
 
   returnButton.addEventListener('click', () => {
     if (defeatReturnStartedAt !== null && performance.now() - defeatReturnStartedAt < 2200) return;
     options.onReturn();
   });
-  if (!options.spectator) bindCombatOrders(shell, options.combat, render);
+  bindCombatOrders(shell, options.combat, render);
   render();
 
   return {
