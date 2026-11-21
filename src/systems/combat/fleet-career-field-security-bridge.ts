@@ -118,7 +118,7 @@ export function createFleetCareerFieldSecurityBridge(
   readonly participants: readonly FleetCombatParticipant[];
   readonly world: FleetCombatWorldOptions;
 } {
-  const pirates = npcs.filter(
+  let pirates = npcs.filter(
     (npc) => npc.pirate && npc.locationId === field.locationId && npc.hullHp > 0
   );
   field.pirates.reconcile(pirates);
@@ -128,10 +128,22 @@ export function createFleetCareerFieldSecurityBridge(
   const drone = careerDroneParticipant(field, droneNpc, reservedIds);
   const participants = careerPirateParticipants(field, pirates, reservedIds, targets);
   if (drone) participants.push(drone);
+  const knownIds = new Set(participants.map((entry) => entry.setup.id));
 
   return {
     participants,
     world: {
+      discoverParticipants() {
+        // The sector economy brings actual NPCs into this already running field.
+        // Reconcile the native local traffic before taking their live poses.
+        pirates = npcs.filter(
+          (npc) => npc.pirate && npc.locationId === field.locationId && npc.hullHp > 0
+        );
+        field.pirates.reconcile(pirates);
+        const newcomers = careerPirateParticipants(field, pirates, knownIds, targets);
+        for (const newcomer of newcomers) knownIds.add(newcomer.setup.id);
+        return newcomers;
+      },
       beforeWorldTick(ships) {
         fleetContacts = ships;
       },
