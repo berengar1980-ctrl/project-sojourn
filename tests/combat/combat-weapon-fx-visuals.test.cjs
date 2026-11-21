@@ -108,6 +108,10 @@ const renderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
   'utf8'
 );
+const nativeWeaponPainters = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-native-weapon-painters.ts'),
+  'utf8'
+);
 const nativeBeam = fs.readFileSync(path.join(root, 'src/ui/combat/combat-beam-visual.ts'), 'utf8');
 assert(gameplay.includes('origin: { ...muzzle }'), 'projectiles remember actual weapon muzzles');
 assert(snapshot.includes('origin: { ...projectile.origin }'), 'origin is detached in snapshots');
@@ -120,7 +124,8 @@ assert(
   'game renderer dispatches railgun lance'
 );
 assert(
-  renderer.includes('drawVisionAutocannon('),
+  renderer.includes('paintNativeAutocannonBursts(') &&
+    nativeWeaponPainters.includes('drawVisionAutocannon('),
   'game renderer dispatches upgraded seven-round autocannon salvo'
 );
 assert(
