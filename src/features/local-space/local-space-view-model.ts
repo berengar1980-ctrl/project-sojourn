@@ -1,4 +1,5 @@
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
+import type { FleetCombatSnapshot } from '../../systems/combat/fleet-combat-service';
 import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
 import type {
@@ -130,6 +131,8 @@ export interface LocalSpaceViewModel {
   readonly cargoResources: readonly LocalCargoResourceView[];
   readonly combat: StrategicCombatSnapshot | null;
   readonly npcCombats?: readonly StrategicCombatSnapshot[];
+  /** N-ship encounters share the existing field and its renderer. */
+  readonly fleetCombat?: FleetCombatSnapshot | null;
 }
 
 function estimateResourceAmount(amount: number): number {
