@@ -20,7 +20,8 @@ const locationId = fieldInstance.sourceLocationId;
 const npcs = createSectorNpcEconomyStates();
 const pirates = npcs.filter((npc) => npc.pirate).slice(0, 2);
 const patrol = npcs.find((npc) => npc.job === 'patrol' && !npc.pirate);
-assert(pirates.length === 2 && patrol);
+const latePirate = npcs.filter((npc) => npc.pirate)[2];
+assert(pirates.length === 2 && patrol && latePirate);
 for (const npc of pirates) {
   npc.locationId = locationId;
   delete npc.travel;
@@ -46,7 +47,7 @@ const field = {
   miners,
   combatWrecks: [],
 };
-const bridge = createFleetCareerFieldSecurityBridge(field, [...pirates, droneNpc]);
+const bridge = createFleetCareerFieldSecurityBridge(field, [...pirates, droneNpc, latePirate]);
 assert.equal(bridge.participants.length, 3);
 assert.deepEqual(
   bridge.participants
@@ -86,6 +87,16 @@ const fleet = createFleetCombatService(
 const snapshot = fleet.tick(0.08);
 assert.equal(snapshot.ships.length, 3);
 assert.equal(trafficTicks, 2, 'shared fleet ticks the existing pirate service once');
+latePirate.locationId = locationId;
+delete latePirate.travel;
+delete latePirate.combatMovement;
+const joined = fleet.tick(0.08);
+assert.equal(joined.ships.length, 4, 'real late career pirate joins the running field');
+assert.equal(
+  joined.ships.find((entry) => entry.ship.id === latePirate.id).factionId,
+  latePirate.factionId === 'pirates2' ? 'pirate-b' : 'pirate-a'
+);
+assert.equal(fleet.tick(0.08).ships.length, 4, 'no duplicate NPC on subsequent ticks');
 assert.equal(snapshot.ships.find((p) => p.ship.id === droneNpc.id).factionId, 'security');
 assert.deepEqual(
   snapshot.ships.find((p) => p.ship.id === droneNpc.id).ship.position,
