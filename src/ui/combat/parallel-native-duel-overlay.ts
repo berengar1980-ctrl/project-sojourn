@@ -57,6 +57,7 @@ export function paintParallelNativeDuels(options: {
   readonly duels: readonly StrategicCombatSnapshot[];
   /** Support snapshots share their defender with a regular duel; draw it once. */
   readonly supportingFromIndex?: number;
+  readonly hiddenIds?: ReadonlySet<string>;
   readonly scale: number;
   readonly project: (point: Point) => Point;
   readonly geometry: (ship: StrategicCombatantSnapshot) => ShipScreenGeometry;
@@ -74,6 +75,7 @@ export function paintParallelNativeDuels(options: {
     context,
     duels,
     supportingFromIndex,
+    hiddenIds,
     scale,
     project,
     geometry,
@@ -119,7 +121,7 @@ export function paintParallelNativeDuels(options: {
       paintShip(duel.defender);
     }
     if (supporting) {
-      drawCombatDamageParticles(
+      if (!hiddenIds?.has(duel.attacker.id)) drawCombatDamageParticles(
         context,
         duel.attacker,
         geometry(duel.attacker),
@@ -136,7 +138,8 @@ export function paintParallelNativeDuels(options: {
         damageParticles,
         timeSeconds,
         width,
-        height
+        height,
+        hiddenIds
       );
     }
     drawCombatImpactBatch(
