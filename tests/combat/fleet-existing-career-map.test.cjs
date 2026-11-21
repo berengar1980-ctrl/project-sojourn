@@ -102,6 +102,16 @@ assert(
 );
 assert(entry.includes('beginControllerFieldFleet(context, locationId, [player])'));
 assert(bridge.includes('syncFleetFieldBodies(field, bodies)'));
+assert(
+  bridge.includes('context.state.localSpace.getShipWorldVelocity()'),
+  'career handoff must transfer native player momentum into the shared combat arena'
+);
+assert(
+  entry.includes('view.projectiles.length > 0') &&
+    entry.includes('view.mines.length > 0') &&
+    entry.includes('view.thrownAsteroids.length > 0'),
+  'field ownership must survive the final pirate kill until live ordnance resolves'
+);
 for (const obsolete of [
   'src/ui/start/fleet-combat-test-panel.ts',
   'src/ui/start/fleet-combat-map-renderer.ts',
