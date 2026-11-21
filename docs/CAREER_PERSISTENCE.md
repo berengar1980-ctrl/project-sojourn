@@ -1020,3 +1020,16 @@ Asteroiden weiterhin selbst und erzeugen unverändert zwei eigene
 Combatant-Instanzen; nur der neue Fleet-Koordinator aktiviert
 die gemeinsame Arena-/Zielreferenz-Unterstützung. Das
 Karriere-Speicherschema bleibt unverändert.
+
+### Native 1v2-Fortsetzung ohne Doppelautorität
+
+Im flüchtigen FleetCombat-Koordinator können zwei Angreifer dasselbe
+live referenzierte Ziel angreifen. Scheidet in einer 1v2-/2v1-Gruppe
+der erste Gegner aus, kann der ursprüngliche Dienst ausschließlich im
+PvP-Fleet-Modus den überlebenden Original-Combatant gegen den nächsten
+noch lebenden Gegner weitersteuern; dieser hat bereits einen eigenen
+nativen Dienst und wird nie ein zweites Mal als KI/Antrieb/Cooldown getickt.
+Auch Fluchten bleiben nach dem Zielwechsel im temporären Fleet-Zustand
+vermerkt. Die reguläre 1vs1-Simulation nutzt den unveränderten Standardpfad,
+während der optionale Einseitentick ausschließlich flüchtige Simulation ist.
+Es entstehen keine neuen Karriere-Speicherfelder und keine Migration.
