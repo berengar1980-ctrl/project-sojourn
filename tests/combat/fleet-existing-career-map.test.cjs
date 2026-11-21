@@ -34,7 +34,7 @@ const firstAsteroid = { ...originalAsteroids[0].position };
 const target = { x: instance.width * 0.33, y: instance.height * 0.48 };
 scene.syncCombatPose(target, 0.42, 21);
 scene.syncCombatIntegrity(31, 19);
-const updated = scene.tickCombatEnvironment(0.08);
+const updated = scene.tickCombatEnvironment(0.08, true);
 assert.equal(updated.instance, instance, 'existing local map is never regenerated');
 assert.equal(updated.instance.asteroids, originalAsteroids, 'field bodies retain identity');
 assert.deepEqual(
