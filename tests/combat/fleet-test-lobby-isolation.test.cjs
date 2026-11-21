@@ -29,11 +29,12 @@ assert(
   fleet.includes('createParallelNativeDuels('),
   'FleetCombat laboratory must start two real strategic 1vs1 services'
 );
+assert(fleet.includes('length: 5'), 'factions offer choices 1 to 5');
 assert(
-  fleet.includes('Number(teamA.control.value) === 2') &&
-    fleet.includes('Number(teamB.control.value) === 2'),
-  'only the first verified 2 vs 2 stage is enabled in the lobby'
+  fleet.includes('Math.min(countA, countB)') && fleet.includes('Math.abs(countA - countB)'),
+  'lobby reports native duel pair count and extra attacking ships'
 );
+assert(fleet.includes('start.disabled = false'), 'all 1-5 combinations may launch');
 assert(
   !fleet.includes('createFleetCombatTestPanel('),
   'parallel duels must use the original combat renderer, never the obsolete arrow map'
