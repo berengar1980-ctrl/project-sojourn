@@ -330,6 +330,8 @@ export interface StrategicCombatService {
   fireGrapple(side: StrategicCombatSide): boolean;
   /** Release a coupled grapple after a tactical retreat without resetting hulls or arena. */
   resumeAfterBoarding(): boolean;
+  /** Transient PvP coordinator access: never serialize this mutable actor. */
+  getParallelActor?(side: StrategicCombatSide): MutableCombatant;
 }
 
 export interface MutableCombatant {
