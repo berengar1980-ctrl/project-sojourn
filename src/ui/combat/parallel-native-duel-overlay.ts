@@ -121,15 +121,16 @@ export function paintParallelNativeDuels(options: {
       paintShip(duel.defender);
     }
     if (supporting) {
-      if (!hiddenIds?.has(duel.attacker.id)) drawCombatDamageParticles(
-        context,
-        duel.attacker,
-        geometry(duel.attacker),
-        damageParticles,
-        timeSeconds,
-        width,
-        height
-      );
+      if (!hiddenIds?.has(duel.attacker.id))
+        drawCombatDamageParticles(
+          context,
+          duel.attacker,
+          geometry(duel.attacker),
+          damageParticles,
+          timeSeconds,
+          width,
+          height
+        );
     } else {
       drawCombatDamagePair(
         context,
