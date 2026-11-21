@@ -28,12 +28,7 @@ import type {
   StrategicCombatService,
   MutableCombatant,
 } from './strategic-combat-types';
-import {
-  distance,
-  createCombatant,
-  createRng,
-  hashSeed,
-} from './strategic-combat-geometry';
+import { distance, createCombatant, createRng, hashSeed } from './strategic-combat-geometry';
 import { runtimeEnemy, runtimeCombatant } from './strategic-combat-runtime';
 import { buildCombatArena } from './strategic-combat-arena';
 import {
