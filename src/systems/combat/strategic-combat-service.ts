@@ -311,6 +311,31 @@ function initializeStrategicCombatLog(
   }
 }
 
+function resumeBoardedCombat(runtime: StrategicCombatRuntime): boolean {
+  if (runtime.outcomeReason !== 'boarding' || runtime.boardingInitiator === null) return false;
+  if (runtime.attacker.hullHp <= 0 || runtime.defender.hullHp <= 0) return false;
+  runtime.winner = null;
+  runtime.outcomeReason = null;
+  runtime.boardingInitiator = null;
+  runtime.grapple = null;
+  runtime.grappleUsed.attacker = true;
+  runtime.grappleUsed.defender = true;
+  const dx = runtime.defender.position.x - runtime.attacker.position.x;
+  const dy = runtime.defender.position.y - runtime.attacker.position.y;
+  const length = Math.max(0.01, Math.hypot(dx, dy));
+  const x = dx / length;
+  const y = dy / length;
+  runtime.attacker.position.x -= x * 45;
+  runtime.attacker.position.y -= y * 45;
+  runtime.defender.position.x += x * 45;
+  runtime.defender.position.y += y * 45;
+  runtime.attacker.strategy = null;
+  runtime.defender.strategy = null;
+  runtime.lastEvent = 'GREIFHAKEN GELOEST · RAUMGEFECHT FORTGESETZT';
+  recordCombatLog(runtime, 'system', 'action', 'BOARDING_RETREAT_RESUMED');
+  return true;
+}
+
 export function createStrategicCombatService(
   attackerSetup: StrategicCombatantSetup,
   defenderSetup: StrategicCombatantSetup,
@@ -355,30 +380,7 @@ export function createStrategicCombatService(
     getSnapshot: () => runtimeSnapshot(runtime),
     getCombatLog: () => runtime.combatLog.map((entry) => ({ ...entry })),
     fireGrapple: (side) => tryFireGrapple(runtime, side),
-    resumeAfterBoarding() {
-      if (runtime.outcomeReason !== 'boarding' || runtime.boardingInitiator === null) return false;
-      if (runtime.attacker.hullHp <= 0 || runtime.defender.hullHp <= 0) return false;
-      runtime.winner = null;
-      runtime.outcomeReason = null;
-      runtime.boardingInitiator = null;
-      runtime.grapple = null;
-      runtime.grappleUsed.attacker = true;
-      runtime.grappleUsed.defender = true;
-      const dx = runtime.defender.position.x - runtime.attacker.position.x;
-      const dy = runtime.defender.position.y - runtime.attacker.position.y;
-      const length = Math.max(0.01, Math.hypot(dx, dy));
-      const x = dx / length;
-      const y = dy / length;
-      runtime.attacker.position.x -= x * 45;
-      runtime.attacker.position.y -= y * 45;
-      runtime.defender.position.x += x * 45;
-      runtime.defender.position.y += y * 45;
-      runtime.attacker.strategy = null;
-      runtime.defender.strategy = null;
-      runtime.lastEvent = 'GREIFHAKEN GELOEST · RAUMGEFECHT FORTGESETZT';
-      recordCombatLog(runtime, 'system', 'action', 'BOARDING_RETREAT_RESUMED');
-      return true;
-    },
+    resumeAfterBoarding: () => resumeBoardedCombat(runtime),
     setTactic(side, tactic) {
       const combatant = runtimeCombatant(runtime, side);
       if (runtime.winner) return;
