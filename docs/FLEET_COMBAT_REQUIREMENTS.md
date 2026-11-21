@@ -549,7 +549,6 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Das ist eine **Rückbau-/Bereinigungsmaßnahme**, keine erfolgreiche automatische Kampagnenintegration. Vor einer neuen Aktivierung sind die echte Karriere-Feldübernahme, exklusive Tick-Autorität, Kampfabschluss und Tests erforderlich.
 - Testabsicherung: `fleet-test-lobby-isolation.test.cjs` verbietet eine Rückkehr der beiden separaten Render-Module oder der UI-eigenen FleetCombat-Simulation.
 
-
 ## Neuer Integrationsbranch: FleetCombat in vorhandenen Kampagnenkarten
 
 **Branch:** `feature/fleetcombat-existing-career-maps`. Die frühere separate
