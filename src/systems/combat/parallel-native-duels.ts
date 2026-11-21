@@ -7,6 +7,7 @@ import type {
   StrategicCombatantSetup,
   StrategicCombatService,
   StrategicCombatSnapshot,
+  StrategicCombatObstacle,
 } from './strategic-combat-types';
 
 /**
@@ -59,7 +60,26 @@ export function createParallelNativeDuels(
 
   // The same original generated asteroid/obstacle arrays are passed to BOTH
   // standard duels. The coordinator is their single physical-world tick owner.
+  const baseObstacles = arena.obstacles ?? [];
+  const pairObstacles: StrategicCombatObstacle[][] = [];
+  const hullRadius = new Map(
+    ships.map((ship) => [
+      ship.id,
+      Math.max(
+        18,
+        Math.max(
+          ship.setup.shieldGeometry?.radiusX ?? 35,
+          ship.setup.shieldGeometry?.radiusY ?? 24
+        ) * 0.85
+      ),
+    ])
+  );
   const pairs: StrategicCombatService[] = first.map((ship, index) => {
+    // Each duel sees the other duel's current ships as moving obstacles for
+    // the EXISTING route planner and line-of-sight routines. Physical contact
+    // still uses native resolveCombatBystanderContacts.
+    const obstacles = [...baseObstacles];
+    pairObstacles.push(obstacles);
     const target = second[index]!;
     const attackerPosition = fieldStart(arena, 'a', index, first.length);
     const defenderPosition = fieldStart(arena, 'b', index, second.length);
@@ -69,6 +89,7 @@ export function createParallelNativeDuels(
       seed + index,
       {
         ...arena,
+        obstacles,
         attackerPosition,
         defenderPosition,
         attackerHeadingRadians: 0,
@@ -113,6 +134,15 @@ export function createParallelNativeDuels(
           });
         // Native bystander geometry keeps ships from different 1vs1 duels
         // solid. Bystanders are never moved or ticked a second time here.
+        const blockers = pairObstacles[index]!;
+        blockers.splice(baseObstacles.length);
+        blockers.push(
+          ...others.map((ship) => ({
+            id: 'ship:' + ship.id,
+            position: ship.position,
+            radius: hullRadius.get(ship.id) ?? 35,
+          }))
+        );
         pairs[index]!.setBystanders(others);
         pairs[index]!.tick(dt);
       }
