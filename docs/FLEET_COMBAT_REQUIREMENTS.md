@@ -605,3 +605,11 @@ zu verifizieren.
 - Nach Abschluss gilt die bestehende `combatReengageSeconds`-Sperre. Damit startet der Controller nicht im selben Frame erneut und spätere Begegnungen bleiben nach dem Cooldown möglich.
 - `fleet-existing-career-map.test.cjs` enthält Quell-/Integrationsprüfungen für den Callback, das Ergebnis-UI und den Wiedereinstiegsschutz; echte Browser-/Defeat- und CI-Tests sind noch **nicht** bestätigt.
 - **Status: Code committed auf PR #380, nicht produktionsreif oder gemergt.** Weitere NPC-Beitritte während derselben Live-Begegnung, 1vs1→Fleet-Übernahme, Sieg-/Niederlage-End-to-End, alle Kartenarten und vollständige CI bleiben offen.
+
+## FC-46 – Später eintreffende echte Karriere-Piraten in laufendes FleetCombat aufnehmen
+
+- Der gemeinsame `createFleetCombatService` ruft vor jedem World-Step optional `discoverParticipants` auf und fügt neue echte Teilnehmer nach ID in die **bereits existierende** Arena und den vorhandenen EngagementManager ein. Kein Renderer- oder Simulationsneustart.
+- Die vorhandene `LocalPirateTraffic`-Instanz wird mit aktuell im Feld angekommenen `SectorNpcState`-Piraten abgeglichen. Die Produktionsbrücke verwendet deren native Schiffsposition, Ausrüstung und Fraktion und übergibt ausschließlich vorher unbekannte IDs.
+- Vorher reservierte oder bereits registrierte Teilnehmer erhalten keinen zweiten Bewegungs- oder Kampfbesitzer. Spät eintreffende Piraten sind unmittelbar aktive lokale Einheiten; zeitgesteuerte Testteilnehmer behalten ihre separaten bestehenden Arrival-Timer.
+- Regressionen: `fleet-combat-service.test.cjs` prüft Arena-/ID-Kontinuität und idempotenten Live-Join; `fleet-career-field-security-bridge.test.cjs` prüft einen realen nachträglichen Karriere-Piratenbeitritt.
+- **Status: Integration committed, Tests und CI noch nicht tatsächlich ausgeführt.** Beitritt während eines bereits vom klassischen 1vs1-Service verwalteten Duells ist **noch nicht** implementiert; die bereits vereinbarte Sperre gegen doppelte Duellautorität bleibt bestehen. Das ist kein Nachweis für vollständige FleetCombat-Freigabe.
