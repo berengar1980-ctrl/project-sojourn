@@ -19,6 +19,7 @@ interface StrategicCombatPanelOptions {
   readonly encounterName?: string;
   /** Additional native 1vs1 snapshots sharing the same existing map renderer. */
   readonly parallelDuels?: () => readonly StrategicCombatSnapshot[];
+  readonly parallelSupportStartIndex?: number;
   readonly spectator?: boolean;
   readonly isComplete?: () => boolean;
 }
@@ -232,13 +233,14 @@ function prepareParallelDuelPanel(
 function updateParallelDuelStatus(
   status: HTMLElement | null,
   primary: StrategicCombatSnapshot,
-  others: readonly StrategicCombatSnapshot[]
+  others: readonly StrategicCombatSnapshot[],
+  supportStartIndex = Number.POSITIVE_INFINITY
 ): void {
   if (!status) return;
   status.textContent = [primary, ...others]
     .map(
       (duel, i) =>
-        'DUELL ' +
+        (i > supportStartIndex ? 'UNTERSTÜTZER ' : 'DUELL ') +
         (i + 1) +
         ' · ' +
         Math.max(0, Math.round(duel.attacker.hullHp)) +
@@ -326,8 +328,17 @@ export function createStrategicCombatPanel(
   let defeatReturnStartedAt: number | null = null;
   const render = (): void => {
     const model = options.combat.getSnapshot();
-    renderer.update(model, options.parallelDuels?.() ?? []);
-    updateParallelDuelStatus(parallelStatus, model, options.parallelDuels?.() ?? []);
+    renderer.update(
+      model,
+      options.parallelDuels?.() ?? [],
+      options.parallelSupportStartIndex
+    );
+    updateParallelDuelStatus(
+      parallelStatus,
+      model,
+      options.parallelDuels?.() ?? [],
+      options.parallelSupportStartIndex
+    );
     if (
       !options.spectator &&
       model.winner !== null &&
