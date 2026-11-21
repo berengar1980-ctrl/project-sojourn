@@ -286,7 +286,7 @@ function createFleetLobbyElements(onBack: () => void) {
   const capabilities = document.createElement('p');
   capabilities.className = 'harrow-fleet__capabilities';
   capabilities.textContent =
-    'Szenario-Konfiguration vorhanden. Kein separater FleetCombat-Kartenbildschirm: Der Start wird erst nach Anbindung an die bestehenden Kampagnenkarten aktiviert.';
+    'FleetCombat startet auf einer echten lokalen Kampagnenkarte. Derzeit sind die beiden Asteroidenfeld-Karten für den direkten Teststart verfügbar.';
   const roster = document.createElement('div');
   roster.className = 'harrow-fleet__roster';
   const actions = document.createElement('div');
@@ -298,13 +298,20 @@ function createFleetLobbyElements(onBack: () => void) {
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';
   back.addEventListener('click', onBack);
-  actions.append(back, shuffle);
+  const start = document.createElement('button');
+  start.type = 'button';
+  start.textContent = 'FleetCombat starten';
+  actions.append(back, shuffle, start);
   shell.append(heading, description, options, capabilities, actions, roster);
-  return { shell, map, player, miners, drones, piratesA, piratesB, roster, shuffle };
+  return { shell, map, player, miners, drones, piratesA, piratesB, roster, shuffle, start, capabilities };
 }
 
-export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
-  const { shell, map, player, miners, drones, piratesA, piratesB, roster, shuffle } =
+export function createFleetTestLobby(
+  root: HTMLElement,
+  onBack: () => void,
+  onStart: (config: FleetTestConfiguration) => void
+): { destroy(): void } {
+  const { shell, map, player, miners, drones, piratesA, piratesB, roster, shuffle, start, capabilities } =
     createFleetLobbyElements(onBack);
   root.replaceChildren(shell);
 
@@ -346,7 +353,16 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
       })),
     };
     renderFleetRoster(roster, config, setArrival);
+    const available = config.map === 'scattered' || config.map === 'asteroid_field';
+    start.disabled = !available;
+    start.title = available ? 'Bestehende Kampagnenkarte öffnen' : 'Diese Kartenart ist noch nicht an die Kampagnen-Fleet-Laufzeit angeschlossen';
+    capabilities.textContent = available
+      ? 'Startet die gewählte Asteroidenkarte mit dem bestehenden Kampagnenrenderer.'
+      : 'Diese Kartenart ist noch nicht verfügbar. Bitte eine Asteroidenkarte auswählen.';
   };
+  start.addEventListener('click', () => {
+    if (!start.disabled) onStart(config);
+  });
   shuffle.addEventListener('click', draw);
   for (const select of [
     map.control,
