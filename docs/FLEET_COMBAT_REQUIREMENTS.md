@@ -613,3 +613,13 @@ zu verifizieren.
 - Vorher reservierte oder bereits registrierte Teilnehmer erhalten keinen zweiten Bewegungs- oder Kampfbesitzer. Spät eintreffende Piraten sind unmittelbar aktive lokale Einheiten; zeitgesteuerte Testteilnehmer behalten ihre separaten bestehenden Arrival-Timer.
 - Regressionen: `fleet-combat-service.test.cjs` prüft Arena-/ID-Kontinuität und idempotenten Live-Join; `fleet-career-field-security-bridge.test.cjs` prüft einen realen nachträglichen Karriere-Piratenbeitritt.
 - **Status: Integration committed, Tests und CI noch nicht tatsächlich ausgeführt.** Beitritt während eines bereits vom klassischen 1vs1-Service verwalteten Duells ist **noch nicht** implementiert; die bereits vereinbarte Sperre gegen doppelte Duellautorität bleibt bestehen. Das ist kein Nachweis für vollständige FleetCombat-Freigabe.
+
+## FC-47 – FleetCombat-Testlabor wieder startbar (bestehende Kampagnenkarte)
+
+- Die `fleet-test-lobby.ts` besitzt wieder einen echten **„FleetCombat starten“**-Button. Der Callback wird über `combat-test-tabs.ts` und `bootstrap.ts` an `createGameController` übergeben.
+- Der Start erzeugt eine **isolierte Testsitzung der bestehenden Kampagne**, öffnet direkt `mountControllerMining` mit der realen `LocalSpaceRenderer`-Karte von Greyrock Belt und verwendet die bestehende `AsteroidFieldWorld`-/Miner-/Piraten-/Drohnen-Laufzeit. Es gibt keine zweite Kampfkarte und keinen FleetCombat-Renderer.
+- Die ausgewählte Spieler-Schiffsdefinition und die konfigurierten Miner/Piraten-Fraktionen werden über reale `SectorNpcState`-Vorlagen bereitgestellt. Verzögerte Piraten werden durch Ortswechsel in der laufenden Session aufgenommen; die gemeinsame FleetCombat-Laufzeit erkennt diese späteren Teilnehmer.
+- Die Karten `scattered` und `asteroid_field` sind an die lokale Mining-Feldwelt gekoppelt; `scattered` verwendet den vorhandenen `generateMiningSpace`-Generator im sparsamen Dichtemodus und behält die Feld-/Asteroidenlisten-Identität. Andere Kartenarten werden nicht stillschweigend umgedeutet.
+- **Noch eingeschränkt:** Der bestehende Feldservice kennt eine Sicherheitsdrohne; mehr als eine Drohne sowie verspätete Miner und Schrottfeld-Karten sind für den direkten Start deaktiviert. Die Vorschau der zufälligen Piratenwaffen ist noch nicht identisch mit dem tatsächlichen Karriere-NPC-Loadout. Volle UI-Szenario-/Renderer-Parität erfordert separate Arbeit.
+- Der isolierte Testlauf darf den Karriere-Speicherplatz nicht überschreiben; das normale Karriere-Speichern ist dafür gesperrt.
+- `fleet-test-lobby-isolation.test.cjs` prüft Startknopf, Callback, Bootstrap, Controller-Anschluss und Original-Karte statisch. **Browser-Test, Build, vollständige CI noch nicht verifiziert.** Kein Merge nach `main`.
