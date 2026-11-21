@@ -65,6 +65,9 @@ export class StrategicCombatRenderer {
   private readonly shieldImpacts = new ShieldImpactRenderer();
   private readonly autocannonBursts = new Map<number, AutocannonVisualBurst>();
   private model: StrategicCombatSnapshot;
+  private parallelDuels: readonly StrategicCombatSnapshot[] = [];
+  private readonly additionalSeenImpacts = new Map<number, number>();
+  private readonly additionalImpacts = new Map<number, VisibleCombatImpact[]>();
   private readonly effectClock = new CombatEffectClock();
   private seenImpactSerial = -1;
   private readonly visibleImpacts: VisibleCombatImpact[] = [];
@@ -86,7 +89,11 @@ export class StrategicCombatRenderer {
     this.model = model;
     this.resize();
   }
-  update(model: StrategicCombatSnapshot): void {
+  update(
+    model: StrategicCombatSnapshot,
+    parallelDuels: readonly StrategicCombatSnapshot[] = []
+  ): void {
+    this.parallelDuels = parallelDuels;
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
@@ -125,6 +132,24 @@ export class StrategicCombatRenderer {
       if (visualNow - visible.startedAt >= VISION_IMPACT_SECONDS) {
         this.visibleImpacts.splice(index, 1);
       }
+    }
+    for (const [index, extra] of parallelDuels.entries()) {
+      const seen = this.additionalSeenImpacts.get(index) ?? -1;
+      const impacts = [...extra.recentImpacts, ...(extra.lastImpact ? [extra.lastImpact] : [])]
+        .filter((impact) => impact.serial > seen)
+        .sort((a, b) => a.serial - b.serial);
+      const visible = this.additionalImpacts.get(index) ?? [];
+      for (const impact of impacts) {
+        this.additionalSeenImpacts.set(index, impact.serial);
+        const delay = impact.weaponFamily
+          ? WEAPON_VISUALS[impact.weaponFamily].impactDelaySeconds
+          : 0;
+        visible.push({ impact, startedAt: extra.elapsedSeconds + delay });
+      }
+      this.additionalImpacts.set(
+        index,
+        visible.filter((effect) => visualNow - effect.startedAt < VISION_IMPACT_SECONDS)
+      );
     }
     this.model = model;
     this.draw();
@@ -279,8 +304,68 @@ export class StrategicCombatRenderer {
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
     this.drawDestruction(width, height, timeSeconds);
+    this.drawAdditionalDuels(width, height, timeSeconds, visualElapsed);
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
+  }
+  /** Additional standard 1vs1 snapshots use the SAME ship/effect painters and camera. */
+  private drawAdditionalDuels(
+    width: number,
+    height: number,
+    timeSeconds: number,
+    visualElapsed: number
+  ): void {
+    const scale = this.camera.scale(
+      width,
+      height,
+      this.model.arena.width,
+      this.model.arena.height
+    );
+    for (const [index, duel] of this.parallelDuels.entries()) {
+      drawTractorThrows(
+        this.context,
+        duel.winner === null ? duel.thrownAsteroids : [],
+        scale,
+        (point) => this.screen(point, width, height),
+        (context, rock, radius) =>
+          drawCombatScrap(context, rock, radius, timeSeconds)
+      );
+      for (const mine of duel.mines) {
+        if (mine.detection === 'hidden') continue;
+        drawCombatMineMarker(this.context, mine, this.screen(mine.position, width, height));
+      }
+      for (const projectile of duel.projectiles) {
+        if (projectile.kind === 'autocannon') continue;
+        this.drawProjectile(
+          projectile,
+          this.screen(projectile.position, width, height),
+          this.screen(projectile.target, width, height)
+        );
+      }
+      for (const beam of duel.beams) {
+        if (beam.ttlSeconds > 0) this.drawBeam(beam, width, height);
+      }
+      if (duel.winner === null || duel.attacker.hullHp > 0)
+        this.drawShip(duel.attacker, width, height, timeSeconds, visualElapsed);
+      if (duel.winner === null || duel.defender.hullHp > 0)
+        this.drawShip(duel.defender, width, height, timeSeconds, visualElapsed);
+      drawCombatDamagePair(
+        this.context,
+        [duel.attacker, duel.defender],
+        (ship) => this.shipGeometry(ship, width, height),
+        this.damageParticles,
+        timeSeconds,
+        width,
+        height
+      );
+      drawCombatImpactBatch(
+        this.context,
+        this.additionalImpacts.get(index) ?? [],
+        visualElapsed,
+        (point) => this.screen(point, width, height),
+        (side) => this.shipGeometry(duel[side], width, height).height
+      );
+    }
   }
   private drawDestruction(width: number, height: number, timeSeconds: number): void {
     if (this.model.winner !== null) {
