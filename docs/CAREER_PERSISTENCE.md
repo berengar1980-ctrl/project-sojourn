@@ -971,8 +971,9 @@ normalen eigenen Asteroiden-Tick; die neue Option `sharedArenaPhysics` ist
 standardmäßig deaktiviert und wird ausschließlich durch den PvP-Koordinator
 aktiviert. Keine Änderung am Save-Schema, keine Datenmigration.
 
-Die Erweiterung auf 2 gegen 1 ist absichtlich noch nicht freigeschaltet:
-Ein gemeinsamer Verteidiger darf später unter keinen Umständen zwei
+Die ursprünglich gesperrte Erweiterung auf 2 gegen 1 wird jetzt zusammen
+mit allen Kombinationen von 1 bis 5 Schiffen im PvP-Test angeboten.
+Ein gemeinsamer Verteidiger darf unter keinen Umständen zwei
 Bewegungs-/Waffen-/Persistenzautoritäten bekommen.
 
 ### Variables Testflottenverhältnis (1–5 je Fraktion)
