@@ -36,21 +36,26 @@ function stageExistingPiratesForPreview(
   if (staged.has(locationId)) return;
   staged.add(locationId);
   const npcs = context.economy.sectorNpcs.npcs;
-  const present = npcs.filter((npc) =>
-    npc.pirate && npc.locationId === locationId && npc.hullHp > 0
+  const present = npcs.filter(
+    (npc) => npc.pirate && npc.locationId === locationId && npc.hullHp > 0
   );
   for (const npc of npcs) {
     if (present.length >= 2) break;
-    if (!npc.pirate || npc.hullHp <= 0 || npc.locationId === locationId ||
-        npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) continue;
+    if (
+      !npc.pirate ||
+      npc.hullHp <= 0 ||
+      npc.locationId === locationId ||
+      npc.combatMovement ||
+      (npc.combatRecoverySeconds ?? 0) > 0
+    )
+      continue;
     npc.locationId = locationId;
     delete npc.travel;
     present.push(npc);
   }
   if (present.length) {
     context.systemLog.write(
-      'FLEET TEST > ' + present.length +
-      ' ECHTE KARRIERE-PIRATEN IM BESTEHENDEN FELD'
+      'FLEET TEST > ' + present.length + ' ECHTE KARRIERE-PIRATEN IM BESTEHENDEN FELD'
     );
   }
 }
