@@ -1,10 +1,13 @@
 import { drawCombatTorpedo } from './combat-torpedo-renderer';
+import { drawTractorThrows } from './combat-tractor-throw-renderer';
+import { drawCombatScrap } from './combat-scrap-renderer';
 import { drawVisionAutocannon, drawVisionProjectile } from './combat-weapon-vision-renderer';
 import { drawCombatMineMarker } from './combat-ship-detail-renderer';
 import type { AutocannonVisualBurst, Point } from './strategic-combat-renderer-types';
 import type {
   CombatMineSnapshot,
   CombatProjectileSnapshot,
+  ThrownAsteroidSnapshot,
 } from '../../systems/combat/strategic-combat-types';
 
 /** Exact native 1vs1 weapon-effect painters, shared by both duel snapshots.
@@ -84,4 +87,34 @@ export function paintNativeMines(
     if (mine.detection === 'hidden') continue;
     drawCombatMineMarker(context, mine, project(mine.position));
   }
+}
+
+/** Preserve the original tractor-rock visual and mesh rotation exactly. */
+export function paintNativeTractorThrows(
+  context: CanvasRenderingContext2D,
+  rocks: readonly ThrownAsteroidSnapshot[],
+  scale: number,
+  project: (point: Point) => Point,
+  timeSeconds: number
+): void {
+  drawTractorThrows(
+    context,
+    rocks,
+    scale,
+    project,
+    (ctx, rock, radius) =>
+      drawCombatScrap(
+        ctx,
+        {
+          ...rock,
+          rotation3d: {
+            x: rock.rotation3d?.x ?? 0.18,
+            y: rock.rotation3d?.y ?? 0.27,
+            z: (rock.rotation3d?.z ?? 0) + rock.ageSeconds * 4,
+          },
+        },
+        radius,
+        timeSeconds
+      )
+  );
 }
