@@ -131,7 +131,10 @@ assert.ok(
   controller.includes('field-combat-arena') && fieldAdapter.includes('backdropSeed: instance.seed'),
   'mining combat keeps the native field seed through the shared adapter'
 );
-assert.ok(service.includes("from './strategic-combat-runtime-snapshot'"), 'combat service uses the shared native snapshot');
+assert.ok(
+  service.includes("from './strategic-combat-runtime-snapshot'"),
+  'combat service uses the shared native snapshot'
+);
 assert.ok(snapshot.includes('runtime.arena.backdropSeed'), 'snapshot carries field seed');
 assert.ok(arena.includes('arenaOptions.backdropSeed'), 'arena preserves field seed');
 assert.ok(
