@@ -28,6 +28,8 @@ interface NativeFleetFrame {
   readonly asteroidWorld: CombatVisualAsteroid[];
   readonly arena: StrategicCombatArenaOptions;
   readonly recordedWrecks: Set<string>;
+  /** Completed escapes must remain recorded after the native target is reassigned. */
+  readonly escapedRecords: Set<string>;
   readonly radiusById: ReadonlyMap<string, number>;
   readonly seed: number;
   readonly elapsed: number;
@@ -45,6 +47,7 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     asteroidWorld,
     arena,
     recordedWrecks,
+    escapedRecords,
     radiusById,
     seed,
     elapsed,
@@ -52,7 +55,8 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   } = frame;
   advanceCombatAsteroids(arena, dt);
   materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
-  const escaped = escapedNativeFleetShips(services);
+  const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
+  for (const id of escaped) escapedRecords.add(id);
   for (const [index, service] of services.entries()) {
     const source = service.getParallelActor?.('attacker');
     const target = service.getParallelActor?.('defender');
@@ -90,8 +94,16 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     service.setBystanders(others);
     const state = service.tick(dt);
     if (state.outcomeReason === 'escape') {
-      if (state.winner === 'defender') escaped.add(state.attacker.id);
-      else if (state.winner === 'attacker') escaped.add(state.defender.id);
+      const escapedId =
+        state.winner === 'defender'
+          ? state.attacker.id
+          : state.winner === 'attacker'
+            ? state.defender.id
+            : null;
+      if (escapedId) {
+        escaped.add(escapedId);
+        escapedRecords.add(escapedId);
+      }
     }
     materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
   }
