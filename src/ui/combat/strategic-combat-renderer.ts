@@ -1,5 +1,8 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
-import { paintParallelNativeDuels, updateParallelNativeImpacts } from './parallel-native-duel-overlay';
+import {
+  paintParallelNativeDuels,
+  updateParallelNativeImpacts,
+} from './parallel-native-duel-overlay';
 import {
   paintNativeProjectile,
   paintNativeAutocannonBursts,
