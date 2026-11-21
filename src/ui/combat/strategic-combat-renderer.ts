@@ -1,16 +1,5 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import {
-  paintParallelNativeDuels,
-  updateParallelNativeImpacts,
-  updateParallelAutocannonBursts,
-} from './parallel-native-duel-overlay';
-import {
-  paintNativeProjectile,
-  paintNativeAutocannonBursts,
-  paintNativeMines,
-  paintNativeTractorThrows,
-} from './combat-native-weapon-painters';
-import {
   DRONE_DIAMETER_PX,
   DRONE_ROTATION_PERIOD_SECONDS,
   drawDroneShield,
@@ -27,11 +16,20 @@ import { drawCombatRamEffect, ramCameraImpulse } from './combat-ram-effect-rende
 import { CombatEffectClock } from './combat-effect-clock';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
 import { missedShotAbove } from '../../systems/combat/combat-miss-depth';
+import { drawTractorThrows } from './combat-tractor-throw-renderer';
+import { drawCombatScrap } from './combat-scrap-renderer';
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
-import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-renderer';
+import { drawCombatTorpedo } from './combat-torpedo-renderer';
+import {
+  drawCombatMineMarker,
+  drawCombatShipBody,
+  drawCombatShipCaption,
+} from './combat-ship-detail-renderer';
 import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
+import { drawVisionAutocannon, drawVisionProjectile } from './combat-weapon-vision-renderer';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
+import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
 import { drawCombatBeamVisual } from './combat-beam-visual';
@@ -39,8 +37,7 @@ import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
 import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatDamagePair } from './combat-damage-visual';
-import { paintNativeDuelDestruction } from './combat-wreck-destruction-renderer';
-import { CombatFleetWreckEffects, nativeFleetVisibility } from './combat-fleet-wreck-effects';
+import { drawDestroyedCombatant } from './combat-wreck-destruction-renderer';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
@@ -61,20 +58,13 @@ export class StrategicCombatRenderer {
   private readonly camera = new CombatCamera();
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
-  private readonly fleetWreckEffects = new CombatFleetWreckEffects();
-  private hiddenShipIds: ReadonlySet<string> = new Set();
-  private hiddenDamageIds: ReadonlySet<string> = new Set();
   private destructionStartedAt: number | null = null;
   private readonly engineEffects = new ShipEngineEffectsRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly lighting = new ShipLightingRenderer();
   private readonly shieldImpacts = new ShieldImpactRenderer();
-  private readonly autocannonBursts = new Map<string, AutocannonVisualBurst>();
+  private readonly autocannonBursts = new Map<number, AutocannonVisualBurst>();
   private model: StrategicCombatSnapshot;
-  private parallelDuels: readonly StrategicCombatSnapshot[] = [];
-  private supportingFromIndex = Number.POSITIVE_INFINITY;
-  private readonly additionalSeenImpacts = new Map<number, number>();
-  private readonly additionalImpacts = new Map<number, VisibleCombatImpact[]>();
   private readonly effectClock = new CombatEffectClock();
   private seenImpactSerial = -1;
   private readonly visibleImpacts: VisibleCombatImpact[] = [];
@@ -96,28 +86,27 @@ export class StrategicCombatRenderer {
     this.model = model;
     this.resize();
   }
-  update(
-    model: StrategicCombatSnapshot,
-    parallelDuels: readonly StrategicCombatSnapshot[] = [],
-    supportingFromIndex = Number.POSITIVE_INFINITY,
-    departedIds: readonly string[] = []
-  ): void {
-    this.parallelDuels = parallelDuels;
-    this.supportingFromIndex = supportingFromIndex;
-    const visibility = nativeFleetVisibility(model, parallelDuels, departedIds);
-    this.hiddenShipIds = visibility.escaped;
-    this.hiddenDamageIds = visibility.damageHidden;
+  update(model: StrategicCombatSnapshot): void {
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
-    const sharedElapsed = Math.max(
-      model.elapsedSeconds,
-      ...parallelDuels.map((duel) => duel.elapsedSeconds)
-    );
-    const allFinished =
-      model.winner !== null && parallelDuels.every((duel) => duel.winner !== null);
-    this.effectClock.update(sharedElapsed, allFinished, performance.now() / 1000);
-    updateParallelAutocannonBursts([model, ...parallelDuels], this.autocannonBursts, sharedElapsed);
+    this.effectClock.update(model.elapsedSeconds, model.winner !== null, performance.now() / 1000);
+    for (const projectile of model.projectiles) {
+      if (projectile.kind !== 'autocannon' || this.autocannonBursts.has(projectile.id)) continue;
+      const origin = projectile.origin;
+      const target = projectile.target;
+      const travel = Math.hypot(target.x - origin.x, target.y - origin.y);
+      this.autocannonBursts.set(projectile.id, {
+        origin: { ...origin },
+        target: { ...target },
+        spawnedAt: model.elapsedSeconds,
+        flightSeconds: Math.max(0.12, travel / 900),
+      });
+    }
+    for (const [id, burst] of this.autocannonBursts) {
+      const lifetime = burst.flightSeconds + (AUTOCANNON_ROUNDS - 1) * AUTOCANNON_ROUND_INTERVAL;
+      if (model.elapsedSeconds - burst.spawnedAt >= lifetime) this.autocannonBursts.delete(id);
+    }
     const recentImpacts = model.recentImpacts ?? [];
     const finalImpact = model.lastImpact ? [model.lastImpact] : [];
     const unseen = [...recentImpacts, ...finalImpact]
@@ -137,12 +126,6 @@ export class StrategicCombatRenderer {
         this.visibleImpacts.splice(index, 1);
       }
     }
-    updateParallelNativeImpacts(
-      parallelDuels,
-      visualNow,
-      this.additionalSeenImpacts,
-      this.additionalImpacts
-    );
     this.model = model;
     this.draw();
   }
@@ -247,12 +230,25 @@ export class StrategicCombatRenderer {
       this.context,
       timeSeconds
     );
-    paintNativeTractorThrows(
+    drawTractorThrows(
       this.context,
       this.model.winner === null ? this.model.thrownAsteroids : [],
       this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       (point) => this.screen(point, width, height),
-      timeSeconds
+      (context, rock, radius) =>
+        drawCombatScrap(
+          context,
+          {
+            ...rock,
+            rotation3d: {
+              x: rock.rotation3d?.x ?? 0.18,
+              y: rock.rotation3d?.y ?? 0.27,
+              z: (rock.rotation3d?.z ?? 0) + rock.ageSeconds * 4,
+            },
+          },
+          radius,
+          timeSeconds
+        )
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
     this.drawMines(width, height);
@@ -277,62 +273,34 @@ export class StrategicCombatRenderer {
       this.damageParticles,
       timeSeconds,
       width,
-      height,
-      this.hiddenDamageIds
+      height
     );
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
-    this.destructionStartedAt = paintNativeDuelDestruction(
-      this.context,
-      this.model,
-      (ship) => this.shipGeometry(ship, width, height),
-      timeSeconds,
-      this.destructionStartedAt,
-      this.hiddenDamageIds
-    );
-    this.drawAdditionalDuels(width, height, timeSeconds, visualElapsed);
-    this.fleetWreckEffects.draw(
-      this.context,
-      this.model.arena.asteroids ?? [],
-      (point) => this.screen(point, width, height),
-      this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
-      timeSeconds,
-      width,
-      height
-    );
+    this.drawDestruction(width, height, timeSeconds);
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
   }
-  private drawAdditionalDuels(
-    width: number,
-    height: number,
-    timeSeconds: number,
-    visualElapsed: number
-  ): void {
-    paintParallelNativeDuels({
-      context: this.context,
-      duels: this.parallelDuels,
-      supportingFromIndex: this.supportingFromIndex,
-      hiddenIds: this.hiddenDamageIds,
-      scale: this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
-      project: (point) => this.screen(point, width, height),
-      geometry: (ship) => this.shipGeometry(ship, width, height),
-      paintShip: (ship) => this.drawShip(ship, width, height, timeSeconds, visualElapsed),
-      paintBeam: (beam) => this.drawBeam(beam, width, height),
-      paintProjectile: (shot) =>
-        this.drawProjectile(
-          shot,
-          this.screen(shot.position, width, height),
-          this.screen(shot.target, width, height)
-        ),
-      damageParticles: this.damageParticles,
-      visibleImpacts: this.additionalImpacts,
-      width,
-      height,
-      timeSeconds,
-      visualElapsed,
-    });
+  private drawDestruction(width: number, height: number, timeSeconds: number): void {
+    if (this.model.winner !== null) {
+      if (this.destructionStartedAt === null) this.destructionStartedAt = timeSeconds;
+      const loser = this.model.winner === 'attacker' ? this.model.defender : this.model.attacker;
+      if (loser.hullHp <= 0) {
+        const geometry = this.shipGeometry(loser, width, height);
+        const age = timeSeconds - this.destructionStartedAt;
+        drawDestroyedCombatant(
+          this.context,
+          geometry.center,
+          Math.max(geometry.width, geometry.height),
+          loser.headingRadians,
+          loser.id,
+          this.model.arena.backdropSeed ?? 0,
+          this.model.elapsedSeconds,
+          age
+        );
+      }
+    }
   }
   private drawBeams(width: number, height: number, above: boolean): void {
     if (this.model.winner !== null) return;
@@ -358,26 +326,63 @@ export class StrategicCombatRenderer {
     }
   }
   private drawAutocannonBursts(width: number, height: number): void {
-    if (this.model.winner !== null && !this.parallelDuels.some((duel) => !duel.winner)) return;
-    paintNativeAutocannonBursts(
-      this.context,
-      this.autocannonBursts.values(),
-      (point) => this.screen(point, width, height),
-      this.effectClock.elapsed(performance.now() / 1000)
-    );
+    if (this.model.winner !== null) return;
+    for (const burst of this.autocannonBursts.values()) {
+      drawVisionAutocannon(
+        this.context,
+        this.screen(burst.origin, width, height),
+        this.screen(burst.target, width, height),
+        this.model.elapsedSeconds - burst.spawnedAt,
+        burst.flightSeconds
+      );
+    }
   }
   private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
-    paintNativeProjectile(
-      this.context,
-      projectile,
-      point,
-      target,
-      this.model.elapsedSeconds,
-      this.camera.zoom
-    );
+    if (
+      drawVisionProjectile(
+        this.context,
+        projectile.family,
+        point,
+        projectile.direction,
+        this.model.elapsedSeconds,
+        projectile.id
+      )
+    ) {
+      return;
+    }
+    const angle =
+      projectile.kind === 'missile'
+        ? Math.atan2(projectile.direction.y, projectile.direction.x)
+        : Math.atan2(target.y - point.y, target.x - point.x);
+    this.context.save();
+    this.context.translate(point.x, point.y);
+    this.context.rotate(angle);
+    if (projectile.kind === 'plasma') {
+      this.context.shadowColor = '#73dfff';
+      this.context.shadowBlur = 14;
+      this.context.fillStyle = 'rgba(78, 177, 241, 0.45)';
+      this.context.beginPath();
+      this.context.arc(0, 0, 7, 0, Math.PI * 2);
+      this.context.fill();
+      this.context.fillStyle = '#e1f9ff';
+      this.context.beginPath();
+      this.context.arc(0, 0, 3, 0, Math.PI * 2);
+      this.context.fill();
+    } else if (projectile.kind === 'missile') {
+      this.context.scale(this.camera.zoom / 3, this.camera.zoom / 3);
+      drawCombatTorpedo(this.context);
+    } else {
+      this.context.fillStyle = 'rgba(245, 211, 156, .95)';
+      this.context.fillRect(-3, -1, 6, 2);
+    }
+    this.context.restore();
   }
   private drawMines(width: number, height: number): void {
-    paintNativeMines(this.context, this.model.mines, (point) => this.screen(point, width, height));
+    for (const mine of this.model.mines) {
+      if (mine.detection === 'hidden') continue;
+      const point = this.screen(mine.position, width, height);
+      drawCombatMineMarker(this.context, mine, point);
+    }
   }
   private drawShip(
     combatant: StrategicCombatSnapshot['attacker'],
@@ -386,7 +391,6 @@ export class StrategicCombatRenderer {
     timeSeconds: number,
     visualElapsed: number
   ): void {
-    if (combatant.hullHp <= 0 || this.hiddenShipIds.has(combatant.id)) return;
     const definition = getShipDefinition(combatant.shipId);
     const isDrone = combatant.id.startsWith('security-drone:');
     const geometry = {
@@ -447,7 +451,9 @@ export class StrategicCombatRenderer {
         combatant.shieldImpacts
       );
     }
-    if (combatant.pirateMark) drawPirateInsignia(this.context, combatant.pirateMark, geometry);
+    if (combatant.pirateMark) {
+      drawPirateInsignia(this.context, combatant.pirateMark, geometry);
+    }
     if (hardpoints) {
       this.engineEffects.drawGlow(
         this.context,
