@@ -22,18 +22,17 @@ import type {
   AutocannonVisualBurst,
   VisibleCombatImpact,
 } from './strategic-combat-renderer-types';
-import { drawCombatShipStatus } from './combat-status-renderer';
-import { drawCombatRamEffect, ramCameraImpulse } from './combat-ram-effect-renderer';
+import { paintFleetShipAnnotations } from './fleet-native-ship-annotations';
+import { ramCameraImpulse } from './combat-ram-effect-renderer';
 import { CombatEffectClock } from './combat-effect-clock';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
 import { missedShotAbove } from '../../systems/combat/combat-miss-depth';
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
-import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-renderer';
+import { drawCombatShipBody } from './combat-ship-detail-renderer';
 import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
-import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
 import { drawCombatBeamVisual } from './combat-beam-visual';
 import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
@@ -475,16 +474,7 @@ export class FleetNativeCombatRenderer {
       );
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
-    drawCombatRamEffect(this.context, combatant, geometry, visualElapsed);
-    drawCombatShipCaption(this.context, combatant.name, hullRatio, geometry);
-    drawCombatShipStatus(this.context, combatant, geometry);
-    drawCombatBoostMeter(
-      this.context,
-      geometry.center,
-      geometry.height,
-      combatant.boostSeconds,
-      combatant.boostActive
-    );
+    paintFleetShipAnnotations(this.context, combatant, geometry, hullRatio, visualElapsed);
   }
   private drawHullImpacts(width: number, height: number, visualElapsed: number): void {
     drawCombatImpactBatch(
