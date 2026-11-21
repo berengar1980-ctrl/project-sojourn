@@ -154,7 +154,7 @@ function combatAwareLocalOptions(
       if (!isCombat()) options.onSelectAsteroid(id);
     },
     onSelectNpc: (id) => {
-      if (!isCombat()) options.onSelectNpc(id);
+      options.onSelectNpc(id);
     },
     onNavigate: (target) => (isCombat() ? Promise.resolve(false) : options.onNavigate(target)),
   };
@@ -232,7 +232,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   const unbindInput = bindNavigationInput(
     canvas,
     renderer,
-    combatAwareLocalOptions(options, () => model.combat !== null),
+    combatAwareLocalOptions(options, () => model.combat !== null || model.fleetCombat != null),
     systemLog,
     updateOverlay,
     (id) => {
