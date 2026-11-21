@@ -97,8 +97,12 @@ export class StrategicCombatRenderer {
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
-    const sharedElapsed = Math.max(model.elapsedSeconds, ...parallelDuels.map((duel) => duel.elapsedSeconds));
-    const allFinished = model.winner !== null && parallelDuels.every((duel) => duel.winner !== null);
+    const sharedElapsed = Math.max(
+      model.elapsedSeconds,
+      ...parallelDuels.map((duel) => duel.elapsedSeconds)
+    );
+    const allFinished =
+      model.winner !== null && parallelDuels.every((duel) => duel.winner !== null);
     this.effectClock.update(sharedElapsed, allFinished, performance.now() / 1000);
     for (const [duelIndex, duel] of [model, ...parallelDuels].entries()) {
       for (const projectile of duel.projectiles) {
@@ -332,8 +336,7 @@ export class StrategicCombatRenderer {
         duel.winner === null ? duel.thrownAsteroids : [],
         scale,
         (point) => this.screen(point, width, height),
-        (context, rock, radius) =>
-          drawCombatScrap(context, rock, radius, timeSeconds)
+        (context, rock, radius) => drawCombatScrap(context, rock, radius, timeSeconds)
       );
       drawCombatGrapple(this.context, duel, (side) => {
         const ship = duel[side];
