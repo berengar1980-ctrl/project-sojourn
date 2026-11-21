@@ -114,7 +114,9 @@ export function updateParallelNativeImpacts(
     const visible = visibleImpacts.get(index) ?? [];
     for (const impact of impacts) {
       seenImpacts.set(index, impact.serial);
-      const delay = impact.weaponFamily ? WEAPON_VISUALS[impact.weaponFamily].impactDelaySeconds : 0;
+      const delay = impact.weaponFamily
+        ? WEAPON_VISUALS[impact.weaponFamily].impactDelaySeconds
+        : 0;
       visible.push({ impact, startedAt: duel.elapsedSeconds + delay });
     }
     visibleImpacts.set(
