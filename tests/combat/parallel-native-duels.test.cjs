@@ -57,10 +57,7 @@ assert.deepEqual(
 assert.equal(view.elapsedSeconds, 0);
 assert.strictEqual(view.duels[0].arena.asteroids, arena.asteroids);
 assert.strictEqual(view.duels[1].arena.asteroids, arena.asteroids);
-assert.equal(
-  new Set(view.duels.flatMap((duel) => [duel.attacker.id, duel.defender.id])).size,
-  4
-);
+assert.equal(new Set(view.duels.flatMap((duel) => [duel.attacker.id, duel.defender.id])).size, 4);
 
 let bystanders = [];
 const originalBystanders = world.duels[0].setBystanders;
@@ -74,14 +71,8 @@ view = world.getSnapshot();
 assert.equal(view.duels[0].elapsedSeconds, 0.08);
 assert.equal(view.duels[1].elapsedSeconds, 0.08);
 assert.equal(bystanders.length, 2, 'other duel ships must be native collision bystanders');
-assert.deepEqual(
-  bystanders.map((s) => s.id).sort(),
-  ['a-2', 'b-2']
-);
-assert.equal(
-  view.duels[0].arena.obstacles.filter((s) => s.id.startsWith('ship:')).length,
-  2
-);
+assert.deepEqual(bystanders.map((s) => s.id).sort(), ['a-2', 'b-2']);
+assert.equal(view.duels[0].arena.obstacles.filter((s) => s.id.startsWith('ship:')).length, 2);
 assert(
   Math.abs(asteroid.position.x - initialRockX - 12 * 0.08) < 0.15,
   'asteroid may advance only once, not once for each duel'
