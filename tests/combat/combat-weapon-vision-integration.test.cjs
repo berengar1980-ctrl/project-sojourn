@@ -178,6 +178,10 @@ const types = fs.readFileSync(
   path.join(root, 'src/systems/combat/strategic-combat-types.ts'),
   'utf8'
 );
+const nativeWeaponPainters = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-native-weapon-painters.ts'),
+  'utf8'
+);
 const nativeBeam = fs.readFileSync(path.join(root, 'src/ui/combat/combat-beam-visual.ts'), 'utf8');
 assert(
   types.includes('readonly weaponFamily?: ShipWeaponFamily'),
@@ -197,7 +201,8 @@ assert(
 assert(
   nativeBeam.includes('drawVisionIonLaser(') &&
     nativeBeam.includes('drawVisionPulseLaser(') &&
-    renderer.includes('drawVisionAutocannon(') &&
+    renderer.includes('paintNativeAutocannonBursts(') &&
+    nativeWeaponPainters.includes('drawVisionAutocannon(') &&
     renderer.includes('drawCombatImpactBatch(') &&
     impactBatch.includes('drawVisionWeaponImpact('),
   'the game renderer uses the requested new beam, burst and contact effects'
