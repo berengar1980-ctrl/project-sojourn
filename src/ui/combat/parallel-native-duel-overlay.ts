@@ -2,10 +2,7 @@ import { drawTractorThrows } from './combat-tractor-throw-renderer';
 import { drawCombatScrap } from './combat-scrap-renderer';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import { drawCombatMineMarker } from './combat-ship-detail-renderer';
-import {
-  drawFleetCombatDamagePair as drawCombatDamagePair,
-  drawFleetCombatDamageShip,
-} from './fleet-native-damage-visual';
+import { drawFleetDuelDamage } from './fleet-native-damage-visual';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
 import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
@@ -125,31 +122,18 @@ export function paintParallelNativeDuels(options: {
     if (!supporting && (duel.winner === null || duel.defender.hullHp > 0)) {
       paintShip(duel.defender);
     }
-    if (supporting) {
-      drawFleetCombatDamageShip(
-        context,
-        duel.attacker,
-        geometry,
-        damageParticles,
-        timeSeconds,
-        width,
-        height,
-        hiddenIds ?? new Set(),
-        damagePaintedIds ?? new Set()
-      );
-    } else {
-      drawCombatDamagePair(
-        context,
-        [duel.attacker, duel.defender],
-        geometry,
-        damageParticles,
-        timeSeconds,
-        width,
-        height,
-        hiddenIds,
-        damagePaintedIds
-      );
-    }
+    drawFleetDuelDamage(
+      context,
+      duel,
+      supporting,
+      geometry,
+      damageParticles,
+      timeSeconds,
+      width,
+      height,
+      hiddenIds,
+      damagePaintedIds
+    );
     drawCombatImpactBatch(
       context,
       visibleImpacts.get(index) ?? [],
