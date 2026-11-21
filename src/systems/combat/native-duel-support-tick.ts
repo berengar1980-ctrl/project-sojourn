@@ -6,7 +6,10 @@ import { resolveCombatantCollision, moveCombatant } from './strategic-combat-mov
 import { reviewAndExecute } from './strategic-combat-telemetry';
 import { advanceRuntimeWeapons, advanceRuntimeProjectiles } from './strategic-combat-weapons';
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
-import { advanceThrownAsteroids, maybeLaunchTractorAsteroid } from './combat-tractor-asteroid-throw';
+import {
+  advanceThrownAsteroids,
+  maybeLaunchTractorAsteroid,
+} from './combat-tractor-asteroid-throw';
 import { pulseCombatTractor } from './combat-tractor-pulse';
 import { resolveRuntimeWinner } from './combat-runtime-winner';
 import type { StrategicCombatRuntime } from './strategic-combat-types';
