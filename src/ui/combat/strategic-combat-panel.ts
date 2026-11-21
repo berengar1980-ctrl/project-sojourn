@@ -17,6 +17,10 @@ interface StrategicCombatPanelOptions {
   readonly combat: StrategicCombatService;
   readonly onReturn: () => void;
   readonly encounterName?: string;
+  /** Additional native 1vs1 snapshots sharing the same existing map renderer. */
+  readonly parallelDuels?: () => readonly StrategicCombatSnapshot[];
+  readonly spectator?: boolean;
+  readonly isComplete?: () => boolean;
 }
 
 function percent(current: number, maximum: number): number {
@@ -210,6 +214,19 @@ export function createStrategicCombatPanel(
   options: StrategicCombatPanelOptions
 ): StrategicCombatPanel {
   const shell = makeCombatShell(options.root);
+  const parallelStatus = options.parallelDuels ? document.createElement('aside') : null;
+  if (parallelStatus) {
+    parallelStatus.className = 'combat-parallel-duels-status';
+    parallelStatus.style.cssText =
+      'position:absolute;top:50px;left:14px;z-index:3;padding:8px 11px;' +
+      'background:rgba(10,20,27,.88);border:1px solid #556973;' +
+      'color:#d8e7ee;font:12px ui-monospace,monospace;pointer-events:none;';
+    shell.append(parallelStatus);
+  }
+  if (options.spectator) {
+    shell.querySelector<HTMLElement>('.combat-tactics')?.remove();
+    shell.querySelector<HTMLElement>('.strategic-combat-grapple')?.remove();
+  }
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
@@ -235,8 +252,19 @@ export function createStrategicCombatPanel(
   let defeatReturnStartedAt: number | null = null;
   const render = (): void => {
     const model = options.combat.getSnapshot();
-    renderer.update(model);
-    if (model.winner !== null && model.attacker.hullHp <= 0 && defeatReturnTimer === null) {
+    renderer.update(model, options.parallelDuels?.() ?? []);
+    if (parallelStatus) {
+      const duels = [model, ...(options.parallelDuels?.() ?? [])];
+      parallelStatus.textContent = duels
+        .map((duel, i) =>
+          'DUELL ' + (i + 1) + ' · ' +
+          Math.max(0, Math.round(duel.attacker.hullHp)) + ' / ' +
+          Math.max(0, Math.round(duel.defender.hullHp)) + ' HP · ' +
+          (duel.winner ? 'BEENDET' : 'AKTIV')
+        )
+        .join('   |   ');
+    }
+    if (!options.spectator && model.winner !== null && model.attacker.hullHp <= 0 && defeatReturnTimer === null) {
       defeatReturnStartedAt = performance.now();
       defeatReturnTimer = setTimeout(() => options.onReturn(), 2200);
     }
@@ -257,10 +285,15 @@ export function createStrategicCombatPanel(
         ':' +
         String(seconds % 60).padStart(2, '0');
     }
-    returnButton.hidden = model.winner === null;
-    returnButton.textContent = combatReturnLabel(model);
+    const complete = options.isComplete?.() ?? model.winner !== null;
+    returnButton.hidden = options.spectator ? false : !complete;
+    returnButton.textContent = options.spectator
+      ? complete ? 'ZUM TESTLABOR' : 'TEST BEENDEN'
+      : combatReturnLabel(model);
     returnButton.disabled =
-      defeatReturnStartedAt !== null && performance.now() - defeatReturnStartedAt < 2200;
+      !options.spectator &&
+      defeatReturnStartedAt !== null &&
+      performance.now() - defeatReturnStartedAt < 2200;
     if (grappleButton) {
       grappleButton.disabled =
         model.winner !== null ||
@@ -288,7 +321,7 @@ export function createStrategicCombatPanel(
     if (defeatReturnStartedAt !== null && performance.now() - defeatReturnStartedAt < 2200) return;
     options.onReturn();
   });
-  bindCombatOrders(shell, options.combat, render);
+  if (!options.spectator) bindCombatOrders(shell, options.combat, render);
   render();
 
   return {
