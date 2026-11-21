@@ -61,6 +61,8 @@ export class FleetNativeCombatRenderer {
   private readonly camera = new CombatCamera();
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
+  private readonly paintedShips = new Set<string>();
+  private readonly paintedDamage = new Set<string>();
   private readonly fleetWreckEffects = new CombatFleetWreckEffects();
   private hiddenShipIds: ReadonlySet<string> = new Set();
   private hiddenDamageIds: ReadonlySet<string> = new Set();
@@ -222,6 +224,8 @@ export class FleetNativeCombatRenderer {
     };
   }
   private draw(): void {
+    this.paintedShips.clear();
+    this.paintedDamage.clear();
     const rect = this.canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
@@ -278,7 +282,8 @@ export class FleetNativeCombatRenderer {
       timeSeconds,
       width,
       height,
-      this.hiddenDamageIds
+      this.hiddenDamageIds,
+      this.paintedDamage
     );
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
@@ -315,6 +320,7 @@ export class FleetNativeCombatRenderer {
       duels: this.parallelDuels,
       supportingFromIndex: this.supportingFromIndex,
       hiddenIds: this.hiddenDamageIds,
+      damagePaintedIds: this.paintedDamage,
       scale: this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       project: (point) => this.screen(point, width, height),
       geometry: (ship) => this.shipGeometry(ship, width, height),
@@ -386,7 +392,8 @@ export class FleetNativeCombatRenderer {
     timeSeconds: number,
     visualElapsed: number
   ): void {
-    if (combatant.hullHp <= 0 || this.hiddenShipIds.has(combatant.id)) return;
+    if (combatant.hullHp <= 0 || this.hiddenShipIds.has(combatant.id) || this.paintedShips.has(combatant.id)) return;
+    this.paintedShips.add(combatant.id);
     const definition = getShipDefinition(combatant.shipId);
     const isDrone = combatant.id.startsWith('security-drone:');
     const geometry = {
