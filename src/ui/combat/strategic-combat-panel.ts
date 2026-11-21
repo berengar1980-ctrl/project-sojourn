@@ -256,15 +256,25 @@ export function createStrategicCombatPanel(
     if (parallelStatus) {
       const duels = [model, ...(options.parallelDuels?.() ?? [])];
       parallelStatus.textContent = duels
-        .map((duel, i) =>
-          'DUELL ' + (i + 1) + ' · ' +
-          Math.max(0, Math.round(duel.attacker.hullHp)) + ' / ' +
-          Math.max(0, Math.round(duel.defender.hullHp)) + ' HP · ' +
-          (duel.winner ? 'BEENDET' : 'AKTIV')
+        .map(
+          (duel, i) =>
+            'DUELL ' +
+            (i + 1) +
+            ' · ' +
+            Math.max(0, Math.round(duel.attacker.hullHp)) +
+            ' / ' +
+            Math.max(0, Math.round(duel.defender.hullHp)) +
+            ' HP · ' +
+            (duel.winner ? 'BEENDET' : 'AKTIV')
         )
         .join('   |   ');
     }
-    if (!options.spectator && model.winner !== null && model.attacker.hullHp <= 0 && defeatReturnTimer === null) {
+    if (
+      !options.spectator &&
+      model.winner !== null &&
+      model.attacker.hullHp <= 0 &&
+      defeatReturnTimer === null
+    ) {
       defeatReturnStartedAt = performance.now();
       defeatReturnTimer = setTimeout(() => options.onReturn(), 2200);
     }
@@ -288,7 +298,9 @@ export function createStrategicCombatPanel(
     const complete = options.isComplete?.() ?? model.winner !== null;
     returnButton.hidden = options.spectator ? false : !complete;
     returnButton.textContent = options.spectator
-      ? complete ? 'ZUM TESTLABOR' : 'TEST BEENDEN'
+      ? complete
+        ? 'ZUM TESTLABOR'
+        : 'TEST BEENDEN'
       : combatReturnLabel(model);
     returnButton.disabled =
       !options.spectator &&
