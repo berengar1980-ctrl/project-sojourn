@@ -589,3 +589,11 @@ das Integrationsziel; die getrennte Integrationsarbeit erfolgt in Draft-PR #380.
 Weitere Arten lokaler Karten, vollständiges Schiffs-Zustands-Handoff und
 Mehrschiff-Gegnerbeitritte aus bereits laufenden 1vs1-Kämpfen sind gesondert
 zu verifizieren.
+
+## FC-44 – Karriere-Navigation und sicherer FleetCombat-Abschluss (Integrationsfix)
+
+- Die bereits aktive lokale Spieler-Navigation bleibt während der Fleet-Lease der einzige Steuerungsautor. `tickFleetNavigation` nutzt den nativen Autopiloten und Miningablauf ohne einen zweiten Asteroiden-Tick; `syncFleetPose` erhält den Flugkurs.
+- Die Karriere-Feldübergabe überreicht die wirkliche Geschwindigkeit aus `getShipWorldVelocity()` an `miningFieldCombatArena`, statt die Arena fälschlich mit null Startgeschwindigkeit zu initialisieren.
+- Nach dem letzten aktiven Piraten bleibt die Fleet-Lease bestehen, solange noch Projektile, Minen oder geworfene Asteroiden im gemeinsamen Combat-Snapshot vorhanden sind; offene Treffer werden nicht durch voreiligen Rückbau verworfen.
+- `fleet-existing-career-map.test.cjs` prüft Routenerhalt, Spielerbewegung und exklusive Asteroiden-Ticks sowie die relevanten Handoff-/Abschluss-Anbindungen.
+- **Status: Commit auf Integrationsbranch; vollständige CI und Browser-End-to-End-Test ausstehend.** Der Kampfabschluss bei Tod des Spielers, spätere Piratenankünfte und der Übergang bereits laufender 1vs1-Gefechte in FleetCombat benötigen noch separate Integrationsprüfungen. Kein Merge nach `main`.
