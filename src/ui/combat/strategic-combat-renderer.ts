@@ -382,11 +382,7 @@ export class StrategicCombatRenderer {
     );
   }
   private drawMines(width: number, height: number): void {
-    paintNativeMines(
-      this.context,
-      this.model.mines,
-      (point) => this.screen(point, width, height)
-    );
+    paintNativeMines(this.context, this.model.mines, (point) => this.screen(point, width, height));
   }
   private drawShip(
     combatant: StrategicCombatSnapshot['attacker'],
