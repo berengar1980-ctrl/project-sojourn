@@ -42,7 +42,10 @@ function fieldStart(
   });
 }
 
-function nativeActor(service: StrategicCombatService, side: 'attacker' | 'defender'): MutableCombatant {
+function nativeActor(
+  service: StrategicCombatService,
+  side: 'attacker' | 'defender'
+): MutableCombatant {
   const actor = service.getParallelActor?.(side);
   if (!actor) throw new Error('Native parallel duel requires a live combatant reference');
   return actor;
@@ -137,7 +140,11 @@ function createNativeDuelServices(
         arena,
         obstacleSet(),
         entry.ship,
-        { id: targetActor.setup.id, team: entry.ship.team === 'a' ? 'b' : 'a', setup: targetActor.setup },
+        {
+          id: targetActor.setup.id,
+          team: entry.ship.team === 'a' ? 'b' : 'a',
+          setup: targetActor.setup,
+        },
         fieldStart(arena, entry.ship.team, entry.index, entry.size),
         targetActor.position
       ),
@@ -177,8 +184,10 @@ export function createParallelNativeDuels(
       actor.setup.id,
       Math.max(
         18,
-        Math.max(actor.setup.shieldGeometry?.radiusX ?? 35, actor.setup.shieldGeometry?.radiusY ?? 24) *
-          0.85
+        Math.max(
+          actor.setup.shieldGeometry?.radiusX ?? 35,
+          actor.setup.shieldGeometry?.radiusY ?? 24
+        ) * 0.85
       ),
     ])
   );
@@ -221,11 +230,13 @@ export function createParallelNativeDuels(
           }));
         const blockers = allObstacles[index]!;
         blockers.splice(baseObstacles.length);
-        blockers.push(...others.map((ship) => ({
-          id: 'ship:' + ship.id,
-          position: ship.position,
-          radius: radiusById.get(ship.id) ?? 35,
-        })));
+        blockers.push(
+          ...others.map((ship) => ({
+            id: 'ship:' + ship.id,
+            position: ship.position,
+            radius: radiusById.get(ship.id) ?? 35,
+          }))
+        );
         service.setBystanders(others);
         service.tick(dt);
       }
