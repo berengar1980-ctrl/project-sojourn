@@ -447,9 +447,8 @@ export class StrategicCombatRenderer {
         combatant.shieldImpacts
       );
     }
-    if (combatant.pirateMark) {
+    if (combatant.pirateMark)
       drawPirateInsignia(this.context, combatant.pirateMark, geometry);
-    }
     if (hardpoints) {
       this.engineEffects.drawGlow(
         this.context,
