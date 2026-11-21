@@ -986,3 +986,15 @@ wird nicht unabhängig kopiert oder ein zweites Mal als AI-Schiff getickt.
 Der Unterstützer-Tick (`native-duel-support-tick.ts`) ist ausschließlich
 flüchtige PvP-Testlogik. Keiner dieser Laufzeitverweise wird gespeichert;
 Speicherformat, Wiederherstellung und Karriere-Autorität bleiben unverändert.
+
+### Flottenwracks und gemeinsam benutzter Fluchtpunkt (PvP-Test)
+
+Bei nativen Mehrschiffgefechten gehört der Fluchtpunkt der gemeinsamen Karte,
+nicht den einzelnen Duellen. Erfolgreich entkommene Schiffe werden in der
+flüchtigen Flottenkoordination als abwesend geführt und nicht mehr gezeichnet
+oder als Kollisionshindernisse übergeben. Für zerstörte Schiffe entsteht
+genau ein echtes Wrack als driftendes `CombatVisualAsteroid` im gemeinsamen
+PvP-Feld. Das native Wrackmodell, Schiffszerfalls-Effekte, Rauch und Feuer
+verwenden bestehende Rendering-Bausteine. Die Kampagnenfelder und deren
+Wrack-Persistenz werden dadurch nicht verändert; alle neuen Wracks bleiben
+auf die nur vorübergehend existierende PvP-Testarena beschränkt.
