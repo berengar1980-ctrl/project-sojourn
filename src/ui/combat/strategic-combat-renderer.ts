@@ -68,6 +68,7 @@ export class StrategicCombatRenderer {
   private readonly autocannonBursts = new Map<string, AutocannonVisualBurst>();
   private model: StrategicCombatSnapshot;
   private parallelDuels: readonly StrategicCombatSnapshot[] = [];
+  private supportingFromIndex = Number.POSITIVE_INFINITY;
   private readonly additionalSeenImpacts = new Map<number, number>();
   private readonly additionalImpacts = new Map<number, VisibleCombatImpact[]>();
   private readonly effectClock = new CombatEffectClock();
@@ -93,9 +94,11 @@ export class StrategicCombatRenderer {
   }
   update(
     model: StrategicCombatSnapshot,
-    parallelDuels: readonly StrategicCombatSnapshot[] = []
+    parallelDuels: readonly StrategicCombatSnapshot[] = [],
+    supportingFromIndex = Number.POSITIVE_INFINITY
   ): void {
     this.parallelDuels = parallelDuels;
+    this.supportingFromIndex = supportingFromIndex;
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
@@ -303,6 +306,7 @@ export class StrategicCombatRenderer {
     paintParallelNativeDuels({
       context: this.context,
       duels: this.parallelDuels,
+      supportingFromIndex: this.supportingFromIndex,
       scale: this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       project: (point) => this.screen(point, width, height),
       geometry: (ship) => this.shipGeometry(ship, width, height),
