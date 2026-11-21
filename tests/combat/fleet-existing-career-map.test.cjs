@@ -85,7 +85,7 @@ const map = read('src/ui/local-space/local-space-renderer.ts');
 const fx = read('src/ui/local-space/local-space-npc-combat-effects.ts');
 const entry = read('src/app/game-controller-fleet-integration.ts');
 const bridge = read('src/app/game-controller-field-world-bridge.ts');
-assert(controller.includes('advanceControllerFleetIntegration(context)'));
+assert(controller.includes('advanceControllerFleetIntegration(context, () => mountControllerStarMap(context))'));
 assert(controller.includes('targetControllerFleetShip(context, id)'));
 assert(!map.includes('FleetCombatMapRenderer'), 'no duplicate fleet renderer');
 assert(
