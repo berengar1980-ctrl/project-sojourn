@@ -63,7 +63,7 @@ export class StrategicCombatRenderer {
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
   private readonly lighting = new ShipLightingRenderer();
   private readonly shieldImpacts = new ShieldImpactRenderer();
-  private readonly autocannonBursts = new Map<number, AutocannonVisualBurst>();
+  private readonly autocannonBursts = new Map<string, AutocannonVisualBurst>();
   private model: StrategicCombatSnapshot;
   private parallelDuels: readonly StrategicCombatSnapshot[] = [];
   private readonly additionalSeenImpacts = new Map<number, number>();
@@ -97,22 +97,27 @@ export class StrategicCombatRenderer {
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
-    this.effectClock.update(model.elapsedSeconds, model.winner !== null, performance.now() / 1000);
-    for (const projectile of model.projectiles) {
-      if (projectile.kind !== 'autocannon' || this.autocannonBursts.has(projectile.id)) continue;
-      const origin = projectile.origin;
-      const target = projectile.target;
-      const travel = Math.hypot(target.x - origin.x, target.y - origin.y);
-      this.autocannonBursts.set(projectile.id, {
-        origin: { ...origin },
-        target: { ...target },
-        spawnedAt: model.elapsedSeconds,
-        flightSeconds: Math.max(0.12, travel / 900),
-      });
+    const sharedElapsed = Math.max(model.elapsedSeconds, ...parallelDuels.map((duel) => duel.elapsedSeconds));
+    const allFinished = model.winner !== null && parallelDuels.every((duel) => duel.winner !== null);
+    this.effectClock.update(sharedElapsed, allFinished, performance.now() / 1000);
+    for (const [duelIndex, duel] of [model, ...parallelDuels].entries()) {
+      for (const projectile of duel.projectiles) {
+        const id = duelIndex + ':' + projectile.id;
+        if (projectile.kind !== 'autocannon' || this.autocannonBursts.has(id)) continue;
+        const origin = projectile.origin;
+        const target = projectile.target;
+        const travel = Math.hypot(target.x - origin.x, target.y - origin.y);
+        this.autocannonBursts.set(id, {
+          origin: { ...origin },
+          target: { ...target },
+          spawnedAt: duel.elapsedSeconds,
+          flightSeconds: Math.max(0.12, travel / 900),
+        });
+      }
     }
     for (const [id, burst] of this.autocannonBursts) {
       const lifetime = burst.flightSeconds + (AUTOCANNON_ROUNDS - 1) * AUTOCANNON_ROUND_INTERVAL;
-      if (model.elapsedSeconds - burst.spawnedAt >= lifetime) this.autocannonBursts.delete(id);
+      if (sharedElapsed - burst.spawnedAt >= lifetime) this.autocannonBursts.delete(id);
     }
     const recentImpacts = model.recentImpacts ?? [];
     const finalImpact = model.lastImpact ? [model.lastImpact] : [];
@@ -330,6 +335,13 @@ export class StrategicCombatRenderer {
         (context, rock, radius) =>
           drawCombatScrap(context, rock, radius, timeSeconds)
       );
+      drawCombatGrapple(this.context, duel, (side) => {
+        const ship = duel[side];
+        const geometry = this.shipGeometry(ship, width, height);
+        const points = getShipDefinition(ship.shipId)?.sprite.hardpoints;
+        const mount = points?.grapplingHooks?.[0];
+        return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
+      });
       for (const mine of duel.mines) {
         if (mine.detection === 'hidden') continue;
         drawCombatMineMarker(this.context, mine, this.screen(mine.position, width, height));
@@ -417,7 +429,7 @@ export class StrategicCombatRenderer {
         this.context,
         this.screen(burst.origin, width, height),
         this.screen(burst.target, width, height),
-        this.model.elapsedSeconds - burst.spawnedAt,
+        this.effectClock.elapsed(performance.now() / 1000) - burst.spawnedAt,
         burst.flightSeconds
       );
     }
