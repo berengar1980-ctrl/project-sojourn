@@ -24,16 +24,19 @@ export function retargetNativeFleetSurvivor(
     survivor === opponent ||
     runtimeEnemy(runtime, side) === opponent
   ) return false;
-  if (side === 'attacker') runtime.defender = opponent;
-  else runtime.attacker = opponent;
+  // Preserve the immutable runtime container and all existing ship objects;
+  // only the fleet-owned opponent reference may change after a completed duel.
+  Object.assign(runtime, side === 'attacker' ? { defender: opponent } : { attacker: opponent });
   runtime.winner = null;
   runtime.outcomeReason = null;
   runtime.boardingInitiator = null;
   runtime.grapple = null;
-  runtime.projectiles = [];
-  runtime.beams = [];
-  runtime.thrownAsteroids = [];
-  runtime.mines = runtime.mines.filter((mine) => mine.owner === side);
+  runtime.projectiles.length = 0;
+  runtime.beams.length = 0;
+  runtime.thrownAsteroids.length = 0;
+  for (let i = runtime.mines.length - 1; i >= 0; i -= 1) {
+    if (runtime.mines[i]!.owner !== side) runtime.mines.splice(i, 1);
+  }
   survivor.strategy = null;
   survivor.nextStrategyReviewAt = runtime.elapsedSeconds;
   survivor.asteroidRoute = [];
