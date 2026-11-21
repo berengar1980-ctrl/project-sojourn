@@ -1,6 +1,11 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import { paintParallelNativeDuels, updateParallelNativeImpacts } from './parallel-native-duel-overlay';
-import { paintNativeProjectile, paintNativeAutocannonBursts, paintNativeMines } from './combat-native-weapon-painters';
+import {
+  paintNativeProjectile,
+  paintNativeAutocannonBursts,
+  paintNativeMines,
+  paintNativeTractorThrows,
+} from './combat-native-weapon-painters';
 import {
   DRONE_DIAMETER_PX,
   DRONE_ROTATION_PERIOD_SECONDS,
@@ -18,8 +23,6 @@ import { drawCombatRamEffect, ramCameraImpulse } from './combat-ram-effect-rende
 import { CombatEffectClock } from './combat-effect-clock';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
 import { missedShotAbove } from '../../systems/combat/combat-miss-depth';
-import { drawTractorThrows } from './combat-tractor-throw-renderer';
-import { drawCombatScrap } from './combat-scrap-renderer';
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-renderer';
@@ -248,25 +251,12 @@ export class StrategicCombatRenderer {
       this.context,
       timeSeconds
     );
-    drawTractorThrows(
+    paintNativeTractorThrows(
       this.context,
       this.model.winner === null ? this.model.thrownAsteroids : [],
       this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       (point) => this.screen(point, width, height),
-      (context, rock, radius) =>
-        drawCombatScrap(
-          context,
-          {
-            ...rock,
-            rotation3d: {
-              x: rock.rotation3d?.x ?? 0.18,
-              y: rock.rotation3d?.y ?? 0.27,
-              z: (rock.rotation3d?.z ?? 0) + rock.ageSeconds * 4,
-            },
-          },
-          radius,
-          timeSeconds
-        )
+      timeSeconds
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
     this.drawMines(width, height);
