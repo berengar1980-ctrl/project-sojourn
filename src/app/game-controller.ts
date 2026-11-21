@@ -1,5 +1,8 @@
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
-import { advanceFleetCareerTest, installFleetCareerTest } from './game-controller-fleet-test-session';
+import {
+  advanceFleetCareerTest,
+  installFleetCareerTest,
+} from './game-controller-fleet-test-session';
 import { advanceControllerFieldWorld, fieldWorldFor } from './game-controller-field-world-bridge';
 import {
   inspectLegalDockArrival,

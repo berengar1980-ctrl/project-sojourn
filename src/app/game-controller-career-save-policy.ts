@@ -35,7 +35,8 @@ export function careerSaveBlockReason(state: CareerSaveSafetyState): string | nu
 
 /** Loading the previous valid career slot intentionally has no combat guard. */
 export function controllerCareerSaveBlockReason(context: ControllerRuntimeContext): string | null {
-  if (isFleetCareerTest(context)) return 'FleetCombat-Testläufe können nicht als Karriere gespeichert werden.';
+  if (isFleetCareerTest(context))
+    return 'FleetCombat-Testläufe können nicht als Karriere gespeichert werden.';
   const { state, navigation, engagements, fuelJourney } = context;
   return careerSaveBlockReason({
     mode: state.mode,

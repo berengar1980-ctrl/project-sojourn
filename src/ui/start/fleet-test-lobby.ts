@@ -303,7 +303,19 @@ function createFleetLobbyElements(onBack: () => void) {
   start.textContent = 'FleetCombat starten';
   actions.append(back, shuffle, start);
   shell.append(heading, description, options, capabilities, actions, roster);
-  return { shell, map, player, miners, drones, piratesA, piratesB, roster, shuffle, start, capabilities };
+  return {
+    shell,
+    map,
+    player,
+    miners,
+    drones,
+    piratesA,
+    piratesB,
+    roster,
+    shuffle,
+    start,
+    capabilities,
+  };
 }
 
 export function createFleetTestLobby(
@@ -311,8 +323,19 @@ export function createFleetTestLobby(
   onBack: () => void,
   onStart: (config: FleetTestConfiguration) => void
 ): { destroy(): void } {
-  const { shell, map, player, miners, drones, piratesA, piratesB, roster, shuffle, start, capabilities } =
-    createFleetLobbyElements(onBack);
+  const {
+    shell,
+    map,
+    player,
+    miners,
+    drones,
+    piratesA,
+    piratesB,
+    roster,
+    shuffle,
+    start,
+    capabilities,
+  } = createFleetLobbyElements(onBack);
   root.replaceChildren(shell);
 
   let config: FleetTestConfiguration;

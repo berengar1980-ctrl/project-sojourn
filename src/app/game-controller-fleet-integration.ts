@@ -102,8 +102,7 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
   );
   field.pirates.reconcile(localPirates);
   const presentPirates = field.pirates.snapshot(localPirates);
-  if (presentPirates.length < (fleetPreviewEnabled() || isFleetCareerTest(context) ? 1 : 2))
-    return;
+  if (presentPirates.length < (fleetPreviewEnabled() || isFleetCareerTest(context) ? 1 : 2)) return;
   const miners = field.miners.ships.filter((entry) =>
     npcs.some((npc) => npc.id === entry.npcId && npc.hullHp > 0 && npc.locationId === locationId)
   );
