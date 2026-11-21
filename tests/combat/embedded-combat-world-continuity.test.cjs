@@ -16,7 +16,7 @@ const miningService = read('src/systems/npcs/npc-local-mining-service.ts');
 const salvageScene = read('src/app/game-controller-salvage.ts');
 const salvageNpc = read('src/systems/npcs/npc-local-salvage-service.ts');
 assert(
-  controller.includes('tickCombatEnvironment(deltaSeconds)'),
+  controller.includes('tickCombatEnvironment(deltaSeconds, hasControllerActiveFieldFleet(context))'),
   'embedded mining advances background systems'
 );
 assert(
