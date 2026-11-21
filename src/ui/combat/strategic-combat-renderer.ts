@@ -142,6 +142,14 @@ export class StrategicCombatRenderer {
         this.visibleImpacts.splice(index, 1);
       }
     }
+    this.updateParallelImpacts(parallelDuels, visualNow);
+    this.model = model;
+    this.draw();
+  }
+  private updateParallelImpacts(
+    parallelDuels: readonly StrategicCombatSnapshot[],
+    visualNow: number
+  ): void {
     for (const [index, extra] of parallelDuels.entries()) {
       const seen = this.additionalSeenImpacts.get(index) ?? -1;
       const impacts = [...extra.recentImpacts, ...(extra.lastImpact ? [extra.lastImpact] : [])]
@@ -160,8 +168,6 @@ export class StrategicCombatRenderer {
         visible.filter((effect) => visualNow - effect.startedAt < VISION_IMPACT_SECONDS)
       );
     }
-    this.model = model;
-    this.draw();
   }
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
