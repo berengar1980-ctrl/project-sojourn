@@ -18,6 +18,43 @@ function fleetPreviewEnabled(): boolean {
   );
 }
 
+/** Preview-only positioning of REAL career pirates in an existing field.
+ * This uses native local pirate services, not synthetic test combatants.
+ */
+const previewStagedFields = new WeakMap<ControllerRuntimeContext, Set<string>>();
+
+function stageExistingPiratesForPreview(
+  context: ControllerRuntimeContext,
+  locationId: string
+): void {
+  if (!fleetPreviewEnabled()) return;
+  let staged = previewStagedFields.get(context);
+  if (!staged) {
+    staged = new Set<string>();
+    previewStagedFields.set(context, staged);
+  }
+  if (staged.has(locationId)) return;
+  staged.add(locationId);
+  const npcs = context.economy.sectorNpcs.npcs;
+  const present = npcs.filter((npc) =>
+    npc.pirate && npc.locationId === locationId && npc.hullHp > 0
+  );
+  for (const npc of npcs) {
+    if (present.length >= 2) break;
+    if (!npc.pirate || npc.hullHp <= 0 || npc.locationId === locationId ||
+        npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) continue;
+    npc.locationId = locationId;
+    delete npc.travel;
+    present.push(npc);
+  }
+  if (present.length) {
+    context.systemLog.write(
+      'FLEET TEST > ' + present.length +
+      ' ECHTE KARRIERE-PIRATEN IM BESTEHENDEN FELD'
+    );
+  }
+}
+
 function currentCareerField(context: ControllerRuntimeContext) {
   const local = context.state.localSpace?.getSnapshot();
   if (
@@ -38,6 +75,7 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
   const current = currentCareerField(context);
   if (!current) return;
   const { field, local, locationId } = current;
+  stageExistingPiratesForPreview(context, locationId);
   if (
     context.engagements
       .activeNpcCombatSnapshots?.()
