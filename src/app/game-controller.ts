@@ -8,6 +8,7 @@ import {
 } from './game-controller-law-enforcement';
 import { observeControllerOperations, operationsCombatHooks } from './game-controller-operations';
 import { startPlayerMiningCombat } from './game-controller-mining-combat-action';
+import { advanceControllerFleetIntegration, targetControllerFleetShip } from './game-controller-fleet-integration';
 import { toggleControllerAsteroidClaim } from './game-controller-claim-actions';
 import { resolveControllerCombat } from './game-controller-combat-resolution';
 import { recordCareerCombatWrecks } from './game-controller-combat-wrecks';
@@ -234,7 +235,9 @@ function mountControllerMining(
       state.selectedNpcId = id;
       state.panels.local?.update(controllerLocalModel(context));
     },
-    onAttackNpc: (id) => startPlayerMiningCombat(context, id),
+    onAttackNpc: (id) => {
+      if (!targetControllerFleetShip(context, id)) startPlayerMiningCombat(context, id);
+    },
     onCombatGrapple: () => {
       context.engagements.activePlayerCombat()?.fireGrapple('attacker');
     },
@@ -355,6 +358,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   context.campaignNavigation.observe(navigationSnapshot);
   inspectPatrolTravel(context, deltaSeconds);
   context.engagements.tick(deltaSeconds);
+  advanceControllerFleetIntegration(context);
   advanceControllerFieldWorld(context, deltaSeconds);
   resolveControllerCombat(context, {
     starMap: () => mountControllerStarMap(context),
