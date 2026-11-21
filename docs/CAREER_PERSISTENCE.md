@@ -963,8 +963,10 @@ Der neue Zweifraktions-Test im FleetCombat-Reiter verwendet zwei unveränderte
 `StrategicCombatService`-Duelle auf einer einzigen, gemeinsam integrierten
 Arena. Die Testkoordinator-Instanz `parallel-native-duels.ts` hält den
 flüchtigen Zeitpunkt und die Bystander-/Kollisionssicht, integriert Asteroiden
-nur einmal pro Tick und reicht die Originalkampf-Snapshots an den vorhandenen
-Renderer weiter. Keiner dieser Werte gelangt in den Karriere-Speicherpfad.
+nur einmal pro Tick und reicht Originalkampf-Snapshots an das separate
+FleetCombat-Zuschauerpanel weiter. Dieses benutzt vorhandene Visual-Bausteine,
+jedoch nicht den normalen 1vs1-Renderer. Keiner dieser Werte gelangt in den
+Karriere-Speicherpfad.
 
 Die Standard-1vs1-Engine behält das bisherige Checkpointformat und den
 normalen eigenen Asteroiden-Tick; die neue Option `sharedArenaPhysics` ist
@@ -998,3 +1000,23 @@ PvP-Feld. Das native Wrackmodell, Schiffszerfalls-Effekte, Rauch und Feuer
 verwenden bestehende Rendering-Bausteine. Die Kampagnenfelder und deren
 Wrack-Persistenz werden dadurch nicht verändert; alle neuen Wracks bleiben
 auf die nur vorübergehend existierende PvP-Testarena beschränkt.
+
+### Schutz des regulären 1vs1-Modus (PR #381)
+
+Die Dateien `strategic-combat-renderer.ts`,
+`strategic-combat-panel.ts`, `combat-damage-visual.ts` und
+`combat-wreck-destruction-renderer.ts` entsprechen wieder bytegenau
+dem Stand von `main`. Die Mehrschiffansicht verwendet stattdessen
+`fleet-native-combat-renderer.ts`, `fleet-native-combat-panel.ts`
+und eigene Ergänzungen für sichtbare Wracks und Schadenspartikel.
+Die normale 1vs1-UI verwendet weiterhin ausschließlich ihre bisherigen
+Dateien. Ein Regressionstest überprüft sowohl die Originaldateien
+als auch die getrennte Verdrahtung und den unveränderten Default-Pfad
+von `createStrategicCombatService` (ohne Fleet-Parameter).
+
+Der Kampfdienst selbst bietet ausschließlich optionale PvP-Fleet-Parameter
+mit unverändertem Standardwert. Normale 1vs1-Duelle integrieren ihre
+Asteroiden weiterhin selbst und erzeugen unverändert zwei eigene
+Combatant-Instanzen; nur der neue Fleet-Koordinator aktiviert
+die gemeinsame Arena-/Zielreferenz-Unterstützung. Das
+Karriere-Speicherschema bleibt unverändert.
