@@ -16,7 +16,7 @@
     "combat:simulate": "node scripts/simulate-combat.cjs",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --write src/systems/combat/native-fleet-retarget.ts src/systems/combat/native-duel-support-tick.ts src/systems/combat/native-fleet-advance.ts src/systems/combat/parallel-native-duels.ts src/systems/combat/strategic-combat-service.ts src/systems/combat/combat-tractor-asteroid-throw.ts src/systems/combat/strategic-combat-types.ts src/ui/combat/fleet-native-combat-renderer.ts src/ui/combat/fleet-native-damage-visual.ts src/ui/combat/fleet-native-ship-annotations.ts src/ui/combat/parallel-native-duel-overlay.ts tests/combat/parallel-native-one-vs-two.test.cjs docs/CAREER_PERSISTENCE.md docs/SOJOURN_FEATURE_PARITY.md docs/CAREER_PERSISTENCE_OWNERS.json && git diff -- src/systems/combat/native-fleet-retarget.ts src/systems/combat/native-duel-support-tick.ts src/systems/combat/native-fleet-advance.ts src/systems/combat/parallel-native-duels.ts src/systems/combat/strategic-combat-service.ts src/systems/combat/combat-tractor-asteroid-throw.ts src/systems/combat/strategic-combat-types.ts src/ui/combat/fleet-native-combat-renderer.ts src/ui/combat/fleet-native-damage-visual.ts src/ui/combat/fleet-native-ship-annotations.ts src/ui/combat/parallel-native-duel-overlay.ts tests/combat/parallel-native-one-vs-two.test.cjs docs/CAREER_PERSISTENCE.md docs/SOJOURN_FEATURE_PARITY.md docs/CAREER_PERSISTENCE_OWNERS.json && prettier --check .",
+    "format:check": "prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run check:quick && npm run build",
