@@ -171,6 +171,10 @@
       "mode": "derived",
       "reason": "Pure wreck factory mutating an explicitly passed live salvage field; the field owns its spawned wrecks and this module retains no private state."
     },
+    "src/systems/combat/strategic-combat-runtime-snapshot.ts": {
+      "mode": "derived",
+      "reason": "Extracted unchanged canonical in-memory snapshot projection of the existing strategic combat runtime; stores no new authoritative state."
+    },
     "src/systems/combat/native-duel-support-tick.ts": {
       "mode": "transient",
       "reason": "Original per-ship combat helpers driven for disposable extra PvP attackers; live target references are not persisted."
