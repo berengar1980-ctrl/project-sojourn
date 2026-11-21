@@ -23,16 +23,6 @@ function fleetPreviewEnabled(): boolean {
  * This uses native local pirate services, not synthetic test combatants.
  */
 const previewStagedFields = new WeakMap<ControllerRuntimeContext, Set<string>>();
-const completedFields = new WeakMap<ControllerRuntimeContext, Set<string>>();
-
-function markFleetCompleted(context: ControllerRuntimeContext, locationId: string): void {
-  let completed = completedFields.get(context);
-  if (!completed) {
-    completed = new Set<string>();
-    completedFields.set(context, completed);
-  }
-  completed.add(locationId);
-}
 
 function stageExistingPiratesForPreview(
   context: ControllerRuntimeContext,
@@ -91,7 +81,7 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
   const current = currentCareerField(context);
   if (!current) return;
   const { field, local, locationId } = current;
-  if (completedFields.get(context)?.has(locationId)) return;
+  if (context.state.combatReengageSeconds > 0) return;
   stageExistingPiratesForPreview(context, locationId);
   if (
     context.engagements
@@ -189,7 +179,6 @@ function endFinishedFleet(
   const defeated = !activePlayer;
   const player = ships.find((entry) => entry.ship.id === 'player')?.ship;
   endControllerFieldFleet(context, locationId, fleet);
-  markFleetCompleted(context, locationId);
   if (defeated && player) {
     context.state.combatResultPending = true;
     context.systemLog.write('FLEETCOMBAT > EIGENES SCHIFF ZERSTÖRT');
