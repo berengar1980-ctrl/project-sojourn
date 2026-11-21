@@ -20,6 +20,20 @@ assert(
 assert(lobby.includes('createDuelArena('), 'free 1vs1 retains maps and procedural seed');
 assert(tabs.includes('createDuelLobby(') && tabs.includes('createFleetTestLobby('));
 assert(bootstrap.includes('createCombatTestTabs('));
+assert(fleet.includes("start.textContent = 'FleetCombat starten'"), 'FleetCombat start control is visible');
+assert(fleet.includes("onStart(config)"), 'start button submits the configured scenario');
+assert(tabs.includes('onStartFleet'), 'PvP tabs pass FleetCombat launch callback');
+assert(bootstrap.includes('launchCampaign(') && bootstrap.includes('fleetTest'),
+  'FleetCombat launches an isolated career-field session');
+const controller = read('src/app/game-controller.ts');
+const testSession = read('src/app/game-controller-fleet-test-session.ts');
+assert(controller.includes('installFleetCareerTest(context, options.fleetTest)'));
+assert(controller.includes('if (options.fleetTest) mountControllerMining(context)'));
+assert(testSession.includes('fieldWorldFor(context).field(FIELD_ID)'));
+assert(testSession.includes('field.instance.asteroids.splice('),
+  'test field retains the existing asteroid instance and native renderer');
+assert(!testSession.includes('createFleetCombatTestPanel('));
+
 assert(fleet.includes('DUEL_MAPS'), 'fleet supports existing five maps');
 assert(fleet.includes('reactor4'), 'fleet uses mk4 reactors');
 assert(fleet.includes('item.tier === 1'), 'weapons are mk1');
