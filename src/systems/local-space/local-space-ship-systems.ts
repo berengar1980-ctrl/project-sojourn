@@ -33,6 +33,7 @@ export interface LocalSpaceShipSystems {
   snapshot(): ShipSystemsSnapshot;
   advance(deltaSeconds: number): void;
   damageHullFraction(fraction: number): number;
+  syncCombatIntegrity(shieldHp: number, hullHp: number): void;
   applyCollision(collision: ShieldCollisionImpact): void;
 }
 
@@ -93,6 +94,11 @@ export function createLocalSpaceShipSystems(
           shield.currentHp + 0.4 * shieldRegenMultiplier * regenSeconds
         );
       }
+    },
+
+    syncCombatIntegrity(shieldHp, hullHp) {
+      shield.currentHp = Math.min(shield.maxHp, Math.max(0, shieldHp));
+      hull.currentHp = Math.min(hull.maxHp, Math.max(0, hullHp));
     },
 
     damageHullFraction(fraction) {
