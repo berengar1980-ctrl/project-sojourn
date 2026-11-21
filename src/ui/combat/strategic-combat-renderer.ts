@@ -1,5 +1,6 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import { paintParallelNativeDuels, updateParallelNativeImpacts } from './parallel-native-duel-overlay';
+import { paintNativeProjectile, paintNativeAutocannonBursts, paintNativeMines } from './combat-native-weapon-painters';
 import {
   DRONE_DIAMETER_PX,
   DRONE_ROTATION_PERIOD_SECONDS,
@@ -21,14 +22,8 @@ import { drawTractorThrows } from './combat-tractor-throw-renderer';
 import { drawCombatScrap } from './combat-scrap-renderer';
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
-import { drawCombatTorpedo } from './combat-torpedo-renderer';
-import {
-  drawCombatMineMarker,
-  drawCombatShipBody,
-  drawCombatShipCaption,
-} from './combat-ship-detail-renderer';
+import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-renderer';
 import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
-import { drawVisionAutocannon, drawVisionProjectile } from './combat-weapon-vision-renderer';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
@@ -379,62 +374,29 @@ export class StrategicCombatRenderer {
   }
   private drawAutocannonBursts(width: number, height: number): void {
     if (this.model.winner !== null) return;
-    for (const burst of this.autocannonBursts.values()) {
-      drawVisionAutocannon(
-        this.context,
-        this.screen(burst.origin, width, height),
-        this.screen(burst.target, width, height),
-        this.effectClock.elapsed(performance.now() / 1000) - burst.spawnedAt,
-        burst.flightSeconds
-      );
-    }
+    paintNativeAutocannonBursts(
+      this.context,
+      this.autocannonBursts.values(),
+      (point) => this.screen(point, width, height),
+      this.effectClock.elapsed(performance.now() / 1000)
+    );
   }
   private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
-    if (
-      drawVisionProjectile(
-        this.context,
-        projectile.family,
-        point,
-        projectile.direction,
-        this.model.elapsedSeconds,
-        projectile.id
-      )
-    ) {
-      return;
-    }
-    const angle =
-      projectile.kind === 'missile'
-        ? Math.atan2(projectile.direction.y, projectile.direction.x)
-        : Math.atan2(target.y - point.y, target.x - point.x);
-    this.context.save();
-    this.context.translate(point.x, point.y);
-    this.context.rotate(angle);
-    if (projectile.kind === 'plasma') {
-      this.context.shadowColor = '#73dfff';
-      this.context.shadowBlur = 14;
-      this.context.fillStyle = 'rgba(78, 177, 241, 0.45)';
-      this.context.beginPath();
-      this.context.arc(0, 0, 7, 0, Math.PI * 2);
-      this.context.fill();
-      this.context.fillStyle = '#e1f9ff';
-      this.context.beginPath();
-      this.context.arc(0, 0, 3, 0, Math.PI * 2);
-      this.context.fill();
-    } else if (projectile.kind === 'missile') {
-      this.context.scale(this.camera.zoom / 3, this.camera.zoom / 3);
-      drawCombatTorpedo(this.context);
-    } else {
-      this.context.fillStyle = 'rgba(245, 211, 156, .95)';
-      this.context.fillRect(-3, -1, 6, 2);
-    }
-    this.context.restore();
+    paintNativeProjectile(
+      this.context,
+      projectile,
+      point,
+      target,
+      this.model.elapsedSeconds,
+      this.camera.zoom
+    );
   }
   private drawMines(width: number, height: number): void {
-    for (const mine of this.model.mines) {
-      if (mine.detection === 'hidden') continue;
-      const point = this.screen(mine.position, width, height);
-      drawCombatMineMarker(this.context, mine, point);
-    }
+    paintNativeMines(
+      this.context,
+      this.model.mines,
+      (point) => this.screen(point, width, height)
+    );
   }
   private drawShip(
     combatant: StrategicCombatSnapshot['attacker'],
