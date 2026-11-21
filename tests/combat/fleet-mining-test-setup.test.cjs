@@ -65,11 +65,15 @@ assert(
     0
   ) >= initialCargo
 );
-const lobby = fs.readFileSync(path.join(root, 'src/ui/start/fleet-test-lobby.ts'), 'utf8');
-assert(
-  lobby.includes('createFleetMiningTestSetup(') &&
-    lobby.includes('generateMiningSpace(') &&
-    lobby.includes('miningSetup?.world'),
-  'PvP launcher must wire actual native campaign world, not an inert miner preview'
+const fieldEntry = fs.readFileSync(
+  path.join(root, 'src/systems/combat/fleet-career-field-entry.ts'), 'utf8'
 );
-console.log('PASS PvP FleetCombat starts real campaign mining world, including delayed worker');
+const controllerBridge = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-field-world-bridge.ts'), 'utf8'
+);
+assert(
+  fieldEntry.includes('createFleetCareerMiningBridge(') &&
+    controllerBridge.includes('createFleetCombatForCareerField('),
+  'mounted campaign field must supply the native miner service to FleetCombat'
+);
+console.log('PASS native career mining world, including delayed worker and live field entry');
