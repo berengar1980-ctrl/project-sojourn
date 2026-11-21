@@ -19,11 +19,8 @@ export function retargetNativeFleetSurvivor(
   if (runtime.winner !== side || opponent.hullHp <= 0) return false;
   if (runtime.outcomeReason !== 'destruction' && runtime.outcomeReason !== 'escape') return false;
   const survivor = runtimeCombatant(runtime, side);
-  if (
-    survivor.hullHp <= 0 ||
-    survivor === opponent ||
-    runtimeEnemy(runtime, side) === opponent
-  ) return false;
+  if (survivor.hullHp <= 0 || survivor === opponent || runtimeEnemy(runtime, side) === opponent)
+    return false;
   // Preserve the immutable runtime container and all existing ship objects;
   // only the fleet-owned opponent reference may change after a completed duel.
   Object.assign(runtime, side === 'attacker' ? { defender: opponent } : { attacker: opponent });
