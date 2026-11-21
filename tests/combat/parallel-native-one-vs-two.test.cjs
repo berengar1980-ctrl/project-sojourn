@@ -115,11 +115,14 @@ const pulse = {
     arcDegrees: 360,
   },
 };
-const extraGunner = ship('gunner', 'b');
+const firstGunner = ship('gunner1', 'b');
+firstGunner.setup.weapons = [pulse];
+firstGunner.setup.hitChance = 1;
+const extraGunner = ship('gunner2', 'b');
 extraGunner.setup.weapons = [pulse];
 extraGunner.setup.hitChance = 1;
 const liveFire = createParallelNativeDuels(
-  [ship('victim', 'a'), ship('unarmed', 'b'), extraGunner],
+  [ship('victim', 'a'), firstGunner, extraGunner],
   arena(),
   719
 );
@@ -130,6 +133,10 @@ shooter.position = { x: 2800, y: 1600 };
 shooter.cooldowns[0] = 0;
 const startingShield = sharedVictim.shieldHp;
 for (let i = 0; i < 30; i += 1) liveFire.tick(0.08);
+assert(
+  liveFire.duels[0].getParallelActor('defender').weaponTelemetry[0].shotsFired > 0,
+  'the first attacker must also fire in the original 1vs1 service'
+);
 assert(
   shooter.weaponTelemetry[0].shotsFired > 0,
   'native extra attacker must actually fire real weapons'
@@ -181,6 +188,37 @@ for (const enemy of ['e1', 'e2']) {
   assert.equal(oneVsThree.duels[0].getSnapshot().winner, null);
 }
 assert.equal(oneVsThree.duels[0].getParallelActor('defender').setup.id, 'e3');
+
+// In the same 1v2 battle the first attacker may ESCAPE rather than die.
+const persistentEscape = createParallelNativeDuels(
+  [ship('solo', 'a'), ship('fugitive', 'b'), ship('remaining', 'b')],
+  arena(),
+  72
+);
+const exit = persistentEscape.getSnapshot().duels[0].exitPoint;
+const escapingShip = persistentEscape.duels[0].getParallelActor('defender');
+const deltaX = 2100 - exit.x;
+const deltaY = 1300 - exit.y;
+const length = Math.max(1, Math.hypot(deltaX, deltaY));
+escapingShip.position.x = exit.x + (deltaX / length) * 55;
+escapingShip.position.y = exit.y + (deltaY / length) * 55;
+escapingShip.tactic = 'flee';
+escapingShip.combatTacticLocked = true;
+persistentEscape.tick(0.08);
+assert(
+  persistentEscape.getSnapshot().escapedShipIds.includes('fugitive'),
+  'the original opponent reaches the one shared exit gate'
+);
+assert.equal(
+  persistentEscape.duels[0].getParallelActor('defender').setup.id,
+  'remaining',
+  'the original survivor must fight the next live attacker after an escape'
+);
+persistentEscape.tick(0.08);
+assert(
+  persistentEscape.getSnapshot().escapedShipIds.includes('fugitive'),
+  'an escaped ship must remain excluded even when its old duel is retargeted'
+);
 
 // In contrast, 2v2 remains two completely separate, original 1v1 pairs.
 const twoVsTwo = createParallelNativeDuels(
