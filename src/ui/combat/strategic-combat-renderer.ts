@@ -324,12 +324,7 @@ export class StrategicCombatRenderer {
     timeSeconds: number,
     visualElapsed: number
   ): void {
-    const scale = this.camera.scale(
-      width,
-      height,
-      this.model.arena.width,
-      this.model.arena.height
-    );
+    const scale = this.camera.scale(width, height, this.model.arena.width, this.model.arena.height);
     for (const [index, duel] of this.parallelDuels.entries()) {
       drawTractorThrows(
         this.context,
