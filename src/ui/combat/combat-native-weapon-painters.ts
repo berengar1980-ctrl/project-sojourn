@@ -97,24 +97,19 @@ export function paintNativeTractorThrows(
   project: (point: Point) => Point,
   timeSeconds: number
 ): void {
-  drawTractorThrows(
-    context,
-    rocks,
-    scale,
-    project,
-    (ctx, rock, radius) =>
-      drawCombatScrap(
-        ctx,
-        {
-          ...rock,
-          rotation3d: {
-            x: rock.rotation3d?.x ?? 0.18,
-            y: rock.rotation3d?.y ?? 0.27,
-            z: (rock.rotation3d?.z ?? 0) + rock.ageSeconds * 4,
-          },
+  drawTractorThrows(context, rocks, scale, project, (ctx, rock, radius) =>
+    drawCombatScrap(
+      ctx,
+      {
+        ...rock,
+        rotation3d: {
+          x: rock.rotation3d?.x ?? 0.18,
+          y: rock.rotation3d?.y ?? 0.27,
+          z: (rock.rotation3d?.z ?? 0) + rock.ageSeconds * 4,
         },
-        radius,
-        timeSeconds
-      )
+      },
+      radius,
+      timeSeconds
+    )
   );
 }
