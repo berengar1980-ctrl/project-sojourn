@@ -392,7 +392,8 @@ export class FleetNativeCombatRenderer {
     timeSeconds: number,
     visualElapsed: number
   ): void {
-    if (combatant.hullHp <= 0 || this.hiddenShipIds.has(combatant.id) || this.paintedShips.has(combatant.id)) return;
+    if (combatant.hullHp <= 0 || this.hiddenShipIds.has(combatant.id)) return;
+    if (this.paintedShips.has(combatant.id)) return;
     this.paintedShips.add(combatant.id);
     const definition = getShipDefinition(combatant.shipId);
     const isDrone = combatant.id.startsWith('security-drone:');
