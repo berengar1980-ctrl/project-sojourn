@@ -536,7 +536,6 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Regressionen: `fleet-weapon-physics.test.cjs` prüft Laser-/Rail-Abschirmung durch ein anderes Schiff, deckende Asteroiden, Streuungsmiss mit tatsächlichem zivilem Treffer und nachträglich in die Flugbahn bewegte Schiffe. `fleet-native-specials.test.cjs` prüft umgelenkten Traktor-Asteroideneinschlag auf eine Drittpartei und Hindernisstopp.
 - **Status: Kollisionsradius des Traktorwurfs an native Treffergeometrie angepasst; Quality-Gate und Regressionen auf dem automatisch formatierten Stand erneut zu prüfen.** Native 1vs1-Quelldateien sind unverändert, produktive Kampagnenaktivierung bleibt eine spätere Stufe.
 
-
 ## Verbindliche UI-Korrektur – KEINE FleetCombat-Sonderkarte
 
 **Nutzerentscheidung:** FleetCombat ist eine Kampf-/Engagement-Logik **in den bereits bestehenden lokalen Kampagnenkarten**. Das Szenario-Testlabor darf Parameter und Teilnehmer konfigurieren, aber **keine eigene Kartenansicht, keine eigene Schiffs-/Asteroiden-Darstellung und keinen zweiten Renderer** starten.
