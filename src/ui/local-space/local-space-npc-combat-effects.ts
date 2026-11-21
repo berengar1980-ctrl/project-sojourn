@@ -7,6 +7,12 @@ import { drawVisionProjectile } from '../combat/combat-weapon-vision-renderer';
 import { LocalNpcImpactTimeline } from './local-npc-impact-timeline';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawShipDestruction } from '../combat/ship-destruction-visual';
+import type { FleetCombatSnapshot } from '../../systems/combat/fleet-combat-service';
+import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
+import { drawCombatMineMarker } from '../combat/combat-ship-detail-renderer';
+import { drawTractorThrows } from '../combat/combat-tractor-throw-renderer';
+import { drawCombatScrap } from '../combat/combat-scrap-renderer';
+import { drawVisionWeaponImpact } from '../combat/combat-weapon-vision-renderer';
 
 const impactTimeline = new LocalNpcImpactTimeline();
 const damageParticles = new Map<string, DistressDamageParticles>();
@@ -15,6 +21,93 @@ const destructionStarts = new Map<string, number>();
 function retainActiveEffects(active: ReadonlySet<string>): void {
   for (const key of damageParticles.keys()) if (!active.has(key)) damageParticles.delete(key);
   for (const key of destructionStarts.keys()) if (!active.has(key)) destructionStarts.delete(key);
+}
+
+/** FleetCombat uses the SAME local scene, camera, native weapon painters and
+ * ship sprites as background 1vs1. It only supplies additional live events.
+ */
+function drawFleetEffects(
+  context: CanvasRenderingContext2D,
+  camera: MapCamera,
+  fleet: FleetCombatSnapshot,
+  width: number,
+  height: number,
+  active: Set<string>
+): void {
+  const screen = (position: { readonly x: number; readonly y: number }) =>
+    camera.worldToScreen(position, width, height);
+  for (const beam of fleet.beams) {
+    if (beam.ttlSeconds <= 0) continue;
+    const duration = WEAPON_VISUALS[beam.family].beamSeconds ??
+      (beam.kind === 'laser' ? 0.16 : 0.09);
+    drawCombatBeamVisual(context, {
+      id: beam.id,
+      owner: 'attacker',
+      kind: beam.kind,
+      family: beam.family,
+      origin: beam.origin,
+      end: beam.end,
+      weaponIndex: 0,
+      ttlSeconds: beam.ttlSeconds,
+      maxTtlSeconds: duration,
+    }, screen(beam.origin), screen(beam.end));
+  }
+  for (const projectile of fleet.projectiles) {
+    if (projectile.ttlSeconds <= 0) continue;
+    const point = screen(projectile.position);
+    if (drawVisionProjectile(context, projectile.family, point, projectile.direction,
+      fleet.elapsedSeconds, projectile.id)) continue;
+    context.save();
+    context.fillStyle = 'rgba(245, 211, 156, .95)';
+    context.beginPath();
+    context.arc(point.x, point.y, Math.max(1.2, camera.scale(3)), 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+  for (const mine of fleet.mines) {
+    drawCombatMineMarker(context, {
+      ...mine,
+      owner: 'attacker',
+      mineId: String(mine.id),
+      name: mine.kind,
+      tier: 1,
+      detection: 'identified',
+    }, screen(mine.position));
+  }
+  drawTractorThrows(
+    context,
+    fleet.thrownAsteroids.map((rock) => ({ ...rock, owner: 'attacker' as const })),
+    camera.scale(1),
+    screen,
+    (ctx, rock, radius) => drawCombatScrap(ctx, rock, radius, fleet.elapsedSeconds)
+  );
+  for (const shot of fleet.shots) {
+    if (shot.shieldDamage + shot.hullDamage <= 0) continue;
+    drawVisionWeaponImpact(context, 'autocannon', screen(shot.destination),
+      0.04, shot.weaponId.length + shot.sourceId.length, shot.shieldDamage > 0);
+  }
+  for (const entry of fleet.ships) {
+    const ship = entry.ship;
+    active.add(ship.id);
+    const fraction = ship.hullHp / Math.max(1, ship.hullMaxHp);
+    if (!Number.isFinite(fraction) || fraction > 0.85) continue;
+    let effect = damageParticles.get(ship.id);
+    if (!effect) {
+      effect = new DistressDamageParticles();
+      damageParticles.set(ship.id, effect);
+    }
+    effect.update(
+      performance.now() / 1000,
+      ship.position,
+      ship.headingRadians,
+      getShipDefinition(ship.shipId)?.nominalLengthMeters ?? 20,
+      camera,
+      context,
+      width,
+      height,
+      fraction
+    );
+  }
 }
 
 /** A background NPC duel is rendered in the existing mining scene, without
@@ -26,7 +119,8 @@ export function drawLocalNpcCombatEffects(
   camera: MapCamera,
   combats: readonly StrategicCombatSnapshot[],
   width: number,
-  height: number
+  height: number,
+  fleet?: FleetCombatSnapshot | null
 ): void {
   const screen = (position: { readonly x: number; readonly y: number }) =>
     camera.worldToScreen(position, width, height);
@@ -112,5 +206,6 @@ export function drawLocalNpcCombatEffects(
       }
     );
   }
+  if (fleet) drawFleetEffects(context, camera, fleet, width, height, active);
   retainActiveEffects(active);
 }
