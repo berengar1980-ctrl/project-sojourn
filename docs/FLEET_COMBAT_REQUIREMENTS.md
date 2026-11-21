@@ -535,3 +535,16 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Friendly Fire verursacht normalen Schaden und wird der tatsächlichen Schützen-ID zugeordnet. Diese Geometrieschicht ändert weder Fraktionen noch Feindseligkeit automatisch; Sicherheits-/Entschädigungsfolgen und KI-Schusslinienvorsicht sind separate Anforderungen.
 - Regressionen: `fleet-weapon-physics.test.cjs` prüft Laser-/Rail-Abschirmung durch ein anderes Schiff, deckende Asteroiden, Streuungsmiss mit tatsächlichem zivilem Treffer und nachträglich in die Flugbahn bewegte Schiffe. `fleet-native-specials.test.cjs` prüft umgelenkten Traktor-Asteroideneinschlag auf eine Drittpartei und Hindernisstopp.
 - **Status: Kollisionsradius des Traktorwurfs an native Treffergeometrie angepasst; Quality-Gate und Regressionen auf dem automatisch formatierten Stand erneut zu prüfen.** Native 1vs1-Quelldateien sind unverändert, produktive Kampagnenaktivierung bleibt eine spätere Stufe.
+
+
+## Verbindliche UI-Korrektur – KEINE FleetCombat-Sonderkarte
+
+**Nutzerentscheidung:** FleetCombat ist eine Kampf-/Engagement-Logik **in den bereits bestehenden lokalen Kampagnenkarten**. Das Szenario-Testlabor darf Parameter und Teilnehmer konfigurieren, aber **keine eigene Kartenansicht, keine eigene Schiffs-/Asteroiden-Darstellung und keinen zweiten Renderer** starten.
+
+- Die provisorische UI `src/ui/start/fleet-combat-test-panel.ts` mit Pfeilschiffen und Kreishindernissen ist entfernt.
+- Der zusätzliche, nicht angeschlossene `src/ui/start/fleet-combat-map-renderer.ts` ist ebenfalls gelöscht. Nicht durch einen dritten Renderer ersetzen.
+- `fleet-test-lobby.ts` bleibt ein **reiner Szenario-Konfigurator**; die bisherige UI-eigene `createFleetPrototype`-Simulation und ihr eigenständiger Startknopf sind beseitigt.
+- Solange der Einstieg in die vorhandenen Karten nicht fertig ist, startet das Testlabor **keine** visuelle Simulation. Der bestehende 1vs1-PvP-Modus, Karriere-Map-Renderer und alle FleetCombat-Systemtests bleiben unangetastet.
+- Beim späteren Anschluss müssen bestehende lokale Karten, ihr normaler Kamera-/Renderpfad sowie die bestehenden Schiffs-/Drohnen-/Asteroiden- und Effekt-Renderer verwendet werden. FleetCombat liefert nur die **bestehenden Live-Zustände und Mehrschiff-Kampfentscheidungen**, keine eigene Zeichenpipeline.
+- Das ist eine **Rückbau-/Bereinigungsmaßnahme**, keine erfolgreiche automatische Kampagnenintegration. Vor einer neuen Aktivierung sind die echte Karriere-Feldübernahme, exklusive Tick-Autorität, Kampfabschluss und Tests erforderlich.
+- Testabsicherung: `fleet-test-lobby-isolation.test.cjs` verbietet eine Rückkehr der beiden separaten Render-Module oder der UI-eigenen FleetCombat-Simulation.
