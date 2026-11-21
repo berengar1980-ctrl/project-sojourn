@@ -328,11 +328,7 @@ export function createStrategicCombatPanel(
   let defeatReturnStartedAt: number | null = null;
   const render = (): void => {
     const model = options.combat.getSnapshot();
-    renderer.update(
-      model,
-      options.parallelDuels?.() ?? [],
-      options.parallelSupportStartIndex
-    );
+    renderer.update(model, options.parallelDuels?.() ?? [], options.parallelSupportStartIndex);
     updateParallelDuelStatus(
       parallelStatus,
       model,
