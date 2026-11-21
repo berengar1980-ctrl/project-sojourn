@@ -40,6 +40,7 @@ import { drawCombatBackground } from './combat-background-renderer';
 import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatDamagePair } from './combat-damage-visual';
 import { drawDestroyedCombatant } from './combat-wreck-destruction-renderer';
+import { CombatFleetWreckEffects } from './combat-fleet-wreck-effects';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
@@ -60,6 +61,9 @@ export class StrategicCombatRenderer {
   private readonly camera = new CombatCamera();
   private readonly images = new Map<string, HTMLImageElement>();
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
+  private readonly fleetWreckEffects = new CombatFleetWreckEffects();
+  private hiddenShipIds: ReadonlySet<string> = new Set();
+  private hiddenDamageIds: ReadonlySet<string> = new Set();
   private destructionStartedAt: number | null = null;
   private readonly engineEffects = new ShipEngineEffectsRenderer();
   private readonly maneuverEffects = new ShipManeuverEffectsRenderer();
@@ -95,10 +99,24 @@ export class StrategicCombatRenderer {
   update(
     model: StrategicCombatSnapshot,
     parallelDuels: readonly StrategicCombatSnapshot[] = [],
-    supportingFromIndex = Number.POSITIVE_INFINITY
+    supportingFromIndex = Number.POSITIVE_INFINITY,
+    departedIds: readonly string[] = []
   ): void {
     this.parallelDuels = parallelDuels;
     this.supportingFromIndex = supportingFromIndex;
+    const departed = new Set(departedIds);
+    for (const duel of [model, ...parallelDuels]) {
+      if (duel.outcomeReason !== 'escape') continue;
+      if (duel.winner === 'defender') departed.add(duel.attacker.id);
+      if (duel.winner === 'attacker') departed.add(duel.defender.id);
+    }
+    this.hiddenShipIds = departed;
+    this.hiddenDamageIds = new Set([
+      ...departed,
+      ...(model.arena.asteroids ?? [])
+        .filter((rock) => rock.id.startsWith('fleet-wreck:'))
+        .map((rock) => rock.id.slice('fleet-wreck:'.length)),
+    ]);
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
@@ -269,13 +287,23 @@ export class StrategicCombatRenderer {
       this.damageParticles,
       timeSeconds,
       width,
-      height
+      height,
+      this.hiddenDamageIds
     );
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
     this.drawDestruction(width, height, timeSeconds);
     this.drawAdditionalDuels(width, height, timeSeconds, visualElapsed);
+    this.fleetWreckEffects.draw(
+      this.context,
+      this.model.arena.asteroids ?? [],
+      (point) => this.screen(point, width, height),
+      this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
+      timeSeconds,
+      width,
+      height
+    );
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
   }
@@ -289,6 +317,7 @@ export class StrategicCombatRenderer {
       context: this.context,
       duels: this.parallelDuels,
       supportingFromIndex: this.supportingFromIndex,
+      hiddenIds: this.hiddenDamageIds,
       scale: this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       project: (point) => this.screen(point, width, height),
       geometry: (ship) => this.shipGeometry(ship, width, height),
@@ -312,7 +341,7 @@ export class StrategicCombatRenderer {
     if (this.model.winner !== null) {
       if (this.destructionStartedAt === null) this.destructionStartedAt = timeSeconds;
       const loser = this.model.winner === 'attacker' ? this.model.defender : this.model.attacker;
-      if (loser.hullHp <= 0) {
+      if (loser.hullHp <= 0 && !this.hiddenDamageIds.has(loser.id)) {
         const geometry = this.shipGeometry(loser, width, height);
         const age = timeSeconds - this.destructionStartedAt;
         drawDestroyedCombatant(
@@ -380,6 +409,7 @@ export class StrategicCombatRenderer {
     timeSeconds: number,
     visualElapsed: number
   ): void {
+    if (combatant.hullHp <= 0 || this.hiddenShipIds.has(combatant.id)) return;
     const definition = getShipDefinition(combatant.shipId);
     const isDrone = combatant.id.startsWith('security-drone:');
     const geometry = {
