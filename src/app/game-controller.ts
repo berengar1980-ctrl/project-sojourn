@@ -476,8 +476,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     state,
   };
   combatContext = context;
-  installControllerCareer(context, options);
   if (options.fleetTest) installFleetCareerTest(context, options.fleetTest);
+  installControllerCareer(context, options);
   const menu = createControllerSettingsMenu(context, options);
   if (options.fleetTest) mountControllerMining(context);
   else mountControllerStarMap(context);
