@@ -5,7 +5,7 @@ import { fitsWeaponHardpoint, getAllShipDefinitions, getShipDefinition } from '.
 import { duelCombatant } from './duel-combatant-setup';
 import { createParallelNativeDuels } from '../../systems/combat/parallel-native-duels';
 import { createDuelArena } from '../../systems/combat/duel-arena-presets';
-import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
+import { createFleetNativeCombatPanel } from '../combat/fleet-native-combat-panel';
 import type { DuelDraft } from './duel-combatant-setup';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 
@@ -91,7 +91,7 @@ function createParallelDuelLauncher(
   lobby: HTMLElement,
   onCombatActiveChange: (active: boolean) => void
 ) {
-  let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
+  let activePanel: ReturnType<typeof createFleetNativeCombatPanel> | null = null;
   let frame = 0;
   let stopped = false;
   let generation = 0;
@@ -121,7 +121,7 @@ function createParallelDuelLauncher(
       });
       const duels = createParallelNativeDuels(ships, arena, seed);
       onCombatActiveChange(true);
-      activePanel = createStrategicCombatPanel({
+      activePanel = createFleetNativeCombatPanel({
         root,
         combat: duels.duels[0]!,
         spectator: true,
