@@ -366,7 +366,7 @@ export class StrategicCombatRenderer {
     }
   }
   private drawAutocannonBursts(width: number, height: number): void {
-    if (this.model.winner !== null) return;
+    if (this.model.winner !== null && !this.parallelDuels.some((duel) => !duel.winner)) return;
     paintNativeAutocannonBursts(
       this.context,
       this.autocannonBursts.values(),
