@@ -171,6 +171,10 @@
       "mode": "derived",
       "reason": "Pure wreck factory mutating an explicitly passed live salvage field; the field owns its spawned wrecks and this module retains no private state."
     },
+    "src/systems/combat/native-duel-support-tick.ts": {
+      "mode": "transient",
+      "reason": "Original per-ship combat helpers driven for disposable extra PvP attackers; live target references are not persisted."
+    },
     "src/systems/combat/parallel-native-duels.ts": {
       "mode": "transient",
       "reason": "Disposable PvP test coordinator of original 1vs1 services and one shared arena tick; it holds no career save state or checkpoint authority."
