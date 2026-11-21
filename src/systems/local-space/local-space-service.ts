@@ -264,12 +264,10 @@ class LocalSpaceRuntime implements LocalSpaceService {
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
     return this.getSnapshot();
   }
-
   syncCombatIntegrity(shieldHp: number, hullHp: number): LocalSpaceSnapshot {
     this.shipSystems.syncCombatIntegrity(shieldHp, hullHp);
     return this.getSnapshot();
   }
-
   /** Advance non-flight systems while combat owns both ship and asteroid physics. */
   tickCombatEnvironment(deltaSeconds: number, fleetOwnsIntegrity = false): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
