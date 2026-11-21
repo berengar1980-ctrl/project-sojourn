@@ -600,7 +600,7 @@ zu verifizieren.
 
 ## FC-45 – Spieler-Niederlage und Wiederaufnahme nach FleetCombat
 
-- Der FleetCombat-Controller erkennt die Zerstörung des realen Spielerschiffs direkt aus dem gemeinsamen Schiffssnapshot, beendet die exklusive Feld-Lease und zeigt das Ergebnis über die bestehende `campaign-combat-summary`-Darstellung an.
+- Der FleetCombat-Controller erkennt Sieg beziehungsweise Zerstörung des realen Spielerschiffs direkt aus dem gemeinsamen Schiffssnapshot, beendet die exklusive Feld-Lease und zeigt beide Ergebnisse über die bestehende `campaign-combat-summary`-Darstellung an.
 - Der Controller hält das Ergebnis mit `combatResultPending` an und verwendet denselben Sternkarten-Rückkehrpfad wie die Kampagne. Der vorhandene 1vs1-Result-Code wurde nicht umgeschrieben.
 - Nach Abschluss gilt die bestehende `combatReengageSeconds`-Sperre. Damit startet der Controller nicht im selben Frame erneut und spätere Begegnungen bleiben nach dem Cooldown möglich.
 - `fleet-existing-career-map.test.cjs` enthält Quell-/Integrationsprüfungen für den Callback, das Ergebnis-UI und den Wiedereinstiegsschutz; echte Browser-/Defeat- und CI-Tests sind noch **nicht** bestätigt.
