@@ -264,6 +264,35 @@ class LocalSpaceRuntime implements LocalSpaceService {
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
     return this.getSnapshot();
   }
+  /** FleetCombat owns asteroid physics; the native local navigation still owns player steering. */
+  tickFleetNavigation(deltaSeconds: number): LocalSpaceSnapshot {
+    const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
+    const asteroid = this.findAsteroid(this.activeTargetId());
+    if (!asteroid && this.miningPhase !== 'idle') this.finishMining();
+    else if (this.miningPhase === 'idle' && this.navigationTarget)
+      this.updateManualNavigation(clamped);
+    else if (this.miningPhase === 'idle')
+      this.scanClock.keepStation(clamped, this.idleStationKeeping, this.stationKeepingPosition);
+    else if (asteroid && this.miningPhase === 'approaching')
+      this.updateApproach(clamped, asteroid);
+    else if (asteroid && this.miningPhase === 'scanning')
+      this.updateShortRangeScan(clamped, asteroid);
+    else if (asteroid && this.miningPhase === 'extracting')
+      this.updateMining(clamped, asteroid);
+    return this.getSnapshot();
+  }
+
+  /** Synchronize native hitbox and camera without clearing an ongoing autopilot route. */
+  syncFleetPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot {
+    this.instance.ship.position = {
+      x: Math.max(0, Math.min(this.instance.width, position.x)),
+      y: Math.max(0, Math.min(this.instance.height, position.y)),
+    };
+    this.instance.ship.headingRadians = headingRadians;
+    this.instance.ship.speed = Math.max(0, speed);
+    return this.getSnapshot();
+  }
+
   syncCombatIntegrity(shieldHp: number, hullHp: number): LocalSpaceSnapshot {
     this.shipSystems.syncCombatIntegrity(shieldHp, hullHp);
     return this.getSnapshot();
