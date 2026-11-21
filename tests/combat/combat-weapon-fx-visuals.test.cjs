@@ -104,6 +104,10 @@ const snapshot = fs.readFileSync(
   path.join(root, 'src/systems/combat/strategic-combat-runtime-snapshot.ts'),
   'utf8'
 );
+const combatService = fs.readFileSync(
+  path.join(root, 'src/systems/combat/strategic-combat-service.ts'),
+  'utf8'
+);
 const renderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
   'utf8'
@@ -116,8 +120,7 @@ const nativeBeam = fs.readFileSync(path.join(root, 'src/ui/combat/combat-beam-vi
 assert(gameplay.includes('origin: { ...muzzle }'), 'projectiles remember actual weapon muzzles');
 assert(snapshot.includes('origin: { ...projectile.origin }'), 'origin is detached in snapshots');
 assert(
-  fs.readFileSync(path.join(root, 'src/systems/combat/strategic-combat-service.ts'), 'utf8')
-    .includes("from './strategic-combat-runtime-snapshot'"),
+  combatService.includes("from './strategic-combat-runtime-snapshot'"),
   'native combat service uses the shared snapshot projection'
 );
 assert(
