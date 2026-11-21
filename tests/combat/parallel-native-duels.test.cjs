@@ -55,8 +55,9 @@ assert.deepEqual(
   ]
 );
 assert.equal(view.elapsedSeconds, 0);
-assert.strictEqual(view.duels[0].arena.asteroids, arena.asteroids);
-assert.strictEqual(view.duels[1].arena.asteroids, arena.asteroids);
+assert.notStrictEqual(view.duels[0].arena.asteroids, arena.asteroids);
+assert.strictEqual(view.duels[0].arena.asteroids, view.duels[1].arena.asteroids);
+assert.strictEqual(view.duels[0].arena.asteroids[0], arena.asteroids[0]);
 assert.equal(new Set(view.duels.flatMap((duel) => [duel.attacker.id, duel.defender.id])).size, 4);
 
 let bystanders = [];
@@ -131,6 +132,14 @@ for (const [countA, countB] of [
   const active = fleet.getSnapshot();
   assert.equal(active.duels.length, Math.min(countA, countB));
   assert.equal(active.supporters.length, Math.abs(countA - countB));
+  assert(
+    [...active.duels, ...active.supporters].every(
+      (duel) =>
+        duel.exitPoint.x === active.duels[0].exitPoint.x &&
+        duel.exitPoint.y === active.duels[0].exitPoint.y
+    ),
+    'all native duels must target the exact same visible exit gate'
+  );
   assert(
     [...active.duels, ...active.supporters].every((duel) => duel.elapsedSeconds === 0.08),
     'all native ships must advance in the same frame'
