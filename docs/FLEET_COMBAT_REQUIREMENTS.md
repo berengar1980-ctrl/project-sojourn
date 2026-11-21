@@ -571,7 +571,11 @@ das Integrationsziel; die getrennte Integrationsarbeit erfolgt in Draft-PR #380.
   geöffneten Karriere-Asteroidenfeld automatisch begonnen, sofern kein
   bestehender 1vs1-Kampf die Feldautorität hält. Für die Prüfung mit nur
   einem Piraten lässt sich `?fleet=1` setzen; dies erzeugt **keine**
-  synthetischen Testschiffe und keine Ersatzkarte. Bei Kampfabschluss
+  synthetischen Testschiffe und keine Ersatzkarte. Für reproduzierbare
+  Tests werden bei `?fleet=1` bis zu zwei echte, aktuell anderweitig
+  eingesetzte Karriere-Piraten in dieses Feld versetzt: **nur einen
+  Testspielstand verwenden**, denn die NPC-Verteilung verändert sich.
+  Bei Kampfabschluss
   beziehungsweise Kartenwechsel wird die Tick-Lease freigegeben.
 - Der vorhandene Kartenangriff auf ein ausgewähltes Schiff setzt bei einer
   Fleet-Begegnung dessen Zielbindung. Außerhalb bleibt der bisherige
