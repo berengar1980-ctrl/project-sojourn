@@ -1741,3 +1741,22 @@ Ein neuer Isolationstest schützt die vier Quelldateien sowie die
 Unterscheidung der beiden UI-Einstiegspunkte und prüft den unveränderten
 Defaultpfad der 1vs1-Simulation. Nur explizit aktivierte Fleet-Parameter
 verwenden den gemeinsamen Welt-Tick. Kein Save-/Karriere-Schema-Wechsel.
+
+## Review-Log (2026-11-21): Native 1v2-Fortsetzung mit gemeinsamem Schiff
+
+**Keine Statusänderung** historischer Feature-IDs. Der erste 1v2-Schritt
+besteht aus einem unveränderten 1vs1-Paar und einem zusätzlichen Angreifer,
+der gegen dieselbe physische Schiffsinstanz kämpft. Stirbt oder entkommt
+der erste Gegner, setzt das überlebende Einzelschiff seinen Kampf gegen den
+nächsten noch aktiven Angreifer fort: Position, Hülle, Schild, Bewegung und
+Energiezustand bleiben erhalten; die neue Zielreferenz bekommt keine
+zusätzliche KI-/Cooldown-Autorität. Dies funktioniert ebenso für 2v1 mit
+einem einzelnen Verteidiger. 2v2 bleibt exakt zwei unabhängig gesteuerte
+1vs1-Paare auf einer gemeinsamen Karte.
+
+Regressionstests prüfen Instanzidentität, Cooldown-Einmaligkeit, die
+Folgezielübernahme, 2v2-Paarung und echten zusätzlichen Pulslaser-Schaden.
+Die separate FleetCombat-Darstellung unterdrückt doppelte Schiffssprites
+und Schadenspartikel. Reguläre 1vs1-GUI, Karriere-Speicherung und
+NPC-Wirtschaft bleiben unverändert. Diese PvP-Testausbaustufe garantiert
+noch keinen globalen automatischen Zielwechsel für beliebige N-vs-M-Gefechte.
