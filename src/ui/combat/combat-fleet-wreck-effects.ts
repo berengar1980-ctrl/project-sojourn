@@ -46,8 +46,8 @@ export class CombatFleetWreckEffects {
     height: number
   ): void {
     const camera = {
-      worldToScreen: (point: CombatPoint) => point,
-      scale: (meters: number) => meters,
+      worldToScreen: (point: CombatPoint) => project(point),
+      scale: (meters: number) => meters * scale,
     };
     for (const rock of bodies) {
       if (!rock.id.startsWith('fleet-wreck:')) continue;
@@ -64,7 +64,17 @@ export class CombatFleetWreckEffects {
         particles = new DistressDamageParticles();
         this.smokeById.set(rock.id, particles);
       }
-      particles.update(now, center, rock.rotation, size * 2, camera, context, width, height, 0);
+      particles.update(
+        now,
+        rock.position,
+        rock.rotation,
+        rock.radius * 2,
+        camera,
+        context,
+        width,
+        height,
+        0
+      );
     }
   }
 }
