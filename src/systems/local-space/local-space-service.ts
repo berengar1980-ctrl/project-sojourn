@@ -278,12 +278,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
         this.updateManualNavigation(dt);
       else if (this.miningPhase === 'idle')
         this.scanClock.keepStation(dt, this.idleStationKeeping, this.stationKeepingPosition);
-      else if (asteroid && this.miningPhase === 'approaching')
-        this.updateApproach(dt, asteroid);
-      else if (asteroid && this.miningPhase === 'scanning')
-        this.updateShortRangeScan(dt, asteroid);
-      else if (asteroid && this.miningPhase === 'extracting')
-        this.updateMining(dt, asteroid);
+      else if (asteroid && this.miningPhase === 'approaching') this.updateApproach(dt, asteroid);
+      else if (asteroid && this.miningPhase === 'scanning') this.updateShortRangeScan(dt, asteroid);
+      else if (asteroid && this.miningPhase === 'extracting') this.updateMining(dt, asteroid);
     }
     return this.getSnapshot();
   }
