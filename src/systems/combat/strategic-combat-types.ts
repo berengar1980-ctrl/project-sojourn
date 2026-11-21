@@ -330,7 +330,6 @@ export interface StrategicCombatService {
   fireGrapple(side: StrategicCombatSide): boolean;
   /** Release a coupled grapple after a tactical retreat without resetting hulls or arena. */
   resumeAfterBoarding(): boolean;
-  /** Fleet-only live actor / target handover; neither belongs in career saves. */
   getParallelActor?(side: StrategicCombatSide): MutableCombatant;
   retargetParallelSurvivor?(side: StrategicCombatSide, opponent: MutableCombatant): boolean;
 }
