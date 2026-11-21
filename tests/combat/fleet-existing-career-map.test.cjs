@@ -55,6 +55,7 @@ const entry = read('src/app/game-controller-fleet-integration.ts');
 const bridge = read('src/app/game-controller-field-world-bridge.ts');
 assert(controller.includes('advanceControllerFleetIntegration(context)'));
 assert(controller.includes('targetControllerFleetShip(context, id)'));
+assert(!map.includes('FleetCombatMapRenderer'), 'no duplicate fleet renderer');
 assert(
   sceneTick.includes('hasControllerActiveFieldFleet(context)'),
   'local map must not integrate native asteroids twice while FleetCombat owns the field'
