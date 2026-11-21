@@ -110,6 +110,17 @@ function drawFleetEffects(
       shot.shieldDamage > 0
     );
   }
+  drawFleetDamage(context, camera, fleet, width, height, active);
+}
+
+function drawFleetDamage(
+  context: CanvasRenderingContext2D,
+  camera: MapCamera,
+  fleet: FleetCombatSnapshot,
+  width: number,
+  height: number,
+  active: Set<string>
+): void {
   for (const entry of fleet.ships) {
     const ship = entry.ship;
     active.add(ship.id);
