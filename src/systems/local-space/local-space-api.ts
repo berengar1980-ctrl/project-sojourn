@@ -21,6 +21,10 @@ export interface LocalSpaceService {
   resolveMiningEvent(choiceId: string): MiningEventResolution | null;
   cancelMining(): LocalSpaceSnapshot;
   syncCombatPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot;
+  /** Preserve live navigation when FleetCombat shares this local field. */
+  syncFleetPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot;
+  /** Advance native player navigation/mining without ticking field asteroids twice. */
+  tickFleetNavigation(deltaSeconds: number): LocalSpaceSnapshot;
   /** Receive native combat integrity without a second damage calculation. */
   syncCombatIntegrity(shieldHp: number, hullHp: number): LocalSpaceSnapshot;
   tickCombatEnvironment(deltaSeconds: number, fleetOwnsIntegrity?: boolean): LocalSpaceSnapshot;
