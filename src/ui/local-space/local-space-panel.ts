@@ -146,16 +146,16 @@ function bindLongScanButton(
 
 function combatAwareLocalOptions(
   options: LocalSpacePanelOptions,
-  isCombat: () => boolean,
-  isDuel: () => boolean
+  getModel: () => LocalSpaceViewModel
 ): LocalSpacePanelOptions {
+  const isCombat = () => getModel().combat !== null || getModel().fleetCombat != null;
   return {
     ...options,
     onSelectAsteroid: (id) => {
       if (!isCombat()) options.onSelectAsteroid(id);
     },
     onSelectNpc: (id) => {
-      if (!isDuel()) options.onSelectNpc(id);
+      if (getModel().combat === null) options.onSelectNpc(id);
     },
     onNavigate: (target) => (isCombat() ? Promise.resolve(false) : options.onNavigate(target)),
   };
@@ -233,11 +233,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   const unbindInput = bindNavigationInput(
     canvas,
     renderer,
-    combatAwareLocalOptions(
-      options,
-      () => model.combat !== null || model.fleetCombat != null,
-      () => model.combat !== null
-    ),
+    combatAwareLocalOptions(options, () => model),
     systemLog,
     updateOverlay,
     (id) => {
