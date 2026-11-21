@@ -15,12 +15,12 @@ assert(fleet.includes("id: 'drone-'"), 'drones have stable identities');
 assert(fleet.includes("addShips('pirate-a'"), 'pirate faction A is configurable');
 assert(fleet.includes("addShips('pirate-b'"), 'pirate faction B is configurable');
 assert(
-  fleet.includes('createFleetMiningTestSetup(') && fleet.includes('miningSetup?.world'),
-  'PvP launch must run native campaign miner service through shared FleetCombat tick'
+  !fleet.includes('createFleetPrototype(') && !fleet.includes('createFleetCombatTestPanel('),
+  'scenario configuration must not launch a second map or simulation'
 );
 assert(fleet.includes('Math.min(10'), 'counts are bounded');
 assert(fleet.includes('String(count)'), 'zero units is a valid scenario');
-assert(fleet.includes('start.disabled = true'), 'do not simulate before fleet runtime exists');
+assert(!fleet.includes('createFleetCombatService('), 'only the career map may own combat');
 assert(fleet.includes('fitsWeaponHardpoint('), 'hardpoint constraints must remain enforced');
 assert(legacy.includes('createStrategicCombatService('), 'legacy 1vs1 combat remains');
 console.log('PASS fleet scenario config includes player and independent NPC categories');
