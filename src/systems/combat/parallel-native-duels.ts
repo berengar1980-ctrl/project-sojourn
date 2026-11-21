@@ -159,6 +159,30 @@ function createNativeDuelServices(
   return { pairs, supporters };
 }
 
+/**
+ * In 1vN the single defending ship must not freeze after its first opponent
+ * is destroyed or escapes. Transfer its EXISTING service to another live
+ * attacker; the new opponent keeps its separate, already-running AI owner.
+ * With 2v2 there is deliberately no target reassignment.
+ */
+function retargetSingletonSurvivor(
+  duel: StrategicCombatService,
+  supporters: readonly StrategicCombatService[],
+  singletonSide: 'attacker' | 'defender' | null,
+  escaped: ReadonlySet<string>
+): void {
+  if (!singletonSide || !supporters.length) return;
+  const state = duel.getSnapshot();
+  if (state.winner !== singletonSide) return;
+  if (state.outcomeReason !== 'destruction' && state.outcomeReason !== 'escape') return;
+  const survivor = nativeActor(duel, singletonSide);
+  if (survivor.hullHp <= 0 || escaped.has(survivor.setup.id)) return;
+  const next = supporters
+    .map((supporter) => nativeActor(supporter, 'attacker'))
+    .find((actor) => actor.hullHp > 0 && !escaped.has(actor.setup.id));
+  if (next) duel.retargetParallelSurvivor?.(singletonSide, next);
+}
+
 export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
@@ -198,6 +222,13 @@ export function createParallelNativeDuels(
   const services = [...pairs, ...supporters];
   const actors = nativeTeamActors(pairs, supporters);
   const recordedWrecks = new Set<string>();
+  const escapedRecords = new Set<string>();
+  const singletonSide =
+    first.length === 1 && second.length > 1
+      ? ('attacker' as const)
+      : second.length === 1 && first.length > 1
+        ? ('defender' as const)
+        : null;
   let elapsed = 0;
   let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
   const radiusById = new Map(
@@ -217,7 +248,7 @@ export function createParallelNativeDuels(
     const duels = pairs.map((service) => service.getSnapshot());
     const additional = supporters.map((service) => service.getSnapshot());
     const states = [...duels, ...additional];
-    const escaped = escapedNativeFleetShips(services);
+    const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
     cachedSnapshot = {
       duels,
       supporters: additional,
@@ -250,11 +281,13 @@ export function createParallelNativeDuels(
         asteroidWorld,
         arena: fleetArena,
         recordedWrecks,
+        escapedRecords,
         radiusById,
         seed,
         elapsed,
         dt,
       });
+      retargetSingletonSurvivor(pairs[0]!, supporters, singletonSide, escapedRecords);
       return getSnapshot();
     },
   };
