@@ -23,6 +23,6 @@ export interface LocalSpaceService {
   syncCombatPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot;
   /** Receive native combat integrity without a second damage calculation. */
   syncCombatIntegrity(shieldHp: number, hullHp: number): LocalSpaceSnapshot;
-  tickCombatEnvironment(deltaSeconds: number): LocalSpaceSnapshot;
+  tickCombatEnvironment(deltaSeconds: number, fleetOwnsIntegrity?: boolean): LocalSpaceSnapshot;
   tick(deltaSeconds: number): LocalSpaceSnapshot;
 }
