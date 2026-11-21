@@ -39,7 +39,7 @@ import { clamp01 } from './strategic-combat-renderer-math';
 import { drawCombatBackground } from './combat-background-renderer';
 import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatDamagePair } from './combat-damage-visual';
-import { drawDestroyedCombatant } from './combat-wreck-destruction-renderer';
+import { paintNativeDuelDestruction } from './combat-wreck-destruction-renderer';
 import { CombatFleetWreckEffects, nativeFleetVisibility } from './combat-fleet-wreck-effects';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
@@ -283,7 +283,14 @@ export class StrategicCombatRenderer {
     this.drawProjectiles(width, height, true);
     this.drawBeams(width, height, true);
     this.drawHullImpacts(width, height, visualElapsed);
-    this.drawDestruction(width, height, timeSeconds);
+    this.destructionStartedAt = paintNativeDuelDestruction(
+      this.context,
+      this.model,
+      (ship) => this.shipGeometry(ship, width, height),
+      timeSeconds,
+      this.destructionStartedAt,
+      this.hiddenDamageIds
+    );
     this.drawAdditionalDuels(width, height, timeSeconds, visualElapsed);
     this.fleetWreckEffects.draw(
       this.context,
@@ -326,26 +333,6 @@ export class StrategicCombatRenderer {
       timeSeconds,
       visualElapsed,
     });
-  }
-  private drawDestruction(width: number, height: number, timeSeconds: number): void {
-    if (this.model.winner !== null) {
-      if (this.destructionStartedAt === null) this.destructionStartedAt = timeSeconds;
-      const loser = this.model.winner === 'attacker' ? this.model.defender : this.model.attacker;
-      if (loser.hullHp <= 0 && !this.hiddenDamageIds.has(loser.id)) {
-        const geometry = this.shipGeometry(loser, width, height);
-        const age = timeSeconds - this.destructionStartedAt;
-        drawDestroyedCombatant(
-          this.context,
-          geometry.center,
-          Math.max(geometry.width, geometry.height),
-          loser.headingRadians,
-          loser.id,
-          this.model.arena.backdropSeed ?? 0,
-          this.model.elapsedSeconds,
-          age
-        );
-      }
-    }
   }
   private drawBeams(width: number, height: number, above: boolean): void {
     if (this.model.winner !== null) return;
