@@ -29,16 +29,22 @@ assert(
   fleet.includes('createFleetTestScenario('),
   'test laboratory retains the existing fleet scenario configuration'
 );
-assert(!fleet.includes('createFleetCombatTestPanel('),
-  'test laboratory cannot launch a separate map or diagnostic view');
-assert(!fleet.includes('createFleetPrototype('),
-  'no unused UI-owned fleet simulation factory survives');
+assert(
+  !fleet.includes('createFleetCombatTestPanel('),
+  'test laboratory cannot launch a separate map or diagnostic view'
+);
+assert(
+  !fleet.includes('createFleetPrototype('),
+  'no unused UI-owned fleet simulation factory survives'
+);
 for (const file of [
   'src/ui/start/fleet-combat-test-panel.ts',
   'src/ui/start/fleet-combat-map-renderer.ts',
 ]) {
-  assert(!fs.existsSync(path.join(root, file)),
-    'obsolete standalone FleetCombat screen must stay deleted: ' + file);
+  assert(
+    !fs.existsSync(path.join(root, file)),
+    'obsolete standalone FleetCombat screen must stay deleted: ' + file
+  );
 }
 assert(core.includes('createStrategicCombatService('), 'legacy 1v1 engine remains');
 for (const file of ['src/ui/start/duel-presets.ts', 'src/ui/start/duel-preset-analysis.ts']) {
