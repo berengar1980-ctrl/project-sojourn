@@ -77,7 +77,7 @@ function labeledSelect(label: string, values: readonly { id: string; title: stri
 }
 
 function teamCount(label: string, initial: number) {
-  const choices = Array.from({ length: 2 }, (_, i) => ({
+  const choices = Array.from({ length: 5 }, (_, i) => ({
     id: String(i + 1),
     title: String(i + 1) + (i === 0 ? ' Schiff' : ' Schiffe'),
   }));
@@ -125,9 +125,14 @@ function createParallelDuelLauncher(
         root,
         combat: duels.duels[0]!,
         spectator: true,
-        parallelDuels: () => duels.getSnapshot().duels.slice(1),
+        parallelDuels: () => [
+          ...duels.getSnapshot().duels.slice(1),
+          ...duels.getSnapshot().supporters,
+        ],
+        parallelSupportStartIndex: duels.duels.length - 1,
         isComplete: () => duels.getSnapshot().finished,
-        encounterName: 'Zwei parallele 1vs1-Duelle',
+        encounterName: config.ships.filter((ship) => ship.team === 'a').length +
+          ' gegen ' + config.ships.filter((ship) => ship.team === 'b').length,
         onReturn: () => {
           stop();
           root.replaceChildren(lobby);
@@ -189,8 +194,8 @@ export function createFleetTestLobby(
   heading.textContent = 'FLEETCOMBAT · TESTLABOR';
   const description = document.createElement('p');
   description.textContent =
-    'Erster Integrationstest: zwei originale 1vs1-Kämpfe parallel auf derselben Karte. ' +
-    '2 gegen 1 folgt nach diesem Test; die unveränderte 1vs1-KI steuert alle Schiffe.';
+    'Zwei Fraktionen mit jeweils 1 bis 5 Schiffen. Alle Teilnehmer nutzen die vorhandene ' +
+    '1vs1-Kampf-KI; zusätzliche Angreifer teilen sich die echten Ziele.';
   const map = labeledSelect('Kampfkarte', DUEL_MAPS);
   const teamA = teamCount('Fraktion A', 2);
   const teamB = teamCount('Fraktion B', 2);
@@ -200,7 +205,7 @@ export function createFleetTestLobby(
   const capabilities = document.createElement('p');
   capabilities.className = 'harrow-fleet__capabilities';
   capabilities.textContent =
-    '2 vs 2: zwei unabhängige native Duelle, eine gemeinsame Karte und Kollisionswelt.';
+    'Gemeinsame Originalkarte: unabhängige 1vs1 und zusätzliche native Angreifer.';
   const roster = document.createElement('div');
   roster.className = 'harrow-fleet__roster';
   const actions = document.createElement('div');
@@ -210,8 +215,8 @@ export function createFleetTestLobby(
   shuffle.textContent = 'Schiffe neu auslosen';
   const start = document.createElement('button');
   start.type = 'button';
-  start.textContent = '2 vs 2 starten';
-  start.title = 'Zwei echte 1vs1-Duelle auf derselben vorhandenen Karte';
+  start.textContent = 'FleetCombat starten';
+  start.title = 'Alle ausgewählten Schiffe auf einer gemeinsamen Karte starten';
   const back = document.createElement('button');
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';
@@ -229,14 +234,14 @@ export function createFleetTestLobby(
       rammingEnabled: true,
       tractorAsteroidThrowEnabled: true,
     };
-    const supported = Number(teamA.control.value) === 2 && Number(teamB.control.value) === 2;
-    start.disabled = !supported;
-    start.title = supported
-      ? 'Zwei echte 1vs1-Duelle starten'
-      : '2 gegen 1 ist der nächste Schritt nach dem 2-gegen-2-Test';
-    capabilities.textContent = supported
-      ? '2 vs 2: zwei native Duelle, eine Karte, gemeinsame Kollisionen.'
-      : 'Diese Konstellation folgt nach dem ersten erfolgreichen 2-vs-2-Test.';
+    const countA = Number(teamA.control.value);
+    const countB = Number(teamB.control.value);
+    start.textContent = countA + ' vs ' + countB + ' starten';
+    start.disabled = false;
+    capabilities.textContent =
+      countA + ' vs ' + countB + ': ' + Math.min(countA, countB) +
+      ' native Duelle, ' + Math.abs(countA - countB) +
+      ' zusätzliche Angreifer auf derselben Karte.';
     renderFleetRoster(roster, config);
   };
   start.addEventListener('click', () => {
