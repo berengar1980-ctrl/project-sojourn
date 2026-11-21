@@ -101,6 +101,22 @@ assert(
   'reuse native strategic combat weapon painters'
 );
 assert(entry.includes('beginControllerFieldFleet(context, locationId, [player])'));
+assert(
+  controller.includes('advanceControllerFleetIntegration(context, () => mountControllerStarMap(context))'),
+  'FleetCombat defeat must return through the native campaign star-map transition'
+);
+assert(
+  entry.includes('showFleetCombatResult(') &&
+    entry.includes('markFleetCompleted(context, locationId)') &&
+    entry.includes('context.state.combatResultPending = true'),
+  'player defeat must settle the field and prevent automatic reentry'
+);
+const summary = read('src/ui/combat/campaign-combat-summary.ts');
+assert(
+  summary.includes('export function showFleetCombatResult(') &&
+    summary.includes("notice.className = 'campaign-combat-summary'"),
+  'FleetCombat must reuse the existing campaign result display'
+);
 assert(bridge.includes('syncFleetFieldBodies(field, bodies)'));
 assert(
   bridge.includes('context.state.localSpace.getShipWorldVelocity()'),
