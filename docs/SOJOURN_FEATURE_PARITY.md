@@ -1676,3 +1676,22 @@ verwenden weiterhin die vorhandene separate Impulsphysik. Im laufenden
 Duell bleibt die native Kampfphysik zuständig. Das Drohnensprite ist von
 18 auf 12 Basispixel verkleinert; Schildradius, Sensorweite und Gameplaywerte
 bleiben unverändert.
+
+## Review-Log (2026-11-21): Zwei parallele native 1vs1-Duelle im PvP-Test (PR #381)
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs. Der
+FleetCombat-Testreiter bietet im ersten Schritt 2 gegen 2 an: Es laufen zwei
+bestehende `StrategicCombatService`-Duelle gleichzeitig auf derselben
+bereits vorhandenen PvP-Karte mit gemeinsamem Asteroiden-Tick. Die Flugwege,
+Waffenwinkel, Taktiken und Trefferregeln jedes Duells stammen aus der
+originalen 1vs1-Engine. Schiffe des jeweils anderen Duells werden als
+Bystander-Hüllenkontakte und Hindernisse der bisherigen Routen- und
+Schusslinienprüfung behandelt. Der originale Kampf-Renderer zeichnet die
+beiden Duell-Snapshots auf einem Canvas.
+
+Dies ist **nur eine begrenzte PvP-Testkopplung**; die Kampagne, Savegames,
+NPC-Ökonomie und die reguläre 1vs1-Steuerung behalten ihre bisherigen
+Funktionen. Der Fall 2 gegen 1 (gemeinsamer Verteidiger) und dynamische
+Zusammenschlüsse bleiben gesperrt, bis das 2-gegen-2-Verhalten praktisch
+verifiziert ist. Schüsse auf Drittparteien und echte Cross-Pair-Kollateralschäden
+sind nicht als abgeschlossen zu betrachten.
