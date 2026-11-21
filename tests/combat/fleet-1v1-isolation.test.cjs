@@ -94,4 +94,6 @@ for (let i = 0; i < 30; i += 1) {
     'ordinary 1v1 physics diverged from its default simulation path at tick ' + i
   );
 }
-console.log('PASS original 1v1 UI/effects byte-identical to main; fleet-specific UI and default native duel parity');
+console.log(
+  'PASS original 1v1 UI/effects byte-identical to main; fleet-specific UI and default native duel parity'
+);
