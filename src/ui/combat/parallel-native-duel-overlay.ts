@@ -6,6 +6,7 @@ import { drawCombatDamagePair } from './combat-damage-visual';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
 import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
+import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { getShipDefinition } from '../../systems/ships';
 import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type {
@@ -15,7 +16,34 @@ import type {
   StrategicCombatantSnapshot,
 } from '../../systems/combat/strategic-combat-types';
 import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
-import type { Point, VisibleCombatImpact } from './strategic-combat-renderer-types';
+import type { Point, VisibleCombatImpact, AutocannonVisualBurst } from './strategic-combat-renderer-types';
+
+/** Keep autocannon burst IDs unique across independent native combat runtimes. */
+export function updateParallelAutocannonBursts(
+  duels: readonly StrategicCombatSnapshot[],
+  bursts: Map<string, AutocannonVisualBurst>,
+  elapsed: number
+): void {
+  for (const [duelIndex, duel] of duels.entries()) {
+    for (const projectile of duel.projectiles) {
+      const id = duelIndex + ':' + projectile.id;
+      if (projectile.kind !== 'autocannon' || bursts.has(id)) continue;
+      const origin = projectile.origin;
+      const target = projectile.target;
+      const travel = Math.hypot(target.x - origin.x, target.y - origin.y);
+      bursts.set(id, {
+        origin: { ...origin },
+        target: { ...target },
+        spawnedAt: duel.elapsedSeconds,
+        flightSeconds: Math.max(0.12, travel / 900),
+      });
+    }
+  }
+  for (const [id, burst] of bursts) {
+    const lifetime = burst.flightSeconds + (AUTOCANNON_ROUNDS - 1) * AUTOCANNON_ROUND_INTERVAL;
+    if (elapsed - burst.spawnedAt >= lifetime) bursts.delete(id);
+  }
+}
 
 /** Additional original 1vs1 snapshots are painted with existing primitives on
  * the same canvas; this module neither creates a renderer nor owns a camera.
