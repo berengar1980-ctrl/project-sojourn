@@ -27,11 +27,8 @@ export interface FleetSpecialMine {
   readonly armed: boolean;
   readonly radius: number;
 }
-export interface FleetSpecialThrow {
+export interface FleetSpecialThrow extends Omit<MutableThrownAsteroid, 'owner'> {
   readonly ownerId: string;
-  readonly asteroidId: string;
-  readonly position: { readonly x: number; readonly y: number };
-  readonly phase: MutableThrownAsteroid['phase'];
 }
 
 /** 1vs1 physics expects a two-sided event envelope, not an independent duel.
@@ -377,10 +374,9 @@ export function createFleetNativeSpecials(arena: StrategicCombatArenaOptions): {
     throws: () =>
       [...pairs.values()].flatMap(({ runtime }) =>
         runtime.thrownAsteroids.map((rock) => ({
+          ...rock,
           ownerId: (rock.owner === 'attacker' ? runtime.attacker : runtime.defender).setup.id,
-          asteroidId: rock.asteroidId,
           position: { ...rock.position },
-          phase: rock.phase,
         }))
       ),
   };
