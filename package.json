@@ -16,7 +16,7 @@
     "combat:simulate": "node scripts/simulate-combat.cjs",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --write src/systems/combat/native-duel-support-tick.ts src/systems/combat/parallel-native-duels.ts src/ui/combat/strategic-combat-panel.ts src/ui/start/fleet-test-lobby.ts tests/combat/parallel-native-duels.test.cjs && git diff -- src/systems/combat/native-duel-support-tick.ts src/systems/combat/parallel-native-duels.ts src/ui/combat/strategic-combat-panel.ts src/ui/start/fleet-test-lobby.ts tests/combat/parallel-native-duels.test.cjs && prettier --check .",
+    "format:check": "prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run check:quick && npm run build",
