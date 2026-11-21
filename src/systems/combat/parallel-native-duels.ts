@@ -212,6 +212,7 @@ export function createParallelNativeDuels(
   const actors = nativeTeamActors(pairs, supporters);
   const recordedWrecks = new Set<string>();
   let elapsed = 0;
+  let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
   const radiusById = new Map(
     actors.map((actor) => [
       actor.setup.id,
@@ -225,21 +226,24 @@ export function createParallelNativeDuels(
     ])
   );
   const getSnapshot = (): ParallelNativeDuelSnapshot => {
+    if (cachedSnapshot) return cachedSnapshot;
     const duels = pairs.map((service) => service.getSnapshot());
     const additional = supporters.map((service) => service.getSnapshot());
+    const states = [...duels, ...additional];
     const escaped = escapedFleetShips(services);
-    return {
+    cachedSnapshot = {
       duels,
       supporters: additional,
-      elapsedSeconds: Math.max(0, ...[...duels, ...additional].map((duel) => duel.elapsedSeconds)),
+      elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
-      finished: services.every(
-        (service, index) =>
-          service.getSnapshot().winner !== null ||
+      finished: states.every(
+        (state, index) =>
+          state.winner !== null ||
           (index >= pairs.length &&
-            escaped.has(nativeActor(service, 'defender').setup.id))
+            escaped.has(nativeActor(services[index]!, 'defender').setup.id))
       ),
     };
+    return cachedSnapshot;
   };
 
   return {
@@ -249,13 +253,14 @@ export function createParallelNativeDuels(
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
       const dt = Math.min(seconds, 0.08);
+      cachedSnapshot = null;
       elapsed += dt;
       if (!services.every((service) => service.getSnapshot().winner !== null)) {
         advanceCombatAsteroids(fleetArena, dt);
       }
       materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
+      const escaped = escapedFleetShips(services);
       for (const [index, service] of services.entries()) {
-        const escaped = escapedFleetShips(services);
         if (escaped.has(nativeActor(service, 'attacker').setup.id)) continue;
         if (index >= pairs.length && escaped.has(nativeActor(service, 'defender').setup.id)) {
           continue;
@@ -295,7 +300,11 @@ export function createParallelNativeDuels(
           }))
         );
         service.setBystanders(others);
-        service.tick(dt);
+        const result = service.tick(dt);
+        if (result.outcomeReason === 'escape') {
+          if (result.winner === 'defender') escaped.add(result.attacker.id);
+          else if (result.winner === 'attacker') escaped.add(result.defender.id);
+        }
         materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
       }
       return getSnapshot();
