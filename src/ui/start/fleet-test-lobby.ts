@@ -322,6 +322,23 @@ export function createFleetTestLobby(
     piratesA: Number(piratesA.control.value),
     piratesB: Number(piratesB.control.value),
   });
+  const updateStartState = (): void => {
+    const mapSupported = config.map === 'scattered' || config.map === 'asteroid_field';
+    const droneSupported = config.counts.drones <= 1;
+    const arrivalSupported = !config.ships.some(
+      (ship) => ship.role === 'miner' && ship.spawnAtSeconds > 0
+    );
+    start.disabled = !mapSupported || !droneSupported || !arrivalSupported;
+    const reason = !mapSupported
+      ? 'Diese Kartenart ist noch nicht verfügbar. Bitte eine Asteroidenkarte auswählen.'
+      : !droneSupported
+        ? 'Der bestehende Karriere-Feldservice hat derzeit nur eine Sicherheitsdrohne.'
+        : !arrivalSupported
+          ? 'Zeitversetzte Miner-Ankünfte sind noch nicht an das Karriere-Feld gekoppelt.'
+          : 'Startet das Szenario auf der bestehenden Kampagnen-Asteroidenkarte.';
+    start.title = reason;
+    capabilities.textContent = reason;
+  };
   const setArrival = (id: string, seconds: number): void => {
     const spawnAtSeconds =
       seconds === 0
@@ -336,6 +353,7 @@ export function createFleetTestLobby(
       ),
     };
     renderFleetRoster(roster, config, setArrival);
+    updateStartState();
   };
   const draw = (): void => {
     const oldArrivals = new Map((config?.ships ?? []).map((ship) => [ship.id, ship]));
@@ -353,12 +371,7 @@ export function createFleetTestLobby(
       })),
     };
     renderFleetRoster(roster, config, setArrival);
-    const available = config.map === 'scattered' || config.map === 'asteroid_field';
-    start.disabled = !available;
-    start.title = available ? 'Bestehende Kampagnenkarte öffnen' : 'Diese Kartenart ist noch nicht an die Kampagnen-Fleet-Laufzeit angeschlossen';
-    capabilities.textContent = available
-      ? 'Startet die gewählte Asteroidenkarte mit dem bestehenden Kampagnenrenderer.'
-      : 'Diese Kartenart ist noch nicht verfügbar. Bitte eine Asteroidenkarte auswählen.';
+    updateStartState();
   };
   start.addEventListener('click', () => {
     if (!start.disabled) onStart(config);
