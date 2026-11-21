@@ -72,6 +72,9 @@ export function createFleetCombatForCareerField(
   const arena = miningFieldCombatArena(field.instance, playerVelocity, field.combatWrecks);
   let elapsedSeconds = 0;
   const world = {
+    discoverParticipants() {
+      return security?.world.discoverParticipants?.() ?? [];
+    },
     beforeWorldTick(ships: Parameters<NonNullable<typeof bridge.world.beforeWorldTick>>[0]) {
       bridge.world.beforeWorldTick?.(ships);
       security?.world.beforeWorldTick?.(ships);
