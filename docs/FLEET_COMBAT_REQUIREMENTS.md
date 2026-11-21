@@ -597,3 +597,11 @@ zu verifizieren.
 - Nach dem letzten aktiven Piraten bleibt die Fleet-Lease bestehen, solange noch Projektile, Minen oder geworfene Asteroiden im gemeinsamen Combat-Snapshot vorhanden sind; offene Treffer werden nicht durch voreiligen Rückbau verworfen.
 - `fleet-existing-career-map.test.cjs` prüft Routenerhalt, Spielerbewegung und exklusive Asteroiden-Ticks sowie die relevanten Handoff-/Abschluss-Anbindungen.
 - **Status: Commit auf Integrationsbranch; vollständige CI und Browser-End-to-End-Test ausstehend.** Der Kampfabschluss bei Tod des Spielers, spätere Piratenankünfte und der Übergang bereits laufender 1vs1-Gefechte in FleetCombat benötigen noch separate Integrationsprüfungen. Kein Merge nach `main`.
+
+## FC-45 – Spieler-Niederlage und Wiederaufnahme nach FleetCombat
+
+- Der FleetCombat-Controller erkennt die Zerstörung des realen Spielerschiffs direkt aus dem gemeinsamen Schiffssnapshot, beendet die exklusive Feld-Lease und zeigt das Ergebnis über die bestehende `campaign-combat-summary`-Darstellung an.
+- Der Controller hält das Ergebnis mit `combatResultPending` an und verwendet denselben Sternkarten-Rückkehrpfad wie die Kampagne. Der vorhandene 1vs1-Result-Code wurde nicht umgeschrieben.
+- Nach Abschluss gilt die bestehende `combatReengageSeconds`-Sperre. Damit startet der Controller nicht im selben Frame erneut und spätere Begegnungen bleiben nach dem Cooldown möglich.
+- `fleet-existing-career-map.test.cjs` enthält Quell-/Integrationsprüfungen für den Callback, das Ergebnis-UI und den Wiedereinstiegsschutz; echte Browser-/Defeat- und CI-Tests sind noch **nicht** bestätigt.
+- **Status: Code committed auf PR #380, nicht produktionsreif oder gemergt.** Weitere NPC-Beitritte während derselben Live-Begegnung, 1vs1→Fleet-Übernahme, Sieg-/Niederlage-End-to-End, alle Kartenarten und vollständige CI bleiben offen.
