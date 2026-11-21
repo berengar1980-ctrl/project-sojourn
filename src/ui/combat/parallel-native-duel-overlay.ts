@@ -16,7 +16,11 @@ import type {
   StrategicCombatantSnapshot,
 } from '../../systems/combat/strategic-combat-types';
 import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
-import type { Point, VisibleCombatImpact, AutocannonVisualBurst } from './strategic-combat-renderer-types';
+import type {
+  Point,
+  VisibleCombatImpact,
+  AutocannonVisualBurst,
+} from './strategic-combat-renderer-types';
 
 /** Keep autocannon burst IDs unique across independent native combat runtimes. */
 export function updateParallelAutocannonBursts(
