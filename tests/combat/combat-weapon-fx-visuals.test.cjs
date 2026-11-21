@@ -101,7 +101,7 @@ const gameplay = fs.readFileSync(
   'utf8'
 );
 const snapshot = fs.readFileSync(
-  path.join(root, 'src/systems/combat/strategic-combat-service.ts'),
+  path.join(root, 'src/systems/combat/strategic-combat-runtime-snapshot.ts'),
   'utf8'
 );
 const renderer = fs.readFileSync(
@@ -115,6 +115,11 @@ const nativeWeaponPainters = fs.readFileSync(
 const nativeBeam = fs.readFileSync(path.join(root, 'src/ui/combat/combat-beam-visual.ts'), 'utf8');
 assert(gameplay.includes('origin: { ...muzzle }'), 'projectiles remember actual weapon muzzles');
 assert(snapshot.includes('origin: { ...projectile.origin }'), 'origin is detached in snapshots');
+assert(
+  fs.readFileSync(path.join(root, 'src/systems/combat/strategic-combat-service.ts'), 'utf8')
+    .includes("from './strategic-combat-runtime-snapshot'"),
+  'native combat service uses the shared snapshot projection'
+);
 assert(
   renderer.includes('drawCombatBeamVisual(') && nativeBeam.includes('drawIonCannonArc('),
   'game renderer dispatches ion cannon lightning'
