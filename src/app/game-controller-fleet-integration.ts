@@ -8,6 +8,7 @@ import {
 } from './game-controller-field-world-bridge';
 import { servicedPlayerCombatant } from './game-controller-ship-service';
 import type { FleetCombatParticipant } from '../systems/combat/fleet-combat-service';
+import { showFleetCombatResult } from '../ui/combat/campaign-combat-summary';
 
 /** Testing override uses the normal running career field; it spawns no ships and
  * creates no PvP map. Natural multi-pirate encounters work without this flag. */
@@ -22,6 +23,16 @@ function fleetPreviewEnabled(): boolean {
  * This uses native local pirate services, not synthetic test combatants.
  */
 const previewStagedFields = new WeakMap<ControllerRuntimeContext, Set<string>>();
+const completedFields = new WeakMap<ControllerRuntimeContext, Set<string>>();
+
+function markFleetCompleted(context: ControllerRuntimeContext, locationId: string): void {
+  let completed = completedFields.get(context);
+  if (!completed) {
+    completed = new Set<string>();
+    completedFields.set(context, completed);
+  }
+  completed.add(locationId);
+}
 
 function stageExistingPiratesForPreview(
   context: ControllerRuntimeContext,
@@ -80,6 +91,7 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
   const current = currentCareerField(context);
   if (!current) return;
   const { field, local, locationId } = current;
+  if (completedFields.get(context)?.has(locationId)) return;
   stageExistingPiratesForPreview(context, locationId);
   if (
     context.engagements
@@ -149,7 +161,11 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
   );
 }
 
-function endFinishedFleet(context: ControllerRuntimeContext, locationId: string): boolean {
+function endFinishedFleet(
+  context: ControllerRuntimeContext,
+  locationId: string,
+  returnToStarMap: () => void
+): boolean {
   const fleet = controllerFieldFleetFor(context, locationId);
   if (!fleet) return false;
   const ships = fleet.getSnapshot().ships;
@@ -170,17 +186,34 @@ function endFinishedFleet(context: ControllerRuntimeContext, locationId: string)
     currentCareerField(context)?.locationId === locationId
   )
     return false;
+  const defeated = !activePlayer;
+  const player = ships.find((entry) => entry.ship.id === 'player')?.ship;
   endControllerFieldFleet(context, locationId, fleet);
-  context.systemLog.write('FLEETCOMBAT > FELD-AUTORITÄT AN KAMPAGNE ZURÜCKGEGEBEN');
+  markFleetCompleted(context, locationId);
+  if (defeated && player) {
+    context.state.combatResultPending = true;
+    context.systemLog.write('FLEETCOMBAT > EIGENES SCHIFF ZERSTÖRT');
+    showFleetCombatResult(context.root, false, player.hullHp, player.hullMaxHp, () => {
+      context.state.combatReengageSeconds = 8;
+      returnToStarMap();
+      context.state.combatResultPending = false;
+    });
+  } else {
+    context.state.combatReengageSeconds = 8;
+    context.systemLog.write('FLEETCOMBAT > FELD-AUTORITÄT AN KAMPAGNE ZURÜCKGEGEBEN');
+  }
   return true;
 }
 
 /** Attach the shared combat coordinator to the ALREADY mounted local field.
  * No additional scene, independent NPCs or graphics pipeline are constructed.
  */
-export function advanceControllerFleetIntegration(context: ControllerRuntimeContext): void {
+export function advanceControllerFleetIntegration(
+  context: ControllerRuntimeContext,
+  returnToStarMap: () => void
+): void {
   const current = controllerFieldFleetLocation(context);
-  if (current && !endFinishedFleet(context, current)) return;
+  if (current && !endFinishedFleet(context, current, returnToStarMap)) return;
   tryBeginFieldFleet(context);
 }
 
