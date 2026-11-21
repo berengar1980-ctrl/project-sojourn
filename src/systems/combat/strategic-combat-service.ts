@@ -1,5 +1,6 @@
 import { reviewShipContact } from './combat-contact-review';
 import { tickNativeSupportingShip } from './native-duel-support-tick';
+import { retargetNativeFleetSurvivor } from './native-fleet-retarget';
 import { runtimeSnapshot } from './strategic-combat-runtime-snapshot';
 import {
   captureCareerStrategicCombat,
@@ -346,35 +347,10 @@ export function createStrategicCombatService(
     exportCareerState: () => captureCareerStrategicCombat(runtime),
     getParallelActor: (side) => runtimeCombatant(runtime, side),
     retargetParallelSurvivor(side, opponent) {
-      // Regular 1vs1 never calls or enables this fleet-only takeover.
-      if (!sharedArenaPhysics || runtime.winner !== side || opponent.hullHp <= 0) return false;
-      if (runtime.outcomeReason !== 'destruction' && runtime.outcomeReason !== 'escape') {
-        return false;
-      }
-      const survivor = runtimeCombatant(runtime, side);
-      if (survivor.hullHp <= 0 || survivor === opponent || runtimeEnemy(runtime, side) === opponent) {
-        return false;
-      }
-      if (side === 'attacker') runtime.defender = opponent;
-      else runtime.attacker = opponent;
-      fleetDrivenSide = side;
-      // From this point the original service drives only its survivor.
-      // The new opponent retains its own separate service and AI authority.
-      runtime.winner = null;
-      runtime.outcomeReason = null;
-      runtime.boardingInitiator = null;
-      runtime.grapple = null;
-      runtime.projectiles = [];
-      runtime.beams = [];
-      runtime.thrownAsteroids = [];
-      runtime.mines = runtime.mines.filter((mine) => mine.owner === side);
-      survivor.strategy = null;
-      survivor.nextStrategyReviewAt = runtime.elapsedSeconds;
-      survivor.asteroidRoute = [];
-      delete survivor.flightPass;
-      runtime.lastEvent = survivor.setup.name + ': NEUES ZIEL ' + opponent.setup.name;
-      recordCombatLog(runtime, side, 'action', 'FLEET_RETARGET ' + opponent.setup.id);
-      return true;
+      if (!sharedArenaPhysics) return false;
+      const continued = retargetNativeFleetSurvivor(runtime, side, opponent);
+      if (continued) fleetDrivenSide = side;
+      return continued;
     },
     getSnapshot: () => runtimeSnapshot(runtime),
     getCombatLog: () => runtime.combatLog.map((entry) => ({ ...entry })),
