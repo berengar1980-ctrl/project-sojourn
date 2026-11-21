@@ -7,6 +7,7 @@ import {
   fieldWorldFor,
 } from './game-controller-field-world-bridge';
 import { servicedPlayerCombatant } from './game-controller-ship-service';
+import { isFleetCareerTest } from './game-controller-fleet-test-session';
 import type { FleetCombatParticipant } from '../systems/combat/fleet-combat-service';
 import { showFleetCombatResult } from '../ui/combat/campaign-combat-summary';
 
@@ -101,7 +102,8 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
   );
   field.pirates.reconcile(localPirates);
   const presentPirates = field.pirates.snapshot(localPirates);
-  if (presentPirates.length < (fleetPreviewEnabled() ? 1 : 2)) return;
+  if (presentPirates.length < (fleetPreviewEnabled() || isFleetCareerTest(context) ? 1 : 2))
+    return;
   const miners = field.miners.ships.filter((entry) =>
     npcs.some((npc) => npc.id === entry.npcId && npc.hullHp > 0 && npc.locationId === locationId)
   );
