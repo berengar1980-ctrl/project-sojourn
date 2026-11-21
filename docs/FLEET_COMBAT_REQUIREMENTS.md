@@ -548,3 +548,41 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - Bereinigungsprüfung: UI-Zeichenpipeline und ihre Start-Verweise sind aus dem Branch entfernt; die laufenden Systeme und die vorhandenen Karten bleiben als Integrationsziel bestehen.
 - Das ist eine **Rückbau-/Bereinigungsmaßnahme**, keine erfolgreiche automatische Kampagnenintegration. Vor einer neuen Aktivierung sind die echte Karriere-Feldübernahme, exklusive Tick-Autorität, Kampfabschluss und Tests erforderlich.
 - Testabsicherung: `fleet-test-lobby-isolation.test.cjs` verbietet eine Rückkehr der beiden separaten Render-Module oder der UI-eigenen FleetCombat-Simulation.
+
+
+## Neuer Integrationsbranch: FleetCombat in vorhandenen Kampagnenkarten
+
+**Branch:** `feature/fleetcombat-existing-career-maps`. Die frühere separate
+Pfeilansicht bleibt gelöscht; es wird **kein** zusätzlicher
+FleetCombat-Kartenrenderer eingerichtet. Die alte Draft-PR #379 ist nicht
+das Integrationsziel; die getrennte Integrationsarbeit erfolgt in Draft-PR #380.
+
+- `advanceControllerFleetIntegration` übergibt eine **bereits existierende**
+  Karriere-Asteroidenfeldinstanz mit ihrem echten Spieler, lokalen Minern,
+  Piraten und Sicherheitsdrohnen an `beginControllerFieldFleet`.
+- Die Original-Instanz `LocalSpaceRenderer` zeichnet Schiffe, Asteroiden,
+  Drohnen und Wracks weiter selbst. Zusätzliche Kampfereignisse werden durch
+  die vorhandenen lokalen NPC-Kampfeffekt-Funktionen mit den bestehenden
+  Waffen-/Traktor-/Minen-Paintern dargestellt.
+- Bei aktiver Fleet-Lease läuft kein zweiter lokaler Asteroiden- oder
+  Spielerbewegungs-Tick. Die autoritativen Posen und die durch die
+  unveränderte Kampfphysik berechneten Hüllen-/Schildwerte werden in
+  die ursprüngliche lokale Karte und Karriere-Schiffsbuchung übernommen.
+- Mehrschiffbegegnungen werden bei mindestens zwei Piraten in einem bereits
+  geöffneten Karriere-Asteroidenfeld automatisch begonnen, sofern kein
+  bestehender 1vs1-Kampf die Feldautorität hält. Für die Prüfung mit nur
+  einem Piraten lässt sich `?fleet=1` setzen; dies erzeugt **keine**
+  synthetischen Testschiffe und keine Ersatzkarte. Bei Kampfabschluss
+  beziehungsweise Kartenwechsel wird die Tick-Lease freigegeben.
+- Der vorhandene Kartenangriff auf ein ausgewähltes Schiff setzt bei einer
+  Fleet-Begegnung dessen Zielbindung. Außerhalb bleibt der bisherige
+  1vs1-Einstieg erhalten.
+- `fleet-existing-career-map.test.cjs` prüft Zustandsübernahme,
+  dass die Karte nicht neu erzeugt oder doppelt integriert wird, sowie
+  die Verwendung der existierenden UI-Painter und das Verbot eigener
+  FleetCombat-Bildschirme.
+
+**Bis zur realen Browserprobe nicht als vollständige Produktivfreigabe markieren.**
+Weitere Arten lokaler Karten, vollständiges Schiffs-Zustands-Handoff und
+Mehrschiff-Gegnerbeitritte aus bereits laufenden 1vs1-Kämpfen sind gesondert
+zu verifizieren.
