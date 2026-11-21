@@ -1,6 +1,31 @@
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawShipDestruction } from './ship-destruction-visual';
-import type { CombatVisualAsteroid, CombatPoint } from '../../systems/combat/strategic-combat-types';
+import type {
+  CombatVisualAsteroid,
+  CombatPoint,
+  StrategicCombatSnapshot,
+} from '../../systems/combat/strategic-combat-types';
+
+/** Every native snapshot agrees about exits and every wreck replaces one hull. */
+export function nativeFleetVisibility(
+  first: StrategicCombatSnapshot,
+  others: readonly StrategicCombatSnapshot[],
+  externalEscapes: readonly string[]
+): { escaped: ReadonlySet<string>; damageHidden: ReadonlySet<string> } {
+  const escaped = new Set(externalEscapes);
+  for (const duel of [first, ...others]) {
+    if (duel.outcomeReason !== 'escape') continue;
+    if (duel.winner === 'defender') escaped.add(duel.attacker.id);
+    if (duel.winner === 'attacker') escaped.add(duel.defender.id);
+  }
+  const damageHidden = new Set(escaped);
+  for (const rock of first.arena.asteroids ?? []) {
+    if (rock.id.startsWith('fleet-wreck:')) {
+      damageHidden.add(rock.id.slice('fleet-wreck:'.length));
+    }
+  }
+  return { escaped, damageHidden };
+}
 
 /**
  * The wreck's actual 3D mesh is drawn by the existing asteroid/salvage painter.
