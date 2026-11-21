@@ -20,6 +20,7 @@ interface StrategicCombatPanelOptions {
   /** Additional native 1vs1 snapshots sharing the same existing map renderer. */
   readonly parallelDuels?: () => readonly StrategicCombatSnapshot[];
   readonly parallelSupportStartIndex?: number;
+  readonly parallelEscapedShipIds?: () => readonly string[];
   readonly spectator?: boolean;
   readonly isComplete?: () => boolean;
 }
@@ -328,7 +329,12 @@ export function createStrategicCombatPanel(
   let defeatReturnStartedAt: number | null = null;
   const render = (): void => {
     const model = options.combat.getSnapshot();
-    renderer.update(model, options.parallelDuels?.() ?? [], options.parallelSupportStartIndex);
+    renderer.update(
+      model,
+      options.parallelDuels?.() ?? [],
+      options.parallelSupportStartIndex,
+      options.parallelEscapedShipIds?.() ?? []
+    );
     updateParallelDuelStatus(
       parallelStatus,
       model,
