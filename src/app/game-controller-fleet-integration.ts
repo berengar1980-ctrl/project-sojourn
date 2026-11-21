@@ -157,7 +157,15 @@ function endFinishedFleet(context: ControllerRuntimeContext, locationId: string)
     (entry) =>
       entry.ship.hullHp > 0 && (entry.factionId === 'pirate-a' || entry.factionId === 'pirate-b')
   );
-  if (activePirates && currentCareerField(context)?.locationId === locationId) return false;
+  // Keep the existing combat world alive until in-flight ordnance resolves.
+  // Otherwise a final projectile/mine/tractor throw disappears when the last
+  // pirate is destroyed, potentially suppressing a real career-world hit.
+  const view = fleet.getSnapshot();
+  const activePlayer = ships.some((entry) => entry.ship.id === 'player' && entry.ship.hullHp > 0);
+  const pendingOrdnance =
+    view.projectiles.length > 0 || view.mines.length > 0 || view.thrownAsteroids.length > 0;
+  if (activePlayer && (activePirates || pendingOrdnance) && currentCareerField(context)?.locationId === locationId)
+    return false;
   endControllerFieldFleet(context, locationId, fleet);
   context.systemLog.write('FLEETCOMBAT > FELD-AUTORITÄT AN KAMPAGNE ZURÜCKGEGEBEN');
   return true;
