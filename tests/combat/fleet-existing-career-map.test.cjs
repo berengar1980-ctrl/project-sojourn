@@ -55,14 +55,24 @@ scene.startNavigation(destination, [origin, destination]);
 const asteroidBeforeFleetNavigation = { ...originalAsteroids[0].position };
 for (let i = 0; i < 25; i += 1) {
   const live = scene.tickFleetNavigation(0.05);
-  scene.syncFleetPose(live.instance.ship.position, live.instance.ship.headingRadians, live.instance.ship.speed);
+  scene.syncFleetPose(
+    live.instance.ship.position,
+    live.instance.ship.headingRadians,
+    live.instance.ship.speed
+  );
 }
 const navigated = scene.getSnapshot();
 assert(
-  Math.hypot(navigated.instance.ship.position.x - origin.x, navigated.instance.ship.position.y - origin.y) > 0,
+  Math.hypot(
+    navigated.instance.ship.position.x - origin.x,
+    navigated.instance.ship.position.y - origin.y
+  ) > 0,
   'native player autopilot must still move while FleetCombat owns the field'
 );
-assert(navigated.navigationTarget, 'FleetCombat pose sync must not erase the active navigation route');
+assert(
+  navigated.navigationTarget,
+  'FleetCombat pose sync must not erase the active navigation route'
+);
 assert.deepEqual(
   originalAsteroids[0].position,
   asteroidBeforeFleetNavigation,
