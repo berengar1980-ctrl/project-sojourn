@@ -328,6 +328,46 @@ try {
   assert(
     droneWorld.getSnapshot().ships.find((entry) => entry.ship.id === 'drone').targetId === 'pirate'
   );
+  // A pirate arriving from the career sector joins the SAME already-running
+  // combat world, retaining its live identity, position and faction.
+  let discoveryCount = 0;
+  const arrivingPirate = {
+    setup: combatant('incoming-b'),
+    factionId: 'pirate-b',
+    position: { x: 3400, y: 2600 },
+    targetId: 'pirate-a',
+  };
+  const persistentFleet = createFleetCombatService(
+    [
+      { setup: combatant('player'), factionId: 'player', position: { x: 800, y: 2200 } },
+      {
+        setup: combatant('pirate-a'),
+        factionId: 'pirate-a',
+        position: { x: 2200, y: 2200 },
+        targetId: 'player',
+      },
+      { setup: combatant('miner'), factionId: 'civilian', position: { x: 1200, y: 3600 } },
+    ],
+    arena,
+    {
+      discoverParticipants() {
+        discoveryCount++;
+        return discoveryCount >= 2 ? [arrivingPirate] : [];
+      },
+    }
+  );
+  const initialArena = persistentFleet.getSnapshot().arena;
+  persistentFleet.tick(0.08);
+  assert.equal(persistentFleet.getSnapshot().ships.length, 3);
+  persistentFleet.tick(0.08);
+  const joined = persistentFleet.getSnapshot();
+  assert.equal(joined.arena, initialArena, 'incoming pirate must not create another arena');
+  assert.equal(joined.ships.length, 4);
+  assert.equal(joined.ships.find((p) => p.ship.id === 'incoming-b').factionId, 'pirate-b');
+  assert.equal(joined.ships.find((p) => p.ship.id === 'incoming-b').targetId, 'pirate-a');
+  persistentFleet.tick(0.08);
+  assert.equal(persistentFleet.getSnapshot().ships.length, 4, 'discovery must be idempotent');
+
   console.log('PASS first 2vs1 fleet kernel: shared world, IDs, movement and layered damage');
 } finally {
   if (previous) require.extensions['.ts'] = previous;
