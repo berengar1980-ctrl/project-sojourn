@@ -103,6 +103,8 @@ export interface FleetCombatSnapshot {
  */
 export interface FleetCombatWorldOptions {
   readonly tickWorld?: (dt: number) => void;
+  /** Join real newly arrived campaign NPCs to this same combat world. */
+  readonly discoverParticipants?: () => readonly FleetCombatParticipant[];
   /** Resolve threats before the native worker ticks, preventing parallel mining. */
   readonly beforeWorldTick?: (ships: readonly FleetCombatShipSnapshot[]) => void;
   /** Reconcile combat damage to campaign NPCs after weapon processing. */
@@ -358,6 +360,15 @@ export function createFleetCombatService(
 ): FleetCombatService {
   validateFleetScenario(participants, arena);
   const { byId, fleet } = initializeFleetParticipants(participants, arena);
+  const admit = (entry: FleetCombatParticipant): void => {
+    if (byId.has(entry.setup.id)) return;
+    const added = initializeFleetParticipants([entry], arena).fleet[0]!;
+    // A ship entering an already running local field is live immediately.
+    // Scheduled scenario arrivals remain owned by their original timer.
+    if (added.spawnAtSeconds <= elapsedSeconds) added.active = true;
+    fleet.push(added);
+    byId.set(entry.setup.id, added);
+  };
   let elapsedSeconds = 0;
   let shots: FleetCombatShotSnapshot[] = [];
   let arrivedIds: string[] = [];
@@ -385,6 +396,7 @@ export function createFleetCombatService(
     );
 
   const step = (dt: number): void => {
+    for (const newcomer of world.discoverParticipants?.() ?? []) admit(newcomer);
     const result = advanceFleetStep(
       { fleet, byId, arena, world, engagementManager, nativeSpecials, weaponPhysics, acquire },
       dt,
