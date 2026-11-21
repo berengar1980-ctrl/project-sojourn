@@ -266,19 +266,25 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
   /** FleetCombat owns asteroid physics; the native local navigation still owns player steering. */
   tickFleetNavigation(deltaSeconds: number): LocalSpaceSnapshot {
-    const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
-    const asteroid = this.findAsteroid(this.activeTargetId());
-    if (!asteroid && this.miningPhase !== 'idle') this.finishMining();
-    else if (this.miningPhase === 'idle' && this.navigationTarget)
-      this.updateManualNavigation(clamped);
-    else if (this.miningPhase === 'idle')
-      this.scanClock.keepStation(clamped, this.idleStationKeeping, this.stationKeepingPosition);
-    else if (asteroid && this.miningPhase === 'approaching')
-      this.updateApproach(clamped, asteroid);
-    else if (asteroid && this.miningPhase === 'scanning')
-      this.updateShortRangeScan(clamped, asteroid);
-    else if (asteroid && this.miningPhase === 'extracting')
-      this.updateMining(clamped, asteroid);
+    // FleetCombat uses up to 0.08 s substeps; consume the full interval in
+    // native <=0.05 s navigation slices rather than slowing the player's ship.
+    let remaining = Number.isFinite(deltaSeconds) ? Math.max(0, deltaSeconds) : 0;
+    while (remaining > 0.000001) {
+      const dt = Math.min(remaining, 0.05);
+      remaining -= dt;
+      const asteroid = this.findAsteroid(this.activeTargetId());
+      if (!asteroid && this.miningPhase !== 'idle') this.finishMining();
+      else if (this.miningPhase === 'idle' && this.navigationTarget)
+        this.updateManualNavigation(dt);
+      else if (this.miningPhase === 'idle')
+        this.scanClock.keepStation(dt, this.idleStationKeeping, this.stationKeepingPosition);
+      else if (asteroid && this.miningPhase === 'approaching')
+        this.updateApproach(dt, asteroid);
+      else if (asteroid && this.miningPhase === 'scanning')
+        this.updateShortRangeScan(dt, asteroid);
+      else if (asteroid && this.miningPhase === 'extracting')
+        this.updateMining(dt, asteroid);
+    }
     return this.getSnapshot();
   }
 
