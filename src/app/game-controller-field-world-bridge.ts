@@ -250,7 +250,7 @@ function syncLeasedCareerFleet(
   syncFleetFieldBodies(field, bodies);
   const player = view.ships.find((entry) => entry.ship.id === 'player')?.ship;
   if (!player || field.locationId !== localId || !context.state.localSpace) return;
-  context.state.localSpace.syncCombatPose(player.position, player.headingRadians, player.speed);
+  context.state.localSpace.syncFleetPose(player.position, player.headingRadians, player.speed);
   context.state.localSpace.syncCombatIntegrity(player.shieldHp, player.hullHp);
   context.shipOperations.recordHull(context.state.activeShip, player.hullHp, player.hullMaxHp);
 }
