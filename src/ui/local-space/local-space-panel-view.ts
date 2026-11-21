@@ -266,9 +266,16 @@ export function updateLocalOverlay(context: LocalOverlayContext): void {
 
   trackIntegrity(model);
 
-  const statusText = miningStatus(model);
+  const fleetActive = model.fleetCombat != null;
+  const statusText = fleetActive
+    ? 'FLEETCOMBAT · BESTEHENDE ASTEROIDENKARTE · SCHIFF AUSWÄHLEN ZUM ANGREIFEN'
+    : miningStatus(model);
   status.hidden = statusText.length === 0;
   status.textContent = statusText;
 
   renderLocalSelection(context, eventActive, miningActive);
+  if (fleetActive) {
+    for (const button of [claimButton, longScanButton, cancelButton,
+      controls.mineButton, controls.shortScanButton]) button.disabled = true;
+  }
 }
