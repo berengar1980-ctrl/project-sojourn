@@ -43,11 +43,9 @@ export function drawCombatDamagePair(
   particlesById: Map<string, DistressDamageParticles>,
   now: number,
   width: number,
-  height: number,
-  hiddenIds: ReadonlySet<string> = new Set()
+  height: number
 ): void {
   for (const combatant of combatants) {
-    if (hiddenIds.has(combatant.id)) continue;
     drawCombatDamageParticles(
       context,
       combatant,
