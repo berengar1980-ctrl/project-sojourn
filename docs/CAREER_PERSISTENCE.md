@@ -956,3 +956,80 @@ Kontakt eine alte Route; dies wird durch den bestehenden
 Sicherheitsdrohnen-Checkpoint erfasst. Die optische Größe ist reine
 UI-Konfiguration. Keine neue Version oder Felder im Karriere-Save;
 die bisherigen Sicherheits- und Kampfzustände bleiben kompatibel.
+
+## Parallele native 1vs1-Duelle im PvP-Test (PR #381)
+
+Der neue Zweifraktions-Test im FleetCombat-Reiter verwendet zwei unveränderte
+`StrategicCombatService`-Duelle auf einer einzigen, gemeinsam integrierten
+Arena. Die Testkoordinator-Instanz `parallel-native-duels.ts` hält den
+flüchtigen Zeitpunkt und die Bystander-/Kollisionssicht, integriert Asteroiden
+nur einmal pro Tick und reicht Originalkampf-Snapshots an das separate
+FleetCombat-Zuschauerpanel weiter. Dieses benutzt vorhandene Visual-Bausteine,
+jedoch nicht den normalen 1vs1-Renderer. Keiner dieser Werte gelangt in den
+Karriere-Speicherpfad.
+
+Die Standard-1vs1-Engine behält das bisherige Checkpointformat und den
+normalen eigenen Asteroiden-Tick; die neue Option `sharedArenaPhysics` ist
+standardmäßig deaktiviert und wird ausschließlich durch den PvP-Koordinator
+aktiviert. Keine Änderung am Save-Schema, keine Datenmigration.
+
+Die ursprünglich gesperrte Erweiterung auf 2 gegen 1 wird jetzt zusammen
+mit allen Kombinationen von 1 bis 5 Schiffen im PvP-Test angeboten.
+Ein gemeinsamer Verteidiger darf unter keinen Umständen zwei
+Bewegungs-/Waffen-/Persistenzautoritäten bekommen.
+
+### Variables Testflottenverhältnis (1–5 je Fraktion)
+
+Der PvP-Koordinator erzeugt für jedes Schiff genau einen simulationsführenden
+Kampfteilnehmer. Reguläre 1vs1-Paarungen verwenden die unveränderte Duelllogik;
+überzählige Angreifer verwenden denselben Planungs-, Bewegungs- und Waffenpfad,
+aber referenzieren den echten Verteidiger aus der Paarung. Dessen Zustand
+wird nicht unabhängig kopiert oder ein zweites Mal als AI-Schiff getickt.
+Der Unterstützer-Tick (`native-duel-support-tick.ts`) ist ausschließlich
+flüchtige PvP-Testlogik. Keiner dieser Laufzeitverweise wird gespeichert;
+Speicherformat, Wiederherstellung und Karriere-Autorität bleiben unverändert.
+
+### Flottenwracks und gemeinsam benutzter Fluchtpunkt (PvP-Test)
+
+Bei nativen Mehrschiffgefechten gehört der Fluchtpunkt der gemeinsamen Karte,
+nicht den einzelnen Duellen. Erfolgreich entkommene Schiffe werden in der
+flüchtigen Flottenkoordination als abwesend geführt und nicht mehr gezeichnet
+oder als Kollisionshindernisse übergeben. Für zerstörte Schiffe entsteht
+genau ein echtes Wrack als driftendes `CombatVisualAsteroid` im gemeinsamen
+PvP-Feld. Das native Wrackmodell, Schiffszerfalls-Effekte, Rauch und Feuer
+verwenden bestehende Rendering-Bausteine. Die Kampagnenfelder und deren
+Wrack-Persistenz werden dadurch nicht verändert; alle neuen Wracks bleiben
+auf die nur vorübergehend existierende PvP-Testarena beschränkt.
+
+### Schutz des regulären 1vs1-Modus (PR #381)
+
+Die Dateien `strategic-combat-renderer.ts`,
+`strategic-combat-panel.ts`, `combat-damage-visual.ts` und
+`combat-wreck-destruction-renderer.ts` entsprechen wieder bytegenau
+dem Stand von `main`. Die Mehrschiffansicht verwendet stattdessen
+`fleet-native-combat-renderer.ts`, `fleet-native-combat-panel.ts`
+und eigene Ergänzungen für sichtbare Wracks und Schadenspartikel.
+Die normale 1vs1-UI verwendet weiterhin ausschließlich ihre bisherigen
+Dateien. Ein Regressionstest überprüft sowohl die Originaldateien
+als auch die getrennte Verdrahtung und den unveränderten Default-Pfad
+von `createStrategicCombatService` (ohne Fleet-Parameter).
+
+Der Kampfdienst selbst bietet ausschließlich optionale PvP-Fleet-Parameter
+mit unverändertem Standardwert. Normale 1vs1-Duelle integrieren ihre
+Asteroiden weiterhin selbst und erzeugen unverändert zwei eigene
+Combatant-Instanzen; nur der neue Fleet-Koordinator aktiviert
+die gemeinsame Arena-/Zielreferenz-Unterstützung. Das
+Karriere-Speicherschema bleibt unverändert.
+
+### Native 1v2-Fortsetzung ohne Doppelautorität
+
+Im flüchtigen FleetCombat-Koordinator können zwei Angreifer dasselbe
+live referenzierte Ziel angreifen. Scheidet in einer 1v2-/2v1-Gruppe
+der erste Gegner aus, kann der ursprüngliche Dienst ausschließlich im
+PvP-Fleet-Modus den überlebenden Original-Combatant gegen den nächsten
+noch lebenden Gegner weitersteuern; dieser hat bereits einen eigenen
+nativen Dienst und wird nie ein zweites Mal als KI/Antrieb/Cooldown getickt.
+Auch Fluchten bleiben nach dem Zielwechsel im temporären Fleet-Zustand
+vermerkt. Die reguläre 1vs1-Simulation nutzt den unveränderten Standardpfad,
+während der optionale Einseitentick ausschließlich flüchtige Simulation ist.
+Es entstehen keine neuen Karriere-Speicherfelder und keine Migration.
