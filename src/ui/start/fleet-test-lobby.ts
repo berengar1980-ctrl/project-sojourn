@@ -131,8 +131,10 @@ function createParallelDuelLauncher(
         ],
         parallelSupportStartIndex: duels.duels.length - 1,
         isComplete: () => duels.getSnapshot().finished,
-        encounterName: config.ships.filter((ship) => ship.team === 'a').length +
-          ' gegen ' + config.ships.filter((ship) => ship.team === 'b').length,
+        encounterName:
+          config.ships.filter((ship) => ship.team === 'a').length +
+          ' gegen ' +
+          config.ships.filter((ship) => ship.team === 'b').length,
         onReturn: () => {
           stop();
           root.replaceChildren(lobby);
@@ -239,8 +241,13 @@ export function createFleetTestLobby(
     start.textContent = countA + ' vs ' + countB + ' starten';
     start.disabled = false;
     capabilities.textContent =
-      countA + ' vs ' + countB + ': ' + Math.min(countA, countB) +
-      ' native Duelle, ' + Math.abs(countA - countB) +
+      countA +
+      ' vs ' +
+      countB +
+      ': ' +
+      Math.min(countA, countB) +
+      ' native Duelle, ' +
+      Math.abs(countA - countB) +
       ' zusätzliche Angreifer auf derselben Karte.';
     renderFleetRoster(roster, config);
   };
