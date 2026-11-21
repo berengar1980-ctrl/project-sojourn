@@ -1711,3 +1711,19 @@ Die vollständige dynamische Zielneuzuordnung nach Gefechtsende sowie
 Cross-Pair-Kollateraltreffer bleiben gesonderte Ausbaustufen und werden
 nicht als abgeschlossen bezeichnet. Karriere, Speicherschema und reguläres
 1vs1-PvP bleiben unverändert.
+
+## Review-Log (2026-11-21): Native FleetCombat-Wracks und Fluchtabschluss
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Alle gleichzeitig laufenden 1vs1-Kämpfe benutzen im FleetCombat-Testlabor
+nun denselben sichtbaren Fluchtpunkt. Erfolgreich geflohene Schiffe werden
+einmalig aus der gemeinsamen Schiffsanzeige und Kollisionssicht entfernt.
+Zerstörte Schiffe werden durch jeweils ein physisches, driftendes 3D-Wrack
+ersetzt, das die vorhandene Asteroiden-/Schrott-Physik und Kollisionsprüfung
+verwendet. Die vorhandenen Rauch-/Feuerpartikel werden am Wrack und nicht an
+der verschwundenen Schiffshülle erzeugt, unabhängig von der gewählten Karte.
+
+Die Änderung betrifft nur den flüchtigen PvP-Test; Karriere-Speicherstände,
+NPC-Wirtschaft, originale 1vs1-Flugphysik und Waffenberechnungen bleiben
+unverändert. Dynamische Zielwechsel zwischen bereits beendeten Teilduellen
+und vollständige Schuss-Kollateraltreffer bleiben weiterhin separate Aufgaben.
