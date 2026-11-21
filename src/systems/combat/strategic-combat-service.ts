@@ -225,7 +225,8 @@ function advanceRuntimeGrapple(runtime: StrategicCombatRuntime, dt: number): boo
 function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number,
-  bystanders: readonly StrategicCombatBystander[]
+  bystanders: readonly StrategicCombatBystander[],
+  sharedArenaPhysics = false
 ): StrategicCombatSnapshot {
   if (runtime.winner || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) {
     return runtimeSnapshot(runtime);
@@ -240,7 +241,7 @@ function tickStrategicCombat(
       recordCombatLog(runtime, side, 'state', 'ENERGIEÜBERLAST · ' + ship.powerFault);
     }
   }
-  advanceCombatAsteroids(runtime.arena, dt);
+  if (!sharedArenaPhysics) advanceCombatAsteroids(runtime.arena, dt);
   runtime.attacker.shieldImpacts = advanceShieldImpacts(runtime.attacker.shieldImpacts, dt);
   runtime.defender.shieldImpacts = advanceShieldImpacts(runtime.defender.shieldImpacts, dt);
   advanceRuntimeBeams(runtime, dt);
@@ -408,7 +409,8 @@ export function createStrategicCombatService(
   defenderSetup: StrategicCombatantSetup,
   seed = hashSeed(attackerSetup.id + ':' + defenderSetup.id),
   arenaOptions?: StrategicCombatArenaOptions,
-  checkpoint?: CareerStrategicCombatCheckpoint
+  checkpoint?: CareerStrategicCombatCheckpoint,
+  sharedArenaPhysics = false
 ): StrategicCombatService {
   const saved = checkpoint
     ? stageCareerStrategicCombat(checkpoint, attackerSetup, defenderSetup)
@@ -484,6 +486,7 @@ export function createStrategicCombatService(
     setBystanders: (ships) => {
       bystanders = ships;
     },
-    tick: (deltaSeconds) => tickStrategicCombat(runtime, deltaSeconds, bystanders),
+    tick: (deltaSeconds) =>
+      tickStrategicCombat(runtime, deltaSeconds, bystanders, sharedArenaPhysics),
   };
 }
