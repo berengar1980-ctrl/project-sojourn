@@ -1,4 +1,5 @@
 import { reviewShipContact } from './combat-contact-review';
+import { tickNativeSupportingAttacker } from './native-duel-support-tick';
 import {
   captureCareerStrategicCombat,
   stageCareerStrategicCombat,
@@ -24,6 +25,7 @@ import type {
   StrategicCombatSnapshot,
   StrategicCombatantSetup,
   StrategicCombatService,
+  MutableCombatant,
 } from './strategic-combat-types';
 import {
   distance,
@@ -297,7 +299,8 @@ function createStrategicCombatRuntime(
   attackerSetup: StrategicCombatantSetup,
   defenderSetup: StrategicCombatantSetup,
   seed: number,
-  arenaOptions?: StrategicCombatArenaOptions
+  arenaOptions?: StrategicCombatArenaOptions,
+  externalDefender?: MutableCombatant
 ): StrategicCombatRuntime {
   const escapeArena = buildCombatArena(attackerSetup, defenderSetup, seed, arenaOptions);
   const random = createRng(seed);
@@ -306,7 +309,7 @@ function createStrategicCombatRuntime(
     randomCalls: 0,
     arena: escapeArena,
     attacker: createCombatant(attackerSetup, 'attacker', escapeArena),
-    defender: createCombatant(defenderSetup, 'defender', escapeArena),
+    defender: externalDefender ?? createCombatant(defenderSetup, 'defender', escapeArena),
     random: () => {
       runtime.randomCalls += 1;
       return random();
@@ -410,7 +413,8 @@ export function createStrategicCombatService(
   seed = hashSeed(attackerSetup.id + ':' + defenderSetup.id),
   arenaOptions?: StrategicCombatArenaOptions,
   checkpoint?: CareerStrategicCombatCheckpoint,
-  sharedArenaPhysics = false
+  sharedArenaPhysics = false,
+  externalDefender?: MutableCombatant
 ): StrategicCombatService {
   const saved = checkpoint
     ? stageCareerStrategicCombat(checkpoint, attackerSetup, defenderSetup)
@@ -419,7 +423,8 @@ export function createStrategicCombatService(
     attackerSetup,
     defenderSetup,
     saved?.seed ?? seed,
-    arenaOptions
+    arenaOptions,
+    externalDefender
   );
   if (saved) {
     for (let call = 0; call < saved.randomCalls; call += 1) runtime.random();
@@ -432,6 +437,7 @@ export function createStrategicCombatService(
   let bystanders: readonly StrategicCombatBystander[] = [];
   return {
     exportCareerState: () => captureCareerStrategicCombat(runtime),
+    getParallelActor: (side) => runtimeCombatant(runtime, side),
     getSnapshot: () => runtimeSnapshot(runtime),
     getCombatLog: () => runtime.combatLog.map((entry) => ({ ...entry })),
     fireGrapple: (side) => tryFireGrapple(runtime, side),
@@ -486,7 +492,12 @@ export function createStrategicCombatService(
     setBystanders: (ships) => {
       bystanders = ships;
     },
-    tick: (deltaSeconds) =>
-      tickStrategicCombat(runtime, deltaSeconds, bystanders, sharedArenaPhysics),
+    tick: (deltaSeconds) => {
+      if (externalDefender) {
+        tickNativeSupportingAttacker(runtime, deltaSeconds, bystanders);
+        return runtimeSnapshot(runtime);
+      }
+      return tickStrategicCombat(runtime, deltaSeconds, bystanders, sharedArenaPhysics);
+    },
   };
 }
