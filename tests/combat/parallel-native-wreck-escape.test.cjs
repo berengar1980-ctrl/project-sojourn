@@ -84,6 +84,26 @@ assert.equal(
   'a wreck persists and can never be generated twice after the original duel freezes'
 );
 
+// A distant fleeing vessel must make real physical progress to the shared gate.
+const routeFleet = createParallelNativeDuels(roster(1, 1), emptyArena(), 515);
+const routeShip = routeFleet.duels[0].getParallelActor('attacker');
+const routeGate = routeFleet.getSnapshot().duels[0].exitPoint;
+const startDistance = Math.hypot(
+  routeShip.position.x - routeGate.x,
+  routeShip.position.y - routeGate.y
+);
+routeShip.tactic = 'flee';
+routeShip.combatTacticLocked = true;
+for (let i = 0; i < 180; i++) routeFleet.tick(0.08);
+const remainingDistance = Math.hypot(
+  routeShip.position.x - routeGate.x,
+  routeShip.position.y - routeGate.y
+);
+assert(
+  remainingDistance < startDistance - 150 || routeFleet.getSnapshot().escapedShipIds.includes('a-1'),
+  'fleeing ships must actually fly toward the real shared exit rather than following a hidden gate'
+);
+
 const escaping = createParallelNativeDuels(roster(5, 5), emptyArena(), 44);
 const escapeGate = escaping.getSnapshot().duels[0].exitPoint;
 const fugitive = escaping.duels[3].getParallelActor('attacker');
