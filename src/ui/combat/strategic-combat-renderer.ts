@@ -40,7 +40,7 @@ import { drawCombatBackground } from './combat-background-renderer';
 import type { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawCombatDamagePair } from './combat-damage-visual';
 import { drawDestroyedCombatant } from './combat-wreck-destruction-renderer';
-import { CombatFleetWreckEffects } from './combat-fleet-wreck-effects';
+import { CombatFleetWreckEffects, nativeFleetVisibility } from './combat-fleet-wreck-effects';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import type {
   CombatBeamSnapshot,
@@ -104,19 +104,9 @@ export class StrategicCombatRenderer {
   ): void {
     this.parallelDuels = parallelDuels;
     this.supportingFromIndex = supportingFromIndex;
-    const departed = new Set(departedIds);
-    for (const duel of [model, ...parallelDuels]) {
-      if (duel.outcomeReason !== 'escape') continue;
-      if (duel.winner === 'defender') departed.add(duel.attacker.id);
-      if (duel.winner === 'attacker') departed.add(duel.defender.id);
-    }
-    this.hiddenShipIds = departed;
-    this.hiddenDamageIds = new Set([
-      ...departed,
-      ...(model.arena.asteroids ?? [])
-        .filter((rock) => rock.id.startsWith('fleet-wreck:'))
-        .map((rock) => rock.id.slice('fleet-wreck:'.length)),
-    ]);
+    const visibility = nativeFleetVisibility(model, parallelDuels, departedIds);
+    this.hiddenShipIds = visibility.escaped;
+    this.hiddenDamageIds = visibility.damageHidden;
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
