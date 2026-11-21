@@ -95,7 +95,9 @@ export function beginControllerFieldFleet(
     field,
     context.economy.sectorNpcs.npcs,
     participants,
-    { x: 0, y: 0 },
+    context.state.localSpace?.getSnapshot().instance === field.instance
+      ? context.state.localSpace.getShipWorldVelocity()
+      : { x: 0, y: 0 },
     (wrecks) => fieldWorldFor(context).registerCombatWrecks(locationId, wrecks)
   );
   owners.acquire(field, fleet);
