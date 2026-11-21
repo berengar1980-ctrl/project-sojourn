@@ -135,7 +135,7 @@ assert(
   'support attackers must disappear after a successful escape without moving their target'
 );
 const overlay = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
+  path.join(root, 'src/ui/combat/fleet-native-combat-renderer.ts'),
   'utf8'
 );
 const smoke = fs.readFileSync(
