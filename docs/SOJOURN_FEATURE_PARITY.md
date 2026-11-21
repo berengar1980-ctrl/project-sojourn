@@ -1727,3 +1727,17 @@ Die Änderung betrifft nur den flüchtigen PvP-Test; Karriere-Speicherstände,
 NPC-Wirtschaft, originale 1vs1-Flugphysik und Waffenberechnungen bleiben
 unverändert. Dynamische Zielwechsel zwischen bereits beendeten Teilduellen
 und vollständige Schuss-Kollateraltreffer bleiben weiterhin separate Aufgaben.
+
+## Review-Log (2026-11-21): Schutz des originalen 1vs1-PvP-Modus
+
+**Keine Statusänderung** historischer Feature-IDs. Die Mehrschiff-Darstellung
+ist jetzt vollständig im separaten FleetCombat-Panel und -Renderer
+untergebracht. Der normale 1vs1-Renderer, das zugehörige Bedienpanel,
+die allgemeinen Schadenspartikel und die ursprüngliche
+Wrack-Übergangsdarstellung wurden bytegenau auf `main` zurückgesetzt.
+FleetCombat verwendet weiterhin die vorhandenen Schiffs-, Laser-,
+Asteroiden- und Kamerabausteine, ohne deren Standardpfade zu ersetzen.
+Ein neuer Isolationstest schützt die vier Quelldateien sowie die
+Unterscheidung der beiden UI-Einstiegspunkte und prüft den unveränderten
+Defaultpfad der 1vs1-Simulation. Nur explizit aktivierte Fleet-Parameter
+verwenden den gemeinsamen Welt-Tick. Kein Save-/Karriere-Schema-Wechsel.
