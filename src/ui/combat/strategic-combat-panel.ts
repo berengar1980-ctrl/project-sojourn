@@ -210,23 +210,70 @@ function combatReturnLabel(model: StrategicCombatSnapshot): string {
   return model.boardingInitiator ? 'ENTERKAMPF STARTEN' : 'ZUR STERNKARTE';
 }
 
-export function createStrategicCombatPanel(
+function prepareParallelDuelPanel(
+  shell: HTMLElement,
   options: StrategicCombatPanelOptions
-): StrategicCombatPanel {
-  const shell = makeCombatShell(options.root);
-  const parallelStatus = options.parallelDuels ? document.createElement('aside') : null;
-  if (parallelStatus) {
-    parallelStatus.className = 'combat-parallel-duels-status';
-    parallelStatus.style.cssText =
-      'position:absolute;top:50px;left:14px;z-index:3;padding:8px 11px;' +
-      'background:rgba(10,20,27,.88);border:1px solid #556973;' +
-      'color:#d8e7ee;font:12px ui-monospace,monospace;pointer-events:none;';
-    shell.append(parallelStatus);
-  }
+): HTMLElement | null {
   if (options.spectator) {
     shell.querySelector<HTMLElement>('.combat-tactics')?.remove();
     shell.querySelector<HTMLElement>('.strategic-combat-grapple')?.remove();
   }
+  if (!options.parallelDuels) return null;
+  const status = document.createElement('aside');
+  status.className = 'combat-parallel-duels-status';
+  status.style.cssText =
+    'position:absolute;top:50px;left:14px;z-index:3;padding:8px 11px;' +
+    'background:rgba(10,20,27,.88);border:1px solid #556973;' +
+    'color:#d8e7ee;font:12px ui-monospace,monospace;pointer-events:none;';
+  shell.append(status);
+  return status;
+}
+
+function updateParallelDuelStatus(
+  status: HTMLElement | null,
+  primary: StrategicCombatSnapshot,
+  others: readonly StrategicCombatSnapshot[]
+): void {
+  if (!status) return;
+  status.textContent = [primary, ...others]
+    .map(
+      (duel, i) =>
+        'DUELL ' +
+        (i + 1) +
+        ' · ' +
+        Math.max(0, Math.round(duel.attacker.hullHp)) +
+        ' / ' +
+        Math.max(0, Math.round(duel.defender.hullHp)) +
+        ' HP · ' +
+        (duel.winner ? 'BEENDET' : 'AKTIV')
+    )
+    .join('   |   ');
+}
+
+function updateCombatReturnButton(
+  button: HTMLButtonElement,
+  options: StrategicCombatPanelOptions,
+  model: StrategicCombatSnapshot,
+  defeatStartedAt: number | null
+): void {
+  const complete = options.isComplete?.() ?? model.winner !== null;
+  button.hidden = options.spectator ? false : !complete;
+  button.textContent = options.spectator
+    ? complete
+      ? 'ZUM TESTLABOR'
+      : 'TEST BEENDEN'
+    : combatReturnLabel(model);
+  button.disabled =
+    !options.spectator &&
+    defeatStartedAt !== null &&
+    performance.now() - defeatStartedAt < 2200;
+}
+
+export function createStrategicCombatPanel(
+  options: StrategicCombatPanelOptions
+): StrategicCombatPanel {
+  const shell = makeCombatShell(options.root);
+  const parallelStatus = prepareParallelDuelPanel(shell, options);
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
@@ -253,22 +300,7 @@ export function createStrategicCombatPanel(
   const render = (): void => {
     const model = options.combat.getSnapshot();
     renderer.update(model, options.parallelDuels?.() ?? []);
-    if (parallelStatus) {
-      const duels = [model, ...(options.parallelDuels?.() ?? [])];
-      parallelStatus.textContent = duels
-        .map(
-          (duel, i) =>
-            'DUELL ' +
-            (i + 1) +
-            ' · ' +
-            Math.max(0, Math.round(duel.attacker.hullHp)) +
-            ' / ' +
-            Math.max(0, Math.round(duel.defender.hullHp)) +
-            ' HP · ' +
-            (duel.winner ? 'BEENDET' : 'AKTIV')
-        )
-        .join('   |   ');
-    }
+    updateParallelDuelStatus(parallelStatus, model, options.parallelDuels?.() ?? []);
     if (
       !options.spectator &&
       model.winner !== null &&
@@ -295,17 +327,7 @@ export function createStrategicCombatPanel(
         ':' +
         String(seconds % 60).padStart(2, '0');
     }
-    const complete = options.isComplete?.() ?? model.winner !== null;
-    returnButton.hidden = options.spectator ? false : !complete;
-    returnButton.textContent = options.spectator
-      ? complete
-        ? 'ZUM TESTLABOR'
-        : 'TEST BEENDEN'
-      : combatReturnLabel(model);
-    returnButton.disabled =
-      !options.spectator &&
-      defeatReturnStartedAt !== null &&
-      performance.now() - defeatReturnStartedAt < 2200;
+    updateCombatReturnButton(returnButton, options, model, defeatReturnStartedAt);
     if (grappleButton) {
       grappleButton.disabled =
         model.winner !== null ||
