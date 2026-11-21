@@ -107,7 +107,7 @@ assert(
 );
 assert(
   entry.includes('showFleetCombatResult(') &&
-    entry.includes('markFleetCompleted(context, locationId)') &&
+    entry.includes('context.state.combatReengageSeconds > 0') &&
     entry.includes('context.state.combatResultPending = true'),
   'player defeat must settle the field and prevent automatic reentry'
 );
