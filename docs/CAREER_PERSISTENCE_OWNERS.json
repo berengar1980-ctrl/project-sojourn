@@ -170,6 +170,10 @@
     "src/systems/salvage/combat-destruction-wreck.ts": {
       "mode": "derived",
       "reason": "Pure wreck factory mutating an explicitly passed live salvage field; the field owns its spawned wrecks and this module retains no private state."
+    },
+    "src/systems/combat/parallel-native-duels.ts": {
+      "mode": "transient",
+      "reason": "Disposable PvP test coordinator of original 1vs1 services and one shared arena tick; it holds no career save state or checkpoint authority."
     }
   }
 }
