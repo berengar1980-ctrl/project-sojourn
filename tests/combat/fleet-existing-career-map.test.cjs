@@ -47,6 +47,28 @@ assert.equal(updated.instance.ship.headingRadians, 0.42);
 assert.equal(updated.shield.currentHp, 31, 'combat damage transfers into original shield state');
 assert.equal(updated.hull.currentHp, 19, 'combat damage transfers into original hull state');
 
+// FleetCombat must not disable existing career-map navigation and must not
+// integrate the same asteroid field a second time.
+const origin = { ...scene.getSnapshot().instance.ship.position };
+const destination = { x: origin.x + 450, y: origin.y + 100 };
+scene.startNavigation(destination, [origin, destination]);
+const asteroidBeforeFleetNavigation = { ...originalAsteroids[0].position };
+for (let i = 0; i < 25; i += 1) {
+  const live = scene.tickFleetNavigation(0.05);
+  scene.syncFleetPose(live.instance.ship.position, live.instance.ship.headingRadians, live.instance.ship.speed);
+}
+const navigated = scene.getSnapshot();
+assert(
+  Math.hypot(navigated.instance.ship.position.x - origin.x, navigated.instance.ship.position.y - origin.y) > 0,
+  'native player autopilot must still move while FleetCombat owns the field'
+);
+assert(navigated.navigationTarget, 'FleetCombat pose sync must not erase the active navigation route');
+assert.deepEqual(
+  originalAsteroids[0].position,
+  asteroidBeforeFleetNavigation,
+  'fleet navigation must never double-tick the live asteroid field'
+);
+
 const controller = read('src/app/game-controller.ts');
 const sceneTick = read('src/app/game-controller-scene-tick.ts');
 const map = read('src/ui/local-space/local-space-renderer.ts');
