@@ -1,4 +1,5 @@
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import { paintParallelNativeDuels, updateParallelNativeImpacts } from './parallel-native-duel-overlay';
 import {
   DRONE_DIAMETER_PX,
   DRONE_ROTATION_PERIOD_SECONDS,
@@ -142,32 +143,14 @@ export class StrategicCombatRenderer {
         this.visibleImpacts.splice(index, 1);
       }
     }
-    this.updateParallelImpacts(parallelDuels, visualNow);
+    updateParallelNativeImpacts(
+      parallelDuels,
+      visualNow,
+      this.additionalSeenImpacts,
+      this.additionalImpacts
+    );
     this.model = model;
     this.draw();
-  }
-  private updateParallelImpacts(
-    parallelDuels: readonly StrategicCombatSnapshot[],
-    visualNow: number
-  ): void {
-    for (const [index, extra] of parallelDuels.entries()) {
-      const seen = this.additionalSeenImpacts.get(index) ?? -1;
-      const impacts = [...extra.recentImpacts, ...(extra.lastImpact ? [extra.lastImpact] : [])]
-        .filter((impact) => impact.serial > seen)
-        .sort((a, b) => a.serial - b.serial);
-      const visible = this.additionalImpacts.get(index) ?? [];
-      for (const impact of impacts) {
-        this.additionalSeenImpacts.set(index, impact.serial);
-        const delay = impact.weaponFamily
-          ? WEAPON_VISUALS[impact.weaponFamily].impactDelaySeconds
-          : 0;
-        visible.push({ impact, startedAt: extra.elapsedSeconds + delay });
-      }
-      this.additionalImpacts.set(
-        index,
-        visible.filter((effect) => visualNow - effect.startedAt < VISION_IMPACT_SECONDS)
-      );
-    }
   }
   resize(): void {
     const rect = this.canvas.getBoundingClientRect();
@@ -323,65 +306,33 @@ export class StrategicCombatRenderer {
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
   }
-  /** Additional standard 1vs1 snapshots use the SAME ship/effect painters and camera. */
   private drawAdditionalDuels(
     width: number,
     height: number,
     timeSeconds: number,
     visualElapsed: number
   ): void {
-    const scale = this.camera.scale(width, height, this.model.arena.width, this.model.arena.height);
-    for (const [index, duel] of this.parallelDuels.entries()) {
-      drawTractorThrows(
-        this.context,
-        duel.winner === null ? duel.thrownAsteroids : [],
-        scale,
-        (point) => this.screen(point, width, height),
-        (context, rock, radius) => drawCombatScrap(context, rock, radius, timeSeconds)
-      );
-      drawCombatGrapple(this.context, duel, (side) => {
-        const ship = duel[side];
-        const geometry = this.shipGeometry(ship, width, height);
-        const points = getShipDefinition(ship.shipId)?.sprite.hardpoints;
-        const mount = points?.grapplingHooks?.[0];
-        return points && mount ? projectHardpoint(mount, points, geometry) : geometry.center;
-      });
-      for (const mine of duel.mines) {
-        if (mine.detection === 'hidden') continue;
-        drawCombatMineMarker(this.context, mine, this.screen(mine.position, width, height));
-      }
-      for (const projectile of duel.projectiles) {
-        if (projectile.kind === 'autocannon') continue;
+    paintParallelNativeDuels({
+      context: this.context,
+      duels: this.parallelDuels,
+      scale: this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
+      project: (point) => this.screen(point, width, height),
+      geometry: (ship) => this.shipGeometry(ship, width, height),
+      paintShip: (ship) => this.drawShip(ship, width, height, timeSeconds, visualElapsed),
+      paintBeam: (beam) => this.drawBeam(beam, width, height),
+      paintProjectile: (shot) =>
         this.drawProjectile(
-          projectile,
-          this.screen(projectile.position, width, height),
-          this.screen(projectile.target, width, height)
-        );
-      }
-      for (const beam of duel.beams) {
-        if (beam.ttlSeconds > 0) this.drawBeam(beam, width, height);
-      }
-      if (duel.winner === null || duel.attacker.hullHp > 0)
-        this.drawShip(duel.attacker, width, height, timeSeconds, visualElapsed);
-      if (duel.winner === null || duel.defender.hullHp > 0)
-        this.drawShip(duel.defender, width, height, timeSeconds, visualElapsed);
-      drawCombatDamagePair(
-        this.context,
-        [duel.attacker, duel.defender],
-        (ship) => this.shipGeometry(ship, width, height),
-        this.damageParticles,
-        timeSeconds,
-        width,
-        height
-      );
-      drawCombatImpactBatch(
-        this.context,
-        this.additionalImpacts.get(index) ?? [],
-        visualElapsed,
-        (point) => this.screen(point, width, height),
-        (side) => this.shipGeometry(duel[side], width, height).height
-      );
-    }
+          shot,
+          this.screen(shot.position, width, height),
+          this.screen(shot.target, width, height)
+        ),
+      damageParticles: this.damageParticles,
+      visibleImpacts: this.additionalImpacts,
+      width,
+      height,
+      timeSeconds,
+      visualElapsed,
+    });
   }
   private drawDestruction(width: number, height: number, timeSeconds: number): void {
     if (this.model.winner !== null) {
