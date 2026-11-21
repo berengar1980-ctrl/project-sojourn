@@ -1,6 +1,8 @@
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { clearCombatSpawn } from './combat-field-spawns';
 import { createStrategicCombatService } from './strategic-combat-service';
+import { buildCombatArena } from './strategic-combat-arena';
+import { materializeNativeFleetWrecks } from './native-fleet-wrecks';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -9,6 +11,7 @@ import type {
   StrategicCombatService,
   StrategicCombatSnapshot,
   StrategicCombatObstacle,
+  CombatVisualAsteroid,
 } from './strategic-combat-types';
 
 export interface NativeDuelShip {
@@ -22,6 +25,7 @@ export interface ParallelNativeDuelSnapshot {
   readonly supporters: readonly StrategicCombatSnapshot[];
   readonly elapsedSeconds: number;
   readonly finished: boolean;
+  readonly escapedShipIds: readonly string[];
 }
 export interface ParallelNativeDuels {
   readonly duels: readonly StrategicCombatService[];
@@ -156,6 +160,18 @@ function createNativeDuelServices(
   return { pairs, supporters };
 }
 
+/** A completed escape removes the actual vessel, not its pursuing opponent. */
+function escapedFleetShips(services: readonly StrategicCombatService[]): Set<string> {
+  const escaped = new Set<string>();
+  for (const service of services) {
+    const state = service.getSnapshot();
+    if (state.outcomeReason !== 'escape') continue;
+    if (state.winner === 'defender') escaped.add(state.attacker.id);
+    else if (state.winner === 'attacker') escaped.add(state.defender.id);
+  }
+  return escaped;
+}
+
 export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
@@ -169,16 +185,33 @@ export function createParallelNativeDuels(
   if (new Set(ships.map((ship) => ship.id)).size !== ships.length) {
     throw new Error('Native duel ship IDs must be unique');
   }
-  const baseObstacles = arena.obstacles ?? [];
+  // One physical world and exactly ONE visible escape gate for every native duel.
+  // Shallow-copy the asteroid list so newly created wrecks do not mutate a
+  // caller's prepared campaign/PvP map; the native bodies themselves stay shared.
+  const fleetArena: StrategicCombatArenaOptions = {
+    ...arena,
+    asteroids: [...(arena.asteroids ?? [])],
+    exitPoint: buildCombatArena(first[0]!.setup, second[0]!.setup, seed, arena).exitPoint,
+  };
+  const asteroidWorld = fleetArena.asteroids as CombatVisualAsteroid[];
+  const baseObstacles = fleetArena.obstacles ?? [];
   const allObstacles: StrategicCombatObstacle[][] = [];
   const obstacleSet = (): StrategicCombatObstacle[] => {
     const blockers = [...baseObstacles];
     allObstacles.push(blockers);
     return blockers;
   };
-  const { pairs, supporters } = createNativeDuelServices(first, second, arena, seed, obstacleSet);
+  const { pairs, supporters } = createNativeDuelServices(
+    first,
+    second,
+    fleetArena,
+    seed,
+    obstacleSet
+  );
   const services = [...pairs, ...supporters];
   const actors = nativeTeamActors(pairs, supporters);
+  const recordedWrecks = new Set<string>();
+  let elapsed = 0;
   const radiusById = new Map(
     actors.map((actor) => [
       actor.setup.id,
@@ -194,11 +227,18 @@ export function createParallelNativeDuels(
   const getSnapshot = (): ParallelNativeDuelSnapshot => {
     const duels = pairs.map((service) => service.getSnapshot());
     const additional = supporters.map((service) => service.getSnapshot());
+    const escaped = escapedFleetShips(services);
     return {
       duels,
       supporters: additional,
       elapsedSeconds: Math.max(0, ...[...duels, ...additional].map((duel) => duel.elapsedSeconds)),
-      finished: services.every((service) => service.getSnapshot().winner !== null),
+      escapedShipIds: [...escaped],
+      finished: services.every(
+        (service, index) =>
+          service.getSnapshot().winner !== null ||
+          (index >= pairs.length &&
+            escaped.has(nativeActor(service, 'defender').setup.id))
+      ),
     };
   };
 
@@ -209,10 +249,17 @@ export function createParallelNativeDuels(
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
       const dt = Math.min(seconds, 0.08);
+      elapsed += dt;
       if (!services.every((service) => service.getSnapshot().winner !== null)) {
-        advanceCombatAsteroids(arena, dt);
+        advanceCombatAsteroids(fleetArena, dt);
       }
+      materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
       for (const [index, service] of services.entries()) {
+        const escaped = escapedFleetShips(services);
+        if (escaped.has(nativeActor(service, 'attacker').setup.id)) continue;
+        if (index >= pairs.length && escaped.has(nativeActor(service, 'defender').setup.id)) {
+          continue;
+        }
         // Both the own actor and its actual target must be omitted from
         // bystander blockers. Otherwise a supporting ship shoots into the
         // target's fake obstacle instead of hitting the real shield/hull.
@@ -221,7 +268,10 @@ export function createParallelNativeDuels(
           nativeActor(service, 'defender').setup.id,
         ]);
         const others = actors
-          .filter((actor) => !duelIds.has(actor.setup.id) && actor.hullHp > 0)
+          .filter(
+            (actor) =>
+              !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)
+          )
           .map((actor) => ({
             id: actor.setup.id,
             shipId: actor.setup.shipId,
@@ -231,6 +281,13 @@ export function createParallelNativeDuels(
         const blockers = allObstacles[index]!;
         blockers.splice(baseObstacles.length);
         blockers.push(
+          ...asteroidWorld
+            .filter((rock) => rock.id.startsWith('fleet-wreck:'))
+            .map((rock) => ({
+              id: rock.id,
+              position: rock.position,
+              radius: rock.collisionRadius ?? rock.radius,
+            })),
           ...others.map((ship) => ({
             id: 'ship:' + ship.id,
             position: ship.position,
@@ -239,6 +296,7 @@ export function createParallelNativeDuels(
         );
         service.setBystanders(others);
         service.tick(dt);
+        materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
       }
       return getSnapshot();
     },
