@@ -259,7 +259,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       this.camera,
       this.model.npcCombats ?? [],
       width,
-      height
+      height,
+      this.model.fleetCombat
     );
     drawLocalSecurityDrone(
       this.context,
