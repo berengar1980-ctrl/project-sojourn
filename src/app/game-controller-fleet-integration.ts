@@ -124,6 +124,24 @@ function tryBeginFieldFleet(context: ControllerRuntimeContext): void {
     position: { ...local.instance.ship.position },
     headingRadians: local.instance.ship.headingRadians,
     targetId: fleetPreviewEnabled() ? (presentPirates[0]?.npcId ?? null) : null,
+    // The original local-space runtime owns player navigation and mining.
+    // FleetCombat only consumes its live pose and resolves shared combat physics.
+    externalMovement(dt, nearby) {
+      const scene = context.state.localSpace;
+      if (!scene || scene.getSnapshot().instance !== field.instance)
+        return {
+          position: { ...local.instance.ship.position },
+          headingRadians: local.instance.ship.headingRadians,
+          targetId: null,
+          active: false,
+        };
+      const state = scene.tickFleetNavigation(dt);
+      return {
+        position: { ...state.instance.ship.position },
+        headingRadians: state.instance.ship.headingRadians,
+        targetId: nearby.find((ship) => ship.ship.id === 'player')?.targetId ?? null,
+      };
+    },
   };
   const fleet = beginControllerFieldFleet(context, locationId, [player]);
   context.systemLog.write(
