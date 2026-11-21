@@ -1,6 +1,7 @@
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerLocalModel, controllerStarModel } from './game-controller-models';
+import { hasControllerActiveFieldFleet } from './game-controller-field-world-bridge';
 import { advanceCareerSalvageDrones } from './game-controller-salvage-drone-world';
 
 // The simulation still runs every animation frame. The full-resolution canvas
@@ -45,7 +46,7 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
     return;
   }
   if (state.mode !== 'local-space' || !state.localSpace) return;
-  if (state.embeddedCombat === 'local-space') {
+  if (state.embeddedCombat === 'local-space' || hasControllerActiveFieldFleet(context)) {
     // Keep non-navigation local systems alive; the duel owns ship and asteroid motion.
     state.localSpace.tickCombatEnvironment(deltaSeconds);
   } else {
