@@ -235,6 +235,34 @@ function syncCombatWreckPoses(
   }
 }
 
+/** Synchronize the leased world's original field and mounted player.
+ * The FleetCombat step has already advanced these real entities once.
+ */
+function syncLeasedCareerFleet(
+  context: ControllerRuntimeContext,
+  field: AsteroidFieldRuntime,
+  localId: string | null
+): void {
+  const fleet = controllerFieldFleetFor(context, field.locationId);
+  if (!fleet) return;
+  const view = fleet.getSnapshot();
+  const bodies = new Map((view.arena.asteroids ?? []).map((body) => [body.id, body]));
+  syncFleetFieldBodies(field, bodies);
+  const player = view.ships.find((entry) => entry.ship.id === 'player')?.ship;
+  if (!player || field.locationId !== localId || !context.state.localSpace) return;
+  context.state.localSpace.syncCombatPose(
+    player.position,
+    player.headingRadians,
+    player.speed
+  );
+  context.state.localSpace.syncCombatIntegrity(player.shieldHp, player.hullHp);
+  context.shipOperations.recordHull(
+    context.state.activeShip,
+    player.hullHp,
+    player.hullMaxHp
+  );
+}
+
 /** All field operations advance on the campaign clock, not only during local rendering. */
 export function advanceControllerFieldWorld(
   context: ControllerRuntimeContext,
@@ -252,26 +280,7 @@ export function advanceControllerFieldWorld(
     // FleetCombat has exclusive ownership of this field's simulation step.
     // It advances the existing miner service itself; never double-tick it.
     if (fleetOwnersFor(context).tickIfOwned(field, seconds)) {
-      const fleet = controllerFieldFleetFor(context, field.locationId);
-      if (fleet) {
-        const view = fleet.getSnapshot();
-        const bodies = new Map((view.arena.asteroids ?? []).map((body) => [body.id, body]));
-        syncFleetFieldBodies(field, bodies);
-        const player = view.ships.find((entry) => entry.ship.id === 'player')?.ship;
-        if (player && field.locationId === localId && context.state.localSpace) {
-          context.state.localSpace.syncCombatPose(
-            player.position,
-            player.headingRadians,
-            player.speed
-          );
-          context.state.localSpace.syncCombatIntegrity(player.shieldHp, player.hullHp);
-          context.shipOperations.recordHull(
-            context.state.activeShip,
-            player.hullHp,
-            player.hullMaxHp
-          );
-        }
-      }
+      syncLeasedCareerFleet(context, field, localId);
       return;
     }
     const activeCombat = field.locationId === localId ? combat : null;
