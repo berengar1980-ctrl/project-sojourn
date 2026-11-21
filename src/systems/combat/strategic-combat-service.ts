@@ -433,7 +433,10 @@ export function createStrategicCombatService(
     Object.assign(runtime.attacker, storedAttacker);
     Object.assign(runtime.defender, storedDefender);
   }
-  if (!saved) initializeStrategicCombatLog(runtime, attackerSetup, defenderSetup, seed);
+  if (!saved && !externalDefender) {
+    initializeStrategicCombatLog(runtime, attackerSetup, defenderSetup, seed);
+  }
+  if (externalDefender) runtime.attacker.nextStrategyReviewAt = 0;
   let bystanders: readonly StrategicCombatBystander[] = [];
   return {
     exportCareerState: () => captureCareerStrategicCombat(runtime),
