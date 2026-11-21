@@ -193,12 +193,15 @@ export function createParallelNativeDuels(
         advanceCombatAsteroids(arena, dt);
       }
       for (const [index, service] of services.entries()) {
-        const owned = index < pairs.length
-          ? [nativeActor(service, 'attacker'), nativeActor(service, 'defender')]
-          : [nativeActor(service, 'attacker')];
-        const ownedIds = new Set(owned.map((actor) => actor.setup.id));
+        // Both the own actor and its actual target must be omitted from
+        // bystander blockers. Otherwise a supporting ship shoots into the
+        // target's fake obstacle instead of hitting the real shield/hull.
+        const duelIds = new Set([
+          nativeActor(service, 'attacker').setup.id,
+          nativeActor(service, 'defender').setup.id,
+        ]);
         const others = actors
-          .filter((actor) => !ownedIds.has(actor.setup.id) && actor.hullHp > 0)
+          .filter((actor) => !duelIds.has(actor.setup.id) && actor.hullHp > 0)
           .map((actor) => ({
             id: actor.setup.id,
             shipId: actor.setup.shipId,
