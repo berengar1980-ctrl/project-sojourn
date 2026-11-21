@@ -2,8 +2,10 @@ import { drawTractorThrows } from './combat-tractor-throw-renderer';
 import { drawCombatScrap } from './combat-scrap-renderer';
 import { drawCombatGrapple } from './combat-grapple-renderer';
 import { drawCombatMineMarker } from './combat-ship-detail-renderer';
-import { drawCombatDamageParticles } from './combat-damage-visual';
-import { drawFleetCombatDamagePair as drawCombatDamagePair } from './fleet-native-damage-visual';
+import {
+  drawFleetCombatDamagePair as drawCombatDamagePair,
+  drawFleetCombatDamageShip,
+} from './fleet-native-damage-visual';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
 import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
@@ -59,6 +61,7 @@ export function paintParallelNativeDuels(options: {
   /** Support snapshots share their defender with a regular duel; draw it once. */
   readonly supportingFromIndex?: number;
   readonly hiddenIds?: ReadonlySet<string>;
+  readonly damagePaintedIds?: Set<string>;
   readonly scale: number;
   readonly project: (point: Point) => Point;
   readonly geometry: (ship: StrategicCombatantSnapshot) => ShipScreenGeometry;
@@ -77,6 +80,7 @@ export function paintParallelNativeDuels(options: {
     duels,
     supportingFromIndex,
     hiddenIds,
+    damagePaintedIds,
     scale,
     project,
     geometry,
@@ -122,16 +126,17 @@ export function paintParallelNativeDuels(options: {
       paintShip(duel.defender);
     }
     if (supporting) {
-      if (!hiddenIds?.has(duel.attacker.id))
-        drawCombatDamageParticles(
-          context,
-          duel.attacker,
-          geometry(duel.attacker),
-          damageParticles,
-          timeSeconds,
-          width,
-          height
-        );
+      drawFleetCombatDamageShip(
+        context,
+        duel.attacker,
+        geometry,
+        damageParticles,
+        timeSeconds,
+        width,
+        height,
+        hiddenIds ?? new Set(),
+        damagePaintedIds ?? new Set()
+      );
     } else {
       drawCombatDamagePair(
         context,
@@ -141,7 +146,8 @@ export function paintParallelNativeDuels(options: {
         timeSeconds,
         width,
         height,
-        hiddenIds
+        hiddenIds,
+        damagePaintedIds
       );
     }
     drawCombatImpactBatch(
