@@ -175,6 +175,10 @@
       "mode": "derived",
       "reason": "Extracted unchanged canonical in-memory snapshot projection of the existing strategic combat runtime; stores no new authoritative state."
     },
+    "src/systems/combat/native-fleet-advance.ts": {
+      "mode": "transient",
+      "reason": "Disposable PvP-only fleet frame coordinator for one shared asteroid world, original 1vs1 actors, physical wrecks and escape status; it persists nothing."
+    },
     "src/systems/combat/native-fleet-wrecks.ts": {
       "mode": "transient",
       "reason": "Creates physical salvage-visual wreck debris solely inside a disposable native PvP fleet arena; no career world or save authority."
