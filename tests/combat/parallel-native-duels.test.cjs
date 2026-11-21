@@ -86,7 +86,54 @@ for (const duel of view.duels) {
     assert(Number.isFinite(ship.position.y));
   }
 }
-assert.throws(() => createParallelNativeDuels(original.slice(0, 3), arena), /exactly 2 vs 2/);
+for (const [countA, countB] of [
+  [1, 1],
+  [2, 4],
+  [1, 5],
+  [5, 1],
+  [5, 5],
+]) {
+  const ships = [
+    ...Array.from({ length: countA }, (_, i) => entry('a-' + (i + 1), 'a')),
+    ...Array.from({ length: countB }, (_, i) => entry('b-' + (i + 1), 'b')),
+  ];
+  const emptyArena = { width: 7600, height: 5600, obstacles: [], asteroids: [] };
+  const fleet = createParallelNativeDuels(ships, emptyArena, 713);
+  assert.equal(fleet.duels.length, Math.min(countA, countB));
+  assert.equal(fleet.supporters.length, Math.abs(countA - countB));
+  const uniqueShips = [
+    ...fleet.duels.flatMap((duel) => [
+      duel.getParallelActor('attacker'),
+      duel.getParallelActor('defender'),
+    ]),
+    ...fleet.supporters.map((support) => support.getParallelActor('attacker')),
+  ];
+  assert.equal(new Set(uniqueShips.map((actor) => actor.setup.id)).size, countA + countB);
+  for (const support of fleet.supporters) {
+    const sharedTarget = support.getParallelActor('defender');
+    assert(
+      fleet.duels.some(
+        (duel) =>
+          duel.getParallelActor('attacker') === sharedTarget ||
+          duel.getParallelActor('defender') === sharedTarget
+      ),
+      'support attack must reference a real native duel target, not a duplicate'
+    );
+  }
+  fleet.tick(0.08);
+  const active = fleet.getSnapshot();
+  assert.equal(active.duels.length, Math.min(countA, countB));
+  assert.equal(active.supporters.length, Math.abs(countA - countB));
+  assert(
+    [...active.duels, ...active.supporters].every((duel) => duel.elapsedSeconds === 0.08),
+    'all native ships must advance in the same frame'
+  );
+}
+assert.throws(() => createParallelNativeDuels([], arena), /1 to 5 ships/);
+assert.throws(
+  () => createParallelNativeDuels(Array.from({ length: 6 }, (_, i) => entry('a-' + i, 'a')).concat(entry('b', 'b')), arena),
+  /1 to 5 ships/
+);
 console.log(
-  'PASS: two original 1vs1 services, shared asteroids once, other ships in collision/flight routes'
+  'PASS: native 1-5 rosters, shared live targets, single-tick asteroids and bystander contacts'
 );
