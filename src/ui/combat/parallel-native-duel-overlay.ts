@@ -23,6 +23,8 @@ import type { Point, VisibleCombatImpact } from './strategic-combat-renderer-typ
 export function paintParallelNativeDuels(options: {
   readonly context: CanvasRenderingContext2D;
   readonly duels: readonly StrategicCombatSnapshot[];
+  /** Support snapshots share their defender with a regular duel; draw it once. */
+  readonly supportingFromIndex?: number;
   readonly scale: number;
   readonly project: (point: Point) => Point;
   readonly geometry: (ship: StrategicCombatantSnapshot) => ShipScreenGeometry;
@@ -39,6 +41,7 @@ export function paintParallelNativeDuels(options: {
   const {
     context,
     duels,
+    supportingFromIndex,
     scale,
     project,
     geometry,
@@ -78,11 +81,14 @@ export function paintParallelNativeDuels(options: {
     for (const beam of duel.beams) {
       if (beam.ttlSeconds > 0) paintBeam(beam);
     }
+    const supporting = index >= (supportingFromIndex ?? Number.POSITIVE_INFINITY);
     if (duel.winner === null || duel.attacker.hullHp > 0) paintShip(duel.attacker);
-    if (duel.winner === null || duel.defender.hullHp > 0) paintShip(duel.defender);
+    if (!supporting && (duel.winner === null || duel.defender.hullHp > 0)) {
+      paintShip(duel.defender);
+    }
     drawCombatDamagePair(
       context,
-      [duel.attacker, duel.defender],
+      supporting ? [duel.attacker] : [duel.attacker, duel.defender],
       geometry,
       damageParticles,
       timeSeconds,
