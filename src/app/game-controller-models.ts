@@ -176,6 +176,13 @@ function localNpcCombatSnapshots(
   });
 }
 
+function liveFleetLocalModel(
+  context: ControllerRuntimeContext,
+  locationId: string | null | undefined
+) {
+  return controllerFieldFleetFor(context, locationId)?.getSnapshot() ?? null;
+}
+
 export function controllerLocalModel(context: ControllerRuntimeContext) {
   const model = createControllerLocalModel(
     context.state.localSpace,
@@ -249,7 +256,7 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
     selectedAsteroidClaimOwner: owner,
     npcShips: [...model.npcShips, ...pirateShips],
     npcCombats: localNpcCombatSnapshots(context, locationId),
-    fleetCombat: controllerFieldFleetFor(context, locationId)?.getSnapshot() ?? null,
+    fleetCombat: liveFleetLocalModel(context, locationId),
     combatWrecks: locationId ? fieldWorldFor(context).combatWrecks(locationId) : [],
     asteroids,
     selectedAsteroid: asteroids.find((asteroid) => asteroid.isSelected) ?? null,
