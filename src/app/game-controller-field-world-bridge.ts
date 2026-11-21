@@ -265,6 +265,11 @@ export function advanceControllerFieldWorld(
             player.speed
           );
           context.state.localSpace.syncCombatIntegrity(player.shieldHp, player.hullHp);
+          context.shipOperations.recordHull(
+            context.state.activeShip,
+            player.hullHp,
+            player.hullMaxHp
+          );
         }
       }
       return;
