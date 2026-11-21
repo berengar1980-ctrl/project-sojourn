@@ -175,6 +175,10 @@
       "mode": "derived",
       "reason": "Extracted unchanged canonical in-memory snapshot projection of the existing strategic combat runtime; stores no new authoritative state."
     },
+    "src/systems/combat/native-fleet-retarget.ts": {
+      "mode": "transient",
+      "reason": "Guarded PvP Fleet-only survivor retarget of one existing live actor; no save or career world authority."
+    },
     "src/systems/combat/native-fleet-advance.ts": {
       "mode": "transient",
       "reason": "Disposable PvP-only fleet frame coordinator for one shared asteroid world, original 1vs1 actors, physical wrecks and escape status; it persists nothing."
