@@ -86,26 +86,13 @@ function pairFields(
  * the same original tactical/weapon code but tick only their OWN combatant.
  * Their target is a reference to the real paired ship, never a copied actor.
  */
-export function createParallelNativeDuels(
-  ships: readonly NativeDuelShip[],
+function createNativeDuelServices(
+  first: readonly NativeDuelShip[],
+  second: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
-  seed = 1
-): ParallelNativeDuels {
-  const first = ships.filter((ship) => ship.team === 'a');
-  const second = ships.filter((ship) => ship.team === 'b');
-  if (!first.length || !second.length || first.length > 5 || second.length > 5) {
-    throw new Error('Parallel native duels require 1 to 5 ships per faction');
-  }
-  if (new Set(ships.map((ship) => ship.id)).size !== ships.length) {
-    throw new Error('Native duel ship IDs must be unique');
-  }
-  const baseObstacles = arena.obstacles ?? [];
-  const allObstacles: StrategicCombatObstacle[][] = [];
-  const obstacleSet = (): StrategicCombatObstacle[] => {
-    const blockers = [...baseObstacles];
-    allObstacles.push(blockers);
-    return blockers;
-  };
+  seed: number,
+  obstacleSet: () => StrategicCombatObstacle[]
+): { pairs: StrategicCombatService[]; supporters: StrategicCombatService[] } {
   const paired = Math.min(first.length, second.length);
   const pairs = Array.from({ length: paired }, (_, index) => {
     const ship = first[index]!;
@@ -159,6 +146,30 @@ export function createParallelNativeDuels(
       targetActor
     );
   });
+  return { pairs, supporters };
+}
+
+export function createParallelNativeDuels(
+  ships: readonly NativeDuelShip[],
+  arena: StrategicCombatArenaOptions,
+  seed = 1
+): ParallelNativeDuels {
+  const first = ships.filter((ship) => ship.team === 'a');
+  const second = ships.filter((ship) => ship.team === 'b');
+  if (!first.length || !second.length || first.length > 5 || second.length > 5) {
+    throw new Error('Parallel native duels require 1 to 5 ships per faction');
+  }
+  if (new Set(ships.map((ship) => ship.id)).size !== ships.length) {
+    throw new Error('Native duel ship IDs must be unique');
+  }
+  const baseObstacles = arena.obstacles ?? [];
+  const allObstacles: StrategicCombatObstacle[][] = [];
+  const obstacleSet = (): StrategicCombatObstacle[] => {
+    const blockers = [...baseObstacles];
+    allObstacles.push(blockers);
+    return blockers;
+  };
+  const { pairs, supporters } = createNativeDuelServices(first, second, arena, seed, obstacleSet);
   const services = [...pairs, ...supporters];
   const actors = nativeTeamActors(pairs, supporters);
   const radiusById = new Map(
