@@ -164,7 +164,11 @@ function endFinishedFleet(context: ControllerRuntimeContext, locationId: string)
   const activePlayer = ships.some((entry) => entry.ship.id === 'player' && entry.ship.hullHp > 0);
   const pendingOrdnance =
     view.projectiles.length > 0 || view.mines.length > 0 || view.thrownAsteroids.length > 0;
-  if (activePlayer && (activePirates || pendingOrdnance) && currentCareerField(context)?.locationId === locationId)
+  if (
+    activePlayer &&
+    (activePirates || pendingOrdnance) &&
+    currentCareerField(context)?.locationId === locationId
+  )
     return false;
   endControllerFieldFleet(context, locationId, fleet);
   context.systemLog.write('FLEETCOMBAT > FELD-AUTORITÄT AN KAMPAGNE ZURÜCKGEGEBEN');
