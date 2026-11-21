@@ -30,8 +30,8 @@ assert(
   'FleetCombat laboratory must start two real strategic 1vs1 services'
 );
 assert(
-  fleet.includes("Number(teamA.control.value) === 2") &&
-    fleet.includes("Number(teamB.control.value) === 2"),
+  fleet.includes('Number(teamA.control.value) === 2') &&
+    fleet.includes('Number(teamB.control.value) === 2'),
   'only the first verified 2 vs 2 stage is enabled in the lobby'
 );
 assert(
