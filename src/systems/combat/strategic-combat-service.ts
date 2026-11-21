@@ -1,5 +1,5 @@
 import { reviewShipContact } from './combat-contact-review';
-import { tickNativeSupportingAttacker } from './native-duel-support-tick';
+import { tickNativeSupportingShip } from './native-duel-support-tick';
 import { runtimeSnapshot } from './strategic-combat-runtime-snapshot';
 import {
   captureCareerStrategicCombat,
@@ -27,6 +27,7 @@ import type {
   StrategicCombatantSetup,
   StrategicCombatService,
   MutableCombatant,
+  StrategicCombatSide,
 } from './strategic-combat-types';
 import { distance, createCombatant, createRng, hashSeed } from './strategic-combat-geometry';
 import { runtimeEnemy, runtimeCombatant } from './strategic-combat-runtime';
@@ -340,9 +341,41 @@ export function createStrategicCombatService(
   }
   if (externalDefender) runtime.attacker.nextStrategyReviewAt = 0;
   let bystanders: readonly StrategicCombatBystander[] = [];
+  let fleetDrivenSide: StrategicCombatSide | null = externalDefender ? 'attacker' : null;
   return {
     exportCareerState: () => captureCareerStrategicCombat(runtime),
     getParallelActor: (side) => runtimeCombatant(runtime, side),
+    retargetParallelSurvivor(side, opponent) {
+      // Regular 1vs1 never calls or enables this fleet-only takeover.
+      if (!sharedArenaPhysics || runtime.winner !== side || opponent.hullHp <= 0) return false;
+      if (runtime.outcomeReason !== 'destruction' && runtime.outcomeReason !== 'escape') {
+        return false;
+      }
+      const survivor = runtimeCombatant(runtime, side);
+      if (survivor.hullHp <= 0 || survivor === opponent || runtimeEnemy(runtime, side) === opponent) {
+        return false;
+      }
+      if (side === 'attacker') runtime.defender = opponent;
+      else runtime.attacker = opponent;
+      fleetDrivenSide = side;
+      // From this point the original service drives only its survivor.
+      // The new opponent retains its own separate service and AI authority.
+      runtime.winner = null;
+      runtime.outcomeReason = null;
+      runtime.boardingInitiator = null;
+      runtime.grapple = null;
+      runtime.projectiles = [];
+      runtime.beams = [];
+      runtime.thrownAsteroids = [];
+      runtime.mines = runtime.mines.filter((mine) => mine.owner === side);
+      survivor.strategy = null;
+      survivor.nextStrategyReviewAt = runtime.elapsedSeconds;
+      survivor.asteroidRoute = [];
+      delete survivor.flightPass;
+      runtime.lastEvent = survivor.setup.name + ': NEUES ZIEL ' + opponent.setup.name;
+      recordCombatLog(runtime, side, 'action', 'FLEET_RETARGET ' + opponent.setup.id);
+      return true;
+    },
     getSnapshot: () => runtimeSnapshot(runtime),
     getCombatLog: () => runtime.combatLog.map((entry) => ({ ...entry })),
     fireGrapple: (side) => tryFireGrapple(runtime, side),
@@ -398,8 +431,8 @@ export function createStrategicCombatService(
       bystanders = ships;
     },
     tick: (deltaSeconds) => {
-      if (externalDefender) {
-        tickNativeSupportingAttacker(runtime, deltaSeconds, bystanders);
+      if (fleetDrivenSide) {
+        tickNativeSupportingShip(runtime, deltaSeconds, bystanders, fleetDrivenSide);
         return runtimeSnapshot(runtime);
       }
       return tickStrategicCombat(runtime, deltaSeconds, bystanders, sharedArenaPhysics);
