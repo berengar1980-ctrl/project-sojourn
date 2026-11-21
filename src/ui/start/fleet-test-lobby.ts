@@ -294,22 +294,17 @@ function createFleetLobbyElements(onBack: () => void) {
   const shuffle = document.createElement('button');
   shuffle.type = 'button';
   shuffle.textContent = 'Ausrüstung neu auslosen';
-  const start = document.createElement('button');
-  start.type = 'button';
-  start.textContent = 'Kampagnenkarte anbinden: noch offen';
-  start.disabled = true;
-  start.title = 'Die separate Pfeilansicht wurde entfernt. FleetCombat wird erst über die vorhandene Kampagnenkarte gestartet.';
   const back = document.createElement('button');
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';
   back.addEventListener('click', onBack);
-  actions.append(back, shuffle, start);
+  actions.append(back, shuffle);
   shell.append(heading, description, options, capabilities, actions, roster);
-  return { shell, map, player, miners, drones, piratesA, piratesB, roster, start, shuffle };
+  return { shell, map, player, miners, drones, piratesA, piratesB, roster, shuffle };
 }
 
 export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
-  const { shell, map, player, miners, drones, piratesA, piratesB, roster, start, shuffle } =
+  const { shell, map, player, miners, drones, piratesA, piratesB, roster, shuffle } =
     createFleetLobbyElements(onBack);
   root.replaceChildren(shell);
 
@@ -363,9 +358,5 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   ])
     select.addEventListener('change', draw);
   draw();
-  return {
-    destroy: () => {
-      shell.remove();
-    },
-  };
+  return { destroy: () => shell.remove() };
 }
