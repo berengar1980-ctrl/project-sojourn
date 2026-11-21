@@ -138,7 +138,11 @@ for (const [countA, countB] of [
 }
 assert.throws(() => createParallelNativeDuels([], arena), /1 to 5 ships/);
 assert.throws(
-  () => createParallelNativeDuels(Array.from({ length: 6 }, (_, i) => entry('a-' + i, 'a')).concat(entry('b', 'b')), arena),
+  () =>
+    createParallelNativeDuels(
+      Array.from({ length: 6 }, (_, i) => entry('a-' + i, 'a')).concat(entry('b', 'b')),
+      arena
+    ),
   /1 to 5 ships/
 );
 console.log(
