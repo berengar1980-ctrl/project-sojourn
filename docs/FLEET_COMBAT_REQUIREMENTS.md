@@ -545,5 +545,6 @@ CI auf dem formatierten Folgecommit bleibt zur Freigabe verpflichtend.
 - `fleet-test-lobby.ts` bleibt ein **reiner Szenario-Konfigurator**; die bisherige UI-eigene `createFleetPrototype`-Simulation und ihr eigenständiger Startknopf sind beseitigt.
 - Solange der Einstieg in die vorhandenen Karten nicht fertig ist, startet das Testlabor **keine** visuelle Simulation. Der bestehende 1vs1-PvP-Modus, Karriere-Map-Renderer und alle FleetCombat-Systemtests bleiben unangetastet.
 - Beim späteren Anschluss müssen bestehende lokale Karten, ihr normaler Kamera-/Renderpfad sowie die bestehenden Schiffs-/Drohnen-/Asteroiden- und Effekt-Renderer verwendet werden. FleetCombat liefert nur die **bestehenden Live-Zustände und Mehrschiff-Kampfentscheidungen**, keine eigene Zeichenpipeline.
+- Bereinigungsprüfung: UI-Zeichenpipeline und ihre Start-Verweise sind aus dem Branch entfernt; die laufenden Systeme und die vorhandenen Karten bleiben als Integrationsziel bestehen.
 - Das ist eine **Rückbau-/Bereinigungsmaßnahme**, keine erfolgreiche automatische Kampagnenintegration. Vor einer neuen Aktivierung sind die echte Karriere-Feldübernahme, exklusive Tick-Autorität, Kampfabschluss und Tests erforderlich.
 - Testabsicherung: `fleet-test-lobby-isolation.test.cjs` verbietet eine Rückkehr der beiden separaten Render-Module oder der UI-eigenen FleetCombat-Simulation.
