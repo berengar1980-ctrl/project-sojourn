@@ -24,15 +24,11 @@ import { createShipOperatingService } from '../systems/ships/ship-operating-cost
 import { createFuelJourneyService } from './game-controller-fuel-journey';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
-import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
+import { createControllerSettingsMenu } from './game-controller-settings';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
 import { captureControllerCareer } from './game-controller-career-capture';
-import {
-  installControllerCareer,
-  saveControllerCareer,
-  rememberMiningField,
-} from './game-controller-career-install';
+import { installControllerCareer, rememberMiningField } from './game-controller-career-install';
 import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { WorldMap } from '../core/world-types';
@@ -472,13 +468,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   };
   combatContext = context;
   installControllerCareer(context, options);
-  const menu = createSettingsMenu(
-    context.audio,
-    options.onReturnToMainMenu,
-    state.playerProfile,
-    () => saveControllerCareer(context),
-    options.onLoadCareer
-  );
+  const menu = createControllerSettingsMenu(context, options);
   mountControllerStarMap(context);
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),

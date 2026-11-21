@@ -11,12 +11,13 @@ const audio = read('src/systems/audio/game-audio-service.ts');
 const bursts = read('src/systems/ships/ship-maneuver-thrusters.ts');
 const visual = read('src/ui/ships/ship-maneuver-effects-renderer.ts');
 const controller = read('src/app/game-controller.ts');
+const controllerSettings = read('src/app/game-controller-settings.ts');
 const sceneTick = read('src/app/game-controller-scene-tick.ts');
 const salvage = read('src/app/game-controller-salvage.ts');
 const settings = read('src/ui/settings/settings-menu.ts');
 const duel = read('src/ui/start/duel-lobby.ts');
 const styles = read('src/ui/styles.css');
-const settingsCall = controller.match(/createSettingsMenu\([^;]+\);/s)?.[0] ?? '';
+const settingsCall = controllerSettings.match(/createSettingsMenu\([^;]+\);/s)?.[0] ?? '';
 
 const rcsPath = path.join(root, 'public/audio/spacecraft-rcs-thruster-burst.ogg');
 if (fs.existsSync(rcsPath)) {
@@ -65,7 +66,8 @@ assert(
 assert(
   settingsCall.includes('context.audio') &&
     settingsCall.includes('options.onReturnToMainMenu') &&
-    settingsCall.includes('state.playerProfile') &&
+    settingsCall.includes('context.state.playerProfile') &&
+    controller.includes('createControllerSettingsMenu(context, options)') &&
     settings.includes('EINSTELLUNGEN') &&
     settings.includes('data-audio-volume="ambience"') &&
     settings.includes('data-audio-volume="rcs"') &&

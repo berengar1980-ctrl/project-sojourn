@@ -309,12 +309,24 @@ function bindSettingsAudio(audio: GameAudioService, shell: HTMLDivElement): () =
   };
 }
 
+function refreshCareerSaveAvailability(
+  save: HTMLButtonElement,
+  status: HTMLElement,
+  onSaveCareer?: () => void,
+  careerSaveBlockReason?: () => string | null
+): void {
+  const reason = careerSaveBlockReason?.() ?? null;
+  save.disabled = !onSaveCareer || reason !== null;
+  status.textContent = reason ?? 'Speichern im ruhenden Orbit oder Hafen';
+}
+
 export function createSettingsMenu(
   audio: GameAudioService,
   onReturnToMainMenu: () => void,
   profile?: PlayerProfile,
   onSaveCareer?: () => void,
-  onLoadCareer?: () => void
+  onLoadCareer?: () => void,
+  careerSaveBlockReason?: () => string | null
 ): SettingsMenu {
   document.querySelector('.settings-menu')?.remove();
 
@@ -332,7 +344,9 @@ export function createSettingsMenu(
   const load = shell.querySelector<HTMLButtonElement>('[data-career-load]')!;
   const saveStatus = shell.querySelector<HTMLElement>('[data-career-status]')!;
   const confirmation = createSettingsConfirmation(shell);
-  save.disabled = !onSaveCareer;
+  const refreshCareerSave = (): void =>
+    refreshCareerSaveAvailability(save, saveStatus, onSaveCareer, careerSaveBlockReason);
+  refreshCareerSave();
   load.disabled = !onLoadCareer;
   let detachAudio: (() => void) | null = null;
   let previouslyFocused: HTMLElement | null = null;
@@ -349,6 +363,7 @@ export function createSettingsMenu(
     shell.classList.toggle('is-open', open);
     if (!open && confirmation.isOpen()) confirmation.hide(false);
     if (open) {
+      refreshCareerSave();
       detachAudio?.();
       detachAudio = bindSettingsAudio(audio, shell);
       close.focus();

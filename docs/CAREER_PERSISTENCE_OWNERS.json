@@ -170,6 +170,78 @@
     "src/systems/salvage/combat-destruction-wreck.ts": {
       "mode": "derived",
       "reason": "Pure wreck factory mutating an explicitly passed live salvage field; the field owns its spawned wrecks and this module retains no private state."
+    },
+    "src/systems/combat/combat-engagement-manager.ts": {
+      "mode": "transient",
+      "reason": "FleetCombat development-only topology manager is not attached to the career session; no live career state exists to persist yet. Before campaign integration, promote to persisted with an atomic checkpoint."
+    },
+    "src/systems/combat/fleet-combat-service.ts": {
+      "mode": "transient",
+      "reason": "Isolated PvP FleetCombat laboratory runtime, with delayed arrivals in simulation seconds; not used by career. On campaign integration a versioned encounter and arrival schedule checkpoint will be mandatory."
+    },
+    "src/systems/combat/fleet-ship-motion.ts": {
+      "mode": "derived",
+      "reason": "Stateless shared combat movement delegation over existing career combatants, field authority and native collision solvers; it owns no independent checkpoint."
+    },
+    "src/systems/combat/fleet-physical-contacts.ts": {
+      "mode": "derived",
+      "reason": "Pure physical swept segment-contact raycast for currently present combat ships; no persisted career state, entity ownership or checkpoint authority."
+    },
+    "src/systems/combat/fleet-native-specials.ts": {
+      "mode": "transient",
+      "reason": "Encounter-scoped native mine, kinetic ram and tractor-throw state. The campaign save gate prohibits active FleetCombat checkpoints; released encounters have no private persisted authority."
+    },
+    "src/systems/combat/fleet-weapon-physics.ts": {
+      "mode": "transient",
+      "reason": "In-memory FleetCombat projectile, beam, random-sequence and impact state exists only during an active battle. Career saving remains blocked while FleetCombat is active; no separate checkpoint authority."
+    },
+    "src/systems/combat/fleet-faction-policy.ts": {
+      "mode": "derived",
+      "reason": "Pure FleetCombat hostility predicate over explicit faction IDs; no independent state or checkpoint data; career faction state will remain authoritative at integration."
+    },
+    "src/systems/combat/fleet-security-drone-interceptor.ts": {
+      "mode": "transient",
+      "reason": "PvP-only interceptor coordinates a transient campaign AsteroidSecurityDrone instance; the real drone's authoritative checkpoint remains in its existing career component and no FleetCombat career session is attached yet."
+    },
+    "src/systems/ships/security-drone-loadout.ts": {
+      "mode": "derived",
+      "reason": "Shared deterministic Mk-III drone outfitting derived from catalog, hardpoint metadata and a supplied NPC state; the sector NPC inventory remains the authoritative checkpoint owner."
+    },
+    "src/systems/combat/fleet-career-npc-adapter.ts": {
+      "mode": "derived",
+      "reason": "Stateless adapter uses the authoritative career NPC combatant setup, faction and local position without independent persistence; NPC cargo, travel, work and live world stay owned by campaign services."
+    },
+    "src/systems/combat/fleet-career-mining-bridge.ts": {
+      "mode": "derived",
+      "reason": "Stateless bridge delegates field navigation, scanning, ore, cargo and interruptions to existing checkpointed career NpcLocalMiningService. World retains sole authority."
+    },
+    "src/systems/combat/fleet-combat-lifecycle.ts": {
+      "mode": "derived",
+      "reason": "Stateless FleetCombat scenario validation, arrival activation and authoritative campaign-world synchronization; does not own any checkpoint domain."
+    },
+    "src/systems/combat/fleet-career-field-entry.ts": {
+      "mode": "derived",
+      "reason": "Stateless entrypoint composing the already checkpointed AsteroidFieldWorld, its authoritative local miner service and supplied career participants into the shared FleetCombat factory. The campaign retains ownership of persisted field and NPC state; active fleet encounter checkpoint integration is not yet implemented."
+    },
+    "src/systems/combat/fleet-field-tick-ownership.ts": {
+      "mode": "transient",
+      "reason": "Exclusive in-memory field-tick lease while FleetCombat owns an existing career field. No independent gameplay state; active fleet encounter and ownership must be checkpointed before enabling production save/resume."
+    },
+    "src/systems/combat/fleet-career-field-security-bridge.ts": {
+      "mode": "transient",
+      "reason": "Adapter advances existing checkpoint-owned LocalPirateTraffic and AsteroidSecurityDrone instances and derives transient interception targets per field tick. No duplicate NPC or patrol authority; the active FleetCombat encounter and target continuity require versioned save/resume before production activation."
+    },
+    "src/systems/combat/fleet-career-hostile-contacts.ts": {
+      "mode": "derived",
+      "reason": "Pure career FleetCombat contact projection using the existing faction hostility predicate, live combat snapshots and currently present native field ships. No mutable target or checkpoint authority."
+    },
+    "src/systems/combat/fleet-career-loot-settlement.ts": {
+      "mode": "transient",
+      "reason": "The shared FleetCombat encounter keeps a per-victim damage-contributor ledger and exactly-once settlement flags in memory, while all awarded cargo and pirate activity changes are made to checkpoint-owned SectorNpcState. Active fleet checkpoint/recovery must preserve contributor ledger and settlement flags before productive activation."
+    },
+    "src/systems/combat/fleet-career-wreck-settlement.ts": {
+      "mode": "transient",
+      "reason": "One-time destroyed-ship bookkeeping for an active shared encounter. Wrecks are created with the existing salvage factory and committed to authoritative persisted AsteroidFieldWorld combatWrecksByLocation; no separate permanent wreck ledger."
     }
   }
 }

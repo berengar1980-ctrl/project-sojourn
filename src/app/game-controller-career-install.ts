@@ -3,6 +3,7 @@ import { registerSecurityDroneCombatants } from './game-controller-economy';
 import { captureCareerCustody } from '../systems/persistence/career-custody-checkpoint';
 import { createCareerSaveStore } from '../systems/persistence/career-save-store';
 import { captureControllerCareer } from './game-controller-career-capture';
+import { controllerCareerSaveBlockReason } from './game-controller-career-save-policy';
 import { bindCareerFieldWorld, fieldWorldFor } from './game-controller-field-world-bridge';
 import { registerSectorShips, stageControllerCustody } from './game-controller-law-enforcement';
 import { restoreControllerDayElapsed } from './game-controller-events';
@@ -39,15 +40,9 @@ export function installControllerCareer(
 }
 
 export function saveControllerCareer(context: ControllerRuntimeContext): void {
-  const { state, navigation, engagements, fuelJourney, systemLog } = context;
-  if (
-    !['star-map', 'port'].includes(state.mode) ||
-    engagements.activePlayerCombat() ||
-    navigation.getSnapshot().isTravelling ||
-    fuelJourney.plan()
-  ) {
-    throw new Error('Speichern ist derzeit nur im ruhenden Orbit oder Hafen möglich.');
-  }
+  const reason = controllerCareerSaveBlockReason(context);
+  if (reason) throw new Error(reason);
+  const { systemLog } = context;
   createCareerSaveStore(window.localStorage).save(captureControllerCareer(context));
   systemLog.write('KARRIERE > SPIELSTAND GESPEICHERT');
 }

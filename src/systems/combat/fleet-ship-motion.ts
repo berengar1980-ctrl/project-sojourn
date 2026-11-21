@@ -1,0 +1,164 @@
+import type {
+  CombatPoint,
+  CombatTactic,
+  MutableCombatant,
+  StrategicCombatArenaOptions,
+  StrategicCombatantSnapshot,
+} from './strategic-combat-types';
+
+interface FleetCombatShipSnapshot {
+  readonly factionId: string;
+  readonly targetId: string | null;
+  readonly ship: StrategicCombatantSnapshot;
+}
+export interface FleetMotionShip {
+  readonly factionId: string;
+  readonly combatant: MutableCombatant;
+  targetId: string | null;
+  readonly spawnAtSeconds: number;
+  active: boolean;
+  departed: boolean;
+  combatMotionOwned: boolean;
+  readonly externalMovement?: (
+    dt: number,
+    nearby: readonly FleetCombatShipSnapshot[]
+  ) => {
+    readonly position: CombatPoint;
+    readonly headingRadians: number;
+    readonly targetId: string | null;
+    readonly active?: boolean;
+    readonly combatMotionTargetId?: string;
+    readonly combatTactic?: CombatTactic;
+    readonly afterCombatMotion?: (position: CombatPoint, heading: number, speed: number) => void;
+  };
+}
+type FleetShip = FleetMotionShip;
+type FleetWorldTick = (dt: number) => void;
+type FleetBeforeTick = (ships: readonly FleetCombatShipSnapshot[]) => void;
+import { distance, snapshot } from './strategic-combat-geometry';
+import {
+  moveCombatant,
+  resolveCombatantCollision,
+  resolveArenaObstacles,
+} from './strategic-combat-movement';
+import { advanceShieldImpacts } from '../shields/shield-service';
+import { isFleetHostile } from './fleet-faction-policy';
+import { shipContact } from './combat-ship-contact-geometry';
+
+function advanceExternalFleetMotion(
+  ship: FleetShip,
+  fleet: readonly FleetShip[],
+  nearby: readonly FleetCombatShipSnapshot[],
+  arena: StrategicCombatArenaOptions,
+  dt: number
+): void {
+  const actor = ship.combatant;
+  const next = ship.externalMovement?.(dt, nearby);
+  if (!next) return;
+  if (next.active === false) {
+    ship.active = false;
+    ship.departed = true;
+    ship.targetId = null;
+    return;
+  }
+  if (next.combatMotionTargetId) {
+    const enemy = fleet.find(
+      (candidate) => candidate.combatant.setup.id === next.combatMotionTargetId
+    );
+    if (enemy?.active && enemy.combatant.hullHp > 0) {
+      actor.tactic = next.combatTactic ?? actor.tactic;
+      moveCombatant(actor, enemy.combatant, 'attacker', dt, arena, []);
+      ship.combatMotionOwned = true;
+      ship.targetId = next.targetId;
+      next.afterCombatMotion?.(actor.position, actor.headingRadians, actor.speed);
+      return;
+    }
+  }
+  const previous = { ...actor.position };
+  actor.position = { ...next.position };
+  actor.velocity = {
+    x: (next.position.x - previous.x) / dt,
+    y: (next.position.y - previous.y) / dt,
+  };
+  actor.speed = distance(previous, next.position) / dt;
+  actor.headingRadians = next.headingRadians;
+  ship.targetId = next.targetId;
+}
+
+function registerNativeRamContact(
+  first: MutableCombatant,
+  second: MutableCombatant,
+  firstFaction: string,
+  secondFaction: string,
+  onContact?: (first: MutableCombatant, second: MutableCombatant) => void
+): void {
+  if (!onContact || !isFleetHostile(firstFaction, secondFaction)) return;
+  const contact = shipContact(first, second);
+  if (contact.distance <= contact.required) onContact(first, second);
+}
+
+export function advanceFleetMotion(
+  fleet: readonly FleetShip[],
+  acquire: (ship: FleetShip) => FleetShip | null,
+  arena: StrategicCombatArenaOptions,
+  dt: number,
+  worldTick?: FleetWorldTick,
+  beforeWorldTick?: FleetBeforeTick,
+  onRamContact?: (first: MutableCombatant, second: MutableCombatant) => void
+): void {
+  // Threat decisions precede the field tick: a threatened miner cannot mine.
+  beforeWorldTick?.(
+    fleet.map((entry) => ({
+      factionId: entry.factionId,
+      targetId: entry.targetId,
+      ship: snapshot(entry.combatant),
+    }))
+  );
+  worldTick?.(dt);
+  const nearby = fleet.map((ship) => ({
+    factionId: ship.factionId,
+    targetId: ship.targetId,
+    ship: snapshot(ship.combatant),
+  }));
+  for (const ship of fleet) {
+    ship.combatMotionOwned = false;
+    const actor = ship.combatant;
+    actor.shieldImpacts = advanceShieldImpacts(actor.shieldImpacts, dt);
+    if (actor.hullHp <= 0) continue;
+    if (ship.externalMovement) {
+      advanceExternalFleetMotion(ship, fleet, nearby, arena, dt);
+      continue;
+    }
+    const target = acquire(ship);
+    if (target) {
+      moveCombatant(actor, target.combatant, 'attacker', dt, arena, []);
+    } else {
+      actor.position.x = Math.max(
+        0,
+        Math.min(arena.width, actor.position.x + actor.velocity.x * dt)
+      );
+      actor.position.y = Math.max(
+        0,
+        Math.min(arena.height, actor.position.y + actor.velocity.y * dt)
+      );
+      resolveArenaObstacles(actor, arena);
+    }
+  }
+  for (let i = 0; i < fleet.length; i += 1) {
+    for (let j = i + 1; j < fleet.length; j += 1) {
+      if (!fleet[i]!.active || !fleet[j]!.active) continue;
+      // The campaign drone already resolves its own physical ship contacts.
+      if (
+        (fleet[i]!.externalMovement && !fleet[i]!.combatMotionOwned) ||
+        (fleet[j]!.externalMovement && !fleet[j]!.combatMotionOwned)
+      )
+        continue;
+      const a = fleet[i]!.combatant;
+      const b = fleet[j]!.combatant;
+      if (a.hullHp > 0 && b.hullHp > 0) {
+        registerNativeRamContact(a, b, fleet[i]!.factionId, fleet[j]!.factionId, onRamContact);
+        resolveCombatantCollision(a, b);
+      }
+    }
+  }
+}
