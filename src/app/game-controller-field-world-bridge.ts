@@ -23,6 +23,24 @@ import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-ty
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
 const fieldFleetOwners = new WeakMap<ControllerRuntimeContext, FleetFieldTickOwnership>();
+const activeFieldFleets = new WeakMap<
+  ControllerRuntimeContext,
+  { readonly locationId: string; readonly fleet: FleetCombatService }
+>();
+
+/** The mounted career scene reads this same live service, never a UI test copy. */
+export function controllerFieldFleetFor(
+  context: ControllerRuntimeContext,
+  locationId?: string | null
+): FleetCombatService | null {
+  const active = activeFieldFleets.get(context);
+  if (!active || (locationId !== undefined && active.locationId !== locationId)) return null;
+  return active.fleet;
+}
+
+export function controllerFieldFleetLocation(context: ControllerRuntimeContext): string | null {
+  return activeFieldFleets.get(context)?.locationId ?? null;
+}
 
 function shouldTickFieldSecurity(
   defenderId: string | undefined,
@@ -81,6 +99,7 @@ export function beginControllerFieldFleet(
     (wrecks) => fieldWorldFor(context).registerCombatWrecks(locationId, wrecks)
   );
   owners.acquire(field, fleet);
+  activeFieldFleets.set(context, { locationId, fleet });
   return fleet;
 }
 
@@ -93,6 +112,7 @@ export function endControllerFieldFleet(
   const field = fieldWorldFor(context).field(locationId);
   if (!field) throw new Error('Unknown FleetCombat career field');
   fleetOwnersFor(context).release(field, fleet);
+  if (activeFieldFleets.get(context)?.fleet === fleet) activeFieldFleets.delete(context);
 }
 
 /** Install the already staged field authority instead of generating new ore/NPCs. */
@@ -179,6 +199,28 @@ function syncNpcDuelFieldPoses(
   }
 }
 
+/** Keep career field bodies identical to the existing combat arena's bodies.
+ * The native local map and its normal asteroid renderer remain authoritative.
+ */
+function syncFleetFieldBodies(
+  field: AsteroidFieldRuntime,
+  bodies: ReadonlyMap<string, CombatVisualAsteroid>
+): void {
+  for (let index = field.instance.asteroids.length - 1; index >= 0; index -= 1) {
+    const asteroid = field.instance.asteroids[index]!;
+    const body = bodies.get(asteroid.id);
+    if (!body) {
+      field.instance.asteroids.splice(index, 1);
+      continue;
+    }
+    asteroid.position = { ...body.position };
+    asteroid.rotation = body.rotation;
+    asteroid.physics.velocity = { ...body.velocity };
+    asteroid.physics.angularVelocity = body.angularVelocity;
+  }
+  syncCombatWreckPoses(field, bodies);
+}
+
 function syncCombatWreckPoses(
   field: AsteroidFieldRuntime,
   bodies: ReadonlyMap<string, CombatVisualAsteroid>
@@ -209,7 +251,24 @@ export function advanceControllerFieldWorld(
   fieldWorld.tick(deltaSeconds, localId, (field, seconds) => {
     // FleetCombat has exclusive ownership of this field's simulation step.
     // It advances the existing miner service itself; never double-tick it.
-    if (fleetOwnersFor(context).tickIfOwned(field, seconds)) return;
+    if (fleetOwnersFor(context).tickIfOwned(field, seconds)) {
+      const fleet = controllerFieldFleetFor(context, field.locationId);
+      if (fleet) {
+        const view = fleet.getSnapshot();
+        const bodies = new Map((view.arena.asteroids ?? []).map((body) => [body.id, body]));
+        syncFleetFieldBodies(field, bodies);
+        const player = view.ships.find((entry) => entry.ship.id === 'player')?.ship;
+        if (player && field.locationId === localId && context.state.localSpace) {
+          context.state.localSpace.syncCombatPose(
+            player.position,
+            player.headingRadians,
+            player.speed
+          );
+          context.state.localSpace.syncCombatIntegrity(player.shieldHp, player.hullHp);
+        }
+      }
+      return;
+    }
     const activeCombat = field.locationId === localId ? combat : null;
     if (activeCombat) {
       // NPC miners and passing pirates are solid ship bodies inside embedded
@@ -243,20 +302,7 @@ export function advanceControllerFieldWorld(
       // instead of integrating the same bodies a second time.
       const combatAsteroids = activeCombat.arena.asteroids ?? [];
       const bodies = new Map(combatAsteroids.map((body) => [body.id, body]));
-      for (let index = field.instance.asteroids.length - 1; index >= 0; index -= 1) {
-        const asteroid = field.instance.asteroids[index]!;
-        const body = bodies.get(asteroid.id);
-        if (!body) {
-          // Thrown or destroyed bodies must not remain as ghost obstacles.
-          field.instance.asteroids.splice(index, 1);
-          continue;
-        }
-        asteroid.position = { ...body.position };
-        asteroid.rotation = body.rotation;
-        asteroid.physics.velocity = { ...body.velocity };
-        asteroid.physics.angularVelocity = body.angularVelocity;
-      }
-      syncCombatWreckPoses(field, bodies);
+      syncFleetFieldBodies(field, bodies);
       context.state.localSpace?.syncCombatPose(
         activeCombat.attacker.position,
         activeCombat.attacker.headingRadians,
