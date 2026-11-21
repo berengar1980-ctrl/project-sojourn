@@ -63,8 +63,7 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     const duelIds = new Set([source.setup.id, target.setup.id]);
     const others = actors
       .filter(
-        (actor) =>
-          !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)
+        (actor) => !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)
       )
       .map((actor) => ({
         id: actor.setup.id,
