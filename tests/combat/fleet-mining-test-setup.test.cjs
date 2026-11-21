@@ -66,10 +66,12 @@ assert(
   ) >= initialCargo
 );
 const fieldEntry = fs.readFileSync(
-  path.join(root, 'src/systems/combat/fleet-career-field-entry.ts'), 'utf8'
+  path.join(root, 'src/systems/combat/fleet-career-field-entry.ts'),
+  'utf8'
 );
 const controllerBridge = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-field-world-bridge.ts'), 'utf8'
+  path.join(root, 'src/app/game-controller-field-world-bridge.ts'),
+  'utf8'
 );
 assert(
   fieldEntry.includes('createFleetCareerMiningBridge(') &&

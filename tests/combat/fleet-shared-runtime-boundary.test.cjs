@@ -29,7 +29,8 @@ const fleet = fs.readFileSync(
   'utf8'
 );
 const bridge = fs.readFileSync(
-  path.join(root, 'src/app/game-controller-field-world-bridge.ts'), 'utf8'
+  path.join(root, 'src/app/game-controller-field-world-bridge.ts'),
+  'utf8'
 );
 const lobby = fs.readFileSync(path.join(root, 'src/ui/start/fleet-test-lobby.ts'), 'utf8');
 const lifecycle = fs.readFileSync(
