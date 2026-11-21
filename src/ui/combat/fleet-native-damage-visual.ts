@@ -47,3 +47,43 @@ export function drawFleetCombatDamagePair(
     );
   }
 }
+
+/** Keep the shared-actor rule outside the already lengthy overlay painter. */
+export function drawFleetDuelDamage(
+  context: CanvasRenderingContext2D,
+  duel: StrategicCombatSnapshot,
+  supporting: boolean,
+  geometry: (combatant: Fighter) => ShipScreenGeometry,
+  particles: Map<string, DistressDamageParticles>,
+  now: number,
+  width: number,
+  height: number,
+  hidden: ReadonlySet<string> = new Set(),
+  painted: Set<string> = new Set()
+): void {
+  if (supporting) {
+    drawFleetCombatDamageShip(
+      context,
+      duel.attacker,
+      geometry,
+      particles,
+      now,
+      width,
+      height,
+      hidden,
+      painted
+    );
+  } else {
+    drawFleetCombatDamagePair(
+      context,
+      [duel.attacker, duel.defender],
+      geometry,
+      particles,
+      now,
+      width,
+      height,
+      hidden,
+      painted
+    );
+  }
+}
