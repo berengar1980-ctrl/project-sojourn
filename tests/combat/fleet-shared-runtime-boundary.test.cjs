@@ -28,6 +28,9 @@ const fleet = fs.readFileSync(
   path.join(root, 'src/systems/combat/fleet-combat-service.ts'),
   'utf8'
 );
+const bridge = fs.readFileSync(
+  path.join(root, 'src/app/game-controller-field-world-bridge.ts'), 'utf8'
+);
 const lobby = fs.readFileSync(path.join(root, 'src/ui/start/fleet-test-lobby.ts'), 'utf8');
 const lifecycle = fs.readFileSync(
   path.join(root, 'src/systems/combat/fleet-combat-lifecycle.ts'),
@@ -39,8 +42,9 @@ assert(
 );
 assert(fleet.includes('export function createFleetCombatService('));
 assert(
-  lobby.includes("from '../../systems/combat/fleet-combat-service'"),
-  'PvP scenario UI must use the same systems-level FleetCombat factory as career'
+  bridge.includes('createFleetCombatForCareerField(') &&
+    !lobby.includes('createFleetCombatService('),
+  'native career field must own the shared FleetCombat service, never test UI'
 );
 assert(
   !/createFleetCombatService\s*\(/.test(
@@ -51,4 +55,4 @@ assert(
 
 // Mandatory FC-25 CI guard; campaign parity still requires replay tests.
 // FC-19/FC-25 remain OPEN until both entrypoints pass them.
-console.log('PASS FleetCombat runtime independent of test UI; PvP calls systems factory');
+console.log('PASS shared FleetCombat runtime is owned by the career field, never test UI');
