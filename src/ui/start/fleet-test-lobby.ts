@@ -86,6 +86,71 @@ function teamCount(label: string, initial: number) {
   return result;
 }
 
+function createParallelDuelLauncher(
+  root: HTMLElement,
+  lobby: HTMLElement,
+  onCombatActiveChange: (active: boolean) => void
+) {
+  let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
+  let frame = 0;
+  let stopped = false;
+  let generation = 0;
+  const stop = (): void => {
+    generation++;
+    cancelAnimationFrame(frame);
+    activePanel?.destroy();
+    activePanel = null;
+    onCombatActiveChange(false);
+  };
+  return {
+    start(config: FleetTestConfiguration): void {
+      if (stopped) return;
+      stop();
+      const current = generation;
+      const seed = Math.floor(Math.random() * 0x7fffffff);
+      const arena = createDuelArena(config.map, seed);
+      const ships = config.ships.map((ship, index) => {
+        const definition = getShipDefinition(ship.draft.shipId);
+        if (!definition) throw new Error('Unbekanntes Duellschiff: ' + ship.draft.shipId);
+        const setup = duelCombatant(index, ship.draft, definition);
+        return {
+          id: ship.id,
+          team: ship.team,
+          setup: { ...setup, id: ship.id, name: ship.id.toUpperCase() + ' · ' + ship.name },
+        };
+      });
+      const duels = createParallelNativeDuels(ships, arena, seed);
+      onCombatActiveChange(true);
+      activePanel = createStrategicCombatPanel({
+        root,
+        combat: duels.duels[0]!,
+        spectator: true,
+        parallelDuels: () => duels.getSnapshot().duels.slice(1),
+        isComplete: () => duels.getSnapshot().finished,
+        encounterName: 'Zwei parallele 1vs1-Duelle',
+        onReturn: () => {
+          stop();
+          root.replaceChildren(lobby);
+        },
+      });
+      let previous = performance.now();
+      const tick = (now: number): void => {
+        if (stopped || !activePanel || current !== generation) return;
+        const dt = Math.min((now - previous) / 1000, 0.08);
+        previous = now;
+        duels.tick(dt);
+        activePanel.update();
+        frame = requestAnimationFrame(tick);
+      };
+      frame = requestAnimationFrame(tick);
+    },
+    destroy(): void {
+      stopped = true;
+      stop();
+    },
+  };
+}
+
 export function createFleetTestLobby(
   root: HTMLElement,
   onBack: () => void,
@@ -129,18 +194,7 @@ export function createFleetTestLobby(
   root.replaceChildren(shell);
 
   let config: FleetTestConfiguration;
-  let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
-  let frame = 0;
-  let stopped = false;
-  let generation = 0;
-  const returnToLobby = (): void => {
-    generation++;
-    cancelAnimationFrame(frame);
-    activePanel?.destroy();
-    activePanel = null;
-    root.replaceChildren(shell);
-    onCombatActiveChange(false);
-  };
+  const launcher = createParallelDuelLauncher(root, shell, onCombatActiveChange);
   const draw = (): void => {
     config = {
       map: map.control.value as DuelMapKind,
@@ -182,44 +236,7 @@ export function createFleetTestLobby(
     }
   };
   start.addEventListener('click', () => {
-    if (start.disabled || stopped) return;
-    generation++;
-    const current = generation;
-    cancelAnimationFrame(frame);
-    activePanel?.destroy();
-    const seed = Math.floor(Math.random() * 0x7fffffff);
-    const arena = createDuelArena(config.map, seed);
-    const ships = config.ships.map((ship, index) => {
-      const definition = getShipDefinition(ship.draft.shipId);
-      if (!definition) throw new Error('Unbekanntes Duellschiff: ' + ship.draft.shipId);
-      const setup = duelCombatant(index, ship.draft, definition);
-      return {
-        id: ship.id,
-        team: ship.team,
-        setup: { ...setup, id: ship.id, name: ship.id.toUpperCase() + ' · ' + ship.name },
-      };
-    });
-    const duels = createParallelNativeDuels(ships, arena, seed);
-    onCombatActiveChange(true);
-    activePanel = createStrategicCombatPanel({
-      root,
-      combat: duels.duels[0]!,
-      spectator: true,
-      parallelDuels: () => duels.getSnapshot().duels.slice(1),
-      isComplete: () => duels.getSnapshot().finished,
-      encounterName: 'Zwei parallele 1vs1-Duelle',
-      onReturn: returnToLobby,
-    });
-    let previous = performance.now();
-    const tick = (now: number): void => {
-      if (stopped || !activePanel || current !== generation) return;
-      const dt = Math.min((now - previous) / 1000, 0.08);
-      previous = now;
-      duels.tick(dt);
-      activePanel.update();
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
+    if (!start.disabled) launcher.start(config);
   });
   shuffle.addEventListener('click', draw);
   teamA.control.addEventListener('change', draw);
@@ -231,11 +248,7 @@ export function createFleetTestLobby(
   draw();
   return {
     destroy() {
-      stopped = true;
-      generation++;
-      cancelAnimationFrame(frame);
-      activePanel?.destroy();
-      onCombatActiveChange(false);
+      launcher.destroy();
       shell.remove();
     },
   };
