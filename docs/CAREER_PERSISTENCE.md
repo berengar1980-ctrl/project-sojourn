@@ -1120,3 +1120,20 @@ Save-Felder, Kontakte, Ausrüstung oder Spielerfraktionsbeziehungen.
 Der gemeinsam verwendete `fleet-conflict-manager.ts` bleibt nur
 für die Dauer des Testgefechts zuständig; die frühere Einschränkung
 für Save/Load laufender Mehrparteiengefechte in der Kampagne gilt weiter.
+
+### FleetCombat: echte GC-87-Drohnen und wiederhergestellte Duellverbindungen (2026-11-22)
+
+Der neue, zustandslose Helfer `security-drone-weapon-loadout.ts` wird vom
+bestehenden Kampagnen-Ausrüstungsdienst und vom PvP-FleetCombat-Testlabor
+gemeinsam verwendet. Er wählt kompatible **Mk-III-Waffen pro aktivem
+Schiffshardpoint**. Die Kampagne behält ihre bisherigen Mk-III-Schild-,
+Hüllen- und Reaktor-Upgrades; das Testlabor verwendet dieselben Stufen und
+die bestehende GC-87-Grafik über die `security-drone:`-Kennung.
+
+**Persistenzentscheidung:** Die Änderung fügt keine neuen Karriere-Save-Felder,
+Besitzer, Fraktionen oder gespeicherten Kampfobjekte hinzu. Bestehende
+`SectorNpcState.installedComponents` und `hullHp` bleiben die maßgeblichen
+Speicherwerte. Die Anpassung der temporären Duell-Verbindungslinien betrifft
+nur den berechneten FleetCombat-Snapshot und wird nicht gespeichert.
+Laufende Mehrparteiengefechte bleiben hinsichtlich des zusätzlichen
+Fleet-Zustands weiterhin nicht vollständig checkpoint-/restore-fähig.
