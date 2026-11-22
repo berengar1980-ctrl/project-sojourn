@@ -1,5 +1,9 @@
 import { reactToPlayerAttack } from './player-attack-reaction';
-import { createCareerFleetEncounter, type CareerFleetEncounter } from './career-fleet-encounter';
+import {
+  createCareerFleetEncounter,
+  createNpcFleetEncounter,
+  type CareerFleetEncounter,
+} from './career-fleet-encounter';
 import type {
   StarMapEngagementService,
   StarMapEngagementOptions,
@@ -24,7 +28,6 @@ import {
 } from '../npcs/npc-combat-ai';
 
 import {
-  createStrategicCombatService,
   type StrategicCombatArenaOptions,
   type StrategicCombatService,
 } from './strategic-combat-service';
@@ -48,6 +51,7 @@ interface BackgroundCombat {
   readonly first: SectorNpcState;
   readonly second: SectorNpcState;
   readonly combat: StrategicCombatService;
+  readonly fleet: CareerFleetEncounter;
 }
 
 interface EngagementRuntime {
@@ -284,13 +288,20 @@ function beginBackgroundCombat(
   const attackerSetup = npcCombatant(attacker);
   const defenderSetup = npcCombatant(defender);
   if (!attackerSetup || !defenderSetup) return;
+  const fleet = createNpcFleetEncounter(
+    attacker,
+    defender,
+    runtime.options.sectorNpcs.npcs,
+    arena
+  );
   const key = pairKey(attacker.id, defender.id);
   runtime.options.sectorNpcs.markEngaged(attacker, 'npc', defender.id, 'Gefecht');
   runtime.options.sectorNpcs.markEngaged(defender, 'npc', attacker.id, 'Gefecht');
   runtime.backgroundCombats.set(key, {
     first: attacker,
     second: defender,
-    combat: createStrategicCombatService(attackerSetup, defenderSetup, undefined, arena),
+    combat: fleet.combat,
+    fleet,
   });
   runtime.npcChases.delete(attacker.id);
   runtime.options.log(
@@ -329,13 +340,25 @@ function updateNpcChases(runtime: EngagementRuntime): void {
 
 function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: number): void {
   for (const [key, entry] of [...runtime.backgroundCombats]) {
-    const model = entry.combat.tick(deltaSeconds);
-    if (!model.winner) continue;
+    const center = runtime.options.sectorNpcs.livePosition(entry.first);
+    entry.fleet.joinNearby(
+      center,
+      runtime.options.sectorNpcs.npcs,
+      (npc) => runtime.options.sectorNpcs.livePosition(npc),
+      (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'npc', entry.first.id, 'Flottengefecht')
+    );
+    entry.fleet.tick(deltaSeconds);
+    const model = entry.combat.getSnapshot();
+    if (!entry.fleet.fleet.getSnapshot().finished && !model.boardingInitiator) continue;
     entry.first.hullHp = Math.round(model.attacker.hullHp);
     entry.second.hullHp = Math.round(model.defender.hullHp);
     runtime.options.onNpcCombatEnded?.(model, entry.first, entry.second);
-    settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
+    if (model.winner) settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
     runtime.options.sectorNpcs.recoverFromCombat(entry.first, 'Nach Gefecht');
+    for (const npc of entry.fleet.members.values()) {
+      if (npc !== entry.first && npc !== entry.second)
+        runtime.options.sectorNpcs.recoverFromCombat(npc, 'Nach Flottengefecht');
+    }
     runtime.options.sectorNpcs.recoverFromCombat(entry.second, 'Nach Gefecht');
     runtime.backgroundCombats.delete(key);
     runtime.options.log('NPC COMBAT > ' + model.lastEvent.toUpperCase());
@@ -402,7 +425,8 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
       runtime.playerFleet.joinNearby(
         runtime.options.navigation.getSnapshot().currentPosition,
         runtime.options.sectorNpcs.npcs,
-        (npc) => runtime.options.sectorNpcs.livePosition(npc)
+        (npc) => runtime.options.sectorNpcs.livePosition(npc),
+        (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
       );
       runtime.playerFleet.tick(deltaSeconds);
     } else {
