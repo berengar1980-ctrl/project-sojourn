@@ -42,6 +42,7 @@ export interface ParallelNativeDuelSnapshot {
 export interface ParallelNativeDuels {
   readonly duels: readonly StrategicCombatService[];
   readonly supporters: readonly StrategicCombatService[];
+  getActor(id: string): MutableCombatant | null;
   /** Bring an existing campaign or test ship into the live battle exactly once. */
   addShip(ship: NativeDuelShip, conflictKey?: string): boolean;
   tick(dt: number): ParallelNativeDuelSnapshot;
@@ -353,6 +354,7 @@ export function createParallelNativeDuels(
       if (joined) cachedSnapshot = null;
       return joined;
     },
+    getActor: (id) => actors.find((actor) => actor.setup.id === id) ?? null,
     getSnapshot,
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
