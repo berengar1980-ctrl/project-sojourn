@@ -1791,3 +1791,21 @@ Dünne Verbindungslinien zeigen die Hauptpaare, gestrichelte Linien
 die aktuellen zusätzlichen Ziele; letztere lassen sich gemeinsam mit
 den Hauptverbindungen ausblenden. Unveränderte Karriere-, Save- und
 1vs1-Standardpfade; keine neue Flotten-Kampf-Engine.
+
+## Review-Log (2026-11-22): Hauptgegnerwechsel und FleetCombat-Anzeigemenü
+
+**Keine Statusänderung** historischer Voidbound-/Sojourn-Feature-IDs.
+Ein 1vs1 plus zwei Zusatzangreifer kann nach Ausfall des Hauptgegners
+als 1vs1 plus ein Zusatzangreifer fortgesetzt werden. Die bis dahin
+zusätzlich angreifende Original-KI wird durch gegenseitige Zielreferenzen
+zum neuen Hauptgegner; bei einem weiteren Ausfall wird der letzte
+Angreifer entsprechend zum Hauptgegner. Ein 5vs5 mit noch intakten
+Hauptduellen behält seine Hauptpaare und zeichnet frei gewordene
+Schiffe weiterhin als Zusatzangreifer.
+
+In einem kompakten aufklappbaren FleetCombat-Menü lassen sich
+Zielverbindungen, Duellmarkierungen, Schiffsaktionen, Namen,
+Boostanzeigen, Duellübersicht, HUD und Kampfmeldungen getrennt
+oder gemeinsam ein-/ausblenden. Die Auswahl bleibt lokal im Browser
+erhalten. Keine neue Kampf-Engine, kein Eingriff in 1vs1-PvP
+oder Karriere-Speicherung.

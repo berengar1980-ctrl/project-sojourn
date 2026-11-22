@@ -4,6 +4,8 @@ import type {
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-types';
 import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
+import type { FleetDisplayPreferences } from './fleet-display-menu';
+import { paintFleetShipAnnotations } from './fleet-native-ship-annotations';
 
 export interface FleetShipBadge {
   readonly id: string;
@@ -112,17 +114,21 @@ export class FleetEngagementMarkerPainter {
   private engagements: readonly NativeFleetEngagement[] = [];
   private escaped: ReadonlySet<string> = new Set();
   private showLines = true;
+  private showBadges = true;
+  private display: FleetDisplayPreferences | null = null;
 
   update(
     duels: readonly StrategicCombatSnapshot[],
     engagements: readonly NativeFleetEngagement[],
     escaped: ReadonlySet<string>,
-    showLines: boolean
+    display: FleetDisplayPreferences
   ): void {
     this.duels = duels;
     this.engagements = engagements;
     this.escaped = escaped;
-    this.showLines = showLines;
+    this.display = display;
+    this.showLines = display.lines;
+    this.showBadges = display.assignments;
   }
 
   drawLines(
@@ -137,6 +143,7 @@ export class FleetEngagementMarkerPainter {
     context: CanvasRenderingContext2D,
     geometry: (ship: StrategicCombatantSnapshot) => ShipScreenGeometry
   ): void {
+    if (!this.showBadges) return;
     const rect = context.canvas.getBoundingClientRect();
     paintFleetShipBadges(
       context,
@@ -147,5 +154,15 @@ export class FleetEngagementMarkerPainter {
       rect.width,
       rect.height
     );
+  }
+
+  paintAnnotations(
+    context: CanvasRenderingContext2D,
+    ship: StrategicCombatantSnapshot,
+    geometry: ShipScreenGeometry,
+    hullRatio: number,
+    visualElapsed: number
+  ): void {
+    paintFleetShipAnnotations(context, ship, geometry, hullRatio, visualElapsed, this.display);
   }
 }

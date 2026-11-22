@@ -3,6 +3,7 @@ import type {
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
 import { FleetNativeCombatRenderer } from './fleet-native-combat-renderer';
+import { createFleetDisplayMenu } from './fleet-display-menu';
 import type { NativeFleetEngagement } from '../../systems/combat/parallel-native-duels';
 import { analyzeCombatLog } from '../../systems/combat/combat-log-analysis';
 import { combatWeaponTelemetryHtml } from './combat-weapon-telemetry-panel';
@@ -235,24 +236,24 @@ function prepareParallelDuelPanel(
 
 function updateParallelDuelStatus(
   status: HTMLElement | null,
-  primary: StrategicCombatSnapshot,
-  others: readonly StrategicCombatSnapshot[],
-  supportStartIndex = Number.POSITIVE_INFINITY
+  engagements: readonly NativeFleetEngagement[]
 ): void {
   if (!status) return;
-  status.textContent = [primary, ...others]
-    .map(
-      (duel, i) =>
-        (i > supportStartIndex ? 'UNTERSTÜTZER ' : 'DUELL ') +
-        (i + 1) +
-        ' · ' +
-        Math.max(0, Math.round(duel.attacker.hullHp)) +
-        ' / ' +
-        Math.max(0, Math.round(duel.defender.hullHp)) +
-        ' HP · ' +
-        (duel.winner ? 'BEENDET' : 'AKTIV')
+  const label = engagements
+    .map((link) =>
+      link.role === 'duel'
+        ? 'D' + link.label + ' ' + link.sourceId + ' ↔ ' + link.targetId
+        : '+' + link.label + ' ' + link.sourceId + ' → ' + link.targetId
     )
     .join('   |   ');
+  const content = label || 'KEINE AKTIVEN DUELLE';
+  if (status.textContent !== content) status.textContent = content;
+}
+
+function setFleetOverlayVisible(element: HTMLElement | null, visible: boolean): void {
+  if (!element) return;
+  const display = visible ? '' : 'none';
+  if (element.style.display !== display) element.style.display = display;
 }
 
 function updateCombatReturnButton(
@@ -301,32 +302,12 @@ function updateCombatActionButtons(
   if (surrenderButton) surrenderButton.disabled = model.winner !== null;
 }
 
-function createFleetMarkerLegend(shell: HTMLElement, enabled: boolean): HTMLInputElement | null {
-  if (!enabled) return null;
-  const legend = document.createElement('label');
-  legend.className = 'combat-fleet-marker-legend';
-  legend.style.cssText =
-    'position:absolute;right:14px;top:50px;z-index:4;padding:9px 12px;' +
-    'background:rgba(7,19,26,.94);border:1px solid #526979;' +
-    'color:#d8e7ee;font:11px ui-monospace,monospace;cursor:pointer;' +
-    'display:flex;align-items:center;gap:9px;max-width:40vw;';
-  const toggle = document.createElement('input');
-  toggle.type = 'checkbox';
-  toggle.checked = true;
-  toggle.setAttribute('aria-label', 'Aktuelle Zielverbindungen anzeigen');
-  const text = document.createElement('span');
-  text.textContent = 'D1–D5: KERNDUELL · +: ZUSATZANGRIFF · ZIELLINIEN';
-  legend.append(toggle, text);
-  shell.append(legend);
-  return toggle;
-}
-
 export function createFleetNativeCombatPanel(
   options: FleetNativeCombatPanelOptions
 ): FleetNativeCombatPanel {
   const shell = makeCombatShell(options.root);
   const parallelStatus = prepareParallelDuelPanel(shell, options);
-  const engagementLinesToggle = createFleetMarkerLegend(shell, Boolean(options.fleetEngagements));
+  const displayMenu = createFleetDisplayMenu(shell);
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
@@ -352,20 +333,22 @@ export function createFleetNativeCombatPanel(
   let defeatReturnStartedAt: number | null = null;
   const render = (): void => {
     const model = options.combat.getSnapshot();
+    const display = displayMenu.get();
+    const others = options.parallelDuels?.() ?? [];
+    const engagements = options.fleetEngagements?.() ?? [];
     renderer.update(
       model,
-      options.parallelDuels?.() ?? [],
+      others,
       options.parallelSupportStartIndex,
       options.parallelEscapedShipIds?.() ?? [],
-      options.fleetEngagements?.() ?? [],
-      engagementLinesToggle?.checked ?? false
+      engagements,
+      display
     );
-    updateParallelDuelStatus(
-      parallelStatus,
-      model,
-      options.parallelDuels?.() ?? [],
-      options.parallelSupportStartIndex
-    );
+    updateParallelDuelStatus(parallelStatus, engagements);
+    setFleetOverlayVisible(parallelStatus, display.overview);
+    setFleetOverlayVisible(playerHud, display.hud);
+    setFleetOverlayVisible(enemyHud, display.hud);
+    setFleetOverlayVisible(event, display.events);
     if (
       !options.spectator &&
       model.winner !== null &&
@@ -396,6 +379,7 @@ export function createFleetNativeCombatPanel(
     updateCombatActionButtons(grappleButton, fleeButton, surrenderButton, model);
   };
 
+  displayMenu.onChange(render);
   returnButton.addEventListener('click', () => {
     if (defeatReturnStartedAt !== null && performance.now() - defeatReturnStartedAt < 2200) return;
     options.onReturn();

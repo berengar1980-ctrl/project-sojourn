@@ -22,7 +22,7 @@ import type {
   AutocannonVisualBurst,
   VisibleCombatImpact,
 } from './strategic-combat-renderer-types';
-import { paintFleetShipAnnotations } from './fleet-native-ship-annotations';
+import type { FleetDisplayPreferences } from './fleet-display-menu';
 import { FleetEngagementMarkerPainter } from './fleet-engagement-markers';
 import type { NativeFleetEngagement } from '../../systems/combat/parallel-native-duels';
 import { ramCameraImpulse } from './combat-ram-effect-renderer';
@@ -106,7 +106,7 @@ export class FleetNativeCombatRenderer {
     supportingFromIndex = Number.POSITIVE_INFINITY,
     departedIds: readonly string[] = [],
     engagements: readonly NativeFleetEngagement[] = [],
-    showEngagementLines = true
+    display?: FleetDisplayPreferences
   ): void {
     this.parallelDuels = parallelDuels;
     this.supportingFromIndex = supportingFromIndex;
@@ -114,7 +114,7 @@ export class FleetNativeCombatRenderer {
     this.hiddenShipIds = visibility.escaped;
     this.hiddenDamageIds = visibility.damageHidden;
     const visibleDuels = [model, ...parallelDuels];
-    this.fleetMarkers.update(visibleDuels, engagements, visibility.escaped, showEngagementLines);
+    if (display) this.fleetMarkers.update(visibleDuels, engagements, visibility.escaped, display);
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
@@ -483,7 +483,7 @@ export class FleetNativeCombatRenderer {
       );
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
-    paintFleetShipAnnotations(this.context, combatant, geometry, hullRatio, visualElapsed);
+    this.fleetMarkers.paintAnnotations(this.context, combatant, geometry, hullRatio, visualElapsed);
   }
   private drawHullImpacts(width: number, height: number, visualElapsed: number): void {
     drawCombatImpactBatch(

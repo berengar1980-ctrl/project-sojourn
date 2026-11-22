@@ -17,7 +17,7 @@ export function activeNativeFleetEngagements(
   pairedCount: number,
   escaped: ReadonlySet<string>
 ): NativeFleetEngagement[] {
-  return states.flatMap((state, index) => {
+  const directed = states.flatMap((state, index) => {
     if (state.winner !== null) return [];
     const driver = drivers[index]!;
     const source = driver === 'both' ? state.attacker : state[driver];
@@ -37,7 +37,40 @@ export function activeNativeFleetEngagements(
         targetId: target.id,
         label: String(index < pairedCount ? index + 1 : index - pairedCount + 1),
         role: driver === 'both' ? ('duel' as const) : ('support' as const),
+        index,
       },
     ];
   });
+
+  // A native 1v1 service may become one-sided when its enemy is destroyed.
+  // If its survivor and an existing one-sided attacker now target each other,
+  // their TWO original owners form the new logical main duel. They must never
+  // become a 'both' driver: that would double-tick the promoted opponent.
+  const main: NativeFleetEngagement[] = [];
+  const claimed = new Set<string>();
+  for (const link of directed) {
+    if (link.role !== 'duel') continue;
+    main.push(link);
+    claimed.add(link.sourceId);
+    claimed.add(link.targetId);
+  }
+  for (const link of directed) {
+    if (link.role !== 'support' || link.index >= pairedCount) continue;
+    if (claimed.has(link.sourceId) || claimed.has(link.targetId)) continue;
+    const reciprocal = directed.find(
+      (candidate) =>
+        candidate !== link &&
+        candidate.role === 'support' &&
+        candidate.sourceId === link.targetId &&
+        candidate.targetId === link.sourceId
+    );
+    if (!reciprocal) continue;
+    main.push({ ...link, role: 'duel' });
+    claimed.add(link.sourceId);
+    claimed.add(link.targetId);
+  }
+  return [
+    ...main,
+    ...directed.filter((link) => link.role === 'support' && !claimed.has(link.sourceId)),
+  ];
 }
