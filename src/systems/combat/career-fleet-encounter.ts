@@ -15,8 +15,7 @@ import type {
 const CONTACT_RANGE = 650;
 
 function participant(npc: SectorNpcState): ConflictParticipant {
-  if (npc.id.startsWith('security-drone:'))
-    return { id: npc.id, role: 'drone', armed: true };
+  if (npc.id.startsWith('security-drone:')) return { id: npc.id, role: 'drone', armed: true };
   if (npc.pirate || npc.job === 'pirate') {
     return {
       id: npc.id,
@@ -121,8 +120,7 @@ function createSectorFleetEncounter(
           victimId: victim,
           witnessedBy: [npc.id],
         });
-        if (!activeActors().some((actor) => conflict.isHostile(npc.id, actor.setup.id)))
-          continue;
+        if (!activeActors().some((actor) => conflict.isHostile(npc.id, actor.setup.id))) continue;
         const setup = npcCombatant(npc);
         if (!setup) continue;
         if (fleet.addShip({ id: npc.id, team: kind.role, setup }, npc.id)) {

@@ -296,12 +296,7 @@ function beginBackgroundCombat(
   const attackerSetup = npcCombatant(attacker);
   const defenderSetup = npcCombatant(defender);
   if (!attackerSetup || !defenderSetup) return;
-  const fleet = createNpcFleetEncounter(
-    attacker,
-    defender,
-    runtime.options.sectorNpcs.npcs,
-    arena
-  );
+  const fleet = createNpcFleetEncounter(attacker, defender, runtime.options.sectorNpcs.npcs, arena);
   const key = pairKey(attacker.id, defender.id);
   runtime.options.sectorNpcs.markEngaged(attacker, 'npc', defender.id, 'Gefecht');
   runtime.options.sectorNpcs.markEngaged(defender, 'npc', attacker.id, 'Gefecht');

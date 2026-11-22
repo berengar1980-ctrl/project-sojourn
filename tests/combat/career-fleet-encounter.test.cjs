@@ -64,14 +64,16 @@ assert.equal(session.members.has('miner'), true);
 // Background NPC fights share the very same coordinator. Nearby security
 // and a capable patrol should oppose pirates without separate combat code.
 const victim = npc('victim', 'freighter', 10);
-const witnesses = [victim, npc('pirate-x', 'pirate'), npc('patrol-x', 'patrol'), npc('security-drone:x', 'patrol')];
+const witnesses = [
+  victim,
+  npc('pirate-x', 'pirate'),
+  npc('patrol-x', 'patrol'),
+  npc('security-drone:x', 'patrol'),
+];
 const background = createNpcFleetEncounter(witnesses[1], victim, witnesses, area);
 const joinedBackground = [];
-background.joinNearby(
-  { x: 100, y: 100 },
-  witnesses,
-  worldPosition,
-  (target) => joinedBackground.push(target.id)
+background.joinNearby({ x: 100, y: 100 }, witnesses, worldPosition, (target) =>
+  joinedBackground.push(target.id)
 );
 assert(joinedBackground.includes('patrol-x'));
 assert(joinedBackground.includes('security-drone:x'));
