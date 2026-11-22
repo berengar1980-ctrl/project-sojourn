@@ -19,10 +19,6 @@ const groups = [
   { group: 'drone', initial: 0, joining: 1, afterSeconds: 15 },
 ];
 const generated = createFleetScenarioRoster(groups);
-const shipDefinitions = loadStandaloneTypeScriptModule(
-  root,
-  'src/systems/ships/ship-registry.ts'
-);
 for (let pass = 0; pass < 50; pass += 1) {
   const civilians = createFleetScenarioRoster([
     { group: 'npc', initial: 10, joining: 10, afterSeconds: 5 },
