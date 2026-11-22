@@ -1846,3 +1846,20 @@ Ohne anfänglichen Feindkontakt verbleibt der Simulator zunächst im
 Wartebildschirm und startet die physische Kampfkarte beim ersten
 feindlichen Kontakt. Die neutrale Vorbereitungsansicht ist damit
 noch keine vollständig laufende taktische Karte.
+
+## Review-Log (2026-11-22): FleetCombat-Duelllinien und Sicherheitsdrohnen
+
+**Keine Statusänderung** an bestehenden Feature-IDs. Die Darstellung
+neu gebildeter, gegenseitiger 1vs1-Zielbeziehungen wurde korrigiert: Ein
+Überlebender eines abgeschlossenen Duells und ein zusätzlich beigetretenes
+Schiff erhalten wieder eine durchgezogene Duelllinie und D-Kennzeichnung.
+Weitere einzelne Angreifer behalten ihre gestrichelten Unterstützungslinien.
+Die physische Simulations- und KI-Zuständigkeit bleibt pro Schiff eindeutig.
+
+Sicherheitsdrohnen verwenden im PvP-Kampagnentestlabor jetzt die vorhandene
+GC-87-Darstellung statt eines zufälligen Patrouillen-Schiffssprites. Die
+Mk-III-Waffenbelegung wurde mit dem bisherigen Kampagnenausrüstungsdienst
+in eine gemeinsame zustandslose Auswahlfunktion überführt. Mk-III-Hülle,
+-Schild und Reaktor sowie die bekannten Fraktionsregeln bleiben erhalten.
+Die Behebung ergänzt keine neuen Kampagnen-Speicherfelder und ändert die
+bekannte Einschränkung beim Restore laufender Mehrparteiengefechte nicht.
