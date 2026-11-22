@@ -1777,3 +1777,17 @@ Neue Tests behandeln 2v2-Nachrücken, Flucht, 2v3-Herauslösen,
 Flucht des abgefangenen Angreifers, 3v3-Nähe und 5v5-Fortsetzung.
 Globale Kollateraltreffer/Traktorwirkung über mehrere Teilduelle
 sind weiterhin nicht Teil dieser Ausbaustufe.
+
+## Review-Log (2026-11-22): Kennzeichnung der Hauptduelle und Zusatzangreifer
+
+**Keine Statusänderung** der historischen Voidbound-/Sojourn-Feature-IDs.
+Die FleetCombat-Testkarte markiert pro initialem Original-1vs1-Paar beide
+Schiffe mit derselben `D1`- bis `D5`-Kennung. Überzählige sowie nach
+Abschuss oder Flucht neu zugewiesene einseitige Angreifer tragen ein
+goldenes `+1` bis `+5`. Die Markierungen folgen dem tatsächlich aktiven
+Kampfservice und Ziel, nicht einer starren Startpaarung.
+
+Dünne Verbindungslinien zeigen die Hauptpaare, gestrichelte Linien
+die aktuellen zusätzlichen Ziele; letztere lassen sich gemeinsam mit
+den Hauptverbindungen ausblenden. Unveränderte Karriere-, Save- und
+1vs1-Standardpfade; keine neue Flotten-Kampf-Engine.
