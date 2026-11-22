@@ -16,7 +16,7 @@
     "combat:simulate": "node scripts/simulate-combat.cjs",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write src/systems/combat/native-fleet-reassignment.ts src/systems/combat/parallel-native-duels.ts tests/combat/native-fleet-target-reassignment.test.cjs && git diff -- src/systems/combat/native-fleet-reassignment.ts src/systems/combat/parallel-native-duels.ts tests/combat/native-fleet-target-reassignment.test.cjs && prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run check:quick && npm run build",
