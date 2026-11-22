@@ -26,6 +26,7 @@ function scenarioDistance(a: NativeDuelShip, b: NativeDuelShip): number {
 }
 
 /** World and combat use the same campaign NPC reaction and drone LOS services. */
+// eslint-disable-next-line complexity
 function canJoinWorldCombat(
   ship: NativeDuelShip,
   opponent: NativeDuelShip,
