@@ -77,6 +77,31 @@ for (const id of ['a', 'b', 'c']) {
   );
 }
 
+// Civilians are not target actors, but their world hulls must block the exact
+// same native combat geometry. The collision response moves only the duelist.
+const { shipContact } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-ship-contact-geometry.ts'
+);
+const contactFleet = createParallelNativeDuels([a, b], arena, 2250);
+const neutral = {
+  id: 'neutral-freighter',
+  shipId: 'patrol-60m-variant-01',
+  position: { x: 710, y: 800 },
+  headingRadians: 0,
+};
+contactFleet.setBystanders([neutral]);
+assert.equal(contactFleet.getActor(neutral.id), null, 'neutral is not enlisted');
+contactFleet.tick(0.08);
+const collision = shipContact(contactFleet.getActor('a'), {
+  ...neutral,
+  setup: { shipId: neutral.shipId },
+});
+assert(
+  collision.distance >= collision.required - 0.1,
+  'shared native collision solver must keep ships from flying through neutral NPC hulls'
+);
+assert.equal(contactFleet.getActor(neutral.id), null, 'collision must not enlist neutral');
 // The campaign must publish the combat actor pose back to the very same
 // SectorNpcState read by the existing navigation and other world services.
 const enemy = {
