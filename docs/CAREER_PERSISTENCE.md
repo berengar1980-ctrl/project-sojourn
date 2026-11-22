@@ -1067,3 +1067,21 @@ Projektionshelfer `native-fleet-engagements.ts` ist als `derived`
 klassifiziert. Die originalen 1vs1-Anzeigen, sämtliche
 Karriere-Checkpoint-Schemata und der Wiederherstellungsablauf bleiben
 unverändert.
+
+### Nachrücken zum neuen FleetCombat-Hauptduell und Anzeigemenü
+
+Fällt in einem temporären 1vs1 plus Zusatzangreifern der Hauptgegner
+durch Zerstörung oder Flucht aus, bevorzugt der verbleibende Pilot einen
+bereits gegen ihn kämpfenden Zusatzangreifer. Die Zielreferenz des
+Originaldienstes wird auf das bereits existierende Schiff umgelenkt.
+Wenn beide unveränderten KI-Eigentümer sich gegenseitig anvisieren,
+wird diese Verbindung als neues Hauptduell dargestellt. Die beiden
+Kampfservices bleiben ausnahmslos einseitige Treiber – keine Kopien,
+kein zusätzlicher Physik-/KI-/Cooldown-Tick.
+
+Das kleine FleetCombat-Anzeigemenü speichert ausschließlich
+Browserpräferenzen (Linien, Rollen, Schiffsnamen, Manöver,
+Boostanzeige, Duellübersicht, HUD und Meldungen) unter
+`sojourn.fleet-combat.display.v1`. Es verändert keine taktischen
+Eingaben und kein Karriere-Speicherschema. Das reguläre 1vs1
+behält seine unveränderte separate Kampfoberfläche.
