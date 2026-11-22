@@ -113,12 +113,8 @@ export class FleetNativeCombatRenderer {
     const visibility = nativeFleetVisibility(model, parallelDuels, departedIds);
     this.hiddenShipIds = visibility.escaped;
     this.hiddenDamageIds = visibility.damageHidden;
-    this.fleetMarkers.update(
-      [model, ...parallelDuels],
-      engagements,
-      visibility.escaped,
-      showEngagementLines
-    );
+    const visibleDuels = [model, ...parallelDuels];
+    this.fleetMarkers.update(visibleDuels, engagements, visibility.escaped, showEngagementLines);
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
@@ -317,12 +313,7 @@ export class FleetNativeCombatRenderer {
       width,
       height
     );
-    this.fleetMarkers.drawBadges(
-      this.context,
-      (ship) => this.shipGeometry(ship, width, height),
-      width,
-      height
-    );
+    this.fleetMarkers.drawBadges(this.context, (ship) => this.shipGeometry(ship, width, height));
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
   }
