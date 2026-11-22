@@ -126,8 +126,10 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       // The native PvP renderer owns combat; career bystanders remain in its scene overlay.
       return;
     }
-    if (this.sharedCombatRenderer && this.sharedCombatActive)
+    if (this.sharedCombatRenderer && this.sharedCombatActive) {
       (this.camera as PvPMapCamera).restorePose(this.sharedCombatRenderer.cameraPose());
+      this.sharedCombatRenderer.suspend();
+    }
     this.sharedCombatActive = false;
     // Retain the same native sprite/asteroid/camera renderer for later contacts.
     // Do not destroy and reload it after every duel or reinforcement.
