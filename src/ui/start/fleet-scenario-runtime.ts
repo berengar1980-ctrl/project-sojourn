@@ -140,6 +140,8 @@ export interface FleetScenarioRuntime {
  * It adds one physical combatant to the existing native fleet rather than
  * spawning a new parallel combat or duplicating a ship's simulation.
  */
+// The lab wires pre-existing field AI and native FleetCombat; it owns no physics.
+// eslint-disable-next-line max-lines-per-function
 export function createFleetScenarioRuntime(
   roster: readonly FleetScenarioShip[],
   arena: StrategicCombatArenaOptions,
