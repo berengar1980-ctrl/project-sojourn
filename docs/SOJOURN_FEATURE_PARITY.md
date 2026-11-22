@@ -1760,3 +1760,20 @@ Die separate FleetCombat-Darstellung unterdrückt doppelte Schiffssprites
 und Schadenspartikel. Reguläre 1vs1-GUI, Karriere-Speicherung und
 NPC-Wirtschaft bleiben unverändert. Diese PvP-Testausbaustufe garantiert
 noch keinen globalen automatischen Zielwechsel für beliebige N-vs-M-Gefechte.
+
+## Review-Log (2026-11-22): Nachrücken und Herauslösen in FleetCombat
+
+**Keine Statusänderung** der historischen Voidbound-/Sojourn-Feature-IDs.
+Die nativen PvP-Duelle bleiben zunächst unabhängig; beendet ein Schiff
+seinen Gegner durch Abschuss oder Flucht, kann der Überlebende in einen
+nahen laufenden Kampf nachrücken. Bei einem bestehenden 1v2 wird
+vorrangig ein zusätzlicher Angreifer abgefangen, der nicht das bisherige
+Fokusziel des befreundeten Schiffs ist. Dessen echter Combatant wird
+ohne zweite AI-Instanz auf das freie Schiff umgelenkt; beide
+Kontrollservices verwenden weiterhin die bestehenden 1vs1-Funktionen.
+
+Die Änderung gilt für Teamgrößen 1 bis 5 pro Seite.
+Neue Tests behandeln 2v2-Nachrücken, Flucht, 2v3-Herauslösen,
+Flucht des abgefangenen Angreifers, 3v3-Nähe und 5v5-Fortsetzung.
+Globale Kollateraltreffer/Traktorwirkung über mehrere Teilduelle
+sind weiterhin nicht Teil dieser Ausbaustufe.
