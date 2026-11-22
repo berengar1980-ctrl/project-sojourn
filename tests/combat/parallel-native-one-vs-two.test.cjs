@@ -220,7 +220,8 @@ assert(
   'an escaped ship must remain excluded even when its old duel is retargeted'
 );
 
-// In contrast, 2v2 remains two completely separate, original 1v1 pairs.
+// In contrast, 2v2 starts as two independent, original 1v1 pairs.
+// Only AFTER one duel ends may its survivor join the other active encounter.
 const twoVsTwo = createParallelNativeDuels(
   [ship('a1', 'a'), ship('a2', 'a'), ship('b1', 'b'), ship('b2', 'b')],
   arena(),
@@ -231,7 +232,8 @@ assert.equal(twoVsTwo.supporters.length, 0);
 const independent = twoVsTwo.duels[1].getParallelActor('defender');
 twoVsTwo.duels[0].getParallelActor('defender').hullHp = 0;
 twoVsTwo.tick(0.08);
-assert.equal(twoVsTwo.duels[0].getSnapshot().winner, 'attacker');
+assert.equal(twoVsTwo.duels[0].getSnapshot().winner, null);
+assert.strictEqual(twoVsTwo.duels[0].getParallelActor('defender'), independent);
 assert.strictEqual(twoVsTwo.duels[1].getParallelActor('defender'), independent);
 assert.equal(twoVsTwo.duels[1].getSnapshot().winner, null);
 
