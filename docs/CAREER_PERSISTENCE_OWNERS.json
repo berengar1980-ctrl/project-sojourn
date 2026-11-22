@@ -218,6 +218,10 @@
     "src/systems/combat/career-fleet-encounter.ts": {
       "mode": "transient",
       "reason": "Live campaign fleet membership and witnesses, writes hull to authoritative SectorNpcState; additional encounter members are not currently restored by Career Save."
+    },
+    "src/systems/combat/star-map-engagement-fleet-resolution.ts": {
+      "mode": "transient",
+      "reason": "Reconciles transient battle outcomes into existing sector NPC and player ship state; owns no extra persisted state."
     }
   }
 }
