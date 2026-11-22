@@ -13,7 +13,7 @@ function npc(id, job, aggression = 80) {
     id,
     name: id,
     job,
-    shipId: 'patrol-60m',
+    shipId: 'patrol-60m-variant-01',
     pirate: job === 'pirate',
     pirateMark: job === 'pirate' ? 'black-tide' : undefined,
     aggression,
@@ -33,7 +33,7 @@ const ships = [miner, drone, pirate, patrol];
 const player = {
   id: 'player',
   name: 'Player',
-  shipId: 'patrol-60m',
+  shipId: 'patrol-60m-variant-01',
   hullHp: 800,
   shieldHp: 500,
   weapons: [],
