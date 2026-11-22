@@ -19,6 +19,15 @@ export interface NativeDuelShip {
   readonly team: 'a' | 'b';
   readonly setup: StrategicCombatantSetup;
 }
+/** Live directed engagements for the FleetCombat map; no duplicate ship objects. */
+export interface NativeFleetEngagement {
+  readonly sourceId: string;
+  readonly targetId: string;
+  /** 1-based original duel index, or 1-based initial extra-attacker index. */
+  readonly label: string;
+  readonly role: 'duel' | 'support';
+}
+
 export interface ParallelNativeDuelSnapshot {
   readonly duels: readonly StrategicCombatSnapshot[];
   /** One-sided original 1vs1 AI participants; defender is a shared live ship. */
@@ -26,6 +35,8 @@ export interface ParallelNativeDuelSnapshot {
   readonly elapsedSeconds: number;
   readonly finished: boolean;
   readonly escapedShipIds: readonly string[];
+  /** A duel draws one solid link; a single-driver reinforcement draws a dashed link. */
+  readonly engagements: readonly NativeFleetEngagement[];
 }
 export interface ParallelNativeDuels {
   readonly duels: readonly StrategicCombatService[];
@@ -236,11 +247,37 @@ export function createParallelNativeDuels(
     const additional = supporters.map((service) => service.getSnapshot());
     const states = [...duels, ...additional];
     const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
+    const engagements: NativeFleetEngagement[] = states.flatMap((state, index) => {
+      if (state.winner !== null) return [];
+      const driver = drivers[index]!;
+      const source = driver === 'both' ? state.attacker : state[driver];
+      const target =
+        driver === 'both'
+          ? state.defender
+          : state[driver === 'attacker' ? 'defender' : 'attacker'];
+      if (
+        source.hullHp <= 0 ||
+        target.hullHp <= 0 ||
+        escaped.has(source.id) ||
+        escaped.has(target.id)
+      ) {
+        return [];
+      }
+      return [
+        {
+          sourceId: source.id,
+          targetId: target.id,
+          label: String(index < pairs.length ? index + 1 : index - pairs.length + 1),
+          role: driver === 'both' ? ('duel' as const) : ('support' as const),
+        },
+      ];
+    });
     cachedSnapshot = {
       duels,
       supporters: additional,
       elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
+      engagements,
       finished: nativeFleetFinished(actors, escaped, teams, states),
     };
     return cachedSnapshot;
