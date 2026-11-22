@@ -226,6 +226,10 @@
     "src/systems/combat/star-map-engagement-runtime-types.ts": {
       "mode": "derived",
       "reason": "Type-only shared transient engagement runtime contract; no new state or checkpoint owner."
+    },
+    "src/systems/ships/security-drone-weapon-loadout.ts": {
+      "mode": "derived",
+      "reason": "Pure shared selection of compatible Mk III security-drone weapons, used by campaign and PvP; carries no saved state."
     }
   }
 }

@@ -24,7 +24,20 @@ assert.equal(generated.filter((ship) => ship.id === 'player').length, 1);
 assert.equal(generated.find((ship) => ship.id === 'npc-2').arrivalSeconds, 5);
 assert.equal(generated.find((ship) => ship.id === 'pirates-yellow-2').arrivalSeconds, 10);
 assert.equal(generated.find((ship) => ship.id === 'pirates-red-1').arrivalSeconds, 12);
-assert.equal(generated.find((ship) => ship.id === 'drone-1').arrivalSeconds, 15);
+const testDrone = generated.find((ship) => ship.id === 'security-drone:test-1');
+assert.equal(testDrone.arrivalSeconds, 15);
+const { getShipComponent } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/ships/ship-component-service.ts'
+);
+assert(testDrone.draft.weapons.some(Boolean), 'security drone needs working guns');
+assert(
+  testDrone.draft.weapons.filter(Boolean).every((id) => getShipComponent('weapon', id)?.tier === 3),
+  'FleetCombat security drones must use actual Mk III weapons'
+);
+assert.equal(testDrone.draft.hullId, 'hull3');
+assert.equal(testDrone.draft.shieldId, 'shield3');
+assert(testDrone.draft.reactorId.includes('reactor3'), 'security drones need Mk III power');
 assert(
   generated
     .filter((ship) => ship.group === 'pirates-yellow' || ship.group === 'pirates-red')
@@ -57,13 +70,13 @@ const roster = [
   entry('npc-1', 'npc', 0),
   entry('pirates-yellow-1', 'pirates-yellow', 0),
   entry('pirates-red-1', 'pirates-red', 0),
-  entry('drone-1', 'drone', 0.16),
+  entry('security-drone:test-1', 'drone', 0.16),
 ];
 const scenario = createFleetScenarioRuntime(roster, arena, 1234, 'none');
 const originalFleet = scenario.fleet;
 assert(originalFleet, 'pirate sighting starts a live encounter on the common map');
 assert.equal(scenario.arrivedCount, 4);
-assert.equal(originalFleet.getActor('drone-1'), null);
+assert.equal(originalFleet.getActor('security-drone:test-1'), null);
 const playerActor = originalFleet.getActor('player');
 assert(playerActor);
 assert.equal(originalFleet.getActor('pirates-yellow-1').setup.pirateMark, 'broken-spear');
@@ -71,7 +84,10 @@ assert.equal(originalFleet.getActor('pirates-red-1').setup.pirateMark, 'black-ti
 scenario.tick(0.08);
 scenario.tick(0.08);
 assert.equal(scenario.fleet, originalFleet, 'reinforcements keep the same native combat');
-assert(originalFleet.getActor('drone-1'), 'security drone joins at its scheduled time');
+assert(
+  originalFleet.getActor('security-drone:test-1'),
+  'security drone joins at its scheduled time'
+);
 assert.equal(originalFleet.getActor('player'), playerActor, 'the player is never recreated');
 assert.equal(scenario.nextArrivalSeconds(), null);
 assert.equal(scenario.arrivedCount, 5);
@@ -101,12 +117,16 @@ assert(delayed.fleet.getActor('npc-1'));
 // In the player-attacks-NPC scenario the observing drone can engage the
 // attacker without changing its permanent anti-pirate policy.
 const defenderScenario = createFleetScenarioRuntime(
-  [entry('player', 'player', 0), entry('npc-1', 'npc', 0), entry('drone-1', 'drone', 0)],
+  [
+    entry('player', 'player', 0),
+    entry('npc-1', 'npc', 0),
+    entry('security-drone:test-1', 'drone', 0),
+  ],
   arena,
   9012,
   'player-attacks-npc'
 );
 assert(defenderScenario.fleet);
-assert(defenderScenario.fleet.getActor('drone-1'));
+assert(defenderScenario.fleet.getActor('security-drone:test-1'));
 assert.equal(defenderScenario.fleet.getSnapshot().finished, false);
 console.log('PASS FleetCombat lab: fixed player, markings, timed same-map joins and drone defence');

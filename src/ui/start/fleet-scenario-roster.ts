@@ -1,7 +1,14 @@
+import { securityDroneMk3WeaponIds } from '../../systems/ships/security-drone-weapon-loadout';
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
-import { fitsWeaponHardpoint, getAllShipDefinitions, getShipDefinition } from '../../systems/ships';
+import {
+  fitsWeaponHardpoint,
+  getAllShipDefinitions,
+  getShipDefinition,
+  calculateShipModeEnergy,
+  createShipyardVariantId,
+} from '../../systems/ships';
 import type { DuelDraft } from './duel-combatant-setup';
 
 export type FleetScenarioGroup = 'npc' | 'pirates-yellow' | 'pirates-red' | 'drone';
@@ -68,14 +75,28 @@ function randomDraft(group: FleetScenarioRole): { name: string; draft: DuelDraft
     );
     return compatible.length ? pick(compatible).id : '';
   });
+  const securityDrone = group === 'drone';
+  const equipped = securityDrone ? securityDroneMk3WeaponIds(ship) : weaponIds;
+  const reactor = securityDrone ? 'reactor3' : 'reactor4';
+  const reactorId =
+    securityDrone &&
+    calculateShipModeEnergy({
+      reactor: [reactor],
+      engine: ['engine1'],
+      hull: ['hull3'],
+      shield: ['shield3'],
+      weapon: equipped.filter(Boolean),
+    }).combat > calculateShipModeEnergy({ reactor: [reactor] }).output
+      ? (createShipyardVariantId('reactor', reactor, 'performance', 100) ?? reactor)
+      : reactor;
   return {
-    name: ship.name,
+    name: securityDrone ? 'Sicherheitsdrohne GC-87' : ship.name,
     draft: {
       shipId: ship.id,
-      weapons: weaponIds,
-      mines: [pick(mines).id],
+      weapons: equipped,
+      mines: securityDrone ? [] : [pick(mines).id],
       crewId: pick(crewDefinitions).id,
-      reactorId: 'reactor4',
+      reactorId,
       engineId: 'engine1',
       shieldId: group === 'drone' ? 'shield3' : 'shield1',
       hullId: group === 'drone' ? 'hull3' : 'hull1',
@@ -98,7 +119,10 @@ export function createFleetScenarioRoster(
     const afterSeconds = Math.max(0, Math.min(3600, setting.afterSeconds));
     for (let index = 0; index < initial + joining; index += 1) {
       result.push({
-        id: setting.group + '-' + (index + 1),
+        id:
+          setting.group === 'drone'
+            ? 'security-drone:test-' + (index + 1)
+            : setting.group + '-' + (index + 1),
         group: setting.group,
         arrivalSeconds: index < initial ? 0 : afterSeconds,
         ...randomDraft(setting.group),
