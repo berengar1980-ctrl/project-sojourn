@@ -371,9 +371,9 @@ export function createStrategicCombatService(
   return {
     exportCareerState: () => captureCareerStrategicCombat(runtime),
     getParallelActor: (side) => runtimeCombatant(runtime, side),
-    retargetParallelSurvivor(side, opponent) {
+    retargetParallelSurvivor(side, opponent, orphaned = false) {
       if (!sharedArenaPhysics) return false;
-      const continued = retargetNativeFleetSurvivor(runtime, side, opponent);
+      const continued = retargetNativeFleetSurvivor(runtime, side, opponent, orphaned);
       if (continued) fleetDrivenSide = side;
       return continued;
     },

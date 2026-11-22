@@ -1,4 +1,9 @@
 import { clearCombatSpawn } from './combat-field-spawns';
+import {
+  defaultFleetHostility,
+  hasActiveFleetHostilities,
+  type FleetHostility,
+} from './native-fleet-hostility';
 import { createStrategicCombatService } from './strategic-combat-service';
 import { buildCombatArena } from './strategic-combat-arena';
 import { advanceNativeFleetFrame, escapedNativeFleetShips } from './native-fleet-advance';
@@ -21,7 +26,7 @@ import type {
 
 export interface NativeDuelShip {
   readonly id: string;
-  readonly team: 'a' | 'b';
+  readonly team: string;
   readonly setup: StrategicCombatantSetup;
 }
 export interface ParallelNativeDuelSnapshot {
@@ -37,13 +42,16 @@ export interface ParallelNativeDuelSnapshot {
 export interface ParallelNativeDuels {
   readonly duels: readonly StrategicCombatService[];
   readonly supporters: readonly StrategicCombatService[];
+  getActor(id: string): MutableCombatant | null;
+  /** Bring an existing campaign or test ship into the live battle exactly once. */
+  addShip(ship: NativeDuelShip, conflictKey?: string): boolean;
   tick(dt: number): ParallelNativeDuelSnapshot;
   getSnapshot(): ParallelNativeDuelSnapshot;
 }
 
 function fieldStart(
   arena: StrategicCombatArenaOptions,
-  team: 'a' | 'b',
+  team: string,
   index: number,
   count: number
 ): CombatPoint {
@@ -179,20 +187,83 @@ function nativeFleetRadii(ships: readonly MutableCombatant[]): Map<string, numbe
 function nativeFleetFinished(
   actors: readonly MutableCombatant[],
   escaped: ReadonlySet<string>,
-  teams: ReadonlyMap<string, 'a' | 'b'>,
-  states: readonly StrategicCombatSnapshot[]
+  factions: ReadonlyMap<string, string>,
+  hostility: FleetHostility
 ): boolean {
-  const active = (team: 'a' | 'b') =>
-    actors.some(
-      (ship) => ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === team
-    );
-  return !active('a') || !active('b') || states.every((state) => state.winner !== null);
+  return !hasActiveFleetHostilities(actors, escaped, factions, hostility);
 }
 
+interface NativeFleetJoinContext {
+  readonly services: StrategicCombatService[];
+  readonly supporters: StrategicCombatService[];
+  readonly actors: MutableCombatant[];
+  readonly drivers: NativeFleetDriver[];
+  readonly teams: Map<string, string>;
+  readonly escaped: ReadonlySet<string>;
+  readonly radii: Map<string, number>;
+  readonly arena: StrategicCombatArenaOptions;
+  readonly obstacleSet: () => StrategicCombatObstacle[];
+  readonly seed: number;
+  readonly hostility: FleetHostility;
+}
+
+function joinNativeFleetShip(
+  context: NativeFleetJoinContext,
+  ship: NativeDuelShip,
+  conflictKey?: string
+): boolean {
+  const { actors, teams, hostility, escaped, arena, seed, obstacleSet } = context;
+  const id = ship.setup.id;
+  if (actors.some((actor) => actor.setup.id === id)) return false;
+  const affiliation = conflictKey ?? ship.team;
+  const target = actors
+    .filter(
+      (actor) =>
+        actor.hullHp > 0 &&
+        !escaped.has(actor.setup.id) &&
+        (hostility(affiliation, teams.get(actor.setup.id)!) ||
+          hostility(teams.get(actor.setup.id)!, affiliation))
+    )
+    .sort((a, b) => a.setup.id.localeCompare(b.setup.id))[0];
+  if (!target) return false;
+  const shipIndex = actors.length;
+  const support = createStrategicCombatService(
+    ship.setup,
+    target.setup,
+    seed + shipIndex,
+    pairFields(
+      arena,
+      obstacleSet(),
+      ship,
+      { id: target.setup.id, team: teams.get(target.setup.id)!, setup: target.setup },
+      clearCombatSpawn(arena, {
+        x: arena.width * 0.5,
+        y: (arena.height * ((shipIndex % 9) + 1)) / 10,
+      }),
+      target.position
+    ),
+    undefined,
+    true,
+    target
+  );
+  const newActor = nativeActor(support, 'attacker');
+  context.supporters.push(support);
+  context.services.push(support);
+  actors.push(newActor);
+  context.drivers.push('attacker');
+  teams.set(id, affiliation);
+  context.radii.set(id, nativeFootprintRadius(newActor));
+  return true;
+}
+
+// The shared frame coordinator keeps its mutable world and AI-owner maps together.
+// eslint-disable-next-line max-lines-per-function
 export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
-  seed = 1
+  seed = 1,
+  hostility: FleetHostility = defaultFleetHostility,
+  conflictKeys?: ReadonlyMap<string, string>
 ): ParallelNativeDuels {
   const first = ships.filter((ship) => ship.team === 'a');
   const second = ships.filter((ship) => ship.team === 'b');
@@ -229,7 +300,11 @@ export function createParallelNativeDuels(
   const actors = nativeTeamActors(pairs, supporters);
   const recordedWrecks = new Set<string>();
   const escapedRecords = new Set<string>();
-  const teams = new Map(ships.map((ship) => [ship.setup.id, ship.team] as const));
+  // An encounter-aware policy may use individual ship IDs rather than broad
+  // A/B test teams, allowing distinct player/NPC/drone/pirate relations.
+  const teams = new Map<string, string>(
+    ships.map((ship) => [ship.setup.id, conflictKeys?.get(ship.setup.id) ?? ship.team] as const)
+  );
   const drivers: NativeFleetDriver[] = [
     ...pairs.map(() => 'both' as const),
     ...supporters.map(() => 'attacker' as const),
@@ -250,7 +325,7 @@ export function createParallelNativeDuels(
       elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
       engagements,
-      finished: nativeFleetFinished(actors, escaped, teams, states),
+      finished: nativeFleetFinished(actors, escaped, teams, hostility),
     };
     return cachedSnapshot;
   };
@@ -258,6 +333,28 @@ export function createParallelNativeDuels(
   return {
     duels: pairs,
     supporters,
+    addShip(ship, conflictKey) {
+      const joined = joinNativeFleetShip(
+        {
+          services,
+          supporters,
+          actors,
+          drivers,
+          teams,
+          escaped: escapedRecords,
+          radii: radiusById,
+          arena: fleetArena,
+          obstacleSet,
+          seed,
+          hostility,
+        },
+        ship,
+        conflictKey
+      );
+      if (joined) cachedSnapshot = null;
+      return joined;
+    },
+    getActor: (id) => actors.find((actor) => actor.setup.id === id) ?? null,
     getSnapshot,
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
@@ -283,6 +380,7 @@ export function createParallelNativeDuels(
         drivers,
         ships: actors,
         teams,
+        hostility,
         escaped: escapedRecords,
       });
       return getSnapshot();

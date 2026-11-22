@@ -1,3 +1,8 @@
+import {
+  defaultFleetHostility,
+  isFleetHostile,
+  type FleetHostility,
+} from './native-fleet-hostility';
 import type {
   MutableCombatant,
   StrategicCombatService,
@@ -10,7 +15,8 @@ interface FleetAssignment {
   readonly services: readonly StrategicCombatService[];
   readonly drivers: NativeFleetDriver[];
   readonly ships: readonly MutableCombatant[];
-  readonly teams: ReadonlyMap<string, 'a' | 'b'>;
+  readonly teams: ReadonlyMap<string, string>;
+  readonly hostility?: FleetHostility;
   readonly escaped: ReadonlySet<string>;
 }
 
@@ -32,7 +38,7 @@ function live(ship: MutableCombatant, context: FleetAssignment): boolean {
 }
 
 function enemy(a: MutableCombatant, b: MutableCombatant, context: FleetAssignment): boolean {
-  return context.teams.get(a.setup.id) !== context.teams.get(b.setup.id);
+  return isFleetHostile(a, b, context.teams, context.hostility ?? defaultFleetHostility);
 }
 
 /** Every physical ship has precisely one owning AI/physics driver. */
@@ -61,13 +67,21 @@ function freeCombatant(
 ): { ship: MutableCombatant; side: StrategicCombatSide } | null {
   const state = service.getSnapshot();
   if (driven === 'both') {
-    if (
-      state.winner === null ||
-      (state.outcomeReason !== 'destruction' && state.outcomeReason !== 'escape')
-    )
-      return null;
-    const ship = actor(service, state.winner);
-    return live(ship, context) ? { ship, side: state.winner } : null;
+    if (state.winner !== null) {
+      if (state.outcomeReason !== 'destruction' && state.outcomeReason !== 'escape') return null;
+      const ship = actor(service, state.winner);
+      return live(ship, context) ? { ship, side: state.winner } : null;
+    }
+    // A shared participant can escape in another service. The fleet frame
+    // correctly skips that service, so it cannot set its own winner first.
+    // Release the surviving actor here rather than leaving its AI frozen.
+    const attacker = actor(service, 'attacker');
+    const defender = actor(service, 'defender');
+    if (live(attacker, context) && !live(defender, context))
+      return { ship: attacker, side: 'attacker' };
+    if (live(defender, context) && !live(attacker, context))
+      return { ship: defender, side: 'defender' };
+    return null;
   }
   const side = driven;
   const ship = actor(service, side);
@@ -104,7 +118,7 @@ function chooseTarget(
   const peel: { choice: TargetChoice; distance: number }[] = [];
   for (const friendly of engagements) {
     if (!live(friendly.owner, context) || friendly.owner === free) continue;
-    if (enemy(free, friendly.owner, context)) continue;
+    if (context.teams.get(free.setup.id) !== context.teams.get(friendly.owner.setup.id)) continue;
     const secondaries = engagements.filter(
       (other) =>
         other.target === friendly.owner &&
@@ -154,7 +168,11 @@ export function reassignNativeFleetTargets(context: FleetAssignment): void {
     if (!choice) continue;
     const assigned =
       context.drivers[index] === 'both'
-        ? service.retargetParallelSurvivor?.(available.side, choice.opponent)
+        ? service.retargetParallelSurvivor?.(
+            available.side,
+            choice.opponent,
+            service.getSnapshot().winner === null
+          )
         : service.redirectParallelSupport?.(choice.opponent);
     if (!assigned) continue;
     context.drivers[index] = available.side;

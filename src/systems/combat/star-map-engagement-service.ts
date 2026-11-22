@@ -1,4 +1,5 @@
 import { reactToPlayerAttack } from './player-attack-reaction';
+import { createCareerFleetEncounter, createNpcFleetEncounter } from './career-fleet-encounter';
 import type {
   StarMapEngagementService,
   StarMapEngagementOptions,
@@ -8,7 +9,7 @@ export type {
   StarMapEngagementOptions,
 } from './star-map-engagement-contract';
 import type { SectorNpcState } from '../../core/npc-types';
-import type { BoardingOutcome } from '../../core/boarding-types';
+import type { EngagementRuntime } from './star-map-engagement-runtime-types';
 
 import { canRaidCivilianCargo, pirateMayIntercept } from './pirate-interception-policy';
 import { protectedBySafeDestination } from '../navigation/route-safety';
@@ -20,15 +21,16 @@ import {
   npcIsPiratePrey,
   npcLooksHostileToPatrol,
   npcMayInitiateAttack,
+  rivalPirateGroups,
 } from '../npcs/npc-combat-ai';
 
-import {
-  createStrategicCombatService,
-  type StrategicCombatArenaOptions,
-  type StrategicCombatService,
-} from './strategic-combat-service';
+import type { StrategicCombatArenaOptions } from './strategic-combat-service';
 
-import { npcCombatant, settleNpcCombatPirateLoot } from './npc-combatant-setup';
+import { npcCombatant } from './npc-combatant-setup';
+import {
+  finishPlayerCombat,
+  resolveBackgroundCombats,
+} from './star-map-engagement-fleet-resolution';
 import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
 
 const PLAYER_ID = 'player';
@@ -36,29 +38,6 @@ const PLAYER_ID = 'player';
 const NPC_ATTACK_SCAN_RANGE = 650;
 
 const FLEE_GAIN_REQUIRED = 520;
-
-interface ChaseRecord {
-  readonly attackerId: string;
-  readonly targetId: string;
-  readonly initialDistance: number;
-}
-
-interface BackgroundCombat {
-  readonly first: SectorNpcState;
-  readonly second: SectorNpcState;
-  readonly combat: StrategicCombatService;
-}
-
-interface EngagementRuntime {
-  readonly options: StarMapEngagementOptions;
-  playerChase: ChaseRecord | null;
-  playerCombat: StrategicCombatService | null;
-  playerEnemy: SectorNpcState | null;
-  piratePlayerChase: ChaseRecord | null;
-  readonly npcChases: Map<string, ChaseRecord>;
-  readonly backgroundCombats: Map<string, BackgroundCombat>;
-  attackScanAccumulator: number;
-}
 
 function engagementNpc(runtime: EngagementRuntime, id: string): SectorNpcState | null {
   return runtime.options.sectorNpcs.npcs.find((npc) => npc.id === id) ?? null;
@@ -160,6 +139,13 @@ function npcAttackTarget(
         if (candidate.id === attacker.id || runtime.options.protectsNpc?.(attacker, candidate))
           return false;
         if (!attacker.pirate) return npcLooksHostileToPatrol(candidate);
+        if (rivalPirateGroups(attacker, candidate)) {
+          return (
+            candidate.hullHp > 0 &&
+            !candidate.combatMovement &&
+            (candidate.combatRecoverySeconds ?? 0) <= 0
+          );
+        }
         // Keep existing target filters, but use the same geographic policy as player interception.
         if (!npcIsPiratePrey(candidate)) return false;
         return canRaidCivilianCargo(
@@ -196,14 +182,22 @@ function scanForNpcAttacks(runtime: EngagementRuntime): void {
 function beginPlayerCombat(
   runtime: EngagementRuntime,
   target: SectorNpcState,
-  arena?: StrategicCombatArenaOptions
+  arena?: StrategicCombatArenaOptions,
+  playerInitiated = false
 ): void {
   const playerSetup = runtime.options.getPlayerCombatant();
   const npcSetup = npcCombatant(target);
   if (!npcSetup) return;
   runtime.options.navigation.stopPursuit();
   runtime.options.sectorNpcs.markEngaged(target, 'player', PLAYER_ID, 'Gefecht mit Spieler');
-  runtime.playerCombat = createStrategicCombatService(playerSetup, npcSetup, undefined, arena);
+  runtime.playerFleet = createCareerFleetEncounter(
+    playerSetup,
+    target,
+    runtime.options.sectorNpcs.npcs,
+    playerInitiated,
+    arena
+  );
+  runtime.playerCombat = runtime.playerFleet.combat;
   runtime.playerEnemy = target;
   runtime.playerChase = null;
   runtime.options.log('COMBAT > KONTAKT · KAMPF BEGINNT GEGEN ' + target.name.toUpperCase());
@@ -251,7 +245,7 @@ function updatePlayerChase(runtime: EngagementRuntime): void {
   const npcShip = getShipDefinition(target.shipId);
   if (!npcShip) return;
   if (currentDistance <= engagementRange(playerShip, npcShip)) {
-    beginPlayerCombat(runtime, target);
+    beginPlayerCombat(runtime, target, undefined, true);
     return;
   }
   if (
@@ -274,13 +268,15 @@ function beginBackgroundCombat(
   const attackerSetup = npcCombatant(attacker);
   const defenderSetup = npcCombatant(defender);
   if (!attackerSetup || !defenderSetup) return;
+  const fleet = createNpcFleetEncounter(attacker, defender, runtime.options.sectorNpcs.npcs, arena);
   const key = pairKey(attacker.id, defender.id);
   runtime.options.sectorNpcs.markEngaged(attacker, 'npc', defender.id, 'Gefecht');
   runtime.options.sectorNpcs.markEngaged(defender, 'npc', attacker.id, 'Gefecht');
   runtime.backgroundCombats.set(key, {
     first: attacker,
     second: defender,
-    combat: createStrategicCombatService(attackerSetup, defenderSetup, undefined, arena),
+    combat: fleet.combat,
+    fleet,
   });
   runtime.npcChases.delete(attacker.id);
   runtime.options.log(
@@ -317,21 +313,6 @@ function updateNpcChases(runtime: EngagementRuntime): void {
   }
 }
 
-function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: number): void {
-  for (const [key, entry] of [...runtime.backgroundCombats]) {
-    const model = entry.combat.tick(deltaSeconds);
-    if (!model.winner) continue;
-    entry.first.hullHp = Math.round(model.attacker.hullHp);
-    entry.second.hullHp = Math.round(model.defender.hullHp);
-    runtime.options.onNpcCombatEnded?.(model, entry.first, entry.second);
-    settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
-    runtime.options.sectorNpcs.recoverFromCombat(entry.first, 'Nach Gefecht');
-    runtime.options.sectorNpcs.recoverFromCombat(entry.second, 'Nach Gefecht');
-    runtime.backgroundCombats.delete(key);
-    runtime.options.log('NPC COMBAT > ' + model.lastEvent.toUpperCase());
-  }
-}
-
 function engageNpc(
   runtime: EngagementRuntime,
   npcId: string,
@@ -341,7 +322,7 @@ function engageNpc(
   const target = engagementNpc(runtime, npcId);
   if (!target || target.hullHp <= 0) return false;
   runtime.options.onPlayerAttack?.(target);
-  beginPlayerCombat(runtime, target, arena);
+  beginPlayerCombat(runtime, target, arena, true);
   return runtime.playerCombat !== null;
 }
 
@@ -388,42 +369,19 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
   updateNpcChases(runtime);
   resolveBackgroundCombats(runtime, deltaSeconds);
   if (runtime.playerCombat) {
-    const model = runtime.playerCombat.tick(deltaSeconds);
-    if (runtime.playerEnemy) runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
+    if (runtime.playerFleet) {
+      runtime.playerFleet.joinNearby(
+        runtime.options.navigation.getSnapshot().currentPosition,
+        runtime.options.sectorNpcs.npcs,
+        (npc) => runtime.options.sectorNpcs.livePosition(npc),
+        (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
+      );
+      runtime.playerFleet.tick(deltaSeconds);
+    } else {
+      const model = runtime.playerCombat.tick(deltaSeconds);
+      if (runtime.playerEnemy) runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
+    }
   }
-}
-
-function finishPlayerCombat(runtime: EngagementRuntime, boardingOutcome?: BoardingOutcome): void {
-  if (!runtime.playerCombat || !runtime.playerEnemy) return;
-  const model = runtime.playerCombat.getSnapshot();
-  runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
-  if (
-    (model.defender.hullHp <= 0 && model.attacker.hullHp > 0) ||
-    (model.boardingInitiator !== null && boardingOutcome === 'player_win')
-  ) {
-    runtime.options.onPlayerVictory?.(runtime.playerEnemy.id);
-  }
-  if (model.defender.hullHp <= 0) {
-    runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Kampfunfähig');
-    runtime.options.log(
-      'COMBAT > ' +
-        runtime.playerEnemy.name.toUpperCase() +
-        ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
-    );
-  } else {
-    const reason =
-      boardingOutcome === 'player_win' ? 'Besatzung nach Enterkampf besiegt' : 'Nach Gefecht';
-    runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, reason);
-  }
-  if (model.attacker.hullHp <= 0) {
-    const recovery = runtime.options.navigation.recoverToNearestDock();
-    const destination = recovery.currentLocationId ?? 'UNKNOWN';
-    runtime.options.log(
-      'COMBAT > EIGENES SCHIFF KAMPFUNFÄHIG · BERGUNG NACH ' + destination.toUpperCase()
-    );
-  }
-  runtime.playerCombat = null;
-  runtime.playerEnemy = null;
 }
 
 export function createStarMapEngagementService(
@@ -433,6 +391,7 @@ export function createStarMapEngagementService(
     options,
     playerChase: null,
     playerCombat: null,
+    playerFleet: null,
     playerEnemy: null,
     piratePlayerChase: null,
     npcChases: new Map(),
@@ -468,8 +427,12 @@ export function createStarMapEngagementService(
     syncPlayerPursuitTarget: () => syncPlayerPursuitTarget(runtime),
     tick: (deltaSeconds) => tickEngagements(runtime, deltaSeconds),
     activePlayerCombat: () => runtime.playerCombat,
+    activePlayerFleet: () => runtime.playerFleet?.fleet ?? null,
     activeNpcCombatSnapshots: () =>
-      [...runtime.backgroundCombats.values()].map((entry) => entry.combat.getSnapshot()),
+      [...runtime.backgroundCombats.values()].flatMap((entry) => [
+        ...entry.fleet.fleet.getSnapshot().duels,
+        ...entry.fleet.fleet.getSnapshot().supporters,
+      ]),
     activePlayerEnemy: () => runtime.playerEnemy,
     restorePlayerCareerCombat(combat, enemyId) {
       if (runtime.playerCombat || runtime.playerEnemy) {

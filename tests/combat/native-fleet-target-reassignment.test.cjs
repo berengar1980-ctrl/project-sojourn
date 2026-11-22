@@ -144,6 +144,92 @@ assert.equal(
   1
 );
 
+// Two independent kills leave one survivor on EACH team. The original
+// winner services must resume as reciprocal single-owner attackers.
+const crossed = createParallelNativeDuels(roster(2, 2), arena(), 1210);
+const crossedA = crossed.duels[0].getParallelActor('attacker');
+const crossedB = crossed.duels[1].getParallelActor('defender');
+crossed.duels[0].getParallelActor('defender').hullHp = 0;
+crossed.duels[1].getParallelActor('attacker').hullHp = 0;
+crossed.tick(0.08);
+assert.equal(crossed.getSnapshot().finished, false);
+assert.strictEqual(crossed.duels[0].getParallelActor('defender'), crossedB);
+assert.strictEqual(crossed.duels[1].getParallelActor('attacker'), crossedA);
+assert.equal(crossed.duels[0].getSnapshot().winner, null);
+assert.equal(crossed.duels[1].getSnapshot().winner, null);
+crossedA.tractorThrowCooldown = 3;
+crossedB.tractorThrowCooldown = 3;
+crossed.tick(0.08);
+assert(Math.abs(crossedA.tractorThrowCooldown - 2.92) < 1e-9);
+assert(Math.abs(crossedB.tractorThrowCooldown - 2.92) < 1e-9);
+
+// A target already marked escaped by another native service prevents its
+// original duel from ticking. Fleet reassignment must still release its
+// surviving owner, rather than waiting forever for a local winner.
+const { reassignNativeFleetTargets } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/native-fleet-reassignment.ts'
+);
+const orphan = createParallelNativeDuels(roster(2, 2), arena(), 1211);
+const orphanA = orphan.duels[0].getParallelActor('attacker');
+const orphanB = orphan.duels[1].getParallelActor('defender');
+const orphanDrivers = ['both', 'both'];
+reassignNativeFleetTargets({
+  services: orphan.duels,
+  drivers: orphanDrivers,
+  ships: orphan.duels.flatMap((duel) => [
+    duel.getParallelActor('attacker'),
+    duel.getParallelActor('defender'),
+  ]),
+  teams: new Map([
+    ['a1', 'a'],
+    ['a2', 'a'],
+    ['b1', 'b'],
+    ['b2', 'b'],
+  ]),
+  escaped: new Set(['b1']),
+});
+assert.strictEqual(orphan.duels[0].getParallelActor('attacker'), orphanA);
+assert.strictEqual(orphan.duels[0].getParallelActor('defender'), orphanB);
+assert.equal(orphanDrivers[0], 'attacker');
+assert.equal(orphan.duels[0].getSnapshot().winner, null);
+orphanA.tractorThrowCooldown = 2;
+orphan.duels[0].tick(0.08);
+assert(Math.abs(orphanA.tractorThrowCooldown - 1.92) < 1e-9);
+
+// Three independent factions and neutral relations must not be collapsed
+// into the two sides of the current PvP scenario editor.
+const { hasActiveFleetHostilities } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/native-fleet-hostility.ts'
+);
+const factionShips = ['pirates', 'traders', 'patrol'].map((faction) => ({
+  setup: { id: faction },
+  hullHp: 100,
+}));
+const factions = new Map([
+  ['pirates', 'pirates'],
+  ['traders', 'traders'],
+  ['patrol', 'patrol'],
+]);
+const factionsHostile = (a, b) =>
+  (a === 'pirates' && b === 'patrol') || (a === 'patrol' && b === 'pirates');
+assert.equal(
+  hasActiveFleetHostilities(factionShips, new Set(), factions, factionsHostile),
+  true,
+  'the third faction can keep combat active without A/B teams'
+);
+assert.equal(
+  hasActiveFleetHostilities(factionShips, new Set(['pirates']), factions, factionsHostile),
+  false,
+  'remaining neutral factions must not fight solely because their IDs differ'
+);
+assert.equal(
+  hasActiveFleetHostilities(factionShips, new Set(['traders']), factions, factionsHostile),
+  true,
+  'removing a neutral faction must not end an ongoing hostile encounter'
+);
+
 console.log(
   'PASS 2v2/2v3/3v3/5v5 free ship reinforcement, escape and secondary attacker interception'
 );

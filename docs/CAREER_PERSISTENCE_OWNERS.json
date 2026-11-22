@@ -202,6 +202,30 @@
     "src/systems/combat/native-fleet-engagements.ts": {
       "mode": "derived",
       "reason": "Pure projection of current disposable FleetCombat actor drivers into transient display badges and target links; no checkpoint or saved authority."
+    },
+    "src/systems/combat/fleet-conflict-manager.ts": {
+      "mode": "transient",
+      "reason": "Encounter-local observed attacks, pirate groups and security relationships; no independent saved authority."
+    },
+    "src/systems/combat/native-fleet-hostility.ts": {
+      "mode": "derived",
+      "reason": "Pure faction hostility predicates; no mutable state."
+    },
+    "src/systems/combat/dynamic-fleet-combat.ts": {
+      "mode": "transient",
+      "reason": "Shared native PvP/campaign combat coordinator; extra actors and targets currently not included in Career combat checkpoint."
+    },
+    "src/systems/combat/career-fleet-encounter.ts": {
+      "mode": "transient",
+      "reason": "Live campaign fleet membership and witnesses, writes hull to authoritative SectorNpcState; additional encounter members are not currently restored by Career Save."
+    },
+    "src/systems/combat/star-map-engagement-fleet-resolution.ts": {
+      "mode": "transient",
+      "reason": "Reconciles transient battle outcomes into existing sector NPC and player ship state; owns no extra persisted state."
+    },
+    "src/systems/combat/star-map-engagement-runtime-types.ts": {
+      "mode": "derived",
+      "reason": "Type-only shared transient engagement runtime contract; no new state or checkpoint owner."
     }
   }
 }
