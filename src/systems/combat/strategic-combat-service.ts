@@ -377,6 +377,10 @@ export function createStrategicCombatService(
       if (continued) fleetDrivenSide = side;
       return continued;
     },
+    redirectParallelSupport(opponent) {
+      if (!sharedArenaPhysics || !fleetDrivenSide) return false;
+      return redirectNativeFleetTarget(runtime, fleetDrivenSide, opponent);
+    },
     getSnapshot: () => runtimeSnapshot(runtime),
     getCombatLog: () => runtime.combatLog.map((entry) => ({ ...entry })),
     fireGrapple: (side) => tryFireGrapple(runtime, side),
