@@ -52,11 +52,12 @@ function canJoinWorldCombat(
     world.npc(ship.id)?.job === 'freighter' ||
     world.npc(ship.id)?.job === 'salvager'
   ) {
-    if (world.defence(ship.id) !== 'fight') {
-      if (opponent.position) world.threaten(ship.id, opponent.position);
-      return false;
-    }
-    return true;
+    // The campaign's defence score determines a response to an attack, not
+    // permission for a neutral civilian to initiate one. The actual aggressor
+    // or scripted incident creates the hostile pair.
+    if (world.defence(ship.id) === 'flee' && opponent.position)
+      world.threaten(ship.id, opponent.position);
+    return false;
   }
   // The player is a valid defender, never an automatic aggressor against civilians.
   return victim?.pirate ? world.canAttack(opponent.id) : incident !== 'none';
