@@ -314,6 +314,7 @@ function updateCombatActionButtons(
   if (surrenderButton) surrenderButton.disabled = model.winner !== null;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function createFleetNativeCombatPanel(
   options: FleetNativeCombatPanelOptions
 ): FleetNativeCombatPanel {
