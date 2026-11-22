@@ -39,21 +39,22 @@ const originalRenderer = read('src/ui/combat/strategic-combat-renderer.ts');
 
 assert(
   originalPanel.includes("from './strategic-combat-renderer'") &&
-    duelLobby.includes('createStrategicCombatPanel('),
-  '1v1 must keep the original panel/renderer'
+    duelLobby.includes('createFleetNativeCombatPanel(') &&
+    fleetPanel.includes("from './fleet-native-combat-renderer'"),
+  '1v1 and FleetCombat intentionally share the FleetNative renderer while native AI stays unchanged'
 );
 assert(
   fleetLobby.includes("from '../combat/fleet-native-combat-panel'") &&
     fleetLobby.includes('createFleetNativeCombatPanel(') &&
     fleetPanel.includes("from './fleet-native-combat-renderer'"),
-  'FleetCombat must use its own spectator panel and renderer'
+  'FleetCombat and native 1v1 share the existing fleet renderer without an alternative AI'
 );
 assert(
   fleetRenderer.includes('paintParallelNativeDuels(') &&
     fleetRenderer.includes('fleetWreckEffects.draw(') &&
     !originalRenderer.includes('paintParallelNativeDuels(') &&
     !originalRenderer.includes('fleetWreckEffects.draw('),
-  'extra ships and wreck effects must stay out of the 1v1 renderer'
+  '1v1 uses native shared renderer but extra ships and wrecks stay isolated by the runtime snapshot'
 );
 
 const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
@@ -95,5 +96,5 @@ for (let i = 0; i < 30; i += 1) {
   );
 }
 console.log(
-  'PASS original 1v1 UI/effects byte-identical to main; fleet-specific UI and default native duel parity'
+  'PASS original 1v1 AI/physics byte-identical; UI deliberately shares FleetNative renderer and native duel parity'
 );
