@@ -133,7 +133,7 @@ function createSectorFleetEncounter(
       fleet.tick(deltaSeconds);
       for (const actor of activeActors()) {
         const npc = members.get(actor.setup.id);
-        if (npc) npc.hullHp = Math.max(0, Math.round(actor.hullHp));
+        if (npc) npc.hullHp = Math.max(0, Math.min(npc.hullMaxHp, Math.round(actor.hullHp)));
       }
     },
   };
