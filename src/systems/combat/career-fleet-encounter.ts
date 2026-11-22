@@ -46,31 +46,31 @@ export interface CareerFleetEncounter {
 }
 
 /** Player/NPC campaign encounter backed by exactly the same native PvP fleet core. */
-export function createCareerFleetEncounter(
-  player: StrategicCombatantSetup,
+function createSectorFleetEncounter(
+  firstSetup: StrategicCombatantSetup,
   enemy: SectorNpcState,
   allNpcs: readonly SectorNpcState[],
-  playerInitiated: boolean,
+  initiator: string,
+  victim: string,
+  firstIsPlayer: boolean,
   arena?: StrategicCombatArenaOptions
 ): CareerFleetEncounter {
   const enemySetup = npcCombatant(enemy);
   if (!enemySetup) throw new Error('Campaign enemy lacks a combat setup');
-  const seed = hashSeed(player.id + ':' + enemy.id);
-  const sessionArena = buildCombatArena(player, enemySetup, seed, arena);
+  const seed = hashSeed(firstSetup.id + ':' + enemy.id);
+  const sessionArena = buildCombatArena(firstSetup, enemySetup, seed, arena);
   const conflict = createConflictManager([
-    { id: player.id, role: 'player' },
-    ...allNpcs.filter((npc) => npc.id !== player.id).map(participant),
+    ...(firstIsPlayer ? [{ id: firstSetup.id, role: 'player' as const }] : []),
+    ...allNpcs.filter((npc) => npc.id !== firstSetup.id || !firstIsPlayer).map(participant),
   ]);
-  const initiator = playerInitiated ? player.id : enemy.id;
-  const victim = playerInitiated ? enemy.id : player.id;
   conflict.recordAttack({ attackerId: initiator, victimId: victim, witnessedBy: [] });
   const keys = new Map([
-    [player.id, player.id],
+    [firstSetup.id, firstSetup.id],
     [enemy.id, enemy.id],
   ]);
   const fleet = createDynamicFleetCombat(
     [
-      { id: player.id, team: 'a', setup: player },
+      { id: firstSetup.id, team: 'a', setup: firstSetup },
       { id: enemy.id, team: 'b', setup: enemySetup },
     ],
     sessionArena,
@@ -78,7 +78,11 @@ export function createCareerFleetEncounter(
     conflict.hostility(),
     keys
   );
-  const members = new Map<string, SectorNpcState>([[enemy.id, enemy]]);
+  const firstNpc = allNpcs.find((npc) => npc.id === firstSetup.id);
+  const members = new Map<string, SectorNpcState>([
+    [enemy.id, enemy],
+    ...(firstNpc ? [[firstNpc.id, firstNpc] as const] : []),
+  ]);
   const activeActors = () => [
     ...fleet.duels.flatMap((service) => [
       service.getParallelActor!('attacker'),
@@ -133,4 +137,43 @@ export function createCareerFleetEncounter(
       }
     },
   };
+}
+
+/** Player-started or pirate-started encounter, using the identical fleet core. */
+export function createCareerFleetEncounter(
+  player: StrategicCombatantSetup,
+  enemy: SectorNpcState,
+  allNpcs: readonly SectorNpcState[],
+  playerInitiated: boolean,
+  arena?: StrategicCombatArenaOptions
+): CareerFleetEncounter {
+  return createSectorFleetEncounter(
+    player,
+    enemy,
+    allNpcs,
+    playerInitiated ? player.id : enemy.id,
+    playerInitiated ? enemy.id : player.id,
+    true,
+    arena
+  );
+}
+
+/** NPC-only battles use the same fleet coordinator and reinforcement policy. */
+export function createNpcFleetEncounter(
+  attacker: SectorNpcState,
+  defender: SectorNpcState,
+  allNpcs: readonly SectorNpcState[],
+  arena?: StrategicCombatArenaOptions
+): CareerFleetEncounter {
+  const setup = npcCombatant(attacker);
+  if (!setup) throw new Error('NPC attacker lacks a combat setup');
+  return createSectorFleetEncounter(
+    setup,
+    defender,
+    allNpcs,
+    attacker.id,
+    defender.id,
+    false,
+    arena
+  );
 }
