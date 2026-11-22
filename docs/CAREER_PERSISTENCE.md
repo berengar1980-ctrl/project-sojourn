@@ -1051,3 +1051,19 @@ Zerstörte und entflohene Schiffe bleiben in der ursprünglichen
 temporären Flottenregistrierung erfasst, auch nach einem Zielwechsel.
 Die reguläre 1vs1-UI, Kampagnen-Speicherung und die Karriere-
 Checkpoint-Schemata werden dadurch nicht erweitert.
+
+### FleetCombat-Rollenmarkierungen ohne persistente Autorität (PR #382)
+
+Die getrennte PvP-FleetCombat-Ansicht zeigt für jede aktive 1vs1-Paarung
+eine gemeinsame Kennung `D1` bis `D5`. Einseitig simulierte zusätzliche
+oder nachrückende Schiffe erhalten stattdessen `+1` bis `+5`.
+Aus aktuellen Treiber- und Zielreferenzen werden ausschließlich flüchtige
+Anzeigeverbindungen abgeleitet; dabei entstehen weder neue Schiffsinstanzen
+noch zusätzliche Bewegungsschritte oder KI-Entscheidungen.
+
+Die Zielverbindungen können im FleetCombat-Test ausgeblendet werden,
+ohne Simulation oder gespeicherten Zustand zu verändern. Der neue reine
+Projektionshelfer `native-fleet-engagements.ts` ist als `derived`
+klassifiziert. Die originalen 1vs1-Anzeigen, sämtliche
+Karriere-Checkpoint-Schemata und der Wiederherstellungsablauf bleiben
+unverändert.
