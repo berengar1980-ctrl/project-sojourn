@@ -10,7 +10,7 @@ import { createSettingsMenu } from '../settings/settings-menu';
 
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
-import { createStrategicCombatPanel } from '../combat/strategic-combat-panel';
+import { createFleetNativeCombatPanel } from '../combat/fleet-native-combat-panel';
 import {
   createDuelArena,
   DUEL_MAPS,
@@ -273,7 +273,7 @@ export function createDuelLobby(
   root.replaceChildren(shell);
   const destroySettings = mountDuelSettings(onBack);
 
-  let activePanel: ReturnType<typeof createStrategicCombatPanel> | null = null;
+  let activePanel: ReturnType<typeof createFleetNativeCombatPanel> | null = null;
   let canceled = false;
   let frame = 0;
   let duelGeneration = 0;
@@ -297,7 +297,7 @@ export function createDuelLobby(
       createDuelArena(mapSelect.value as DuelMapKind, duelSeed)
     );
     onCombatActiveChange(true);
-    activePanel = createStrategicCombatPanel({
+    activePanel = createFleetNativeCombatPanel({
       root,
       combat,
       onReturn: () => {
