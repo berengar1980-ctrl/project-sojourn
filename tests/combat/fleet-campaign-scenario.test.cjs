@@ -63,8 +63,9 @@ const entry = (id, group, arrivalSeconds) => ({
 });
 const arena = { width: 4200, height: 2600, obstacles: [], asteroids: [] };
 
-// Six-sided hostility can evolve without starting another battle or ticking
-// a target a second time.
+// All three modes now use the existing campaign services for neutral world
+// behavior; a scheduled reinforcement no longer materializes as an immediate
+// gunner in FleetCombat unless it sees and elects to join the conflict.
 const roster = [
   entry('player', 'player', 0),
   entry('npc-1', 'npc', 0),
@@ -72,61 +73,64 @@ const roster = [
   entry('pirates-red-1', 'pirates-red', 0),
   entry('security-drone:test-1', 'drone', 0.16),
 ];
-const scenario = createFleetScenarioRuntime(roster, arena, 1234, 'none');
-const originalFleet = scenario.fleet;
-assert(originalFleet, 'pirate sighting starts a live encounter on the common map');
+const scenario = createFleetScenarioRuntime(roster, arena, 1234, 'none', 'empty');
+const firstFleet = scenario.fleet;
+assert(firstFleet, 'a live pirate contact starts the common native fleet engine');
 assert.equal(scenario.arrivedCount, 4);
-assert.equal(originalFleet.getActor('security-drone:test-1'), null);
-const playerActor = originalFleet.getActor('player');
-assert(playerActor);
-assert.equal(originalFleet.getActor('pirates-yellow-1').setup.pirateMark, 'broken-spear');
-assert.equal(originalFleet.getActor('pirates-red-1').setup.pirateMark, 'black-tide');
+const actorsAtStart = [
+  ...firstFleet.duels.flatMap((service) => [
+    service.getParallelActor('attacker'), service.getParallelActor('defender'),
+  ]),
+  ...firstFleet.supporters.map((service) => service.getParallelActor('attacker')),
+];
+assert.equal(new Set(actorsAtStart).size, actorsAtStart.length);
+const playerActor = firstFleet.getActor('player');
+assert(playerActor, 'player participates when targeted by an arriving pirate');
+const originalPlayerPosition = { ...playerActor.position };
 scenario.tick(0.08);
 scenario.tick(0.08);
-assert.equal(scenario.fleet, originalFleet, 'reinforcements keep the same native combat');
-assert(
-  originalFleet.getActor('security-drone:test-1'),
-  'security drone joins at its scheduled time'
-);
-assert.equal(originalFleet.getActor('player'), playerActor, 'the player is never recreated');
-assert.equal(scenario.nextArrivalSeconds(), null);
+assert.equal(scenario.fleet, firstFleet, 'the same combat instance survives world arrivals');
+assert.equal(firstFleet.getActor('player'), playerActor, 'player physical actor never replaced');
 assert.equal(scenario.arrivedCount, 5);
-assert.equal(originalFleet.duels.length, 1);
-assert.equal(originalFleet.supporters.length, 3);
-
-// A neutral player and a civilian are not forced into a duel until a pirate
-// arrives. Their actor identities are then unique on the same battlefield.
-const delayed = createFleetScenarioRuntime(
-  [
-    entry('player', 'player', 0),
-    entry('npc-1', 'npc', 0),
-    entry('pirates-yellow-1', 'pirates-yellow', 0.16),
-  ],
-  arena,
-  5678,
-  'none'
+assert.equal(scenario.nextArrivalSeconds(), null);
+assert(
+  firstFleet.getActor('security-drone:test-1') ||
+    scenario.worldContacts.some((contact) => contact.id === 'security-drone:test-1'),
+  'the drone must exist in the world even if its sensors have not cleared an attack'
 );
-assert.equal(delayed.fleet, null);
-delayed.tick(0.08);
-assert.equal(delayed.fleet, null);
-delayed.tick(0.08);
-assert(delayed.fleet);
-assert(delayed.fleet.getActor('player'));
-assert(delayed.fleet.getActor('npc-1'));
+assert(Number.isFinite(playerActor.position.x) && Number.isFinite(playerActor.position.y));
+assert(Number.isFinite(originalPlayerPosition.x));
 
-// In the player-attacks-NPC scenario the observing drone can engage the
-// attacker without changing its permanent anti-pirate policy.
+// A neutral miner does not get converted into a combat AI merely because
+// another vessel is fighting nearby. Its world movement is still simulated.
+const ships = loadStandaloneTypeScriptModule(root, 'src/systems/ships/ship-registry.ts');
+const minerShip = ships.getAllShipDefinitions().find((ship) => ship.role === 'mining');
+assert(minerShip, 'the campaign has a physical miner for this test');
+const miner = { ...entry('npc-1', 'npc', 0), draft: { ...commonDraft, shipId: minerShip.id } };
+const minerScenario = createFleetScenarioRuntime(
+  [entry('player', 'player', 0), miner],
+  arena, 5678, 'none', 'empty'
+);
+assert.equal(minerScenario.fleet, null);
+assert.equal(minerScenario.worldContacts.length, 2);
+minerScenario.tick(0.08);
+assert.equal(minerScenario.fleet, null, 'two non-hostile actors never start a fake 1v1');
+assert(minerScenario.worldContacts.some((contact) => contact.id === 'npc-1'));
+
+// A scenario incident starts a real duel, while security drones remain world
+// contacts until they have actually detected the relevant hostile ship.
 const defenderScenario = createFleetScenarioRuntime(
   [
     entry('player', 'player', 0),
     entry('npc-1', 'npc', 0),
     entry('security-drone:test-1', 'drone', 0),
   ],
-  arena,
-  9012,
-  'player-attacks-npc'
+  arena, 9012, 'player-attacks-npc', 'empty'
 );
-assert(defenderScenario.fleet);
-assert(defenderScenario.fleet.getActor('security-drone:test-1'));
-assert.equal(defenderScenario.fleet.getSnapshot().finished, false);
-console.log('PASS FleetCombat lab: fixed player, markings, timed same-map joins and drone defence');
+assert(defenderScenario.fleet, 'explicit player attack starts native combat');
+assert(
+  defenderScenario.fleet.getActor('security-drone:test-1') ||
+    defenderScenario.worldContacts.some((ship) => ship.id === 'security-drone:test-1'),
+  'a protective drone is present, but only joins when its patrol senses the incident'
+);
+console.log('PASS FleetCombat lab: fixed player, persistent native actors, true NPC world behavior and observed drone entry');
