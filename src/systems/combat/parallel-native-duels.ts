@@ -168,6 +168,10 @@ function nativeFootprintRadius(actor: MutableCombatant): number {
   return Math.max(18, Math.max(shield?.radiusX ?? 35, shield?.radiusY ?? 24) * 0.85);
 }
 
+function nativeFleetRadii(ships: readonly MutableCombatant[]): Map<string, number> {
+  return new Map(ships.map((ship) => [ship.setup.id, nativeFootprintRadius(ship)] as const));
+}
+
 function nativeFleetFinished(
   actors: readonly MutableCombatant[],
   escaped: ReadonlySet<string>,
@@ -229,9 +233,7 @@ export function createParallelNativeDuels(
   ];
   let elapsed = 0;
   let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
-  const radiusById = new Map(
-    actors.map((actor) => [actor.setup.id, nativeFootprintRadius(actor)] as const)
-  );
+  const radiusById = nativeFleetRadii(actors);
   const getSnapshot = (): ParallelNativeDuelSnapshot => {
     if (cachedSnapshot) return cachedSnapshot;
     const duels = pairs.map((service) => service.getSnapshot());
