@@ -28,6 +28,10 @@ export interface NativeDuelShip {
   readonly id: string;
   readonly team: string;
   readonly setup: StrategicCombatantSetup;
+  /** Existing world-space pose when a ship hands off to native combat. */
+  readonly position?: CombatPoint;
+  readonly velocity?: CombatPoint;
+  readonly headingRadians?: number;
 }
 export interface ParallelNativeDuelSnapshot {
   readonly duels: readonly StrategicCombatSnapshot[];
@@ -98,8 +102,10 @@ function pairFields(
     obstacles,
     attackerPosition: from,
     defenderPosition: to,
-    attackerHeadingRadians: ship.team === 'a' ? 0 : Math.PI,
-    defenderHeadingRadians: target.team === 'a' ? 0 : Math.PI,
+    attackerHeadingRadians: ship.headingRadians ?? arena.attackerHeadingRadians ?? (ship.team === 'a' ? 0 : Math.PI),
+    defenderHeadingRadians: target.headingRadians ?? arena.defenderHeadingRadians ?? (target.team === 'a' ? 0 : Math.PI),
+    ...(ship.velocity ? { attackerVelocity: ship.velocity } : {}),
+    ...(target.velocity ? { defenderVelocity: target.velocity } : {}),
   };
 }
 
@@ -128,8 +134,8 @@ function createNativeDuelServices(
         obstacleSet(),
         ship,
         target,
-        fieldStart(arena, 'a', index, first.length),
-        fieldStart(arena, 'b', index, second.length)
+        ship.position ?? (index === 0 ? arena.attackerPosition : undefined) ?? fieldStart(arena, 'a', index, first.length),
+        target.position ?? (index === 0 ? arena.defenderPosition : undefined) ?? fieldStart(arena, 'b', index, second.length)
       ),
       undefined,
       true
@@ -164,7 +170,7 @@ function createNativeDuelServices(
           team: entry.ship.team === 'a' ? 'b' : 'a',
           setup: targetActor.setup,
         },
-        fieldStart(arena, entry.ship.team, entry.index, entry.size),
+        entry.ship.position ?? fieldStart(arena, entry.ship.team, entry.index, entry.size),
         targetActor.position
       ),
       undefined,
@@ -236,7 +242,7 @@ function joinNativeFleetShip(
       obstacleSet(),
       ship,
       { id: target.setup.id, team: teams.get(target.setup.id)!, setup: target.setup },
-      clearCombatSpawn(arena, {
+      ship.position ?? clearCombatSpawn(arena, {
         x: arena.width * 0.5,
         y: (arena.height * ((shipIndex % 9) + 1)) / 10,
       }),
