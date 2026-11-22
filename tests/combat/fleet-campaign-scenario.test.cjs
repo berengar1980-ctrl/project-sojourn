@@ -19,6 +19,24 @@ const groups = [
   { group: 'drone', initial: 0, joining: 1, afterSeconds: 15 },
 ];
 const generated = createFleetScenarioRoster(groups);
+const shipDefinitions = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/ships/ship-registry.ts'
+);
+for (let pass = 0; pass < 50; pass += 1) {
+  const civilians = createFleetScenarioRoster([
+    { group: 'npc', initial: 10, joining: 10, afterSeconds: 5 },
+  ]).filter((ship) => ship.group === 'npc');
+  assert.equal(civilians.length, 20);
+  assert(
+    civilians.every((ship) => !ship.draft.shipId.startsWith('pirate-')),
+    'civilian NPC roster must never spawn pirate hulls, even if the random catalog offers them'
+  );
+  assert(
+    civilians.every((ship) => !ship.name.toLowerCase().includes('korsaren')),
+    'civilian display names must not claim to be pirates'
+  );
+}
 assert.equal(generated.length, 8);
 assert.equal(generated.filter((ship) => ship.id === 'player').length, 1);
 assert.equal(generated.find((ship) => ship.id === 'npc-2').arrivalSeconds, 5);
