@@ -1,7 +1,5 @@
 import { getShipDefinition } from '../../systems/ships';
-import {
-  npcMayTargetNpc,
-} from '../../systems/npcs/npc-combat-ai';
+import { npcMayTargetNpc } from '../../systems/npcs/npc-combat-ai';
 import {
   createConflictManager,
   type ConflictParticipant,
