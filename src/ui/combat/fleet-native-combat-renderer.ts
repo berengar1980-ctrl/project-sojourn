@@ -23,7 +23,7 @@ import type {
   VisibleCombatImpact,
 } from './strategic-combat-renderer-types';
 import { paintFleetShipAnnotations } from './fleet-native-ship-annotations';
-import { paintFleetEngagementLines, paintFleetShipBadges } from './fleet-engagement-markers';
+import { FleetEngagementMarkerPainter } from './fleet-engagement-markers';
 import type { NativeFleetEngagement } from '../../systems/combat/parallel-native-duels';
 import { ramCameraImpulse } from './combat-ram-effect-renderer';
 import { CombatEffectClock } from './combat-effect-clock';
@@ -76,8 +76,7 @@ export class FleetNativeCombatRenderer {
   private model: StrategicCombatSnapshot;
   private parallelDuels: readonly StrategicCombatSnapshot[] = [];
   private supportingFromIndex = Number.POSITIVE_INFINITY;
-  private engagements: readonly NativeFleetEngagement[] = [];
-  private showEngagementLines = true;
+  private readonly fleetMarkers = new FleetEngagementMarkerPainter();
   private readonly additionalSeenImpacts = new Map<number, number>();
   private readonly additionalImpacts = new Map<number, VisibleCombatImpact[]>();
   private readonly effectClock = new CombatEffectClock();
@@ -109,13 +108,17 @@ export class FleetNativeCombatRenderer {
     engagements: readonly NativeFleetEngagement[] = [],
     showEngagementLines = true
   ): void {
-    this.engagements = engagements;
-    this.showEngagementLines = showEngagementLines;
     this.parallelDuels = parallelDuels;
     this.supportingFromIndex = supportingFromIndex;
     const visibility = nativeFleetVisibility(model, parallelDuels, departedIds);
     this.hiddenShipIds = visibility.escaped;
     this.hiddenDamageIds = visibility.damageHidden;
+    this.fleetMarkers.update(
+      [model, ...parallelDuels],
+      engagements,
+      visibility.escaped,
+      showEngagementLines
+    );
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
@@ -266,7 +269,7 @@ export class FleetNativeCombatRenderer {
       timeSeconds
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
-    this.drawFleetLinks(width, height);
+    this.fleetMarkers.drawLines(this.context, (ship) => this.shipGeometry(ship, width, height));
     this.drawMines(width, height);
     this.drawProjectiles(width, height, false);
     this.drawAutocannonBursts(width, height);
@@ -314,7 +317,12 @@ export class FleetNativeCombatRenderer {
       width,
       height
     );
-    this.drawFleetBadges(width, height);
+    this.fleetMarkers.drawBadges(
+      this.context,
+      (ship) => this.shipGeometry(ship, width, height),
+      width,
+      height
+    );
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
   }
@@ -348,27 +356,6 @@ export class FleetNativeCombatRenderer {
       timeSeconds,
       visualElapsed,
     });
-  }
-  private drawFleetLinks(width: number, height: number): void {
-    if (!this.showEngagementLines) return;
-    paintFleetEngagementLines(
-      this.context,
-      [this.model, ...this.parallelDuels],
-      this.engagements,
-      this.hiddenShipIds,
-      (ship) => this.shipGeometry(ship, width, height)
-    );
-  }
-  private drawFleetBadges(width: number, height: number): void {
-    paintFleetShipBadges(
-      this.context,
-      [this.model, ...this.parallelDuels],
-      this.engagements,
-      this.hiddenShipIds,
-      (ship) => this.shipGeometry(ship, width, height),
-      width,
-      height
-    );
   }
   private drawBeams(width: number, height: number, above: boolean): void {
     if (this.model.winner !== null) return;
