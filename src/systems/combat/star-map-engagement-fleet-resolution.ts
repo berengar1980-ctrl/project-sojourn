@@ -43,7 +43,7 @@ export function finishPlayerCombat(
   // The original NPC already receives its real hull via its unique actor ID.
   if (!runtime.playerFleet) runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
   const playerAlive = runtime.playerFleet
-    ? runtime.playerFleet.fleet.getActor('player')?.hullHp! > 0
+    ? (runtime.playerFleet.fleet.getActor('player')?.hullHp ?? 0) > 0
     : model.attacker.hullHp > 0;
   if (
     (runtime.playerEnemy.hullHp <= 0 && playerAlive) ||
