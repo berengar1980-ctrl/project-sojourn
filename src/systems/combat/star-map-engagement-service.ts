@@ -353,10 +353,14 @@ function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: numb
     entry.fleet.tick(deltaSeconds);
     const model = entry.combat.getSnapshot();
     if (!entry.fleet.fleet.getSnapshot().finished && !model.boardingInitiator) continue;
-    entry.first.hullHp = Math.round(model.attacker.hullHp);
-    entry.second.hullHp = Math.round(model.defender.hullHp);
-    runtime.options.onNpcCombatEnded?.(model, entry.first, entry.second);
-    if (model.winner) settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
+    // The fleet may have retargeted its original service; actor identity is
+    // authoritative, never the mutable attacker/defender slot after promotion.
+    const initialPairIntact =
+      model.attacker.id === entry.first.id && model.defender.id === entry.second.id;
+    if (initialPairIntact) {
+      runtime.options.onNpcCombatEnded?.(model, entry.first, entry.second);
+      if (model.winner) settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
+    }
     runtime.options.sectorNpcs.recoverFromCombat(entry.first, 'Nach Gefecht');
     for (const npc of entry.fleet.members.values()) {
       if (npc !== entry.first && npc !== entry.second)
@@ -442,14 +446,19 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
 function finishPlayerCombat(runtime: EngagementRuntime, boardingOutcome?: BoardingOutcome): void {
   if (!runtime.playerCombat || !runtime.playerEnemy) return;
   const model = runtime.playerCombat.getSnapshot();
-  runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
+  // The initial defender can be replaced by a different live fleet opponent.
+  // The original NPC already receives its real hull via its unique actor ID.
+  if (!runtime.playerFleet) runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
+  const playerAlive = runtime.playerFleet
+    ? runtime.playerFleet.fleet.getActor('player')?.hullHp! > 0
+    : model.attacker.hullHp > 0;
   if (
-    (model.defender.hullHp <= 0 && model.attacker.hullHp > 0) ||
+    (runtime.playerEnemy.hullHp <= 0 && playerAlive) ||
     (model.boardingInitiator !== null && boardingOutcome === 'player_win')
   ) {
     runtime.options.onPlayerVictory?.(runtime.playerEnemy.id);
   }
-  if (model.defender.hullHp <= 0) {
+  if (runtime.playerEnemy.hullHp <= 0) {
     runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Kampfunfähig');
     runtime.options.log(
       'COMBAT > ' +
@@ -461,7 +470,7 @@ function finishPlayerCombat(runtime: EngagementRuntime, boardingOutcome?: Boardi
       boardingOutcome === 'player_win' ? 'Besatzung nach Enterkampf besiegt' : 'Nach Gefecht';
     runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, reason);
   }
-  if (model.attacker.hullHp <= 0) {
+  if (!playerAlive) {
     const recovery = runtime.options.navigation.recoverToNearestDock();
     const destination = recovery.currentLocationId ?? 'UNKNOWN';
     runtime.options.log(
