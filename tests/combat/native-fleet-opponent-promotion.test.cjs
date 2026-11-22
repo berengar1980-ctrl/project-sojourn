@@ -48,9 +48,10 @@ b2.position.x = a1.position.x + 380;
 b2.position.y = a1.position.y;
 b3.position.x = a1.position.x + 1100;
 b3.position.y = a1.position.y + 350;
-assert.deepEqual(main(fleet.getSnapshot()).map((link) => [link.sourceId, link.targetId]), [
-  ['a1', 'b1'],
-]);
+assert.deepEqual(
+  main(fleet.getSnapshot()).map((link) => [link.sourceId, link.targetId]),
+  [['a1', 'b1']]
+);
 assert.equal(extra(fleet.getSnapshot()).length, 2);
 
 // B1 destroyed: B2 is promoted to the *real* main opponent, B3 stays extra.
@@ -61,10 +62,14 @@ assert.strictEqual(fleet.duels[0].getParallelActor('attacker'), a1);
 assert.strictEqual(fleet.duels[0].getParallelActor('defender'), b2);
 assert.strictEqual(fleet.supporters[0].getParallelActor('attacker'), b2);
 assert.strictEqual(fleet.supporters[0].getParallelActor('defender'), a1);
-assert.deepEqual(main(snapshot).map((link) => [link.label, link.sourceId, link.targetId]), [
-  ['1', 'a1', 'b2'],
-]);
-assert.deepEqual(extra(snapshot).map((link) => [link.sourceId, link.targetId]), [['b3', 'a1']]);
+assert.deepEqual(
+  main(snapshot).map((link) => [link.label, link.sourceId, link.targetId]),
+  [['1', 'a1', 'b2']]
+);
+assert.deepEqual(
+  extra(snapshot).map((link) => [link.sourceId, link.targetId]),
+  [['b3', 'a1']]
+);
 assert.equal(snapshot.finished, false);
 
 // The two separate original native owners must each tick exactly once.
@@ -84,7 +89,10 @@ fleet.tick(0.08);
 snapshot = fleet.getSnapshot();
 assert.strictEqual(fleet.duels[0].getParallelActor('defender'), b3);
 assert.strictEqual(fleet.supporters[1].getParallelActor('defender'), a1);
-assert.deepEqual(main(snapshot).map((link) => [link.sourceId, link.targetId]), [['a1', 'b3']]);
+assert.deepEqual(
+  main(snapshot).map((link) => [link.sourceId, link.targetId]),
+  [['a1', 'b3']]
+);
 assert.equal(extra(snapshot).length, 0);
 assert.equal(snapshot.finished, false);
 b3.hullHp = 0;
@@ -101,9 +109,10 @@ firstA.hullHp = 0;
 reverse.tick(0.08);
 assert.strictEqual(reverse.duels[0].getParallelActor('attacker'), nextA);
 assert.strictEqual(reverse.supporters[0].getParallelActor('defender'), firstB);
-assert.deepEqual(main(reverse.getSnapshot()).map((link) => [link.sourceId, link.targetId]), [
-  ['b1', 'a2'],
-]);
+assert.deepEqual(
+  main(reverse.getSnapshot()).map((link) => [link.sourceId, link.targetId]),
+  [['b1', 'a2']]
+);
 assert.equal(extra(reverse.getSnapshot()).length, 1);
 
 // 5v5: joining a still-active pair remains extra and cannot steal its primary.
