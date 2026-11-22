@@ -1,6 +1,6 @@
 import { reviewShipContact } from './combat-contact-review';
 import { tickNativeSupportingShip } from './native-duel-support-tick';
-import { retargetNativeFleetSurvivor } from './native-fleet-retarget';
+import { retargetNativeFleetSurvivor, redirectNativeFleetTarget } from './native-fleet-retarget';
 import { runtimeSnapshot } from './strategic-combat-runtime-snapshot';
 import {
   captureCareerStrategicCombat,
