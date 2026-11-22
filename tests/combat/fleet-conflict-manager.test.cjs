@@ -75,6 +75,20 @@ assert.equal(hostile('miner', 'freighter'), true);
 assert.equal(hostile('freighter', 'miner'), true);
 assert.equal(hostile('drone', 'pirate-a1'), true);
 
+// A detected concession violation starts as a warning. Security becomes
+// hostile only after the world escalates enforcement; other drones stay neutral.
+manager.clearEncounter();
+manager.recordConcessionViolation({
+  offenderId: 'player', witnessedBy: ['drone'], escalatedToHostility: false,
+});
+assert.equal(hostile('drone', 'player'), false);
+manager.recordConcessionViolation({
+  offenderId: 'player', witnessedBy: ['drone'], escalatedToHostility: true,
+});
+assert.equal(hostile('drone', 'player'), true);
+assert.equal(hostile('drone2', 'player'), false);
+manager.clearEncounter();
+
 // Invalid members and fabricated witnesses cannot silently set hostilities.
 assert.throws(() => createConflictManager([{ id: 'x', role: 'pirate' }]), /pirateGroup/);
 assert.throws(() => manager.recordAttack({
