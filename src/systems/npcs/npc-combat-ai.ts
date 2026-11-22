@@ -33,3 +33,11 @@ export function npcIsPiratePrey(npc: SectorNpcState): boolean {
     (npc.job === 'freighter' || npc.job === 'miner' || npc.job === 'salvager')
   );
 }
+
+/** Hostile pirate outfits can encounter and attack one another on the sector map. */
+export function rivalPirateGroups(a: SectorNpcState, b: SectorNpcState): boolean {
+  if ((!a.pirate && a.job !== 'pirate') || (!b.pirate && b.job !== 'pirate')) return false;
+  const groupA = a.factionId ?? a.pirateMark ?? 'pirates';
+  const groupB = b.factionId ?? b.pirateMark ?? 'pirates';
+  return groupA !== groupB;
+}
