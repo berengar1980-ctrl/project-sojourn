@@ -68,8 +68,8 @@ assert.equal(label(uneven.engagements, 'b1'), 'D1');
 for (let i = 2; i <= 5; i++) assert.equal(label(uneven.engagements, 'b' + i), '+' + (i - 1));
 assert.equal(fleetShipBadges(uneven.engagements).length, 6);
 
-// 2v3: when A2 becomes free, its +2 and B3's +1 links must point at
-// each other, while A1/B1 continue to display their intact D1 pairing.
+// 2v3: A2 and B3 mutually target each other and become D2,
+// while A1/B1 continue to display their intact D1 pairing.
 const peeled = createParallelNativeDuels(roster(2, 3), arena(), 1203);
 const before = peeled.getSnapshot();
 assert.equal(label(before.engagements, 'b3'), '+1');
@@ -79,18 +79,14 @@ peeled.tick(0.08);
 const after = peeled.getSnapshot();
 assert.equal(label(after.engagements, 'a1'), 'D1');
 assert.equal(label(after.engagements, 'b1'), 'D1');
-assert.equal(label(after.engagements, 'a2'), '+2');
-assert.equal(label(after.engagements, 'b3'), '+1');
+assert.equal(label(after.engagements, 'a2'), 'D2');
+assert.equal(label(after.engagements, 'b3'), 'D2');
 assert(
   after.engagements.some(
-    (link) => link.sourceId === 'a2' && link.targetId === 'b3' && link.role === 'support'
+    (link) => link.sourceId === 'a2' && link.targetId === 'b3' && link.role === 'duel'
   )
 );
-assert(
-  after.engagements.some(
-    (link) => link.sourceId === 'b3' && link.targetId === 'a2' && link.role === 'support'
-  )
-);
+assert.equal(after.engagements.length, 2, 'a reciprocal main is only one visual engagement');
 assert.equal(fleetShipBadges(after.engagements).length, 4);
 
 const calls = { dashed: [], badges: [], strokes: 0 };
@@ -119,12 +115,17 @@ const shape = (entry) => ({
   angle: entry.headingRadians,
 });
 const snapshots = [...after.duels, ...after.supporters];
-paintFleetEngagementLines(painter, snapshots, after.engagements, new Set(), shape);
-assert.equal(calls.strokes, 2, 'opposite support links between A2/B3 are painted only once');
+paintFleetEngagementLines(painter, snapshots, before.engagements, new Set(), shape);
+assert.equal(calls.strokes, 3);
 assert(calls.dashed.some((dashes) => dashes.length > 0));
 assert(calls.dashed.some((dashes) => dashes.length === 0));
+calls.strokes = 0;
+calls.dashed = [];
+paintFleetEngagementLines(painter, snapshots, after.engagements, new Set(), shape);
+assert.equal(calls.strokes, 2, 'promoted reciprocal main gets one link');
+assert(calls.dashed.every((dashes) => dashes.length === 0));
 paintFleetShipBadges(painter, snapshots, after.engagements, new Set(), shape, 4200, 2600);
-assert.deepEqual(calls.badges.sort(), ['+1', '+2', 'D1', 'D1'].sort());
+assert.deepEqual(calls.badges.sort(), ['D1', 'D1', 'D2', 'D2'].sort());
 
 console.log(
   'PASS FleetCombat live primary-pair badges, support-role transitions and deduped links'
