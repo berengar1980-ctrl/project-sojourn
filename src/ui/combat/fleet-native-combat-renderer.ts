@@ -79,7 +79,7 @@ export class FleetNativeCombatRenderer {
   private readonly fleetMarkers = new FleetEngagementMarkerPainter();
   private readonly additionalSeenImpacts = new Map<number, number>();
   private readonly additionalImpacts = new Map<number, VisibleCombatImpact[]>();
-  private readonly effectClock = new CombatEffectClock();
+  private effectClock = new CombatEffectClock();
   private seenImpactSerial = -1;
   private readonly visibleImpacts: VisibleCombatImpact[] = [];
   constructor(
@@ -99,6 +99,22 @@ export class FleetNativeCombatRenderer {
     this.asteroidBackdrop = new CombatAsteroidBackdrop(context, model.arena);
     this.model = model;
     this.resize();
+  }
+  /** Retain sprite and camera resources, but reset transient effects for a new fight. */
+  beginEncounter(model: StrategicCombatSnapshot): void {
+    this.model = model;
+    this.parallelDuels = [];
+    this.hiddenShipIds = new Set();
+    this.hiddenDamageIds = new Set();
+    this.supportingFromIndex = Number.POSITIVE_INFINITY;
+    this.seenImpactSerial = -1;
+    this.visibleImpacts.length = 0;
+    this.additionalSeenImpacts.clear();
+    this.additionalImpacts.clear();
+    this.autocannonBursts.clear();
+    this.damageParticles.clear();
+    this.destructionStartedAt = null;
+    this.effectClock = new CombatEffectClock();
   }
   update(
     model: StrategicCombatSnapshot,
