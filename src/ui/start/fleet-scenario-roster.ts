@@ -60,13 +60,16 @@ function randomDraft(group: FleetScenarioRole): { name: string; draft: DuelDraft
     getShipDefinition('pirate-reaver-80m'),
     getShipDefinition('pirate-marauder-120m'),
   ].filter((ship): ship is NonNullable<typeof ship> => ship !== null);
+  const civilianShips = ships.filter((candidate) =>
+    candidate.role !== 'patrol' || !candidate.id.startsWith('pirate-')
+  ).filter((candidate) => !pirateShips.some((pirate) => pirate.id === candidate.id));
   const matching =
     group === 'drone'
       ? ships.filter((ship) => ship.role === 'patrol')
       : group === 'pirates-yellow' || group === 'pirates-red'
         ? pirateShips
-        : ships;
-  const ship = pick(matching.length > 0 ? matching : ships);
+        : civilianShips;
+  const ship = pick(matching);
   const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? []).filter((item) => item.tier === 1);
   const mines = SHIP_MINE_CATALOG.filter((item) => item.tier === 1);
   const weaponIds = (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
