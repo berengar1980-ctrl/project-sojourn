@@ -2,7 +2,7 @@ import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-d
 import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
 import { drawMiningCombatWrecks, type CombatWreckHitArea } from './local-combat-wreck-renderer';
 import { drawLocalNavigationRoute } from './local-space-navigation-route';
-import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
+import { FleetNativeCombatRenderer } from '../combat/fleet-native-combat-renderer';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import { resizeMapCanvasBackingStore } from '../map/map-canvas-backing-store';
 import type {
@@ -32,7 +32,7 @@ import { MiningEffectsRenderer } from './mining-effects-renderer';
 import { drawLocalShortRangeScan, drawLocalLongRangeScan } from './local-space-scan-renderer';
 export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
-  private sharedCombatRenderer: StrategicCombatRenderer | null = null;
+  private sharedCombatRenderer: FleetNativeCombatRenderer | null = null;
   protected readonly camera: MapCamera;
   protected readonly miningEffects: MiningEffectsRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
@@ -81,7 +81,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     if (model.combat) {
       if (!this.sharedCombatRenderer) {
-        this.sharedCombatRenderer = new StrategicCombatRenderer(
+        this.sharedCombatRenderer = new FleetNativeCombatRenderer(
           this.canvas,
           model.combat,
           (pose, width, height, timeSeconds) => {
