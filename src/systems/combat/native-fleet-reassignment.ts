@@ -127,7 +127,18 @@ function chooseTarget(
   if (closestPeel && closestPeel.distance <= separation(free, nearest) * 1.3 + 120) {
     return closestPeel.choice;
   }
-  return { opponent: nearest };
+  // A surviving main duelist should first face an EXTRA ship already
+  // attacking it. That attacker retains its own AI/cooldown ownership;
+  // reciprocal targets make a real new 1v1, with any others still supporting.
+  const incoming = engagements
+    .filter(
+      (link) =>
+        link.target === free &&
+        enemy(free, link.owner, context) &&
+        context.drivers[link.serviceIndex] !== 'both'
+    )
+    .sort((a, b) => separation(free, a.owner) - separation(free, b.owner))[0];
+  return { opponent: incoming?.owner ?? nearest };
 }
 
 /**
