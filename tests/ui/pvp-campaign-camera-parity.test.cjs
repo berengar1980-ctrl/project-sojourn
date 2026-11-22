@@ -61,4 +61,26 @@ for (const source of [mining, salvage]) {
   assert(source.includes('model.combat,'));
 }
 
+// FleetCombat must not create a substitute battle before a hostile world contact.
+// The same physical canvas and camera carry neutral world and native combat.
+const fleetLobby = fs.readFileSync(
+  path.join(root, 'src/ui/start/fleet-test-lobby.ts'),
+  'utf8'
+);
+const fleetPanel = fs.readFileSync(
+  path.join(root, 'src/ui/combat/fleet-native-combat-panel.ts'),
+  'utf8'
+);
+const idleMap = fs.readFileSync(
+  path.join(root, 'src/ui/start/fleet-idle-world-canvas.ts'),
+  'utf8'
+);
+assert(fleetLobby.includes('createFleetIdleWorldCanvas(canvas, arena'));
+assert(fleetLobby.includes('canvas,\n          initialCameraPose,'));
+assert(fleetLobby.includes('waiting.prepend(canvas)'));
+assert(fleetPanel.includes('makeCombatShell(options.root, options.canvas)'));
+assert(idleMap.includes('drawCombatAsteroids('));
+assert(idleMap.includes('createFleetWorldContactOverlay('));
+assert(!idleMap.includes('createDynamicFleetCombat('));
+
 console.log('PASS PvP camera and the same FleetNative renderer used in mining/salvage career maps');
