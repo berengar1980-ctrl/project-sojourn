@@ -79,11 +79,15 @@ assert.equal(hostile('drone', 'pirate-a1'), true);
 // hostile only after the world escalates enforcement; other drones stay neutral.
 manager.clearEncounter();
 manager.recordConcessionViolation({
-  offenderId: 'player', witnessedBy: ['drone'], escalatedToHostility: false,
+  offenderId: 'player',
+  witnessedBy: ['drone'],
+  escalatedToHostility: false,
 });
 assert.equal(hostile('drone', 'player'), false);
 manager.recordConcessionViolation({
-  offenderId: 'player', witnessedBy: ['drone'], escalatedToHostility: true,
+  offenderId: 'player',
+  witnessedBy: ['drone'],
+  escalatedToHostility: true,
 });
 assert.equal(hostile('drone', 'player'), true);
 assert.equal(hostile('drone2', 'player'), false);
@@ -91,8 +95,16 @@ manager.clearEncounter();
 
 // Invalid members and fabricated witnesses cannot silently set hostilities.
 assert.throws(() => createConflictManager([{ id: 'x', role: 'pirate' }]), /pirateGroup/);
-assert.throws(() => manager.recordAttack({
-  attackerId: 'player', victimId: 'miner', witnessedBy: ['unknown'],
-}), /Unknown conflict participant/);
+assert.throws(
+  () =>
+    manager.recordAttack({
+      attackerId: 'player',
+      victimId: 'miner',
+      witnessedBy: ['unknown'],
+    }),
+  /Unknown conflict participant/
+);
 assert.equal(manager.hostility()('drone', 'pirate-b1'), true);
-console.log('PASS: multi-party conflict rules, player/NPC victim protection, pirates, and observed drone intervention');
+console.log(
+  'PASS: multi-party conflict rules, player/NPC victim protection, pirates, and observed drone intervention'
+);

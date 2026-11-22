@@ -1,4 +1,8 @@
-import { createParallelNativeDuels, type NativeDuelShip, type ParallelNativeDuels } from './parallel-native-duels';
+import {
+  createParallelNativeDuels,
+  type NativeDuelShip,
+  type ParallelNativeDuels,
+} from './parallel-native-duels';
 import { defaultFleetHostility, type FleetHostility } from './native-fleet-hostility';
 import type { StrategicCombatArenaOptions } from './strategic-combat-types';
 
@@ -27,9 +31,9 @@ export function createDynamicFleetCombat(
     ships.some((ship) => ship.team === 'a') &&
     ships.some((ship) => ship.team === 'b') &&
     ships.every((ship) =>
-      ships.some((other) =>
-        other !== ship &&
-        (hostility(key(ship), key(other)) || hostility(key(other), key(ship)))
+      ships.some(
+        (other) =>
+          other !== ship && (hostility(key(ship), key(other)) || hostility(key(other), key(ship)))
       )
     )
   ) {
@@ -52,7 +56,10 @@ export function createDynamicFleetCombat(
   const first = ships[firstIndex]!;
   const second = ships[opponentIndex]!;
   const native = createParallelNativeDuels(
-    [{ ...first, team: 'a' }, { ...second, team: 'b' }],
+    [
+      { ...first, team: 'a' },
+      { ...second, team: 'b' },
+    ],
     arena,
     seed,
     hostility,

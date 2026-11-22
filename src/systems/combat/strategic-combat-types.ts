@@ -330,7 +330,11 @@ export interface StrategicCombatService {
   fireGrapple(side: StrategicCombatSide): boolean;
   resumeAfterBoarding(): boolean;
   getParallelActor?(side: StrategicCombatSide): MutableCombatant;
-  retargetParallelSurvivor?(side: StrategicCombatSide, opponent: MutableCombatant, orphaned?: boolean): boolean;
+  retargetParallelSurvivor?(
+    side: StrategicCombatSide,
+    opponent: MutableCombatant,
+    orphaned?: boolean
+  ): boolean;
   redirectParallelSupport?(opponent: MutableCombatant): boolean;
 }
 

@@ -1,5 +1,9 @@
 import { clearCombatSpawn } from './combat-field-spawns';
-import { defaultFleetHostility, hasActiveFleetHostilities, type FleetHostility } from './native-fleet-hostility';
+import {
+  defaultFleetHostility,
+  hasActiveFleetHostilities,
+  type FleetHostility,
+} from './native-fleet-hostility';
 import { createStrategicCombatService } from './strategic-combat-service';
 import { buildCombatArena } from './strategic-combat-arena';
 import { advanceNativeFleetFrame, escapedNativeFleetShips } from './native-fleet-advance';
@@ -289,7 +293,7 @@ export function createParallelNativeDuels(
           { id: target.setup.id, team: teams.get(target.setup.id)!, setup: target.setup },
           clearCombatSpawn(fleetArena, {
             x: fleetArena.width * 0.5,
-            y: fleetArena.height * ((shipIndex % 9) + 1) / 10,
+            y: (fleetArena.height * ((shipIndex % 9) + 1)) / 10,
           }),
           target.position
         ),

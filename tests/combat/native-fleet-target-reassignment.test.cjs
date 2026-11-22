@@ -144,7 +144,6 @@ assert.equal(
   1
 );
 
-
 // Two independent kills leave one survivor on EACH team. The original
 // winner services must resume as reciprocal single-owner attackers.
 const crossed = createParallelNativeDuels(roster(2, 2), arena(), 1210);

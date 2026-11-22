@@ -42,7 +42,9 @@ export interface ConflictManager {
   hostility(): (sourceId: string, targetId: string) => boolean;
 }
 
-export function createConflictManager(participants: readonly ConflictParticipant[]): ConflictManager {
+export function createConflictManager(
+  participants: readonly ConflictParticipant[]
+): ConflictManager {
   const members = new Map<string, ConflictParticipant>();
   for (const participant of participants) {
     if (!participant.id || members.has(participant.id))
@@ -116,7 +118,11 @@ export function createConflictManager(participants: readonly ConflictParticipant
         }
       }
     },
-    recordConcessionViolation({ offenderId, witnessedBy, escalatedToHostility }: ConcessionViolation): void {
+    recordConcessionViolation({
+      offenderId,
+      witnessedBy,
+      escalatedToHostility,
+    }: ConcessionViolation): void {
       const offender = member(offenderId);
       if (offender.role === 'pirate' || !escalatedToHostility) return;
       for (const id of new Set(witnessedBy)) {
