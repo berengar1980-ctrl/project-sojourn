@@ -1,5 +1,10 @@
 import { getShipDefinition } from '../../systems/ships';
 import {
+  npcIsPiratePrey,
+  npcLooksHostileToPatrol,
+  rivalPirateGroups,
+} from '../../systems/npcs/npc-combat-ai';
+import {
   createConflictManager,
   type ConflictParticipant,
 } from '../../systems/combat/fleet-conflict-manager';
@@ -28,10 +33,19 @@ function canJoinWorldCombat(
   incident: FleetScenarioIncident
 ): boolean {
   if (scenarioDistance(ship, opponent) > 650) return false;
+  const aggressor = world.npc(ship.id);
+  const victim = world.npc(opponent.id);
+  if (aggressor?.hullHp !== undefined && aggressor.hullHp <= 0) return false;
+  if (victim?.hullHp !== undefined && victim.hullHp <= 0) return false;
   if (ship.id.startsWith('security-drone:'))
     return !!opponent.position && world.canDroneSee(ship.id, opponent.position);
-  if (world.npc(ship.id)?.pirate) return world.canAttack(ship.id);
-  if (world.npc(ship.id)?.job === 'patrol') return world.canAttack(ship.id);
+  if (aggressor?.pirate) {
+    if (!world.canAttack(ship.id)) return false;
+    if (opponent.id === 'player') return true;
+    return !!victim && (rivalPirateGroups(aggressor, victim) || npcIsPiratePrey(victim));
+  }
+  if (aggressor?.job === 'patrol')
+    return world.canAttack(ship.id) && !!victim && npcLooksHostileToPatrol(victim);
   if (
     world.npc(ship.id)?.job === 'miner' ||
     world.npc(ship.id)?.job === 'freighter' ||
@@ -44,7 +58,7 @@ function canJoinWorldCombat(
     return true;
   }
   // The player is a valid defender, never an automatic aggressor against civilians.
-  return world.npc(opponent.id)?.pirate ? world.canAttack(opponent.id) : incident !== 'none';
+  return victim?.pirate ? world.canAttack(opponent.id) : incident !== 'none';
 }
 
 function firstHostilePair(
