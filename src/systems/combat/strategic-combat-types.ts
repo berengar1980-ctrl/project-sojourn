@@ -59,7 +59,6 @@ export interface CombatPoint {
   readonly x: number;
   readonly y: number;
 }
-
 export interface CombatWeaponMount {
   readonly slotIndex: number;
   readonly x: number;
@@ -69,7 +68,6 @@ export interface CombatWeaponMount {
   readonly allowedMounts?: readonly ('forward' | 'broadside' | 'turret' | 'guided')[];
   readonly allowedFamilies?: readonly ShipWeaponFamily[];
 }
-
 export interface CombatGrapple {
   readonly owner: StrategicCombatSide;
   readonly success: boolean;
@@ -83,14 +81,12 @@ export interface CombatGrapple {
   readonly tension: number;
   readonly tractorAssisted: boolean;
 }
-
 export interface CombatShieldGeometry {
   readonly centerOffset: CombatPoint;
   readonly radiusX: number;
   readonly radiusY: number;
   readonly modifier: number;
 }
-
 export interface StrategicCombatantSetup {
   readonly id: string;
   readonly name: string;
@@ -124,7 +120,6 @@ export interface StrategicCombatantSetup {
   readonly factionId?: 'civilian' | 'pirates' | 'pirates2';
   readonly pirateMark?: 'broken-spear' | 'black-tide';
 }
-
 export interface WeaponTelemetry {
   readonly slotIndex: number;
   readonly weaponId: string;
@@ -134,14 +129,12 @@ export interface WeaponTelemetry {
   hullDamageDealt: number;
   lastFiredAt: number | null;
 }
-
 export interface WeaponTelemetrySnapshot extends Readonly<WeaponTelemetry> {
   readonly cooldownRemaining: number;
   readonly cooldownSeconds: number;
   readonly mountLabel: string;
   readonly displayOrder: number;
 }
-
 export interface StrategicCombatantSnapshot {
   readonly id: string;
   readonly name: string;
