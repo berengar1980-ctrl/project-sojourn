@@ -24,10 +24,7 @@ import {
   rivalPirateGroups,
 } from '../npcs/npc-combat-ai';
 
-import {
-  type StrategicCombatArenaOptions,
-  type StrategicCombatService,
-} from './strategic-combat-service';
+import type { StrategicCombatArenaOptions } from './strategic-combat-service';
 
 import { npcCombatant } from './npc-combatant-setup';
 import {
