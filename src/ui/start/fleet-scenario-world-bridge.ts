@@ -43,7 +43,7 @@ const WORLD_LOCATION = 'duel';
  * The test state never mutates the real career sector or economy.
  */
 // Thin integration of existing campaign miners, drones, world routing and fleet AI.
-// eslint-disable-next-line max-lines-per-function
+// eslint-disable-next-line max-lines-per-function, complexity
 export function createFleetScenarioWorldBridge(
   roster: readonly FleetScenarioShip[],
   arena: StrategicCombatArenaOptions,
