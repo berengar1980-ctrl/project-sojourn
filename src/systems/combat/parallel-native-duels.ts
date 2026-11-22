@@ -180,13 +180,12 @@ function nativeFleetFinished(
   actors: readonly MutableCombatant[],
   escaped: ReadonlySet<string>,
   teams: ReadonlyMap<string, 'a' | 'b'>,
-  states: readonly StrategicCombatSnapshot[]
-): boolean {
+ ): boolean {
   const active = (team: 'a' | 'b') =>
     actors.some(
       (ship) => ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === team
     );
-  return !active('a') || !active('b') || states.every((state) => state.winner !== null);
+  return !active('a') || !active('b');
 }
 
 export function createParallelNativeDuels(
@@ -250,7 +249,7 @@ export function createParallelNativeDuels(
       elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
       engagements,
-      finished: nativeFleetFinished(actors, escaped, teams, states),
+      finished: nativeFleetFinished(actors, escaped, teams),
     };
     return cachedSnapshot;
   };
