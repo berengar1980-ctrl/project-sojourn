@@ -14,10 +14,20 @@ import type {
 export function retargetNativeFleetSurvivor(
   runtime: StrategicCombatRuntime,
   side: StrategicCombatSide,
-  opponent: MutableCombatant
+  opponent: MutableCombatant,
+  orphaned = false
 ): boolean {
-  if (runtime.winner !== side || opponent.hullHp <= 0) return false;
-  if (runtime.outcomeReason !== 'destruction' && runtime.outcomeReason !== 'escape') return false;
+  if (opponent.hullHp <= 0) return false;
+  // The fleet coordinator may release a survivor whose target escaped in
+  // another service; that service cannot tick to produce its own winner.
+  if (orphaned) {
+    if (runtime.winner !== null) return false;
+  } else if (
+    runtime.winner !== side ||
+    (runtime.outcomeReason !== 'destruction' && runtime.outcomeReason !== 'escape')
+  ) {
+    return false;
+  }
   const survivor = runtimeCombatant(runtime, side);
   if (survivor.hullHp <= 0 || survivor === opponent || runtimeEnemy(runtime, side) === opponent)
     return false;
