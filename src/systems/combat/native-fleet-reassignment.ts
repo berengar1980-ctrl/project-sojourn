@@ -1,3 +1,4 @@
+import { defaultFleetHostility, isFleetHostile, type FleetHostility } from './native-fleet-hostility';
 import type {
   MutableCombatant,
   StrategicCombatService,
@@ -10,7 +11,8 @@ interface FleetAssignment {
   readonly services: readonly StrategicCombatService[];
   readonly drivers: NativeFleetDriver[];
   readonly ships: readonly MutableCombatant[];
-  readonly teams: ReadonlyMap<string, 'a' | 'b'>;
+  readonly teams: ReadonlyMap<string, string>;
+  readonly hostility?: FleetHostility;
   readonly escaped: ReadonlySet<string>;
 }
 
@@ -32,7 +34,7 @@ function live(ship: MutableCombatant, context: FleetAssignment): boolean {
 }
 
 function enemy(a: MutableCombatant, b: MutableCombatant, context: FleetAssignment): boolean {
-  return context.teams.get(a.setup.id) !== context.teams.get(b.setup.id);
+  return isFleetHostile(a, b, context.teams, context.hostility ?? defaultFleetHostility);
 }
 
 /** Every physical ship has precisely one owning AI/physics driver. */
