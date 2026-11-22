@@ -238,9 +238,6 @@ export class FleetNativeCombatRenderer {
     const height = rect.height;
     const timeSeconds = performance.now() / 1000;
     const visualElapsed = this.effectClock.elapsed(timeSeconds);
-    const engagementDuels = [this.model, ...this.parallelDuels];
-    const shipShape = (ship: StrategicCombatSnapshot['attacker']) =>
-      this.shipGeometry(ship, width, height);
     this.context.clearRect(0, 0, width, height);
     const shake = ramCameraImpulse(this.model.attacker, this.model.defender, visualElapsed);
     this.context.save();
@@ -269,15 +266,7 @@ export class FleetNativeCombatRenderer {
       timeSeconds
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
-    if (this.showEngagementLines) {
-      paintFleetEngagementLines(
-        this.context,
-        engagementDuels,
-        this.engagements,
-        this.hiddenShipIds,
-        shipShape
-      );
-    }
+    this.drawFleetLinks(width, height);
     this.drawMines(width, height);
     this.drawProjectiles(width, height, false);
     this.drawAutocannonBursts(width, height);
@@ -325,15 +314,7 @@ export class FleetNativeCombatRenderer {
       width,
       height
     );
-    paintFleetShipBadges(
-      this.context,
-      engagementDuels,
-      this.engagements,
-      this.hiddenShipIds,
-      shipShape,
-      width,
-      height
-    );
+    this.drawFleetBadges(width, height);
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
   }
@@ -367,6 +348,27 @@ export class FleetNativeCombatRenderer {
       timeSeconds,
       visualElapsed,
     });
+  }
+  private drawFleetLinks(width: number, height: number): void {
+    if (!this.showEngagementLines) return;
+    paintFleetEngagementLines(
+      this.context,
+      [this.model, ...this.parallelDuels],
+      this.engagements,
+      this.hiddenShipIds,
+      (ship) => this.shipGeometry(ship, width, height)
+    );
+  }
+  private drawFleetBadges(width: number, height: number): void {
+    paintFleetShipBadges(
+      this.context,
+      [this.model, ...this.parallelDuels],
+      this.engagements,
+      this.hiddenShipIds,
+      (ship) => this.shipGeometry(ship, width, height),
+      width,
+      height
+    );
   }
   private drawBeams(width: number, height: number, above: boolean): void {
     if (this.model.winner !== null) return;
