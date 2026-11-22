@@ -195,7 +195,12 @@ function beginPlayerCombat(
     target,
     runtime.options.sectorNpcs.npcs,
     playerInitiated,
-    arena
+    arena,
+    {
+      positionOf: (npc) => runtime.options.sectorNpcs.livePosition(npc),
+      headingOf: (npc) => runtime.options.sectorNpcs.liveHeading(npc),
+      playerPosition: runtime.options.navigation.getSnapshot().currentPosition,
+    }
   );
   runtime.playerCombat = runtime.playerFleet.combat;
   runtime.playerEnemy = target;
@@ -268,7 +273,10 @@ function beginBackgroundCombat(
   const attackerSetup = npcCombatant(attacker);
   const defenderSetup = npcCombatant(defender);
   if (!attackerSetup || !defenderSetup) return;
-  const fleet = createNpcFleetEncounter(attacker, defender, runtime.options.sectorNpcs.npcs, arena);
+  const fleet = createNpcFleetEncounter(attacker, defender, runtime.options.sectorNpcs.npcs, arena, {
+    positionOf: (npc) => runtime.options.sectorNpcs.livePosition(npc),
+    headingOf: (npc) => runtime.options.sectorNpcs.liveHeading(npc),
+  });
   const key = pairKey(attacker.id, defender.id);
   runtime.options.sectorNpcs.markEngaged(attacker, 'npc', defender.id, 'Gefecht');
   runtime.options.sectorNpcs.markEngaged(defender, 'npc', attacker.id, 'Gefecht');
