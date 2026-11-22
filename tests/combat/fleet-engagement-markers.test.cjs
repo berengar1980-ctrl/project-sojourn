@@ -72,6 +72,7 @@ assert.equal(fleetShipBadges(uneven.engagements).length, 6);
 // while A1/B1 continue to display their intact D1 pairing.
 const peeled = createParallelNativeDuels(roster(2, 3), arena(), 1203);
 const before = peeled.getSnapshot();
+const beforeSnapshots = [...before.duels, ...before.supporters];
 assert.equal(label(before.engagements, 'b3'), '+1');
 assert.equal(label(before.engagements, 'a2'), 'D2');
 peeled.duels[1].getParallelActor('defender').hullHp = 0;
@@ -115,7 +116,7 @@ const shape = (entry) => ({
   angle: entry.headingRadians,
 });
 const snapshots = [...after.duels, ...after.supporters];
-paintFleetEngagementLines(painter, snapshots, before.engagements, new Set(), shape);
+paintFleetEngagementLines(painter, beforeSnapshots, before.engagements, new Set(), shape);
 assert.equal(calls.strokes, 3);
 assert(calls.dashed.some((dashes) => dashes.length > 0));
 assert(calls.dashed.some((dashes) => dashes.length === 0));
