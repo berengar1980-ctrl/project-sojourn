@@ -51,12 +51,14 @@ function firstHostilePair(
   available: readonly NativeDuelShip[],
   hostility: (source: string, target: string) => boolean,
   world: ScenarioWorld,
-  incident: FleetScenarioIncident
+  incident: FleetScenarioIncident,
+  completedPairs: ReadonlySet<string>
 ): readonly [NativeDuelShip, NativeDuelShip] | null {
   for (const source of available) {
     const target = available.find(
       (other) =>
         other !== source &&
+        !completedPairs.has([source.id, other.id].sort().join('|')) &&
         (hostility(source.id, other.id) || hostility(other.id, source.id)) &&
         (canJoinWorldCombat(source, other, world, incident) ||
           canJoinWorldCombat(other, source, world, incident))
@@ -166,6 +168,7 @@ export function createFleetScenarioRuntime(
   const identities = new Map(roster.map((ship) => [ship.id, ship.id]));
   const arrived = new Map<string, NativeDuelShip>();
   const joined = new Set<string>();
+  const completedPairs = new Set<string>();
   let elapsedSeconds = 0;
   let fleet: ParallelNativeDuels | null = null;
   let completedEncounters = 0;
@@ -199,7 +202,7 @@ export function createFleetScenarioRuntime(
   const connectWorldFighters = (): void => {
     const active = [...arrived.keys()].map(atWorldPose);
     if (!fleet) {
-      const pair = firstHostilePair(active, conflict.hostility(), world, incident);
+      const pair = firstHostilePair(active, conflict.hostility(), world, incident, completedPairs);
       if (!pair) return;
       fleet = createDynamicFleetCombat(pair, arena, seed, conflict.hostility(), identities);
       for (const ship of pair) {
@@ -268,6 +271,12 @@ export function createFleetScenarioRuntime(
         }
       }
       if (fleet?.getSnapshot().finished) {
+        const participants = [...joined].sort();
+        for (let i = 0; i < participants.length; i++) {
+          for (let j = i + 1; j < participants.length; j++) {
+            completedPairs.add([participants[i], participants[j]].join('|'));
+          }
+        }
         for (const id of joined) world.releaseCombat(id);
         joined.clear();
         fleet = null;
