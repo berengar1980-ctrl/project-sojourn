@@ -1,4 +1,5 @@
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
+import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import { materializeNativeFleetWrecks } from './native-fleet-wrecks';
 import type {
   CombatVisualAsteroid,
@@ -33,6 +34,7 @@ interface NativeFleetFrame {
   readonly seed: number;
   readonly elapsed: number;
   readonly dt: number;
+  readonly bystanders: readonly StrategicCombatBystander[];
 }
 
 /** One asteroid tick, one native actor tick, one recorded wreck per vessel. */
@@ -50,6 +52,7 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     seed,
     elapsed,
     dt,
+    bystanders,
   } = frame;
   advanceCombatAsteroids(arena, dt);
   materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
@@ -83,13 +86,20 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
           position: rock.position,
           radius: rock.collisionRadius ?? rock.radius,
         })),
+      ...bystanders
+        .filter((ship) => !duelIds.has(ship.id))
+        .map((ship) => ({
+          id: 'ship:' + ship.id,
+          position: ship.position,
+          radius: radiusById.get(ship.id) ?? 35,
+        })),
       ...others.map((ship) => ({
         id: 'ship:' + ship.id,
         position: ship.position,
         radius: radiusById.get(ship.id) ?? 35,
       }))
     );
-    service.setBystanders(others);
+    service.setBystanders([...others, ...bystanders.filter((ship) => !duelIds.has(ship.id))]);
     const state = service.tick(dt);
     if (state.outcomeReason === 'escape') {
       const escapedId =
