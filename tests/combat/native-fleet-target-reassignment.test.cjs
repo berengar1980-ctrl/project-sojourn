@@ -140,9 +140,10 @@ assert.equal(five.getSnapshot().finished, false);
 assert.equal(five.getSnapshot().duels.length, 5);
 assert.equal(five.getSnapshot().supporters.length, 0);
 assert.equal(
-  five.getSnapshot().duels[0].arena.asteroids.filter((rock) => rock.id === 'fleet-wreck:b1')
-    .length,
+  five.getSnapshot().duels[0].arena.asteroids.filter((rock) => rock.id === 'fleet-wreck:b1').length,
   1
 );
 
-console.log('PASS 2v2/2v3/3v3/5v5 free ship reinforcement, escape and secondary attacker interception');
+console.log(
+  'PASS 2v2/2v3/3v3/5v5 free ship reinforcement, escape and secondary attacker interception'
+);
