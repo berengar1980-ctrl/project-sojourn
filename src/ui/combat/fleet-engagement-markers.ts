@@ -135,18 +135,17 @@ export class FleetEngagementMarkerPainter {
 
   drawBadges(
     context: CanvasRenderingContext2D,
-    geometry: (ship: StrategicCombatantSnapshot) => ShipScreenGeometry,
-    width: number,
-    height: number
+    geometry: (ship: StrategicCombatantSnapshot) => ShipScreenGeometry
   ): void {
+    const rect = context.canvas.getBoundingClientRect();
     paintFleetShipBadges(
       context,
       this.duels,
       this.engagements,
       this.escaped,
       geometry,
-      width,
-      height
+      rect.width,
+      rect.height
     );
   }
 }
