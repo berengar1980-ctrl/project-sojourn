@@ -168,6 +168,20 @@ function nativeFootprintRadius(actor: MutableCombatant): number {
   return Math.max(18, Math.max(shield?.radiusX ?? 35, shield?.radiusY ?? 24) * 0.85);
 }
 
+function nativeFleetFinished(
+  actors: readonly MutableCombatant[],
+  escaped: ReadonlySet<string>,
+  teams: ReadonlyMap<string, 'a' | 'b'>,
+  states: readonly StrategicCombatSnapshot[]
+): boolean {
+  const active = (team: 'a' | 'b') =>
+    actors.some(
+      (ship) =>
+        ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === team
+    );
+  return !active('a') || !active('b') || states.every((state) => state.winner !== null);
+}
+
 export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
@@ -229,10 +243,7 @@ export function createParallelNativeDuels(
       supporters: additional,
       elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
-      finished:
-        !actors.some((ship) => ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === 'a') ||
-        !actors.some((ship) => ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === 'b') ||
-        states.every((state) => state.winner !== null),
+      finished: nativeFleetFinished(actors, escaped, teams, states),
     };
     return cachedSnapshot;
   };
