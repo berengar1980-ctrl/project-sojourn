@@ -1,6 +1,6 @@
 import type { BoardingOutcome } from '../../core/boarding-types';
 import { settleNpcCombatPirateLoot } from './npc-combatant-setup';
-import type { EngagementRuntime } from './star-map-engagement-service';
+import type { EngagementRuntime } from './star-map-engagement-runtime-types';
 
 export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: number): void {
   for (const [key, entry] of [...runtime.backgroundCombats]) {
