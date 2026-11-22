@@ -24,6 +24,7 @@ jobs:
         run: |
           npx prettier --write             src/systems/combat/fleet-conflict-manager.ts             src/systems/combat/native-fleet-hostility.ts             src/systems/combat/native-fleet-reassignment.ts             src/systems/combat/native-fleet-retarget.ts             src/systems/combat/parallel-native-duels.ts             src/systems/combat/strategic-combat-service.ts             src/systems/combat/strategic-combat-types.ts             src/systems/combat/dynamic-fleet-combat.ts \
             src/systems/combat/career-fleet-encounter.ts \
+            src/systems/npcs/npc-combat-ai.ts \
             src/systems/combat/star-map-engagement-contract.ts \
             src/systems/combat/star-map-engagement-service.ts \
             src/app/game-controller-combat-scene.ts \
