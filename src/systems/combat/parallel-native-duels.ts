@@ -2,6 +2,10 @@ import { clearCombatSpawn } from './combat-field-spawns';
 import { createStrategicCombatService } from './strategic-combat-service';
 import { buildCombatArena } from './strategic-combat-arena';
 import { advanceNativeFleetFrame, escapedNativeFleetShips } from './native-fleet-advance';
+import {
+  reassignNativeFleetTargets,
+  type NativeFleetDriver,
+} from './native-fleet-reassignment';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -159,30 +163,6 @@ function createNativeDuelServices(
   return { pairs, supporters };
 }
 
-/**
- * In 1vN the single defending ship must not freeze after its first opponent
- * is destroyed or escapes. Transfer its EXISTING service to another live
- * attacker; the new opponent keeps its separate, already-running AI owner.
- * With 2v2 there is deliberately no target reassignment.
- */
-function retargetSingletonSurvivor(
-  duel: StrategicCombatService,
-  supporters: readonly StrategicCombatService[],
-  singletonSide: 'attacker' | 'defender' | null,
-  escaped: ReadonlySet<string>
-): void {
-  if (!singletonSide || !supporters.length) return;
-  const state = duel.getSnapshot();
-  if (state.winner !== singletonSide) return;
-  if (state.outcomeReason !== 'destruction' && state.outcomeReason !== 'escape') return;
-  const survivor = nativeActor(duel, singletonSide);
-  if (survivor.hullHp <= 0 || escaped.has(survivor.setup.id)) return;
-  const next = supporters
-    .map((supporter) => nativeActor(supporter, 'attacker'))
-    .find((actor) => actor.hullHp > 0 && !escaped.has(actor.setup.id));
-  if (next) duel.retargetParallelSurvivor?.(singletonSide, next);
-}
-
 function nativeFootprintRadius(actor: MutableCombatant): number {
   const shield = actor.setup.shieldGeometry;
   return Math.max(18, Math.max(shield?.radiusX ?? 35, shield?.radiusY ?? 24) * 0.85);
@@ -228,12 +208,11 @@ export function createParallelNativeDuels(
   const actors = nativeTeamActors(pairs, supporters);
   const recordedWrecks = new Set<string>();
   const escapedRecords = new Set<string>();
-  const singletonSide =
-    first.length === 1 && second.length > 1
-      ? ('attacker' as const)
-      : second.length === 1 && first.length > 1
-        ? ('defender' as const)
-        : null;
+  const teams = new Map(ships.map((ship) => [ship.setup.id, ship.team] as const));
+  const drivers: NativeFleetDriver[] = [
+    ...pairs.map(() => 'both' as const),
+    ...supporters.map(() => 'attacker' as const),
+  ];
   let elapsed = 0;
   let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
   const radiusById = new Map(
@@ -250,11 +229,10 @@ export function createParallelNativeDuels(
       supporters: additional,
       elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
-      finished: states.every(
-        (state, index) =>
-          state.winner !== null ||
-          (index >= pairs.length && escaped.has(nativeActor(services[index]!, 'defender').setup.id))
-      ),
+      finished:
+        !actors.some((ship) => ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === 'a') ||
+        !actors.some((ship) => ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === 'b') ||
+        states.every((state) => state.winner !== null),
     };
     return cachedSnapshot;
   };
@@ -283,7 +261,13 @@ export function createParallelNativeDuels(
         elapsed,
         dt,
       });
-      retargetSingletonSurvivor(pairs[0]!, supporters, singletonSide, escapedRecords);
+      reassignNativeFleetTargets({
+        services,
+        drivers,
+        ships: actors,
+        teams,
+        escaped: escapedRecords,
+      });
       return getSnapshot();
     },
   };
