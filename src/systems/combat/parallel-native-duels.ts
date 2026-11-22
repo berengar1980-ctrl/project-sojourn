@@ -2,10 +2,7 @@ import { clearCombatSpawn } from './combat-field-spawns';
 import { createStrategicCombatService } from './strategic-combat-service';
 import { buildCombatArena } from './strategic-combat-arena';
 import { advanceNativeFleetFrame, escapedNativeFleetShips } from './native-fleet-advance';
-import {
-  reassignNativeFleetTargets,
-  type NativeFleetDriver,
-} from './native-fleet-reassignment';
+import { reassignNativeFleetTargets, type NativeFleetDriver } from './native-fleet-reassignment';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -180,8 +177,7 @@ function nativeFleetFinished(
 ): boolean {
   const active = (team: 'a' | 'b') =>
     actors.some(
-      (ship) =>
-        ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === team
+      (ship) => ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === team
     );
   return !active('a') || !active('b') || states.every((state) => state.winner !== null);
 }
