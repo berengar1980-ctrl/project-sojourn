@@ -25,9 +25,13 @@ assert(fleet.includes('reactor4'), 'fleet uses mk4 reactors');
 assert(fleet.includes('item.tier === 1'), 'weapons are mk1');
 assert(fleet.includes('item.tier === 1'), 'mines are mk1');
 assert(fleet.includes('fitsWeaponHardpoint'), 'weapons respect mount sizes');
+const fleetFactory = read('src/systems/combat/dynamic-fleet-combat.ts');
+const parallel = read('src/systems/combat/parallel-native-duels.ts');
 assert(
-  fleet.includes('createParallelNativeDuels('),
-  'FleetCombat laboratory must start two real strategic 1vs1 services'
+  fleet.includes('createDynamicFleetCombat(') &&
+    fleetFactory.includes('createParallelNativeDuels(') &&
+    parallel.includes('createStrategicCombatService('),
+  'FleetCombat laboratory must share the original native 1vs1 services'
 );
 assert(fleet.includes('length: 5'), 'factions offer choices 1 to 5');
 assert(
