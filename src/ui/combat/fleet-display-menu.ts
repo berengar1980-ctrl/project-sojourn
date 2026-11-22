@@ -111,7 +111,11 @@ export function createFleetDisplayMenu(shell: HTMLElement): FleetDisplayMenu {
       'flex:1;cursor:pointer;border:1px solid #587682;background:#142834;' +
       'color:#d9eef4;font:11px ui-monospace,monospace;padding:6px;';
     button.addEventListener('click', () =>
-      apply(Object.fromEntries(CONTROLS.map(({ key }) => [key, visible])) as unknown as FleetDisplayPreferences)
+      apply(
+        Object.fromEntries(
+          CONTROLS.map(({ key }) => [key, visible])
+        ) as unknown as FleetDisplayPreferences
+      )
     );
     actions.append(button);
   }
