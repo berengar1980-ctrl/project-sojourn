@@ -10,7 +10,7 @@ export interface NativeFleetEngagement {
   readonly role: 'duel' | 'support';
 }
 
-/** Mark original native pairs and the actors simulated by one-sided support ticks. */
+/** Mark original native pairs and any reciprocal single-owner pair as genuine duels. */
 export function activeNativeFleetEngagements(
   states: readonly StrategicCombatSnapshot[],
   drivers: readonly NativeFleetDriver[],
@@ -54,8 +54,11 @@ export function activeNativeFleetEngagements(
     claimed.add(link.sourceId);
     claimed.add(link.targetId);
   }
+  // Any two original, single-owner AI drivers can become a genuine new
+  // 1v1. In dynamically joined encounters the second driver is often an
+  // EXTRA service (index >= pairedCount), not another original pair.
   for (const link of directed) {
-    if (link.role !== 'support' || link.index >= pairedCount) continue;
+    if (link.role !== 'support') continue;
     if (claimed.has(link.sourceId) || claimed.has(link.targetId)) continue;
     const reciprocal = directed.find(
       (candidate) =>
@@ -65,7 +68,12 @@ export function activeNativeFleetEngagements(
         candidate.targetId === link.sourceId
     );
     if (!reciprocal) continue;
-    main.push({ ...link, role: 'duel' });
+    main.push({
+      sourceId: link.sourceId,
+      targetId: link.targetId,
+      label: link.label,
+      role: 'duel',
+    });
     claimed.add(link.sourceId);
     claimed.add(link.targetId);
   }
