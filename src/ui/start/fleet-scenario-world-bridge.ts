@@ -50,6 +50,7 @@ export function createFleetScenarioWorldBridge(
   const templates = createSectorNpcEconomyStates();
   const arrived = new Set<string>();
   const engaged = new Set<string>();
+  const threats = new Map<string, WorldPoint>();
   const states = new Map<string, MovingNpc>();
   const drones = new Map<string, AsteroidSecurityDrone>();
   const playerStart = arena.attackerPosition ?? { x: arena.width * 0.5, y: arena.height * 0.5 };
@@ -179,10 +180,11 @@ export function createFleetScenarioWorldBridge(
     canDroneSee: (id: string, point: WorldPoint) => drones.get(id)?.detect(point, rocks) ?? false,
     markEngaged(id: string, targetId: string) {
       if (engaged.has(id)) return;
+      const current = pose(id);
       engaged.add(id);
+      threats.delete(id);
       const moving = states.get(id);
       if (!moving) return;
-      const current = pose(id);
       if (current) {
         moving.position = { ...current.position };
         moving.headingRadians = current.headingRadians;
@@ -194,6 +196,9 @@ export function createFleetScenarioWorldBridge(
       };
     },
     syncFromCombat,
+    threaten(id: string, aggressor: WorldPoint) {
+      if (!engaged.has(id) && states.has(id)) threats.set(id, { ...aggressor });
+    },
     tick(dt: number, threat: WorldPoint | null) {
       // The campaign's existing mining and security services drive civilians
       // and drones until their native combat driver takes ownership.
@@ -205,8 +210,12 @@ export function createFleetScenarioWorldBridge(
           drones.get(id)?.tick(dt, rocks, [], [], threat ?? undefined);
           continue;
         }
-        const destination = threat && moving.npc.pirate && npcMayInitiateAttack(moving.npc)
-          ? threat : moving.waypoint;
+        const danger = threats.get(id);
+        const destination = danger && npcDefenseReaction(moving.npc) === 'flee'
+          ? { x: Math.max(180, Math.min(arena.width - 180, moving.position.x * 2 - danger.x)),
+              y: Math.max(180, Math.min(arena.height - 180, moving.position.y * 2 - danger.y)) }
+          : threat && moving.npc.pirate && npcMayInitiateAttack(moving.npc)
+            ? threat : moving.waypoint;
         const arrivedAt = moveFieldShip(moving, destination, 110, dt, obstacles(), 65, 'patrol');
         if (arrivedAt) {
           const hash = hashId(id + ':' + Math.floor(dt * 1000) + ':' + Math.round(moving.position.x));
@@ -218,11 +227,12 @@ export function createFleetScenarioWorldBridge(
       }
     },
     contacts(): FleetWorldContact[] {
-      return [...states].flatMap(([id, value]) => {
+      const bystanders = [...states].flatMap(([id, value]) => {
         if (!arrived.has(id) || engaged.has(id) || value.npc.hullHp <= 0) return [];
         const movement = pose(id);
         return movement ? [{ id, name: value.npc.name, shipId: value.npc.shipId, ...movement }] : [];
       });
+      return engaged.has('player') ? bystanders : [{ id: 'player', name: 'Spieler', shipId: roster.find((ship) => ship.id === 'player')!.draft.shipId, ...playerPose }, ...bystanders];
     },
   };
 }
