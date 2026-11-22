@@ -257,7 +257,6 @@ export function createParallelNativeDuels(
       elapsed += dt;
       advanceNativeFleetFrame({
         services,
-        pairCount: pairs.length,
         actors,
         baseObstacles,
         allObstacles,
