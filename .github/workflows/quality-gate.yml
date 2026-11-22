@@ -27,10 +27,6 @@ jobs:
           cache: npm
       - name: Install locked dependencies
         run: npm ci
-      - name: Temporary FleetCombat formatting diagnostic
-        run: |
-          npx prettier --write src/ui/combat/fleet-display-menu.ts tests/combat/native-fleet-opponent-promotion.test.cjs
-          git diff -- src/ui/combat/fleet-display-menu.ts tests/combat/native-fleet-opponent-promotion.test.cjs
       - name: Check Prettier
         run: npm run format:check
       - name: Check ESLint
