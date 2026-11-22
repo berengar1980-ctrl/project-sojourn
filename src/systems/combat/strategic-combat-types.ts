@@ -328,7 +328,6 @@ export interface StrategicCombatService {
   setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
   surrender(side: StrategicCombatSide): void;
   fireGrapple(side: StrategicCombatSide): boolean;
-  /** Release a coupled grapple after a tactical retreat without resetting hulls or arena. */
   resumeAfterBoarding(): boolean;
   getParallelActor?(side: StrategicCombatSide): MutableCombatant;
   retargetParallelSurvivor?(side: StrategicCombatSide, opponent: MutableCombatant): boolean;
