@@ -105,3 +105,48 @@ export function paintFleetShipBadges(
   }
   context.restore();
 }
+
+/** Keeps FleetCombat's optional line/role overlay state out of the core canvas renderer. */
+export class FleetEngagementMarkerPainter {
+  private duels: readonly StrategicCombatSnapshot[] = [];
+  private engagements: readonly NativeFleetEngagement[] = [];
+  private escaped: ReadonlySet<string> = new Set();
+  private showLines = true;
+
+  update(
+    duels: readonly StrategicCombatSnapshot[],
+    engagements: readonly NativeFleetEngagement[],
+    escaped: ReadonlySet<string>,
+    showLines: boolean
+  ): void {
+    this.duels = duels;
+    this.engagements = engagements;
+    this.escaped = escaped;
+    this.showLines = showLines;
+  }
+
+  drawLines(
+    context: CanvasRenderingContext2D,
+    geometry: (ship: StrategicCombatantSnapshot) => ShipScreenGeometry
+  ): void {
+    if (!this.showLines) return;
+    paintFleetEngagementLines(context, this.duels, this.engagements, this.escaped, geometry);
+  }
+
+  drawBadges(
+    context: CanvasRenderingContext2D,
+    geometry: (ship: StrategicCombatantSnapshot) => ShipScreenGeometry,
+    width: number,
+    height: number
+  ): void {
+    paintFleetShipBadges(
+      context,
+      this.duels,
+      this.engagements,
+      this.escaped,
+      geometry,
+      width,
+      height
+    );
+  }
+}
