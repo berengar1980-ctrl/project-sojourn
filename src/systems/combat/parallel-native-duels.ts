@@ -1,4 +1,5 @@
 import { clearCombatSpawn } from './combat-field-spawns';
+import { defaultFleetHostility, hasActiveFleetHostilities, type FleetHostility } from './native-fleet-hostility';
 import { createStrategicCombatService } from './strategic-combat-service';
 import { buildCombatArena } from './strategic-combat-arena';
 import { advanceNativeFleetFrame, escapedNativeFleetShips } from './native-fleet-advance';
@@ -179,19 +180,17 @@ function nativeFleetRadii(ships: readonly MutableCombatant[]): Map<string, numbe
 function nativeFleetFinished(
   actors: readonly MutableCombatant[],
   escaped: ReadonlySet<string>,
-  teams: ReadonlyMap<string, 'a' | 'b'>
+  factions: ReadonlyMap<string, string>,
+  hostility: FleetHostility
 ): boolean {
-  const active = (team: 'a' | 'b') =>
-    actors.some(
-      (ship) => ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === team
-    );
-  return !active('a') || !active('b');
+  return !hasActiveFleetHostilities(actors, escaped, factions, hostility);
 }
 
 export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
-  seed = 1
+  seed = 1,
+  hostility: FleetHostility = defaultFleetHostility
 ): ParallelNativeDuels {
   const first = ships.filter((ship) => ship.team === 'a');
   const second = ships.filter((ship) => ship.team === 'b');
@@ -249,7 +248,7 @@ export function createParallelNativeDuels(
       elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
       engagements,
-      finished: nativeFleetFinished(actors, escaped, teams),
+      finished: nativeFleetFinished(actors, escaped, teams, hostility),
     };
     return cachedSnapshot;
   };
@@ -282,6 +281,7 @@ export function createParallelNativeDuels(
         drivers,
         ships: actors,
         teams,
+        hostility,
         escaped: escapedRecords,
       });
       return getSnapshot();
