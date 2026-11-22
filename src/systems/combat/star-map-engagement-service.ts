@@ -1,8 +1,5 @@
 import { reactToPlayerAttack } from './player-attack-reaction';
-import {
-  createCareerFleetEncounter,
-  createNpcFleetEncounter,
-} from './career-fleet-encounter';
+import { createCareerFleetEncounter, createNpcFleetEncounter } from './career-fleet-encounter';
 import type {
   StarMapEngagementService,
   StarMapEngagementOptions,
