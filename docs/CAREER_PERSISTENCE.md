@@ -1137,3 +1137,27 @@ Speicherwerte. Die Anpassung der temporären Duell-Verbindungslinien betrifft
 nur den berechneten FleetCombat-Snapshot und wird nicht gespeichert.
 Laufende Mehrparteiengefechte bleiben hinsichtlich des zusätzlichen
 Fleet-Zustands weiterhin nicht vollständig checkpoint-/restore-fähig.
+
+### Einheitliche native Kampfphysik und NPC-Weltzustand (PR #387)
+
+Die Kampagne besitzt weiterhin die maßgeblichen `SectorNpcState`- und
+`combatMovement`-Daten. Der gemeinsame native FleetCombat-Akteur
+übernimmt bei Kampfbeginn Position, Flugrichtung und Geschwindigkeit,
+wird während des Kampfes nur einmal physisch simuliert und synchronisiert
+seine tatsächliche Bewegung auf den bestehenden NPC-Zustand zurück.
+Die Umrechnung zwischen strategischen Sektorkoordinaten und lokalen
+Kampfkoordinaten bleibt als temporärer Offset beim Encounter, ohne
+neues Speicherfeld oder konkurrierende Bewegungsinstanz.
+
+Für das PvP-Testlabor werden temporäre NPC-Profile aus den vorhandenen
+`createSectorNpcEconomyStates`-Vorlagen kopiert. Ihre lokalen Miner
+verwenden den bestehenden `createNpcLocalMiningService`, die
+Sicherheitsdrohnen die vorhandene `AsteroidSecurityDrone`, beide mit
+dem gemeinsamen Feld-Routing. Diese Daten werden **nicht** in der
+Karriere persistiert und greifen nicht auf deren Wirtschaft zu.
+
+Die bereits dokumentierte Save/Load-Grenze bleibt bestehen:
+Zusätzliche Mehrparteien-Flottenakteure, kurzfristige Feindschaften
+und ihre Zuordnungen sind noch nicht vollständig durch das
+Karriere-Kampfcheckpoint erfasst. Die Änderungen in diesem Branch
+beheben **nicht** diese separate Persistenzlücke.
