@@ -1,4 +1,5 @@
 import type { FleetWorldContact } from '../start/fleet-scenario-world-bridge';
+import type { CombatCameraPose } from './combat-camera';
 import { createFleetWorldContactOverlay } from './fleet-world-contact-overlay';
 import type {
   StrategicCombatService,
@@ -13,11 +14,15 @@ import { describeCombatStatus } from '../../systems/combat/combat-intent-labels'
 
 export interface FleetNativeCombatPanel {
   update(): void;
+  cameraPose(): CombatCameraPose;
   destroy(): void;
 }
 
 interface FleetNativeCombatPanelOptions {
   readonly root: HTMLElement;
+  /** Reuse the same physical canvas when an idle world becomes a battle. */
+  readonly canvas?: HTMLCanvasElement;
+  readonly initialCameraPose?: CombatCameraPose;
   readonly combat: StrategicCombatService;
   readonly onReturn: () => void;
   readonly encounterName?: string;
@@ -145,7 +150,7 @@ function bindCombatCamera(
   };
 }
 
-function makeCombatShell(root: HTMLElement): HTMLElement {
+function makeCombatShell(root: HTMLElement, existingCanvas?: HTMLCanvasElement): HTMLElement {
   const shell = document.createElement('section');
   shell.className = 'strategic-combat-shell';
   shell.innerHTML = `
@@ -174,6 +179,9 @@ function makeCombatShell(root: HTMLElement): HTMLElement {
     <button class="strategic-combat-log-export" type="button">KAMPFLOG EXPORTIEREN</button>
     <button class="strategic-combat-return" type="button" hidden>ZUR STERNKARTE</button>
   `;
+  if (existingCanvas) {
+    shell.querySelector('.strategic-combat-map')?.replaceWith(existingCanvas);
+  }
   root.replaceChildren(shell);
 
   return shell;
@@ -309,7 +317,7 @@ function updateCombatActionButtons(
 export function createFleetNativeCombatPanel(
   options: FleetNativeCombatPanelOptions
 ): FleetNativeCombatPanel {
-  const shell = makeCombatShell(options.root);
+  const shell = makeCombatShell(options.root, options.canvas);
   const parallelStatus = prepareParallelDuelPanel(shell, options);
   const displayMenu = createFleetDisplayMenu(shell);
 
@@ -340,6 +348,7 @@ export function createFleetNativeCombatPanel(
         )
       : undefined
   );
+  if (options.initialCameraPose) renderer.restoreCameraPose(options.initialCameraPose);
   const unbindCamera = bindCombatCamera(canvas, renderer);
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
@@ -405,7 +414,9 @@ export function createFleetNativeCombatPanel(
 
   return {
     update: render,
+    cameraPose: () => renderer.cameraPose(),
     destroy() {
+      renderer.suspend();
       if (defeatReturnTimer !== null) clearTimeout(defeatReturnTimer);
       resizeObserver.disconnect();
       unbindCamera();
