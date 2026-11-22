@@ -40,7 +40,8 @@ export interface CareerFleetEncounter {
   joinNearby(
     position: WorldPoint,
     npcs: readonly SectorNpcState[],
-    npcPosition: (npc: SectorNpcState) => WorldPoint
+    npcPosition: (npc: SectorNpcState) => WorldPoint,
+    onJoin?: (npc: SectorNpcState) => void
   ): void;
   tick(deltaSeconds: number): void;
 }
@@ -94,7 +95,7 @@ function createSectorFleetEncounter(
     fleet,
     combat: fleet.duels[0]!,
     members,
-    joinNearby(position, npcs, npcPosition) {
+    joinNearby(position, npcs, npcPosition, onJoin) {
       if (fleet.getSnapshot().finished) return;
       for (const npc of npcs) {
         if (
@@ -126,6 +127,7 @@ function createSectorFleetEncounter(
         if (!setup) continue;
         if (fleet.addShip({ id: npc.id, team: kind.role, setup }, npc.id)) {
           members.set(npc.id, npc);
+          onJoin?.(npc);
         }
       }
     },
