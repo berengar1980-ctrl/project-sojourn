@@ -192,6 +192,69 @@ function nativeFleetFinished(
   return !hasActiveFleetHostilities(actors, escaped, factions, hostility);
 }
 
+interface NativeFleetJoinContext {
+  readonly services: StrategicCombatService[];
+  readonly supporters: StrategicCombatService[];
+  readonly actors: MutableCombatant[];
+  readonly drivers: NativeFleetDriver[];
+  readonly teams: Map<string, string>;
+  readonly escaped: ReadonlySet<string>;
+  readonly radii: Map<string, number>;
+  readonly arena: StrategicCombatArenaOptions;
+  readonly obstacleSet: () => StrategicCombatObstacle[];
+  readonly seed: number;
+  readonly hostility: FleetHostility;
+}
+
+function joinNativeFleetShip(
+  context: NativeFleetJoinContext,
+  ship: NativeDuelShip,
+  conflictKey?: string
+): boolean {
+  const { actors, teams, hostility, escaped, arena, seed, obstacleSet } = context;
+  const id = ship.setup.id;
+  if (actors.some((actor) => actor.setup.id === id)) return false;
+  const affiliation = conflictKey ?? ship.team;
+  const target = actors
+    .filter(
+      (actor) =>
+        actor.hullHp > 0 &&
+        !escaped.has(actor.setup.id) &&
+        (hostility(affiliation, teams.get(actor.setup.id)!) ||
+          hostility(teams.get(actor.setup.id)!, affiliation))
+    )
+    .sort((a, b) => a.setup.id.localeCompare(b.setup.id))[0];
+  if (!target) return false;
+  const shipIndex = actors.length;
+  const support = createStrategicCombatService(
+    ship.setup,
+    target.setup,
+    seed + shipIndex,
+    pairFields(
+      arena,
+      obstacleSet(),
+      ship,
+      { id: target.setup.id, team: teams.get(target.setup.id)!, setup: target.setup },
+      clearCombatSpawn(arena, {
+        x: arena.width * 0.5,
+        y: (arena.height * ((shipIndex % 9) + 1)) / 10,
+      }),
+      target.position
+    ),
+    undefined,
+    true,
+    target
+  );
+  const newActor = nativeActor(support, 'attacker');
+  context.supporters.push(support);
+  context.services.push(support);
+  actors.push(newActor);
+  context.drivers.push('attacker');
+  teams.set(id, affiliation);
+  context.radii.set(id, nativeFootprintRadius(newActor));
+  return true;
+}
+
 export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
@@ -268,48 +331,25 @@ export function createParallelNativeDuels(
     duels: pairs,
     supporters,
     addShip(ship, conflictKey) {
-      const id = ship.setup.id;
-      if (actors.some((actor) => actor.setup.id === id)) return false;
-      const affiliation = conflictKey ?? ship.team;
-      const target = actors
-        .filter(
-          (actor) =>
-            actor.hullHp > 0 &&
-            !escapedRecords.has(actor.setup.id) &&
-            (hostility(affiliation, teams.get(actor.setup.id)!) ||
-              hostility(teams.get(actor.setup.id)!, affiliation))
-        )
-        .sort((a, b) => a.setup.id.localeCompare(b.setup.id))[0];
-      if (!target) return false;
-      const shipIndex = actors.length;
-      const support = createStrategicCombatService(
-        ship.setup,
-        target.setup,
-        seed + shipIndex,
-        pairFields(
-          fleetArena,
-          obstacleSet(),
-          ship,
-          { id: target.setup.id, team: teams.get(target.setup.id)!, setup: target.setup },
-          clearCombatSpawn(fleetArena, {
-            x: fleetArena.width * 0.5,
-            y: (fleetArena.height * ((shipIndex % 9) + 1)) / 10,
-          }),
-          target.position
-        ),
-        undefined,
-        true,
-        target
+      const joined = joinNativeFleetShip(
+        {
+          services,
+          supporters,
+          actors,
+          drivers,
+          teams,
+          escaped: escapedRecords,
+          radii: radiusById,
+          arena: fleetArena,
+          obstacleSet,
+          seed,
+          hostility,
+        },
+        ship,
+        conflictKey
       );
-      const newActor = nativeActor(support, 'attacker');
-      supporters.push(support);
-      services.push(support);
-      actors.push(newActor);
-      drivers.push('attacker');
-      teams.set(id, affiliation);
-      radiusById.set(id, nativeFootprintRadius(newActor));
-      cachedSnapshot = null;
-      return true;
+      if (joined) cachedSnapshot = null;
+      return joined;
     },
     getSnapshot,
     tick(seconds) {
