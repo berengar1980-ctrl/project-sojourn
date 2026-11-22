@@ -22,7 +22,13 @@ jobs:
       - run: npm ci
       - name: Format touched sources
         run: |
-          npx prettier --write             src/systems/combat/fleet-conflict-manager.ts             src/systems/combat/native-fleet-hostility.ts             src/systems/combat/native-fleet-reassignment.ts             src/systems/combat/native-fleet-retarget.ts             src/systems/combat/parallel-native-duels.ts             src/systems/combat/strategic-combat-service.ts             src/systems/combat/strategic-combat-types.ts             src/systems/combat/dynamic-fleet-combat.ts             tests/combat/fleet-conflict-manager.test.cjs             tests/combat/native-fleet-target-reassignment.test.cjs             tests/combat/dynamic-fleet-combat.test.cjs
+          npx prettier --write             src/systems/combat/fleet-conflict-manager.ts             src/systems/combat/native-fleet-hostility.ts             src/systems/combat/native-fleet-reassignment.ts             src/systems/combat/native-fleet-retarget.ts             src/systems/combat/parallel-native-duels.ts             src/systems/combat/strategic-combat-service.ts             src/systems/combat/strategic-combat-types.ts             src/systems/combat/dynamic-fleet-combat.ts \
+            src/systems/combat/career-fleet-encounter.ts \
+            src/systems/combat/star-map-engagement-contract.ts \
+            src/systems/combat/star-map-engagement-service.ts \
+            src/app/game-controller-combat-scene.ts \
+            src/ui/start/fleet-test-lobby.ts             tests/combat/fleet-conflict-manager.test.cjs             tests/combat/native-fleet-target-reassignment.test.cjs             tests/combat/dynamic-fleet-combat.test.cjs \
+            tests/combat/career-fleet-encounter.test.cjs
       - name: Commit formatting
         run: |
           if ! git diff --quiet; then
