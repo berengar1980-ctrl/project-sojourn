@@ -179,8 +179,8 @@ function nativeFleetRadii(ships: readonly MutableCombatant[]): Map<string, numbe
 function nativeFleetFinished(
   actors: readonly MutableCombatant[],
   escaped: ReadonlySet<string>,
-  teams: ReadonlyMap<string, 'a' | 'b'>,
- ): boolean {
+  teams: ReadonlyMap<string, 'a' | 'b'>
+): boolean {
   const active = (team: 'a' | 'b') =>
     actors.some(
       (ship) => ship.hullHp > 0 && !escaped.has(ship.setup.id) && teams.get(ship.setup.id) === team
