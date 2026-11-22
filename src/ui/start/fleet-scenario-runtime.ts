@@ -255,6 +255,7 @@ export function createFleetScenarioRuntime(
       world.tick(dt, threat);
       deploy();
       if (fleet && !fleet.getSnapshot().finished) {
+        fleet.setBystanders(world.contacts().filter((contact) => !joined.has(contact.id)));
         fleet.tick(dt);
         for (const id of joined) {
           const actor = fleet.getActor(id);
