@@ -1826,3 +1826,23 @@ Noch nicht vollständig abgeschlossen: persistente Wiederherstellung
 laufender Mehrparteiengefechte, vollständige Kollateraltreffer zwischen
 Teilduellen sowie alle kampagnenweiten Folgen von Mehrparteienresultaten.
 Diese Grenzen werden vor einem Merge als bestehende Paritätslücken behandelt.
+
+## Review-Log (2026-11-22): FleetCombat-Testlabor als Kampagnen-Simulator
+
+**Keine Statusänderung** historischer Feature-IDs. Die bisherige
+A/B-Fraktionsauswahl im FleetCombat-Testlabor wurde zugunsten von
+Spieler (fest 1 Schiff), zivilen NPCs, gelben Piraten (Broken Spear),
+roten Piraten (Black Tide) und Sicherheitsdrohnen entfernt.
+Für jede NPC-Gruppe können Startzahl, Nachrückzahl und verzögerter
+Eintritt in Sekunden eingestellt werden. Die Schiffe erhalten die
+gleichen Kennzeichnungen wie in der Kampagne und die gemeinsame
+ereignisbasierte Feindschaftslogik.
+
+Die spätere Verstärkung wird mit `ParallelNativeDuels.addShip()`
+demselben laufenden nativen Combat-Service hinzugefügt. Der Simulator
+unterstützt als optionalen Konfliktstarter Spieler-gegen-NPC bzw.
+NPC-gegen-Spieler, um die verteidigende Drohnenreaktion zu prüfen.
+Ohne anfänglichen Feindkontakt verbleibt der Simulator zunächst im
+Wartebildschirm und startet die physische Kampfkarte beim ersten
+feindlichen Kontakt. Die neutrale Vorbereitungsansicht ist damit
+noch keine vollständig laufende taktische Karte.

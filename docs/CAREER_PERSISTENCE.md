@@ -1109,3 +1109,14 @@ vorübergehenden Feindschaften sind beim Laden eines laufenden
 Mehrparteiengefechts **nicht vollständig wiederherstellbar**.
 Ein vollständiger atomarer Fleet-Karrierecheckpoint samt Validierung
 und Restore-Test ist für Save/Load-Parität weiterhin erforderlich.
+
+### Zeitversetzte FleetCombat-Testkonfiguration (PvP)
+
+Die neue Testlabor-Oberfläche verwaltet temporäre Einsatzgruppen
+(Spieler, zivile NPCs, zwei Piratengruppen, Sicherheitsdrohnen) und
+deren Einrückzeitpunkt ausschließlich in einer laufenden Testsitzung.
+Diese Testlabordaten erzeugen **keine** zusätzlichen Karriere-
+Save-Felder, Kontakte, Ausrüstung oder Spielerfraktionsbeziehungen.
+Der gemeinsam verwendete `fleet-conflict-manager.ts` bleibt nur
+für die Dauer des Testgefechts zuständig; die frühere Einschränkung
+für Save/Load laufender Mehrparteiengefechte in der Kampagne gilt weiter.
