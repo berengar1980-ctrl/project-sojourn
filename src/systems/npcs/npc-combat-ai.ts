@@ -41,3 +41,12 @@ export function rivalPirateGroups(a: SectorNpcState, b: SectorNpcState): boolean
   const groupB = b.factionId ?? b.pirateMark ?? 'pirates';
   return groupA !== groupB;
 }
+
+/** One NPC-versus-NPC target policy for campaign encounters and FleetCombat labs. */
+export function npcMayTargetNpc(attacker: SectorNpcState, target: SectorNpcState): boolean {
+  if (attacker.id === target.id) return false;
+  if (!attacker.pirate) return npcLooksHostileToPatrol(target);
+  if (rivalPirateGroups(attacker, target))
+    return target.hullHp > 0 && !target.combatMovement && (target.combatRecoverySeconds ?? 0) <= 0;
+  return npcIsPiratePrey(target);
+}
