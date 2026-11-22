@@ -1809,3 +1809,20 @@ Boostanzeigen, Duellübersicht, HUD und Kampfmeldungen getrennt
 oder gemeinsam ein-/ausblenden. Die Auswahl bleibt lokal im Browser
 erhalten. Keine neue Kampf-Engine, kein Eingriff in 1vs1-PvP
 oder Karriere-Speicherung.
+
+## Review-Log (2026-11-22): Gemeinsamer dynamischer FleetCombat-Kern
+
+**Keine abgeschlossene Statusänderung** historischer Feature-IDs:
+Der bisher nur als PvP-Test verfügbare native Fleet-Koordinator ist als
+gemeinsamer Einstieg für PvP- und Kampagnengefechte angebunden. Im Sektor
+können Piraten, Patrouillen und Sicherheitsdrohnen auf Basis beobachteter
+Feindkontakte in dieselbe laufende Kampfkarte eintreten. Spieler- und
+NPC-Teilnehmer verwenden dieselben Original-1vs1-Strategie-,
+Waffen- und Physikdienste; jedes Schiff besitzt einen einzigen
+Bewegungs-/KI-Treiber. Unterschiedliche Piratengruppen sind Feinde,
+während Drohnen den Angegriffenen unterstützen können.
+
+Noch nicht vollständig abgeschlossen: persistente Wiederherstellung
+laufender Mehrparteiengefechte, vollständige Kollateraltreffer zwischen
+Teilduellen sowie alle kampagnenweiten Folgen von Mehrparteienresultaten.
+Diese Grenzen werden vor einem Merge als bestehende Paritätslücken behandelt.
