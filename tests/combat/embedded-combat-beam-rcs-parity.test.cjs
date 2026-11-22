@@ -7,7 +7,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-const native = read('src/ui/combat/strategic-combat-renderer.ts');
+const native = read('src/ui/combat/fleet-native-combat-renderer.ts');
 const beam = read('src/ui/combat/combat-beam-visual.ts');
 const thrust = read('src/ui/combat/embedded-combat-thrusters.ts');
 const mining = read('src/ui/local-space/local-space-scene-layers.ts');
@@ -18,7 +18,7 @@ const salvagePlayer = read('src/ui/salvage/salvage-space-renderer.ts');
 const service = read('src/systems/combat/strategic-combat-service.ts');
 const bridge = read('src/app/game-controller-field-world-bridge.ts');
 
-assert(native.includes('drawCombatBeamVisual(this.context, beam, start, end)'));
+assert(native.includes('drawCombatBeamVisual('), 'shared native FleetCombat painter owns beam visuals');
 assert(beam.includes("beam.family === 'pulse_laser'"));
 assert(beam.includes("beam.family === 'railgun'"));
 for (const field of [mining, salvage]) {
@@ -42,7 +42,7 @@ assert(thrust.includes('combatant.boostActive'));
 assert(thrust.includes('engines.drawExhaust('));
 assert(thrust.includes('maneuver.drawExhaust('));
 for (const field of [miningPlayer, salvagePlayer]) {
-  assert(field.includes('new StrategicCombatRenderer(') && field.includes('model.combat,'));
+  assert(field.includes('new FleetNativeCombatRenderer(') && field.includes('model.combat,'));
   assert(field.includes('drawFieldPlayerThrusters('));
   assert(field.includes('this.model.combat?.attacker ?? null'));
 }
