@@ -1,0 +1,31 @@
+name: Format FleetCombat branch
+on:
+  push:
+    branches:
+      - fix/fleet-survivor-reassignment-stall
+permissions:
+  contents: write
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Format touched sources
+        run: |
+          npx prettier --write             src/systems/combat/fleet-conflict-manager.ts             src/systems/combat/native-fleet-hostility.ts             src/systems/combat/native-fleet-reassignment.ts             src/systems/combat/native-fleet-retarget.ts             src/systems/combat/parallel-native-duels.ts             src/systems/combat/strategic-combat-service.ts             src/systems/combat/strategic-combat-types.ts             src/systems/combat/dynamic-fleet-combat.ts             tests/combat/fleet-conflict-manager.test.cjs             tests/combat/native-fleet-target-reassignment.test.cjs             tests/combat/dynamic-fleet-combat.test.cjs
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/systems/combat tests/combat
+            git commit -m "style: format FleetCombat changes"
+            git push
+          fi
