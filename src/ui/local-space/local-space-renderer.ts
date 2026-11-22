@@ -1,3 +1,4 @@
+import { pickNearestHitArea } from '../salvage/salvage-hit-test';
 import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-drone-visual';
 import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
 import { drawMiningCombatWrecks, type CombatWreckHitArea } from './local-combat-wreck-renderer';
@@ -184,28 +185,13 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     return this.camera.screenToWorld({ x, y }, rect.width, rect.height);
   }
   pickNpc(x: number, y: number): string | null {
-    let best: NpcHitArea | null = null;
-    for (const area of this.npcHitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!best || area.radius < best.radius) best = area;
-    }
-    return best?.id ?? null;
+    return pickNearestHitArea(this.npcHitAreas, x, y);
   }
   pickAsteroid(x: number, y: number): string | null {
-    let best: AsteroidHitArea | null = null;
-    for (const area of this.hitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!best || area.radius < best.radius) best = area;
-    }
-    return best?.id ?? null;
+    return pickNearestHitArea(this.hitAreas, x, y);
   }
   pickCombatWreck(x: number, y: number): string | null {
-    let closest: CombatWreckHitArea | null = null;
-    for (const area of this.combatWreckHitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!closest || area.radius < closest.radius) closest = area;
-    }
-    return closest?.id ?? null;
+    return pickNearestHitArea(this.combatWreckHitAreas, x, y);
   }
   selectCombatWreck(id: string | null): void {
     this.selectedCombatWreckId = id;
