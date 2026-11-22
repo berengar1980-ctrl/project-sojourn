@@ -255,6 +255,8 @@ function joinNativeFleetShip(
   return true;
 }
 
+// The shared frame coordinator keeps its mutable world and AI-owner maps together.
+// eslint-disable-next-line max-lines-per-function
 export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
