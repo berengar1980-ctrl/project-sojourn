@@ -33,7 +33,10 @@ import {
 } from './strategic-combat-service';
 
 import { npcCombatant } from './npc-combatant-setup';
-import { finishPlayerCombat, resolveBackgroundCombats } from './star-map-engagement-fleet-resolution';
+import {
+  finishPlayerCombat,
+  resolveBackgroundCombats,
+} from './star-map-engagement-fleet-resolution';
 import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
 
 const PLAYER_ID = 'player';
@@ -341,7 +344,6 @@ function updateNpcChases(runtime: EngagementRuntime): void {
   }
 }
 
-
 function engageNpc(
   runtime: EngagementRuntime,
   npcId: string,
@@ -412,7 +414,6 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
     }
   }
 }
-
 
 export function createStarMapEngagementService(
   options: StarMapEngagementOptions

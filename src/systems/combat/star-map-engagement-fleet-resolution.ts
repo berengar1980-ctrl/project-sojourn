@@ -33,7 +33,10 @@ export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSecond
   }
 }
 
-export function finishPlayerCombat(runtime: EngagementRuntime, boardingOutcome?: BoardingOutcome): void {
+export function finishPlayerCombat(
+  runtime: EngagementRuntime,
+  boardingOutcome?: BoardingOutcome
+): void {
   if (!runtime.playerCombat || !runtime.playerEnemy) return;
   const model = runtime.playerCombat.getSnapshot();
   // The initial defender can be replaced by a different live fleet opponent.
@@ -77,4 +80,3 @@ export function finishPlayerCombat(runtime: EngagementRuntime, boardingOutcome?:
   runtime.playerCombat = null;
   runtime.playerEnemy = null;
 }
-
