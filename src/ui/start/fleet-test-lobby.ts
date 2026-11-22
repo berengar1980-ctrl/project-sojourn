@@ -106,6 +106,8 @@ function renderRoster(root: HTMLElement, config: FleetTestConfiguration): void {
   }
 }
 
+// The launcher owns both the idle world clock and successive native battles.
+// eslint-disable-next-line max-lines-per-function
 function createSimulatorLauncher(
   root: HTMLElement,
   lobby: HTMLElement,
