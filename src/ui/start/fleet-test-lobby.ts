@@ -13,6 +13,7 @@ import {
   type FleetScenarioShip,
 } from './fleet-scenario-roster';
 import { createFleetScenarioRuntime } from './fleet-scenario-runtime';
+import { createFleetIdleWorldCanvas } from './fleet-idle-world-canvas';
 
 interface FleetTestConfiguration {
   readonly map: DuelMapKind;
@@ -114,6 +115,7 @@ function createSimulatorLauncher(
   onCombatActiveChange: (active: boolean) => void
 ) {
   let panel: ReturnType<typeof createFleetNativeCombatPanel> | null = null;
+  let idleWorld: ReturnType<typeof createFleetIdleWorldCanvas> | null = null;
   let displayedFleet: ReturnType<typeof createFleetScenarioRuntime>['fleet'] = null;
   let frame = 0;
   let generation = 0;
@@ -121,6 +123,8 @@ function createSimulatorLauncher(
   const stop = (): void => {
     generation++;
     cancelAnimationFrame(frame);
+    idleWorld?.deactivate();
+    idleWorld = null;
     panel?.destroy();
     panel = null;
     displayedFleet = null;
@@ -141,28 +145,44 @@ function createSimulatorLauncher(
         config.map
       );
       const waiting = document.createElement('section');
-      waiting.className = 'harrow-duel harrow-fleet';
-      const heading = document.createElement('h1');
+      waiting.className = 'strategic-combat-shell';
+      const heading = document.createElement('div');
+      heading.className = 'combat-map-title';
       heading.textContent = 'FLEETCOMBAT · EINSATZGEBIET';
-      const status = document.createElement('p');
+      const status = document.createElement('div');
+      status.className = 'combat-parallel-duels-status';
+      status.style.cssText =
+        'position:absolute;top:50px;left:14px;z-index:3;padding:8px 11px;' +
+        'background:rgba(10,20,27,.88);color:#d8e7ee;font:12px monospace';
+      const canvas = document.createElement('canvas');
+      canvas.className = 'strategic-combat-map';
+      canvas.setAttribute('aria-label', 'FleetCombat Einsatzgebiet');
+      idleWorld = createFleetIdleWorldCanvas(canvas, arena, () => session.worldContacts);
       const cancel = document.createElement('button');
       cancel.type = 'button';
       cancel.textContent = 'Test beenden';
+      cancel.className = 'strategic-combat-return';
+      cancel.hidden = false;
       const returnToLobby = (): void => {
         stop();
         root.replaceChildren(lobby);
       };
       cancel.addEventListener('click', returnToLobby);
-      waiting.append(heading, status, cancel);
+      waiting.append(canvas, heading, status, cancel);
       root.replaceChildren(waiting);
+      idleWorld.activate();
       onCombatActiveChange(true);
 
       const mountCombat = (): void => {
         const fleet = session.fleet;
         if (!fleet || panel) return;
         displayedFleet = fleet;
+        const initialCameraPose = idleWorld?.pose();
+        idleWorld?.deactivate();
         panel = createFleetNativeCombatPanel({
           root,
+          canvas,
+          initialCameraPose,
           combat: fleet.duels[0]!,
           spectator: true,
           parallelDuels: () => [
@@ -186,15 +206,20 @@ function createSimulatorLauncher(
         previous = now;
         session.tick(dt);
         if (panel && displayedFleet !== session.fleet) {
+          const cameraPose = panel.cameraPose();
           panel.destroy();
           panel = null;
           displayedFleet = null;
+          waiting.prepend(canvas);
           root.replaceChildren(waiting);
+          idleWorld?.restorePose(cameraPose);
+          idleWorld?.activate();
         }
         mountCombat();
         if (panel) {
           panel.update();
         } else {
+          idleWorld?.draw();
           const next = session.nextArrivalSeconds();
           status.textContent =
             'Schiffe im Einsatzgebiet: ' +
