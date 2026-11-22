@@ -21,7 +21,6 @@ export interface CareerFleetWorldPose {
   readonly playerPosition?: WorldPoint;
 }
 
-
 function participant(npc: SectorNpcState): ConflictParticipant {
   if (npc.id.startsWith('security-drone:')) return { id: npc.id, role: 'drone', armed: true };
   if (npc.pirate || npc.job === 'pirate') {
@@ -77,29 +76,47 @@ function createSectorFleetEncounter(
   // strategic sector, project both ships into one arena without changing the
   // world-space separation or the original NPC position.
   const firstNpc = allNpcs.find((npc) => npc.id === firstSetup.id);
-  const firstWorld = firstIsPlayer ? worldPose?.playerPosition : firstNpc && worldPose?.positionOf(firstNpc);
+  const firstWorld = firstIsPlayer
+    ? worldPose?.playerPosition
+    : firstNpc && worldPose?.positionOf(firstNpc);
   const enemyWorld = worldPose?.positionOf(enemy);
   const anchor = { x: sessionArena.width * 0.5, y: sessionArena.height * 0.5 };
-  const firstPosition = arena?.attackerPosition ?? (firstWorld && enemyWorld
-    ? { x: anchor.x + (firstWorld.x - enemyWorld.x) * 0.5,
-        y: anchor.y + (firstWorld.y - enemyWorld.y) * 0.5 }
-    : undefined);
-  const enemyPosition = arena?.defenderPosition ?? (firstWorld && enemyWorld
-    ? { x: anchor.x + (enemyWorld.x - firstWorld.x) * 0.5,
-        y: anchor.y + (enemyWorld.y - firstWorld.y) * 0.5 }
-    : undefined);
+  const firstPosition =
+    arena?.attackerPosition ??
+    (firstWorld && enemyWorld
+      ? {
+          x: anchor.x + (firstWorld.x - enemyWorld.x) * 0.5,
+          y: anchor.y + (firstWorld.y - enemyWorld.y) * 0.5,
+        }
+      : undefined);
+  const enemyPosition =
+    arena?.defenderPosition ??
+    (firstWorld && enemyWorld
+      ? {
+          x: anchor.x + (enemyWorld.x - firstWorld.x) * 0.5,
+          y: anchor.y + (enemyWorld.y - firstWorld.y) * 0.5,
+        }
+      : undefined);
   const keys = new Map([
     [firstSetup.id, firstSetup.id],
     [enemy.id, enemy.id],
   ]);
   const fleet = createDynamicFleetCombat(
     [
-      { id: firstSetup.id, team: 'a', setup: firstSetup,
+      {
+        id: firstSetup.id,
+        team: 'a',
+        setup: firstSetup,
         ...(firstPosition ? { position: firstPosition } : {}),
-        ...(firstNpc && worldPose ? { headingRadians: worldPose.headingOf(firstNpc) } : {}) },
-      { id: enemy.id, team: 'b', setup: enemySetup,
+        ...(firstNpc && worldPose ? { headingRadians: worldPose.headingOf(firstNpc) } : {}),
+      },
+      {
+        id: enemy.id,
+        team: 'b',
+        setup: enemySetup,
         ...(enemyPosition ? { position: enemyPosition } : {}),
-        ...(worldPose ? { headingRadians: worldPose.headingOf(enemy) } : {}) },
+        ...(worldPose ? { headingRadians: worldPose.headingOf(enemy) } : {}),
+      },
     ],
     sessionArena,
     seed,
@@ -112,7 +129,10 @@ function createSectorFleetEncounter(
     const actor = fleet.getActor(npc.id);
     if (!actor) continue;
     const original = worldPose.positionOf(npc);
-    worldOffsets.set(npc.id, { x: original.x - actor.position.x, y: original.y - actor.position.y });
+    worldOffsets.set(npc.id, {
+      x: original.x - actor.position.x,
+      y: original.y - actor.position.y,
+    });
   }
   const members = new Map<string, SectorNpcState>([
     [enemy.id, enemy],
@@ -160,17 +180,31 @@ function createSectorFleetEncounter(
         if (!setup) continue;
         const anchorActor = fleet.getActor(enemy.id);
         const anchorWorld = worldPose?.positionOf(enemy);
-        const arrival = worldPose && anchorActor && anchorWorld
-          ? { x: anchorActor.position.x + spot.x - anchorWorld.x,
-              y: anchorActor.position.y + spot.y - anchorWorld.y }
-          : undefined;
-        if (fleet.addShip({ id: npc.id, team: kind.role, setup,
-          ...(arrival ? { position: arrival } : {}),
-          ...(worldPose ? { headingRadians: worldPose.headingOf(npc) } : {}) }, npc.id)) {
+        const arrival =
+          worldPose && anchorActor && anchorWorld
+            ? {
+                x: anchorActor.position.x + spot.x - anchorWorld.x,
+                y: anchorActor.position.y + spot.y - anchorWorld.y,
+              }
+            : undefined;
+        if (
+          fleet.addShip(
+            {
+              id: npc.id,
+              team: kind.role,
+              setup,
+              ...(arrival ? { position: arrival } : {}),
+              ...(worldPose ? { headingRadians: worldPose.headingOf(npc) } : {}),
+            },
+            npc.id
+          )
+        ) {
           const actor = fleet.getActor(npc.id);
-          if (actor && worldPose) worldOffsets.set(npc.id, {
-            x: spot.x - actor.position.x, y: spot.y - actor.position.y,
-          });
+          if (actor && worldPose)
+            worldOffsets.set(npc.id, {
+              x: spot.x - actor.position.x,
+              y: spot.y - actor.position.y,
+            });
           members.set(npc.id, npc);
           onJoin?.(npc);
         }

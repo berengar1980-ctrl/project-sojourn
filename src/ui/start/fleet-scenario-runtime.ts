@@ -32,8 +32,11 @@ function canJoinWorldCombat(
     return !!opponent.position && world.canDroneSee(ship.id, opponent.position);
   if (world.npc(ship.id)?.pirate) return world.canAttack(ship.id);
   if (world.npc(ship.id)?.job === 'patrol') return world.canAttack(ship.id);
-  if (world.npc(ship.id)?.job === 'miner' || world.npc(ship.id)?.job === 'freighter' ||
-      world.npc(ship.id)?.job === 'salvager') {
+  if (
+    world.npc(ship.id)?.job === 'miner' ||
+    world.npc(ship.id)?.job === 'freighter' ||
+    world.npc(ship.id)?.job === 'salvager'
+  ) {
     if (world.defence(ship.id) !== 'fight') {
       if (opponent.position) world.threaten(ship.id, opponent.position);
       return false;
@@ -52,10 +55,11 @@ function firstHostilePair(
 ): readonly [NativeDuelShip, NativeDuelShip] | null {
   for (const source of available) {
     const target = available.find(
-      (other) => other !== source &&
+      (other) =>
+        other !== source &&
         (hostility(source.id, other.id) || hostility(other.id, source.id)) &&
         (canJoinWorldCombat(source, other, world, incident) ||
-         canJoinWorldCombat(other, source, world, incident))
+          canJoinWorldCombat(other, source, world, incident))
     );
     if (target) return [source, target];
   }
@@ -141,7 +145,8 @@ export function createFleetScenarioRuntime(
   arena: StrategicCombatArenaOptions,
   seed: number,
   incident: FleetScenarioIncident,
-  mapKind: 'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field' = 'asteroid_field'
+  mapKind:
+    'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field' = 'asteroid_field'
 ): FleetScenarioRuntime {
   if (roster.filter((ship) => ship.group === 'player').length !== 1)
     throw new Error('FleetCombat simulation requires exactly one player ship');
@@ -165,17 +170,17 @@ export function createFleetScenarioRuntime(
   const observeIncident = (): void => {
     if (incident === 'none') return;
     if (!incidentTarget) {
-      incidentTarget = roster.find(
-        (ship) => ship.group === 'npc' && arrived.has(ship.id)
-      )?.id ?? null;
+      incidentTarget =
+        roster.find((ship) => ship.group === 'npc' && arrived.has(ship.id))?.id ?? null;
     }
     if (!incidentTarget) return;
-    const drones = roster.filter((ship) => {
-      if (ship.group !== 'drone' || !arrived.has(ship.id) || witnessed.has(ship.id))
-        return false;
-      const victim = atWorldPose(incidentTarget!);
-      return !!victim.position && world.canDroneSee(ship.id, victim.position);
-    }).map((ship) => ship.id);
+    const drones = roster
+      .filter((ship) => {
+        if (ship.group !== 'drone' || !arrived.has(ship.id) || witnessed.has(ship.id)) return false;
+        const victim = atWorldPose(incidentTarget!);
+        return !!victim.position && world.canDroneSee(ship.id, victim.position);
+      })
+      .map((ship) => ship.id);
     const attackerId = incident === 'player-attacks-npc' ? 'player' : incidentTarget;
     const victimId = incident === 'player-attacks-npc' ? incidentTarget : 'player';
     conflict.recordAttack({ attackerId, victimId, witnessedBy: drones });
@@ -194,10 +199,12 @@ export function createFleetScenarioRuntime(
     }
     for (const ship of active) {
       if (joined.has(ship.id)) continue;
-      const target = active.find((other) =>
-        joined.has(other.id) && other !== ship &&
-        (conflict.isHostile(ship.id, other.id) || conflict.isHostile(other.id, ship.id)) &&
-        canJoinWorldCombat(ship, other, world, incident)
+      const target = active.find(
+        (other) =>
+          joined.has(other.id) &&
+          other !== ship &&
+          (conflict.isHostile(ship.id, other.id) || conflict.isHostile(other.id, ship.id)) &&
+          canJoinWorldCombat(ship, other, world, incident)
       );
       if (!target) continue;
       if (fleet.addShip(ship, ship.id)) {
@@ -219,10 +226,18 @@ export function createFleetScenarioRuntime(
   return {
     ships: roster,
     totalCount: roster.length,
-    get elapsedSeconds() { return elapsedSeconds; },
-    get arrivedCount() { return arrived.size; },
-    get fleet() { return fleet; },
-    get worldContacts() { return world.contacts(); },
+    get elapsedSeconds() {
+      return elapsedSeconds;
+    },
+    get arrivedCount() {
+      return arrived.size;
+    },
+    get fleet() {
+      return fleet;
+    },
+    get worldContacts() {
+      return world.contacts();
+    },
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return;
       const dt = Math.min(seconds, 0.08);
@@ -243,7 +258,9 @@ export function createFleetScenarioRuntime(
       return arrived.size === roster.length && fleet !== null && fleet.getSnapshot().finished;
     },
     nextArrivalSeconds() {
-      const times = roster.filter((ship) => !arrived.has(ship.id)).map((ship) => ship.arrivalSeconds);
+      const times = roster
+        .filter((ship) => !arrived.has(ship.id))
+        .map((ship) => ship.arrivalSeconds);
       return times.length > 0 ? Math.min(...times) : null;
     },
   };

@@ -4,25 +4,40 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const { createParallelNativeDuels } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/parallel-native-duels.ts'
+  root,
+  'src/systems/combat/parallel-native-duels.ts'
 );
 const { createCareerFleetEncounter } = loadStandaloneTypeScriptModule(
-  root, 'src/systems/combat/career-fleet-encounter.ts'
+  root,
+  'src/systems/combat/career-fleet-encounter.ts'
 );
 function setup(id) {
   return {
-    id, name: id, shipId: 'patrol-60m-variant-01',
-    shieldHp: 500, hullHp: 1000, weapons: [], hitChance: 0.75,
-    dodgeChance: 0.1, damageMultiplier: 1, criticalChance: 0,
-    cycleTimeMultiplier: 1, combatSpeed: 140,
+    id,
+    name: id,
+    shipId: 'patrol-60m-variant-01',
+    shieldHp: 500,
+    hullHp: 1000,
+    weapons: [],
+    hitChance: 0.75,
+    dodgeChance: 0.1,
+    damageMultiplier: 1,
+    criticalChance: 0,
+    cycleTimeMultiplier: 1,
+    combatSpeed: 140,
   };
 }
 const arena = {
-  width: 4200, height: 2600,
-  attackerPosition: { x: 700, y: 800 }, defenderPosition: { x: 1120, y: 820 },
-  attackerHeadingRadians: 0.9, defenderHeadingRadians: -1.1,
-  attackerVelocity: { x: 23, y: -10 }, defenderVelocity: { x: -35, y: 12 },
-  asteroids: [], obstacles: [],
+  width: 4200,
+  height: 2600,
+  attackerPosition: { x: 700, y: 800 },
+  defenderPosition: { x: 1120, y: 820 },
+  attackerHeadingRadians: 0.9,
+  defenderHeadingRadians: -1.1,
+  attackerVelocity: { x: 23, y: -10 },
+  defenderVelocity: { x: -35, y: 12 },
+  asteroids: [],
+  obstacles: [],
 };
 const a = { id: 'a', team: 'a', setup: setup('a') };
 const b = { id: 'b', team: 'b', setup: setup('b') };
@@ -36,10 +51,17 @@ assert.equal(fleet.getActor('b').headingRadians, arena.defenderHeadingRadians);
 
 const extraPose = { x: 1410, y: 1190 };
 const extraVelocity = { x: 43, y: -7 };
-assert.equal(fleet.addShip({
-  id: 'c', team: 'a', setup: setup('c'),
-  position: extraPose, velocity: extraVelocity, headingRadians: 2.15,
-}), true);
+assert.equal(
+  fleet.addShip({
+    id: 'c',
+    team: 'a',
+    setup: setup('c'),
+    position: extraPose,
+    velocity: extraVelocity,
+    headingRadians: 2.15,
+  }),
+  true
+);
 assert.deepEqual(fleet.getActor('c').position, extraPose);
 assert.deepEqual(fleet.getActor('c').velocity, extraVelocity);
 assert.equal(fleet.getActor('c').headingRadians, 2.15);
@@ -58,13 +80,25 @@ for (const id of ['a', 'b', 'c']) {
 // The campaign must publish the combat actor pose back to the very same
 // SectorNpcState read by the existing navigation and other world services.
 const enemy = {
-  id: 'npc', name: 'NPC', job: 'patrol', shipId: 'patrol-60m-variant-01',
-  pirate: false, aggression: 80, hullHp: 900, hullMaxHp: 900,
-  installedComponents: { weapon: [] }, locationId: 'haven',
-  cargo: {}, cargoCapacity: 100,
+  id: 'npc',
+  name: 'NPC',
+  job: 'patrol',
+  shipId: 'patrol-60m-variant-01',
+  pirate: false,
+  aggression: 80,
+  hullHp: 900,
+  hullMaxHp: 900,
+  installedComponents: { weapon: [] },
+  locationId: 'haven',
+  cargo: {},
+  cargoCapacity: 100,
   combatMovement: {
-    mode: 'engaged', targetKind: 'player', targetId: 'player',
-    position: { x: 800, y: 800 }, headingRadians: 0, speed: 0,
+    mode: 'engaged',
+    targetKind: 'player',
+    targetId: 'player',
+    position: { x: 800, y: 800 },
+    headingRadians: 0,
+    speed: 0,
   },
 };
 const worldPose = {
@@ -83,4 +117,6 @@ assert.equal(
   800 - arena.defenderPosition.x,
   'the campaign holds the original world-space coordinate mapping without jumping'
 );
-console.log('PASS shared native 1v1/fleet/career positions, velocity, heading and single motion owner');
+console.log(
+  'PASS shared native 1v1/fleet/career positions, velocity, heading and single motion owner'
+);

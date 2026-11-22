@@ -25,18 +25,18 @@ export function createFleetWorldContactOverlay(
       const definition = getShipDefinition(ship.shipId);
       const drone = ship.id.startsWith('security-drone:');
       if (!definition && !drone) continue;
-      const url = drone
-        ? '/drones/security-drone-gc87r8.webp'
-        : definition!.sprite.assetUrl;
+      const url = drone ? '/drones/security-drone-gc87r8.webp' : definition!.sprite.assetUrl;
       let sprite = images.get(url);
       if (!sprite) {
         sprite = new Image();
         sprite.src = url;
         images.set(url, sprite);
       }
-      const length = drone ? DRONE_DIAMETER_PX * pose.zoom
+      const length = drone
+        ? DRONE_DIAMETER_PX * pose.zoom
         : (definition?.nominalLengthMeters ?? 60) * scale;
-      const aspect = drone ? 1
+      const aspect = drone
+        ? 1
         : sprite.complete && sprite.naturalWidth > 0 && sprite.naturalHeight > 0
           ? sprite.naturalWidth / sprite.naturalHeight
           : (definition?.sprite.widthPx ?? 60) / (definition?.sprite.heightPx ?? 30);
@@ -47,8 +47,12 @@ export function createFleetWorldContactOverlay(
         angle: ship.headingRadians,
       };
       drawCombatShipBody(
-        context, geometry, 1, sprite,
-        drone ? undefined : definition?.sprite.hardpoints, lighting
+        context,
+        geometry,
+        1,
+        sprite,
+        drone ? undefined : definition?.sprite.hardpoints,
+        lighting
       );
       drawCombatShipCaption(context, ship.name, 1, geometry);
     }

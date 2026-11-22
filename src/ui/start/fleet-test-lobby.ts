@@ -129,7 +129,13 @@ function createSimulatorLauncher(
       const epoch = generation;
       const seed = Math.floor(Math.random() * 0x7fffffff);
       const arena = createDuelArena(config.map, seed);
-      const session = createFleetScenarioRuntime(config.ships, arena, seed, config.incident, config.map);
+      const session = createFleetScenarioRuntime(
+        config.ships,
+        arena,
+        seed,
+        config.incident,
+        config.map
+      );
       const waiting = document.createElement('section');
       waiting.className = 'harrow-duel harrow-fleet';
       const heading = document.createElement('h1');

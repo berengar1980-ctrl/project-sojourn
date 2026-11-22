@@ -79,7 +79,8 @@ assert(firstFleet, 'a live pirate contact starts the common native fleet engine'
 assert.equal(scenario.arrivedCount, 4);
 const actorsAtStart = [
   ...firstFleet.duels.flatMap((service) => [
-    service.getParallelActor('attacker'), service.getParallelActor('defender'),
+    service.getParallelActor('attacker'),
+    service.getParallelActor('defender'),
   ]),
   ...firstFleet.supporters.map((service) => service.getParallelActor('attacker')),
 ];
@@ -109,7 +110,10 @@ assert(minerShip, 'the campaign has a physical miner for this test');
 const miner = { ...entry('npc-1', 'npc', 0), draft: { ...commonDraft, shipId: minerShip.id } };
 const minerScenario = createFleetScenarioRuntime(
   [entry('player', 'player', 0), miner],
-  arena, 5678, 'none', 'empty'
+  arena,
+  5678,
+  'none',
+  'empty'
 );
 assert.equal(minerScenario.fleet, null);
 assert.equal(minerScenario.worldContacts.length, 2);
@@ -125,7 +129,10 @@ const defenderScenario = createFleetScenarioRuntime(
     entry('npc-1', 'npc', 0),
     entry('security-drone:test-1', 'drone', 0),
   ],
-  arena, 9012, 'player-attacks-npc', 'empty'
+  arena,
+  9012,
+  'player-attacks-npc',
+  'empty'
 );
 assert(defenderScenario.fleet, 'explicit player attack starts native combat');
 assert(
@@ -133,4 +140,6 @@ assert(
     defenderScenario.worldContacts.some((ship) => ship.id === 'security-drone:test-1'),
   'a protective drone is present, but only joins when its patrol senses the incident'
 );
-console.log('PASS FleetCombat lab: fixed player, persistent native actors, true NPC world behavior and observed drone entry');
+console.log(
+  'PASS FleetCombat lab: fixed player, persistent native actors, true NPC world behavior and observed drone entry'
+);

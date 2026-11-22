@@ -333,7 +333,10 @@ export function createFleetNativeCombatPanel(
     firstSnapshot,
     options.worldContacts
       ? createFleetWorldContactOverlay(
-          canvas, options.worldContacts, firstSnapshot.arena.width, firstSnapshot.arena.height
+          canvas,
+          options.worldContacts,
+          firstSnapshot.arena.width,
+          firstSnapshot.arena.height
         )
       : undefined
   );

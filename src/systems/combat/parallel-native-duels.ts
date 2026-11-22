@@ -102,8 +102,10 @@ function pairFields(
     obstacles,
     attackerPosition: from,
     defenderPosition: to,
-    attackerHeadingRadians: ship.headingRadians ?? arena.attackerHeadingRadians ?? (ship.team === 'a' ? 0 : Math.PI),
-    defenderHeadingRadians: target.headingRadians ?? arena.defenderHeadingRadians ?? (target.team === 'a' ? 0 : Math.PI),
+    attackerHeadingRadians:
+      ship.headingRadians ?? arena.attackerHeadingRadians ?? (ship.team === 'a' ? 0 : Math.PI),
+    defenderHeadingRadians:
+      target.headingRadians ?? arena.defenderHeadingRadians ?? (target.team === 'a' ? 0 : Math.PI),
     ...(ship.velocity ? { attackerVelocity: ship.velocity } : {}),
     ...(target.velocity ? { defenderVelocity: target.velocity } : {}),
   };
@@ -134,8 +136,12 @@ function createNativeDuelServices(
         obstacleSet(),
         ship,
         target,
-        ship.position ?? (index === 0 ? arena.attackerPosition : undefined) ?? fieldStart(arena, 'a', index, first.length),
-        target.position ?? (index === 0 ? arena.defenderPosition : undefined) ?? fieldStart(arena, 'b', index, second.length)
+        ship.position ??
+          (index === 0 ? arena.attackerPosition : undefined) ??
+          fieldStart(arena, 'a', index, first.length),
+        target.position ??
+          (index === 0 ? arena.defenderPosition : undefined) ??
+          fieldStart(arena, 'b', index, second.length)
       ),
       undefined,
       true
@@ -242,10 +248,11 @@ function joinNativeFleetShip(
       obstacleSet(),
       ship,
       { id: target.setup.id, team: teams.get(target.setup.id)!, setup: target.setup },
-      ship.position ?? clearCombatSpawn(arena, {
-        x: arena.width * 0.5,
-        y: (arena.height * ((shipIndex % 9) + 1)) / 10,
-      }),
+      ship.position ??
+        clearCombatSpawn(arena, {
+          x: arena.width * 0.5,
+          y: (arena.height * ((shipIndex % 9) + 1)) / 10,
+        }),
       target.position
     ),
     undefined,
