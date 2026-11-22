@@ -137,8 +137,15 @@ assert(
 const duel = read('src/ui/start/duel-lobby.ts');
 const engagements = read('src/systems/combat/star-map-engagement-service.ts');
 assert(duel.includes('createStrategicCombatService('));
+const campaignFleet = read('src/systems/combat/career-fleet-encounter.ts');
+const dynamic = read('src/systems/combat/dynamic-fleet-combat.ts');
+const nativeFleet = read('src/systems/combat/parallel-native-duels.ts');
 assert(
-  engagements.includes('createStrategicCombatService('),
-  'campaign and duel must use the same simulator'
+  engagements.includes('createCareerFleetEncounter(') &&
+    engagements.includes('createNpcFleetEncounter(') &&
+    campaignFleet.includes('createDynamicFleetCombat(') &&
+    dynamic.includes('createParallelNativeDuels(') &&
+    nativeFleet.includes('createStrategicCombatService('),
+  'campaign and duel must share the native 1vs1 simulator through FleetCombat'
 );
 console.log('PASS campaign/duel shared simulator and preserved combat entry motion');
