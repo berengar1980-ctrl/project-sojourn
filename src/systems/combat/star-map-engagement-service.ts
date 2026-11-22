@@ -1,4 +1,5 @@
 import { reactToPlayerAttack } from './player-attack-reaction';
+import { createCareerFleetEncounter, type CareerFleetEncounter } from './career-fleet-encounter';
 import type {
   StarMapEngagementService,
   StarMapEngagementOptions,
@@ -53,6 +54,7 @@ interface EngagementRuntime {
   readonly options: StarMapEngagementOptions;
   playerChase: ChaseRecord | null;
   playerCombat: StrategicCombatService | null;
+  playerFleet: CareerFleetEncounter | null;
   playerEnemy: SectorNpcState | null;
   piratePlayerChase: ChaseRecord | null;
   readonly npcChases: Map<string, ChaseRecord>;
@@ -196,14 +198,22 @@ function scanForNpcAttacks(runtime: EngagementRuntime): void {
 function beginPlayerCombat(
   runtime: EngagementRuntime,
   target: SectorNpcState,
-  arena?: StrategicCombatArenaOptions
+  arena?: StrategicCombatArenaOptions,
+  playerInitiated = false
 ): void {
   const playerSetup = runtime.options.getPlayerCombatant();
   const npcSetup = npcCombatant(target);
   if (!npcSetup) return;
   runtime.options.navigation.stopPursuit();
   runtime.options.sectorNpcs.markEngaged(target, 'player', PLAYER_ID, 'Gefecht mit Spieler');
-  runtime.playerCombat = createStrategicCombatService(playerSetup, npcSetup, undefined, arena);
+  runtime.playerFleet = createCareerFleetEncounter(
+    playerSetup,
+    target,
+    runtime.options.sectorNpcs.npcs,
+    playerInitiated,
+    arena
+  );
+  runtime.playerCombat = runtime.playerFleet.combat;
   runtime.playerEnemy = target;
   runtime.playerChase = null;
   runtime.options.log('COMBAT > KONTAKT · KAMPF BEGINNT GEGEN ' + target.name.toUpperCase());
@@ -251,7 +261,7 @@ function updatePlayerChase(runtime: EngagementRuntime): void {
   const npcShip = getShipDefinition(target.shipId);
   if (!npcShip) return;
   if (currentDistance <= engagementRange(playerShip, npcShip)) {
-    beginPlayerCombat(runtime, target);
+    beginPlayerCombat(runtime, target, undefined, true);
     return;
   }
   if (
@@ -341,7 +351,7 @@ function engageNpc(
   const target = engagementNpc(runtime, npcId);
   if (!target || target.hullHp <= 0) return false;
   runtime.options.onPlayerAttack?.(target);
-  beginPlayerCombat(runtime, target, arena);
+  beginPlayerCombat(runtime, target, arena, true);
   return runtime.playerCombat !== null;
 }
 
@@ -388,8 +398,17 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
   updateNpcChases(runtime);
   resolveBackgroundCombats(runtime, deltaSeconds);
   if (runtime.playerCombat) {
-    const model = runtime.playerCombat.tick(deltaSeconds);
-    if (runtime.playerEnemy) runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
+    if (runtime.playerFleet) {
+      runtime.playerFleet.joinNearby(
+        runtime.options.navigation.getSnapshot().currentPosition,
+        runtime.options.sectorNpcs.npcs,
+        (npc) => runtime.options.sectorNpcs.livePosition(npc)
+      );
+      runtime.playerFleet.tick(deltaSeconds);
+    } else {
+      const model = runtime.playerCombat.tick(deltaSeconds);
+      if (runtime.playerEnemy) runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
+    }
   }
 }
 
@@ -422,6 +441,13 @@ function finishPlayerCombat(runtime: EngagementRuntime, boardingOutcome?: Boardi
       'COMBAT > EIGENES SCHIFF KAMPFUNFÄHIG · BERGUNG NACH ' + destination.toUpperCase()
     );
   }
+  if (runtime.playerFleet) {
+    for (const member of runtime.playerFleet.members.values()) {
+      if (member !== runtime.playerEnemy)
+        runtime.options.sectorNpcs.recoverFromCombat(member, 'Nach Flottengefecht');
+    }
+  }
+  runtime.playerFleet = null;
   runtime.playerCombat = null;
   runtime.playerEnemy = null;
 }
@@ -433,6 +459,7 @@ export function createStarMapEngagementService(
     options,
     playerChase: null,
     playerCombat: null,
+    playerFleet: null,
     playerEnemy: null,
     piratePlayerChase: null,
     npcChases: new Map(),
@@ -468,6 +495,7 @@ export function createStarMapEngagementService(
     syncPlayerPursuitTarget: () => syncPlayerPursuitTarget(runtime),
     tick: (deltaSeconds) => tickEngagements(runtime, deltaSeconds),
     activePlayerCombat: () => runtime.playerCombat,
+    activePlayerFleet: () => runtime.playerFleet?.fleet ?? null,
     activeNpcCombatSnapshots: () =>
       [...runtime.backgroundCombats.values()].map((entry) => entry.combat.getSnapshot()),
     activePlayerEnemy: () => runtime.playerEnemy,
