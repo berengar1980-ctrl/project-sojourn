@@ -348,10 +348,12 @@ export function createFleetScenarioWorldBridge(
         if (!arrived.has(id) || engaged.has(id) || moving.npc.hullHp <= 0) return [];
         const ship = getShipDefinition(moving.npc.shipId);
         if (!ship) return [];
-        const state = drones.get(id) ??
+        const state =
+          drones.get(id) ??
           (moving.npc.job === 'miner' && moving.npc.combatMovement?.mode !== 'flee'
             ? miners.ships.find((miner) => miner.npcId === id)
-            : undefined) ?? moving;
+            : undefined) ??
+          moving;
         return [{ id, ship, state }];
       });
       resolveShipShieldCollisions(neutralBodies);
