@@ -156,7 +156,10 @@ export function createFleetScenarioRuntime(
     throw new Error('FleetCombat simulation requires exactly one player ship');
   const all = new Map(roster.map((ship, index) => [ship.id, nativeShip(ship, index)]));
   if (all.size !== roster.length) throw new Error('FleetCombat ship IDs must be unique');
-  const world = createFleetScenarioWorldBridge(roster, arena, seed, mapKind);
+  const world = createFleetScenarioWorldBridge(
+    roster, arena, seed, mapKind,
+    new Map([...all].map(([id, ship]) => [id, ship.setup.hullHp]))
+  );
   const conflict = createConflictManager(roster.map(participant));
   const identities = new Map(roster.map((ship) => [ship.id, ship.id]));
   const arrived = new Map<string, NativeDuelShip>();
