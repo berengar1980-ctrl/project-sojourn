@@ -59,6 +59,24 @@ assert.equal(label(rejoined.engagements, 'a2'), 'D2');
 assert.equal(label(rejoined.engagements, 'b2'), 'D2');
 assert(rejoined.engagements.some((link) => link.sourceId === 'a1' && link.role === 'support'));
 
+// Regression: a dynamically joined third ship is a genuine replacement 1v1
+// once the first opponent has been destroyed. There must still be a solid line.
+const joinedFleet = createParallelNativeDuels(roster(1, 1), arena(), 1353);
+assert.equal(joinedFleet.addShip(ship('b2', 'b')), true);
+joinedFleet.getActor('b1').hullHp = 0;
+joinedFleet.tick(0.08);
+const replacementLinks = joinedFleet.getSnapshot().engagements;
+assert(
+  replacementLinks.some(
+    (link) =>
+      link.role === 'duel' &&
+      [link.sourceId, link.targetId].includes('a1') &&
+      [link.sourceId, link.targetId].includes('b2')
+  ),
+  'the surviving original ship and the joined attacker must retain a solid 1v1 line'
+);
+assert.equal(joinedFleet.getSnapshot().finished, false);
+
 // 1v5: one real central duel; four additional attackers with separate + labels.
 const uneven = createParallelNativeDuels(roster(1, 5), arena(), 1210).getSnapshot();
 assert.equal(uneven.engagements.filter((link) => link.role === 'duel').length, 1);
