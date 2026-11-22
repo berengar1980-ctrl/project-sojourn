@@ -220,7 +220,15 @@ export function createFleetScenarioWorldBridge(
         radius: rock.collisionRadius ?? rock.radius,
       }));
   const syncFromCombat = (actor: MutableCombatant): void => {
-    if (actor.setup.id === 'player') return;
+    if (actor.setup.id === 'player') {
+      playerPose.position = { ...actor.position };
+      playerPose.headingRadians = actor.headingRadians;
+      playerPose.velocity = {
+        x: Math.cos(actor.headingRadians) * actor.speed,
+        y: Math.sin(actor.headingRadians) * actor.speed,
+      };
+      return;
+    }
     const moving = states.get(actor.setup.id);
     if (!moving) return;
     moving.position = { ...actor.position };
@@ -269,6 +277,23 @@ export function createFleetScenarioWorldBridge(
       };
     },
     syncFromCombat,
+    /** Hand control of a surviving ship back to its original campaign service. */
+    releaseCombat(id: string) {
+      if (!engaged.delete(id)) return;
+      const moving = states.get(id);
+      if (!moving) return;
+      delete moving.npc.combatMovement;
+      threats.delete(id);
+      if (moving.npc.hullHp <= 0) return;
+      if (moving.npc.job === 'miner') {
+        miners.syncCombatPose(id, moving.position, moving.headingRadians, moving.speed);
+        if (moving.npc.autonomy) moving.npc.autonomy.phase = 'working';
+      }
+      if (id.startsWith('security-drone:')) {
+        const drone = drones.get(id);
+        drone?.restore(moving.position, true);
+      }
+    },
     threaten(id: string, aggressor: WorldPoint) {
       if (engaged.has(id)) return;
       const moving = states.get(id);
