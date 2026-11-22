@@ -102,8 +102,8 @@ export function createFleetScenarioWorldBridge(
       locationId: WORLD_LOCATION,
       workLocationId: WORLD_LOCATION,
       workResourceIds: [],
-      hullHp: template.hullMaxHp,
-      hullMaxHp: template.hullMaxHp,
+      hullHp: hullById.get(ship.id) ?? template.hullMaxHp,
+      hullMaxHp: hullById.get(ship.id) ?? template.hullMaxHp,
       installedComponents: duelInstalledComponents(ship.draft),
       pirate: job === 'pirate',
       ...(ship.group === 'pirates-yellow'
