@@ -10,6 +10,7 @@ import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc
 import { hashId } from '../../systems/npcs/npc-mining-targets';
 import { AsteroidSecurityDrone } from '../../systems/operations/asteroid-security-drone';
 import { moveFieldShip, type FieldRouteShip } from '../../systems/navigation/field-ship-routing';
+import { resolveShipShieldCollisions } from '../../systems/local-space/ship-shield-collision';
 import type {
   StrategicCombatArenaOptions,
   MutableCombatant,
@@ -341,6 +342,19 @@ export function createFleetScenarioWorldBridge(
           };
         }
       }
+      // Campaign local-ship collisions remain authoritative for noncombatants.
+      // Operate on their live states, not copies, and do not integrate motion twice.
+      const neutralBodies = [...states].flatMap(([id, moving]) => {
+        if (!arrived.has(id) || engaged.has(id) || moving.npc.hullHp <= 0) return [];
+        const ship = getShipDefinition(moving.npc.shipId);
+        if (!ship) return [];
+        const state = drones.get(id) ??
+          (moving.npc.job === 'miner' && moving.npc.combatMovement?.mode !== 'flee'
+            ? miners.ships.find((miner) => miner.npcId === id)
+            : undefined) ?? moving;
+        return [{ id, ship, state }];
+      });
+      resolveShipShieldCollisions(neutralBodies);
     },
     contacts(): FleetWorldContact[] {
       const bystanders = [...states].flatMap(([id, value]) => {
