@@ -2,7 +2,8 @@ import type { SectorNpcState, NpcJob } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import { createSectorNpcEconomyStates } from '../../data/economy/sector-npc-economy';
-import { getShipDefinition } from '../../systems/ships';
+import { getShipDefinition, resolveShipLocalCruiseSpeed } from '../../systems/ships';
+import { ensureNpcInstalledComponents } from '../../systems/npcs/npc-upgrade-service';
 import { generateMiningSpace } from '../../systems/local-space/local-space-generator';
 import { createNpcLocalMiningService } from '../../systems/npcs/npc-local-mining-service';
 import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc-combat-ai';
@@ -315,7 +316,11 @@ export function createFleetScenarioWorldBridge(
             : threat && moving.npc.pirate && npcMayInitiateAttack(moving.npc)
               ? threat
               : moving.waypoint;
-        const arrivedAt = moveFieldShip(moving, destination, 110, dt, obstacles(), 65, 'patrol');
+        const definition = getShipDefinition(moving.npc.shipId);
+        const speed = definition
+          ? resolveShipLocalCruiseSpeed(definition, ensureNpcInstalledComponents(moving.npc))
+          : 110;
+        const arrivedAt = moveFieldShip(moving, destination, speed, dt, obstacles(), 65, 'patrol');
         if (arrivedAt && moving.npc.combatMovement?.mode === 'flee') {
           delete moving.npc.combatMovement;
           threats.delete(id);
