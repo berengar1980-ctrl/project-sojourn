@@ -49,7 +49,8 @@ export function createFleetScenarioWorldBridge(
   arena: StrategicCombatArenaOptions,
   seed: number,
   mapKind:
-    'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field' = 'asteroid_field'
+    'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field' = 'asteroid_field',
+  hullById: ReadonlyMap<string, number> = new Map()
 ) {
   const field =
     (arena.asteroids?.length ?? 0) > 0 && (mapKind === 'scattered' || mapKind === 'asteroid_field')
