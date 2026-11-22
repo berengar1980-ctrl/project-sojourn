@@ -1,6 +1,5 @@
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { materializeNativeFleetWrecks } from './native-fleet-wrecks';
-import type { NativeFleetDriver } from './native-fleet-reassignment';
 import type {
   CombatVisualAsteroid,
   MutableCombatant,
@@ -22,7 +21,6 @@ export function escapedNativeFleetShips(services: readonly StrategicCombatServic
 
 interface NativeFleetFrame {
   readonly services: readonly StrategicCombatService[];
-  readonly drivers: readonly NativeFleetDriver[];
   readonly actors: readonly MutableCombatant[];
   readonly baseObstacles: readonly StrategicCombatObstacle[];
   readonly allObstacles: readonly StrategicCombatObstacle[][];
@@ -41,7 +39,6 @@ interface NativeFleetFrame {
 export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   const {
     services,
-    drivers,
     actors,
     baseObstacles,
     allObstacles,
@@ -62,14 +59,9 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     const source = service.getParallelActor?.('attacker');
     const target = service.getParallelActor?.('defender');
     if (!source || !target) throw new Error('Missing native fleet combat actor');
-    // Pairs initially own BOTH ships; after reinforcement they only own
-    // their one survivor. Never tick a departed shared target a second time.
-    const driven = drivers[index];
-    if (
-      escaped.has(source.setup.id) ||
-      (driven !== 'attacker' && escaped.has(target.setup.id)) ||
-      (driven === 'attacker' && escaped.has(target.setup.id))
-    ) continue;
+    // A shared target may have escaped through another active duel.
+    // Do not move either participant until that service is reassigned.
+    if (escaped.has(source.setup.id) || escaped.has(target.setup.id)) continue;
     const duelIds = new Set([source.setup.id, target.setup.id]);
     const others = actors
       .filter(
