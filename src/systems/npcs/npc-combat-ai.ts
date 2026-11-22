@@ -47,6 +47,8 @@ export function npcMayTargetNpc(attacker: SectorNpcState, target: SectorNpcState
   if (attacker.id === target.id) return false;
   if (!attacker.pirate) return npcLooksHostileToPatrol(target);
   if (rivalPirateGroups(attacker, target))
-    return target.hullHp > 0 && !target.combatMovement && (target.combatRecoverySeconds ?? 0) <= 0;
+    return (
+      target.hullHp > 0 && !target.combatMovement && (target.combatRecoverySeconds ?? 0) <= 0
+    );
   return npcIsPiratePrey(target);
 }
