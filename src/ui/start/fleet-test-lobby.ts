@@ -131,6 +131,7 @@ function createSimulatorLauncher(
     onCombatActiveChange(false);
   };
   return {
+    // eslint-disable-next-line max-lines-per-function
     start(config: FleetTestConfiguration): void {
       if (destroyed) return;
       stop();
