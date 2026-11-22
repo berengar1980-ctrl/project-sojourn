@@ -3,7 +3,7 @@ import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog'
 import { DUEL_MAPS, type DuelMapKind } from '../../systems/combat/duel-arena-presets';
 import { fitsWeaponHardpoint, getAllShipDefinitions, getShipDefinition } from '../../systems/ships';
 import { duelCombatant } from './duel-combatant-setup';
-import { createParallelNativeDuels } from '../../systems/combat/parallel-native-duels';
+import { createDynamicFleetCombat } from '../../systems/combat/dynamic-fleet-combat';
 import { createDuelArena } from '../../systems/combat/duel-arena-presets';
 import { createFleetNativeCombatPanel } from '../combat/fleet-native-combat-panel';
 import type { DuelDraft } from './duel-combatant-setup';
@@ -119,7 +119,7 @@ function createParallelDuelLauncher(
           setup: { ...setup, id: ship.id, name: ship.id.toUpperCase() + ' · ' + ship.name },
         };
       });
-      const duels = createParallelNativeDuels(ships, arena, seed);
+      const duels = createDynamicFleetCombat(ships, arena, seed);
       onCombatActiveChange(true);
       activePanel = createFleetNativeCombatPanel({
         root,
