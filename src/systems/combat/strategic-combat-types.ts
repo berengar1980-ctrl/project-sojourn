@@ -332,6 +332,7 @@ export interface StrategicCombatService {
   resumeAfterBoarding(): boolean;
   getParallelActor?(side: StrategicCombatSide): MutableCombatant;
   retargetParallelSurvivor?(side: StrategicCombatSide, opponent: MutableCombatant): boolean;
+  redirectParallelSupport?(opponent: MutableCombatant): boolean;
 }
 
 export interface MutableCombatant {
