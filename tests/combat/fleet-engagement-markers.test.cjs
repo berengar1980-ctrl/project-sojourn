@@ -98,13 +98,19 @@ const painter = {
   save() {},
   restore() {},
   beginPath() {},
-  setLineDash(dashes) { calls.dashed.push(dashes); },
+  setLineDash(dashes) {
+    calls.dashed.push(dashes);
+  },
   moveTo() {},
   lineTo() {},
-  stroke() { calls.strokes++; },
+  stroke() {
+    calls.strokes++;
+  },
   fillRect() {},
   strokeRect() {},
-  fillText(value) { calls.badges.push(value); },
+  fillText(value) {
+    calls.badges.push(value);
+  },
 };
 const shape = (entry) => ({
   center: entry.position,
@@ -120,4 +126,6 @@ assert(calls.dashed.some((dashes) => dashes.length === 0));
 paintFleetShipBadges(painter, snapshots, after.engagements, new Set(), shape, 4200, 2600);
 assert.deepEqual(calls.badges.sort(), ['+1', '+2', 'D1', 'D1'].sort());
 
-console.log('PASS FleetCombat live primary-pair badges, support-role transitions and deduped links');
+console.log(
+  'PASS FleetCombat live primary-pair badges, support-role transitions and deduped links'
+);
