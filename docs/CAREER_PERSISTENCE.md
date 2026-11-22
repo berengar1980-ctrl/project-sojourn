@@ -1033,3 +1033,21 @@ Auch Fluchten bleiben nach dem Zielwechsel im temporären Fleet-Zustand
 vermerkt. Die reguläre 1vs1-Simulation nutzt den unveränderten Standardpfad,
 während der optionale Einseitentick ausschließlich flüchtige Simulation ist.
 Es entstehen keine neuen Karriere-Speicherfelder und keine Migration.
+
+### Allgemeine Flottenzielzuweisung (PvP-Test)
+
+Die flüchtige FleetCombat-Koordination verwendet eine stabile
+Schiffsinstanz pro Teilnehmer und führt keine zweite Kampf-Engine ein.
+Sobald ein Kampf durch Zerstörung oder Flucht endet, wählt das
+freigewordene Schiff einen räumlich nahen laufenden Kampf. Ist dort
+ein befreundetes Schiff durch einen zusätzlichen Angreifer im Nachteil,
+kann dieser zusätzliche Angreifer durch die Umschaltung seiner
+vorhandenen einseitigen KI-Zielreferenz abgefangen werden. Paarungen,
+die weiterlaufen, behalten ihre ursprüngliche physikalische
+und taktische Autorität; fremde Schiffe werden weder geklont noch
+doppelt bewegt oder mit doppelten Cooldowns versorgt.
+
+Zerstörte und entflohene Schiffe bleiben in der ursprünglichen
+temporären Flottenregistrierung erfasst, auch nach einem Zielwechsel.
+Die reguläre 1vs1-UI, Kampagnen-Speicherung und die Karriere-
+Checkpoint-Schemata werden dadurch nicht erweitert.
