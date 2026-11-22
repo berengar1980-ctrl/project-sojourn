@@ -46,7 +46,7 @@ export interface ParallelNativeDuels {
 
 function fieldStart(
   arena: StrategicCombatArenaOptions,
-  team: 'a' | 'b',
+  team: string,
   index: number,
   count: number
 ): CombatPoint {
