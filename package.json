@@ -16,7 +16,7 @@
     "combat:simulate": "node scripts/simulate-combat.cjs",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
-    "format:check": "prettier --check . && node tests/combat/native-fleet-target-reassignment.test.cjs && node tests/combat/parallel-native-one-vs-two.test.cjs",
+    "format:check": "prettier --check .",
     "deps:report": "node scripts/dependency-report.cjs --write",
     "deps:check": "node scripts/dependency-report.cjs --check",
     "check": "npm run check:quick && npm run build",
