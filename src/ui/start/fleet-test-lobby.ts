@@ -112,6 +112,7 @@ function createSimulatorLauncher(
   onCombatActiveChange: (active: boolean) => void
 ) {
   let panel: ReturnType<typeof createFleetNativeCombatPanel> | null = null;
+  let displayedFleet: ReturnType<typeof createFleetScenarioRuntime>['fleet'] = null;
   let frame = 0;
   let generation = 0;
   let destroyed = false;
@@ -120,6 +121,7 @@ function createSimulatorLauncher(
     cancelAnimationFrame(frame);
     panel?.destroy();
     panel = null;
+    displayedFleet = null;
     onCombatActiveChange(false);
   };
   return {
@@ -156,6 +158,7 @@ function createSimulatorLauncher(
       const mountCombat = (): void => {
         const fleet = session.fleet;
         if (!fleet || panel) return;
+        displayedFleet = fleet;
         panel = createFleetNativeCombatPanel({
           root,
           combat: fleet.duels[0]!,
@@ -180,6 +183,12 @@ function createSimulatorLauncher(
         const dt = Math.min(Math.max(0, now - previous) / 1000, 0.08);
         previous = now;
         session.tick(dt);
+        if (panel && displayedFleet !== session.fleet) {
+          panel.destroy();
+          panel = null;
+          displayedFleet = null;
+          root.replaceChildren(waiting);
+        }
         mountCombat();
         if (panel) {
           panel.update();
