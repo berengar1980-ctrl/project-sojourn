@@ -2,7 +2,7 @@ import { advanceCombatPower } from './combat-power-service';
 import { applyCombatRamImpact } from './combat-ram-impact';
 import { advanceShieldImpacts } from '../shields/shield-service';
 import { resolveCombatBystanderContacts } from './combat-bystander-contacts';
-import { resolveCombatantCollision, moveCombatant } from './strategic-combat-movement';
+import { moveCombatant } from './strategic-combat-movement';
 import { reviewAndExecute } from './strategic-combat-telemetry';
 import { advanceRuntimeWeapons, advanceRuntimeProjectiles } from './strategic-combat-weapons';
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
@@ -45,8 +45,17 @@ export function tickNativeSupportingShip(
   if (source.powerFault !== 'total') reviewAndExecute(runtime, source, target, side);
   moveCombatant(source, target, side, dt, runtime.arena, runtime.mines);
   applyCombatRamImpact(runtime);
-  resolveCombatantCollision(source, target);
-  resolveCombatBystanderContacts(source, bystanders);
+  // Collisions may correct only the ship owned by this one-sided service.
+  // The shared target's physics belongs to its original native duel.
+  resolveCombatBystanderContacts(source, [
+    ...bystanders,
+    {
+      id: target.setup.id,
+      shipId: target.setup.shipId,
+      position: target.position,
+      headingRadians: target.headingRadians,
+    },
+  ]);
   if (source.powerFault !== 'total') {
     maybeDropRuntimeMine(runtime, side, source, target, dt);
     maybeLaunchTractorAsteroid(runtime, side, source, target);
@@ -59,6 +68,12 @@ export function tickNativeSupportingShip(
   advanceRuntimeProjectiles(runtime, dt);
   advanceRuntimeMines(runtime, dt);
   resolveRuntimeWinner(runtime);
+  // A target's escape is authoritative only in the service that actually
+  // drives that target. Do not steal an exit outcome from its native owner.
+  if (runtime.outcomeReason === 'escape' && runtime.winner === side) {
+    runtime.winner = null;
+    runtime.outcomeReason = null;
+  }
 }
 
 /** Backwards-compatible facade for the already-active fleet supporters. */
