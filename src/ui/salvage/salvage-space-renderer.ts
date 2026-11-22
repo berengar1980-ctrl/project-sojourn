@@ -30,6 +30,7 @@ import { type NpcHitArea, SalvageSceneLayers, type WreckHitArea } from './salvag
 export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
   private sharedCombatRenderer: FleetNativeCombatRenderer | null = null;
+  private sharedCombatActive = false;
   protected readonly camera: MapCamera;
   protected readonly background: SpaceBackgroundRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
@@ -67,6 +68,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.model = model;
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     if (model.combat) {
+      const resumedCombat = this.sharedCombatRenderer !== null && !this.sharedCombatActive;
+      this.sharedCombatActive = true;
       if (!this.sharedCombatRenderer) {
         this.sharedCombatRenderer = new FleetNativeCombatRenderer(
           this.canvas,
@@ -81,13 +84,17 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
         );
         this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
       } else {
+        if (resumedCombat)
+          this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
         this.sharedCombatRenderer.update(model.combat);
       }
       return;
     }
-    if (this.sharedCombatRenderer)
+    if (this.sharedCombatRenderer && this.sharedCombatActive)
       (this.camera as PvPMapCamera).restorePose(this.sharedCombatRenderer.cameraPose());
-    this.sharedCombatRenderer = null;
+    this.sharedCombatActive = false;
+    // Retain the same native sprite/asteroid/camera renderer for later contacts.
+    // Do not destroy and reload it after every duel or reinforcement.
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     const now = performance.now();
@@ -109,11 +116,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     }
     this.ensureShipImage(this.model.ship.spriteUrl);
     for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
-    if (this.sharedCombatRenderer) this.sharedCombatRenderer.resize();
+    if (this.sharedCombatActive && this.sharedCombatRenderer) this.sharedCombatRenderer.resize();
     else this.draw();
   }
   pan(dx: number, dy: number): void {
-    if (this.sharedCombatRenderer) {
+    if (this.sharedCombatActive && this.sharedCombatRenderer) {
       this.sharedCombatRenderer.pan(dx, dy);
       return;
     }
@@ -121,7 +128,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.draw();
   }
   zoomAt(deltaY: number, x: number, y: number): void {
-    if (this.sharedCombatRenderer) {
+    if (this.sharedCombatActive && this.sharedCombatRenderer) {
       this.sharedCombatRenderer.zoomAt(Math.exp(-deltaY * 0.00135), x, y);
       return;
     }
@@ -146,7 +153,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.shipImage.src = url;
   }
   protected draw(): void {
-    if (this.sharedCombatRenderer) return;
+    if (this.sharedCombatActive) return;
     this.drawLocalScene();
   }
   private drawLocalScene(): void {
