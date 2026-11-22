@@ -35,7 +35,7 @@ jobs:
           if ! git diff --quiet; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/systems/combat tests/combat src/app/game-controller-combat-scene.ts src/ui/start/fleet-test-lobby.ts
+            git add src/systems/combat src/systems/npcs/npc-combat-ai.ts tests/combat src/app/game-controller-combat-scene.ts src/ui/start/fleet-test-lobby.ts
             git commit -m "style: format FleetCombat changes"
             git pull --rebase origin fix/fleet-survivor-reassignment-stall
             git push
