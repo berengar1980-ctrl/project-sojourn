@@ -14,6 +14,14 @@ import type {
 
 const CONTACT_RANGE = 650;
 
+export interface CareerFleetWorldPose {
+  /** Authoritative world position; never mutate it from a renderer. */
+  readonly positionOf: (npc: SectorNpcState) => WorldPoint;
+  readonly headingOf: (npc: SectorNpcState) => number;
+  readonly playerPosition?: WorldPoint;
+}
+
+
 function participant(npc: SectorNpcState): ConflictParticipant {
   if (npc.id.startsWith('security-drone:')) return { id: npc.id, role: 'drone', armed: true };
   if (npc.pirate || npc.job === 'pirate') {
@@ -53,7 +61,8 @@ function createSectorFleetEncounter(
   initiator: string,
   victim: string,
   firstIsPlayer: boolean,
-  arena?: StrategicCombatArenaOptions
+  arena?: StrategicCombatArenaOptions,
+  worldPose?: CareerFleetWorldPose
 ): CareerFleetEncounter {
   const enemySetup = npcCombatant(enemy);
   if (!enemySetup) throw new Error('Campaign enemy lacks a combat setup');
@@ -64,21 +73,47 @@ function createSectorFleetEncounter(
     ...allNpcs.filter((npc) => npc.id !== firstSetup.id || !firstIsPlayer).map(participant),
   ]);
   conflict.recordAttack({ attackerId: initiator, victimId: victim, witnessedBy: [] });
+  // Native combat uses the existing field coordinates when supplied. In the
+  // strategic sector, project both ships into one arena without changing the
+  // world-space separation or the original NPC position.
+  const firstNpc = allNpcs.find((npc) => npc.id === firstSetup.id);
+  const firstWorld = firstIsPlayer ? worldPose?.playerPosition : firstNpc && worldPose?.positionOf(firstNpc);
+  const enemyWorld = worldPose?.positionOf(enemy);
+  const anchor = { x: sessionArena.width * 0.5, y: sessionArena.height * 0.5 };
+  const firstPosition = arena?.attackerPosition ?? (firstWorld && enemyWorld
+    ? { x: anchor.x + (firstWorld.x - enemyWorld.x) * 0.5,
+        y: anchor.y + (firstWorld.y - enemyWorld.y) * 0.5 }
+    : undefined);
+  const enemyPosition = arena?.defenderPosition ?? (firstWorld && enemyWorld
+    ? { x: anchor.x + (enemyWorld.x - firstWorld.x) * 0.5,
+        y: anchor.y + (enemyWorld.y - firstWorld.y) * 0.5 }
+    : undefined);
   const keys = new Map([
     [firstSetup.id, firstSetup.id],
     [enemy.id, enemy.id],
   ]);
   const fleet = createDynamicFleetCombat(
     [
-      { id: firstSetup.id, team: 'a', setup: firstSetup },
-      { id: enemy.id, team: 'b', setup: enemySetup },
+      { id: firstSetup.id, team: 'a', setup: firstSetup,
+        ...(firstPosition ? { position: firstPosition } : {}),
+        ...(firstNpc && worldPose ? { headingRadians: worldPose.headingOf(firstNpc) } : {}) },
+      { id: enemy.id, team: 'b', setup: enemySetup,
+        ...(enemyPosition ? { position: enemyPosition } : {}),
+        ...(worldPose ? { headingRadians: worldPose.headingOf(enemy) } : {}) },
     ],
     sessionArena,
     seed,
     conflict.hostility(),
     keys
   );
-  const firstNpc = allNpcs.find((npc) => npc.id === firstSetup.id);
+  const worldOffsets = new Map<string, WorldPoint>();
+  for (const npc of [firstNpc, enemy]) {
+    if (!npc || !worldPose) continue;
+    const actor = fleet.getActor(npc.id);
+    if (!actor) continue;
+    const original = worldPose.positionOf(npc);
+    worldOffsets.set(npc.id, { x: original.x - actor.position.x, y: original.y - actor.position.y });
+  }
   const members = new Map<string, SectorNpcState>([
     [enemy.id, enemy],
     ...(firstNpc ? [[firstNpc.id, firstNpc] as const] : []),
@@ -123,7 +158,19 @@ function createSectorFleetEncounter(
         if (!activeActors().some((actor) => conflict.isHostile(npc.id, actor.setup.id))) continue;
         const setup = npcCombatant(npc);
         if (!setup) continue;
-        if (fleet.addShip({ id: npc.id, team: kind.role, setup }, npc.id)) {
+        const anchorActor = fleet.getActor(enemy.id);
+        const anchorWorld = worldPose?.positionOf(enemy);
+        const arrival = worldPose && anchorActor && anchorWorld
+          ? { x: anchorActor.position.x + spot.x - anchorWorld.x,
+              y: anchorActor.position.y + spot.y - anchorWorld.y }
+          : undefined;
+        if (fleet.addShip({ id: npc.id, team: kind.role, setup,
+          ...(arrival ? { position: arrival } : {}),
+          ...(worldPose ? { headingRadians: worldPose.headingOf(npc) } : {}) }, npc.id)) {
+          const actor = fleet.getActor(npc.id);
+          if (actor && worldPose) worldOffsets.set(npc.id, {
+            x: spot.x - actor.position.x, y: spot.y - actor.position.y,
+          });
           members.set(npc.id, npc);
           onJoin?.(npc);
         }
@@ -133,7 +180,20 @@ function createSectorFleetEncounter(
       fleet.tick(deltaSeconds);
       for (const actor of activeActors()) {
         const npc = members.get(actor.setup.id);
-        if (npc) npc.hullHp = Math.max(0, Math.min(npc.hullMaxHp, Math.round(actor.hullHp)));
+        if (!npc) continue;
+        npc.hullHp = Math.max(0, Math.min(npc.hullMaxHp, Math.round(actor.hullHp)));
+        // The native 1v1 AI owns position/heading/velocity for engaged ships.
+        // Sector navigation observes that same pose instead of integrating a
+        // competing movement or returning to the pre-combat contact point.
+        if (npc.combatMovement?.mode === 'engaged') {
+          const offset = worldOffsets.get(npc.id) ?? { x: 0, y: 0 };
+          npc.combatMovement.position = {
+            x: actor.position.x + offset.x,
+            y: actor.position.y + offset.y,
+          };
+          npc.combatMovement.headingRadians = actor.headingRadians;
+          npc.combatMovement.speed = actor.speed;
+        }
       }
     },
   };
@@ -145,7 +205,8 @@ export function createCareerFleetEncounter(
   enemy: SectorNpcState,
   allNpcs: readonly SectorNpcState[],
   playerInitiated: boolean,
-  arena?: StrategicCombatArenaOptions
+  arena?: StrategicCombatArenaOptions,
+  worldPose?: CareerFleetWorldPose
 ): CareerFleetEncounter {
   return createSectorFleetEncounter(
     player,
@@ -154,7 +215,8 @@ export function createCareerFleetEncounter(
     playerInitiated ? player.id : enemy.id,
     playerInitiated ? enemy.id : player.id,
     true,
-    arena
+    arena,
+    worldPose
   );
 }
 
@@ -163,7 +225,8 @@ export function createNpcFleetEncounter(
   attacker: SectorNpcState,
   defender: SectorNpcState,
   allNpcs: readonly SectorNpcState[],
-  arena?: StrategicCombatArenaOptions
+  arena?: StrategicCombatArenaOptions,
+  worldPose?: CareerFleetWorldPose
 ): CareerFleetEncounter {
   const setup = npcCombatant(attacker);
   if (!setup) throw new Error('NPC attacker lacks a combat setup');
@@ -174,6 +237,7 @@ export function createNpcFleetEncounter(
     attacker.id,
     defender.id,
     false,
-    arena
+    arena,
+    worldPose
   );
 }
