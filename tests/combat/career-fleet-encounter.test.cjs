@@ -78,4 +78,13 @@ assert(joinedBackground.includes('security-drone:x'));
 background.tick(0.08);
 assert.equal(background.fleet.getSnapshot().finished, false);
 assert.equal(background.members.size, 4);
+const { rivalPirateGroups } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/npcs/npc-combat-ai.ts'
+);
+assert.equal(
+  rivalPirateGroups(npc('a', 'pirate'), { ...npc('b', 'pirate'), pirateMark: 'broken-spear' }),
+  true
+);
+assert.equal(rivalPirateGroups(npc('a', 'pirate'), npc('b', 'pirate')), false);
 console.log('PASS campaign shared fleet sessions: player, NPC, pirates, patrols, drones join live');
