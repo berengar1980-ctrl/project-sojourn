@@ -15,7 +15,6 @@ import type { FleetWorldContact } from './fleet-scenario-world-bridge';
  * the simulation. The canvas itself is handed to the live PvP renderer without
  * replacing it or constructing a fake duel.
  */
-// eslint-disable-next-line max-lines-per-function
 export function createFleetIdleWorldCanvas(
   canvas: HTMLCanvasElement,
   arena: StrategicCombatArenaOptions,
