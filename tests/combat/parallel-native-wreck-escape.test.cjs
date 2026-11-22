@@ -116,7 +116,15 @@ nearGate(fugitive, escapeGate);
 escaping.tick(0.08);
 const escaped = escaping.getSnapshot();
 assert(escaped.escapedShipIds.includes('a-4'), 'an escaped 5v5 ship leaves the shared world');
-assert.equal(escaped.duels[3].outcomeReason, 'escape');
+assert.equal(
+  escaped.duels[3].winner,
+  null,
+  'remaining ship must immediately rejoin the fleet fight after its opponent flees'
+);
+assert(
+  escaped.duels[3].defender.hullHp > 0,
+  'the original surviving defender remains a real live combatant'
+);
 assert(
   nativeFleetVisibility(
     escaped.duels[0],
