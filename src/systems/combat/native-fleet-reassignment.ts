@@ -64,7 +64,8 @@ function freeCombatant(
     if (
       state.winner === null ||
       (state.outcomeReason !== 'destruction' && state.outcomeReason !== 'escape')
-    ) return null;
+    )
+      return null;
     const ship = actor(service, state.winner);
     return live(ship, context) ? { ship, side: state.winner } : null;
   }
@@ -150,7 +151,8 @@ export function reassignNativeFleetTargets(context: FleetAssignment): void {
     // The secondary attacker is already being simulated by its OWN service.
     // Redirect that service's target toward the arriving defender; do not
     // create a new service or advance any actor a second time.
-    choice.intercept?.owner &&
+    if (choice.intercept) {
       context.services[choice.intercept.serviceIndex]?.redirectParallelSupport?.(available.ship);
+    }
   }
 }
