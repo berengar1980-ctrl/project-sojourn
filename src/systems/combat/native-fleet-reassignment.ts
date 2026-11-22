@@ -114,7 +114,8 @@ function chooseTarget(
   const peel: { choice: TargetChoice; distance: number }[] = [];
   for (const friendly of engagements) {
     if (!live(friendly.owner, context) || friendly.owner === free) continue;
-    if (enemy(free, friendly.owner, context)) continue;
+    if (context.teams.get(free.setup.id) !== context.teams.get(friendly.owner.setup.id))
+      continue;
     const secondaries = engagements.filter(
       (other) =>
         other.target === friendly.owner &&
