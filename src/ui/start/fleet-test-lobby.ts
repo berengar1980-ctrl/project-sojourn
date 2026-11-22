@@ -183,7 +183,7 @@ function createSimulatorLauncher(
         panel = createFleetNativeCombatPanel({
           root,
           canvas,
-          initialCameraPose,
+          ...(initialCameraPose ? { initialCameraPose } : {}),
           combat: fleet.duels[0]!,
           spectator: true,
           parallelDuels: () => [
