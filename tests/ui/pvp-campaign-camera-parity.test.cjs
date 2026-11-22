@@ -70,7 +70,7 @@ const fleetPanel = fs.readFileSync(
 );
 const idleMap = fs.readFileSync(path.join(root, 'src/ui/start/fleet-idle-world-canvas.ts'), 'utf8');
 assert(fleetLobby.includes('createFleetIdleWorldCanvas(canvas, arena'));
-assert(fleetLobby.includes('canvas,\n          initialCameraPose,'));
+assert(fleetLobby.includes('...(initialCameraPose ? { initialCameraPose } : {})'));
 assert(fleetLobby.includes('waiting.prepend(canvas)'));
 assert(fleetPanel.includes('makeCombatShell(options.root, options.canvas)'));
 assert(idleMap.includes('drawCombatAsteroids('));
