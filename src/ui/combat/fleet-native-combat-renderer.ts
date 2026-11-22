@@ -23,6 +23,8 @@ import type {
   VisibleCombatImpact,
 } from './strategic-combat-renderer-types';
 import { paintFleetShipAnnotations } from './fleet-native-ship-annotations';
+import { paintFleetEngagementLines, paintFleetShipBadges } from './fleet-engagement-markers';
+import type { NativeFleetEngagement } from '../../systems/combat/parallel-native-duels';
 import { ramCameraImpulse } from './combat-ram-effect-renderer';
 import { CombatEffectClock } from './combat-effect-clock';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
@@ -74,6 +76,8 @@ export class FleetNativeCombatRenderer {
   private model: StrategicCombatSnapshot;
   private parallelDuels: readonly StrategicCombatSnapshot[] = [];
   private supportingFromIndex = Number.POSITIVE_INFINITY;
+  private engagements: readonly NativeFleetEngagement[] = [];
+  private showEngagementLines = true;
   private readonly additionalSeenImpacts = new Map<number, number>();
   private readonly additionalImpacts = new Map<number, VisibleCombatImpact[]>();
   private readonly effectClock = new CombatEffectClock();
@@ -101,8 +105,12 @@ export class FleetNativeCombatRenderer {
     model: StrategicCombatSnapshot,
     parallelDuels: readonly StrategicCombatSnapshot[] = [],
     supportingFromIndex = Number.POSITIVE_INFINITY,
-    departedIds: readonly string[] = []
+    departedIds: readonly string[] = [],
+    engagements: readonly NativeFleetEngagement[] = [],
+    showEngagementLines = true
   ): void {
+    this.engagements = engagements;
+    this.showEngagementLines = showEngagementLines;
     this.parallelDuels = parallelDuels;
     this.supportingFromIndex = supportingFromIndex;
     const visibility = nativeFleetVisibility(model, parallelDuels, departedIds);
@@ -230,6 +238,9 @@ export class FleetNativeCombatRenderer {
     const height = rect.height;
     const timeSeconds = performance.now() / 1000;
     const visualElapsed = this.effectClock.elapsed(timeSeconds);
+    const engagementDuels = [this.model, ...this.parallelDuels];
+    const shipShape = (ship: StrategicCombatSnapshot['attacker']) =>
+      this.shipGeometry(ship, width, height);
     this.context.clearRect(0, 0, width, height);
     const shake = ramCameraImpulse(this.model.attacker, this.model.defender, visualElapsed);
     this.context.save();
@@ -258,6 +269,15 @@ export class FleetNativeCombatRenderer {
       timeSeconds
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
+    if (this.showEngagementLines) {
+      paintFleetEngagementLines(
+        this.context,
+        engagementDuels,
+        this.engagements,
+        this.hiddenShipIds,
+        shipShape
+      );
+    }
     this.drawMines(width, height);
     this.drawProjectiles(width, height, false);
     this.drawAutocannonBursts(width, height);
@@ -302,6 +322,15 @@ export class FleetNativeCombatRenderer {
       (point) => this.screen(point, width, height),
       this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
       timeSeconds,
+      width,
+      height
+    );
+    paintFleetShipBadges(
+      this.context,
+      engagementDuels,
+      this.engagements,
+      this.hiddenShipIds,
+      shipShape,
       width,
       height
     );
