@@ -162,7 +162,11 @@ export function reassignNativeFleetTargets(context: FleetAssignment): void {
     if (!choice) continue;
     const assigned =
       context.drivers[index] === 'both'
-        ? service.retargetParallelSurvivor?.(available.side, choice.opponent)
+        ? service.retargetParallelSurvivor?.(
+            available.side,
+            choice.opponent,
+            service.getSnapshot().winner === null
+          )
         : service.redirectParallelSupport?.(choice.opponent);
     if (!assigned) continue;
     context.drivers[index] = available.side;
