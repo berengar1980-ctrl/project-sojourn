@@ -198,6 +198,10 @@
     "src/systems/combat/parallel-native-duels.ts": {
       "mode": "transient",
       "reason": "Disposable PvP test coordinator of original 1vs1 services and one shared arena tick; it holds no career save state or checkpoint authority."
+    },
+    "src/systems/combat/native-fleet-engagements.ts": {
+      "mode": "derived",
+      "reason": "Pure projection of current disposable FleetCombat actor drivers into transient display badges and target links; no checkpoint or saved authority."
     }
   }
 }
