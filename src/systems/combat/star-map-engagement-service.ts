@@ -2,7 +2,6 @@ import { reactToPlayerAttack } from './player-attack-reaction';
 import {
   createCareerFleetEncounter,
   createNpcFleetEncounter,
-  type CareerFleetEncounter,
 } from './career-fleet-encounter';
 import type {
   StarMapEngagementService,
@@ -13,6 +12,7 @@ export type {
   StarMapEngagementOptions,
 } from './star-map-engagement-contract';
 import type { SectorNpcState } from '../../core/npc-types';
+import type { EngagementRuntime } from './star-map-engagement-runtime-types';
 
 import { canRaidCivilianCargo, pirateMayIntercept } from './pirate-interception-policy';
 import { protectedBySafeDestination } from '../navigation/route-safety';
@@ -45,30 +45,6 @@ const NPC_ATTACK_SCAN_RANGE = 650;
 
 const FLEE_GAIN_REQUIRED = 520;
 
-interface ChaseRecord {
-  readonly attackerId: string;
-  readonly targetId: string;
-  readonly initialDistance: number;
-}
-
-interface BackgroundCombat {
-  readonly first: SectorNpcState;
-  readonly second: SectorNpcState;
-  readonly combat: StrategicCombatService;
-  readonly fleet: CareerFleetEncounter;
-}
-
-export interface EngagementRuntime {
-  readonly options: StarMapEngagementOptions;
-  playerChase: ChaseRecord | null;
-  playerCombat: StrategicCombatService | null;
-  playerFleet: CareerFleetEncounter | null;
-  playerEnemy: SectorNpcState | null;
-  piratePlayerChase: ChaseRecord | null;
-  readonly npcChases: Map<string, ChaseRecord>;
-  readonly backgroundCombats: Map<string, BackgroundCombat>;
-  attackScanAccumulator: number;
-}
 
 function engagementNpc(runtime: EngagementRuntime, id: string): SectorNpcState | null {
   return runtime.options.sectorNpcs.npcs.find((npc) => npc.id === id) ?? null;
