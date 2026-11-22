@@ -198,6 +198,39 @@ orphanA.tractorThrowCooldown = 2;
 orphan.duels[0].tick(0.08);
 assert(Math.abs(orphanA.tractorThrowCooldown - 1.92) < 1e-9);
 
+// Three independent factions and neutral relations must not be collapsed
+// into the two sides of the current PvP scenario editor.
+const { hasActiveFleetHostilities } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/native-fleet-hostility.ts'
+);
+const factionShips = ['pirates', 'traders', 'patrol'].map((faction) => ({
+  setup: { id: faction },
+  hullHp: 100,
+}));
+const factions = new Map([
+  ['pirates', 'pirates'],
+  ['traders', 'traders'],
+  ['patrol', 'patrol'],
+]);
+const factionsHostile = (a, b) =>
+  (a === 'pirates' && b === 'patrol') || (a === 'patrol' && b === 'pirates');
+assert.equal(
+  hasActiveFleetHostilities(factionShips, new Set(), factions, factionsHostile),
+  true,
+  'the third faction can keep combat active without A/B teams'
+);
+assert.equal(
+  hasActiveFleetHostilities(factionShips, new Set(['pirates']), factions, factionsHostile),
+  false,
+  'remaining neutral factions must not fight solely because their IDs differ'
+);
+assert.equal(
+  hasActiveFleetHostilities(factionShips, new Set(['traders']), factions, factionsHostile),
+  true,
+  'removing a neutral faction must not end an ongoing hostile encounter'
+);
+
 console.log(
   'PASS 2v2/2v3/3v3/5v5 free ship reinforcement, escape and secondary attacker interception'
 );
