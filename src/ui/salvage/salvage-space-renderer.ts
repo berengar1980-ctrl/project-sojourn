@@ -84,8 +84,10 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
         );
         this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
       } else {
-        if (resumedCombat)
+        if (resumedCombat) {
+          this.sharedCombatRenderer.beginEncounter(model.combat);
           this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
+        }
         this.sharedCombatRenderer.update(model.combat);
       }
       return;
