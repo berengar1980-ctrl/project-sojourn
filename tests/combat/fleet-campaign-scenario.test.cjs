@@ -66,11 +66,15 @@ const arena = { width: 4200, height: 2600, obstacles: [], asteroids: [] };
 // All three modes now use the existing campaign services for neutral world
 // behavior; a scheduled reinforcement no longer materializes as an immediate
 // gunner in FleetCombat unless it sees and elects to join the conflict.
+const aggressivePirate = (id, group, arrivalSeconds) => ({
+  ...entry(id, group, arrivalSeconds),
+  draft: { ...commonDraft, shipId: 'pirate-marauder-120m' },
+});
 const roster = [
   entry('player', 'player', 0),
   entry('npc-1', 'npc', 0),
-  entry('pirates-yellow-1', 'pirates-yellow', 0),
-  entry('pirates-red-1', 'pirates-red', 0),
+  aggressivePirate('pirates-yellow-1', 'pirates-yellow', 0),
+  aggressivePirate('pirates-red-1', 'pirates-red', 0),
   entry('security-drone:test-1', 'drone', 0.16),
 ];
 const scenario = createFleetScenarioRuntime(roster, arena, 1234, 'none', 'empty');
