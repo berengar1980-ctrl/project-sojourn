@@ -23,6 +23,8 @@ import type {
   VisibleCombatImpact,
 } from './strategic-combat-renderer-types';
 import { paintFleetShipAnnotations } from './fleet-native-ship-annotations';
+import { FleetEngagementMarkerPainter } from './fleet-engagement-markers';
+import type { NativeFleetEngagement } from '../../systems/combat/parallel-native-duels';
 import { ramCameraImpulse } from './combat-ram-effect-renderer';
 import { CombatEffectClock } from './combat-effect-clock';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
@@ -74,6 +76,7 @@ export class FleetNativeCombatRenderer {
   private model: StrategicCombatSnapshot;
   private parallelDuels: readonly StrategicCombatSnapshot[] = [];
   private supportingFromIndex = Number.POSITIVE_INFINITY;
+  private readonly fleetMarkers = new FleetEngagementMarkerPainter();
   private readonly additionalSeenImpacts = new Map<number, number>();
   private readonly additionalImpacts = new Map<number, VisibleCombatImpact[]>();
   private readonly effectClock = new CombatEffectClock();
@@ -101,13 +104,17 @@ export class FleetNativeCombatRenderer {
     model: StrategicCombatSnapshot,
     parallelDuels: readonly StrategicCombatSnapshot[] = [],
     supportingFromIndex = Number.POSITIVE_INFINITY,
-    departedIds: readonly string[] = []
+    departedIds: readonly string[] = [],
+    engagements: readonly NativeFleetEngagement[] = [],
+    showEngagementLines = true
   ): void {
     this.parallelDuels = parallelDuels;
     this.supportingFromIndex = supportingFromIndex;
     const visibility = nativeFleetVisibility(model, parallelDuels, departedIds);
     this.hiddenShipIds = visibility.escaped;
     this.hiddenDamageIds = visibility.damageHidden;
+    const visibleDuels = [model, ...parallelDuels];
+    this.fleetMarkers.update(visibleDuels, engagements, visibility.escaped, showEngagementLines);
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
@@ -258,6 +265,7 @@ export class FleetNativeCombatRenderer {
       timeSeconds
     );
     drawCombatEscapeGate(this.context, this.screen(this.model.exitPoint, width, height));
+    this.fleetMarkers.drawLines(this.context, (ship) => this.shipGeometry(ship, width, height));
     this.drawMines(width, height);
     this.drawProjectiles(width, height, false);
     this.drawAutocannonBursts(width, height);
@@ -305,6 +313,7 @@ export class FleetNativeCombatRenderer {
       width,
       height
     );
+    this.fleetMarkers.drawBadges(this.context, (ship) => this.shipGeometry(ship, width, height));
     this.drawCareerActors?.(this.camera.pose(), width, height, timeSeconds);
     this.context.restore();
   }

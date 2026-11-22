@@ -3,6 +3,7 @@ import type {
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-service';
 import { FleetNativeCombatRenderer } from './fleet-native-combat-renderer';
+import type { NativeFleetEngagement } from '../../systems/combat/parallel-native-duels';
 import { analyzeCombatLog } from '../../systems/combat/combat-log-analysis';
 import { combatWeaponTelemetryHtml } from './combat-weapon-telemetry-panel';
 import { describeCombatStatus } from '../../systems/combat/combat-intent-labels';
@@ -21,6 +22,7 @@ interface FleetNativeCombatPanelOptions {
   readonly parallelDuels?: () => readonly StrategicCombatSnapshot[];
   readonly parallelSupportStartIndex?: number;
   readonly parallelEscapedShipIds?: () => readonly string[];
+  readonly fleetEngagements?: () => readonly NativeFleetEngagement[];
   readonly spectator?: boolean;
   readonly isComplete?: () => boolean;
 }
@@ -224,7 +226,7 @@ function prepareParallelDuelPanel(
   const status = document.createElement('aside');
   status.className = 'combat-parallel-duels-status';
   status.style.cssText =
-    'position:absolute;top:50px;left:14px;z-index:3;padding:8px 11px;' +
+    'position:absolute;top:50px;left:14px;z-index:3;padding:8px 11px;max-width:56vw;' +
     'background:rgba(10,20,27,.88);border:1px solid #556973;' +
     'color:#d8e7ee;font:12px ui-monospace,monospace;pointer-events:none;';
   shell.append(status);
@@ -299,11 +301,32 @@ function updateCombatActionButtons(
   if (surrenderButton) surrenderButton.disabled = model.winner !== null;
 }
 
+function createFleetMarkerLegend(shell: HTMLElement, enabled: boolean): HTMLInputElement | null {
+  if (!enabled) return null;
+  const legend = document.createElement('label');
+  legend.className = 'combat-fleet-marker-legend';
+  legend.style.cssText =
+    'position:absolute;right:14px;top:50px;z-index:4;padding:9px 12px;' +
+    'background:rgba(7,19,26,.94);border:1px solid #526979;' +
+    'color:#d8e7ee;font:11px ui-monospace,monospace;cursor:pointer;' +
+    'display:flex;align-items:center;gap:9px;max-width:40vw;';
+  const toggle = document.createElement('input');
+  toggle.type = 'checkbox';
+  toggle.checked = true;
+  toggle.setAttribute('aria-label', 'Aktuelle Zielverbindungen anzeigen');
+  const text = document.createElement('span');
+  text.textContent = 'D1–D5: KERNDUELL · +: ZUSATZANGRIFF · ZIELLINIEN';
+  legend.append(toggle, text);
+  shell.append(legend);
+  return toggle;
+}
+
 export function createFleetNativeCombatPanel(
   options: FleetNativeCombatPanelOptions
 ): FleetNativeCombatPanel {
   const shell = makeCombatShell(options.root);
   const parallelStatus = prepareParallelDuelPanel(shell, options);
+  const engagementLinesToggle = createFleetMarkerLegend(shell, Boolean(options.fleetEngagements));
 
   const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
@@ -333,7 +356,9 @@ export function createFleetNativeCombatPanel(
       model,
       options.parallelDuels?.() ?? [],
       options.parallelSupportStartIndex,
-      options.parallelEscapedShipIds?.() ?? []
+      options.parallelEscapedShipIds?.() ?? [],
+      options.fleetEngagements?.() ?? [],
+      engagementLinesToggle?.checked ?? false
     );
     updateParallelDuelStatus(
       parallelStatus,

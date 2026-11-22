@@ -131,6 +131,7 @@ function createParallelDuelLauncher(
         ],
         parallelSupportStartIndex: duels.duels.length - 1,
         parallelEscapedShipIds: () => duels.getSnapshot().escapedShipIds,
+        fleetEngagements: () => duels.getSnapshot().engagements,
         isComplete: () => duels.getSnapshot().finished,
         encounterName:
           config.ships.filter((ship) => ship.team === 'a').length +

@@ -3,6 +3,11 @@ import { createStrategicCombatService } from './strategic-combat-service';
 import { buildCombatArena } from './strategic-combat-arena';
 import { advanceNativeFleetFrame, escapedNativeFleetShips } from './native-fleet-advance';
 import { reassignNativeFleetTargets, type NativeFleetDriver } from './native-fleet-reassignment';
+import {
+  activeNativeFleetEngagements,
+  type NativeFleetEngagement,
+} from './native-fleet-engagements';
+export type { NativeFleetEngagement } from './native-fleet-engagements';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -26,6 +31,8 @@ export interface ParallelNativeDuelSnapshot {
   readonly elapsedSeconds: number;
   readonly finished: boolean;
   readonly escapedShipIds: readonly string[];
+  /** A duel draws one solid link; a single-driver reinforcement draws a dashed link. */
+  readonly engagements: readonly NativeFleetEngagement[];
 }
 export interface ParallelNativeDuels {
   readonly duels: readonly StrategicCombatService[];
@@ -236,11 +243,13 @@ export function createParallelNativeDuels(
     const additional = supporters.map((service) => service.getSnapshot());
     const states = [...duels, ...additional];
     const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
+    const engagements = activeNativeFleetEngagements(states, drivers, pairs.length, escaped);
     cachedSnapshot = {
       duels,
       supporters: additional,
       elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
+      engagements,
       finished: nativeFleetFinished(actors, escaped, teams, states),
     };
     return cachedSnapshot;
