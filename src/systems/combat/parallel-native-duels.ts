@@ -190,7 +190,8 @@ export function createParallelNativeDuels(
   ships: readonly NativeDuelShip[],
   arena: StrategicCombatArenaOptions,
   seed = 1,
-  hostility: FleetHostility = defaultFleetHostility
+  hostility: FleetHostility = defaultFleetHostility,
+  conflictKeys?: ReadonlyMap<string, string>
 ): ParallelNativeDuels {
   const first = ships.filter((ship) => ship.team === 'a');
   const second = ships.filter((ship) => ship.team === 'b');
@@ -227,7 +228,11 @@ export function createParallelNativeDuels(
   const actors = nativeTeamActors(pairs, supporters);
   const recordedWrecks = new Set<string>();
   const escapedRecords = new Set<string>();
-  const teams = new Map(ships.map((ship) => [ship.setup.id, ship.team] as const));
+  // An encounter-aware policy may use individual ship IDs rather than broad
+  // A/B test teams, allowing distinct player/NPC/drone/pirate relations.
+  const teams = new Map(
+    ships.map((ship) => [ship.setup.id, conflictKeys?.get(ship.setup.id) ?? ship.team] as const)
+  );
   const drivers: NativeFleetDriver[] = [
     ...pairs.map(() => 'both' as const),
     ...supporters.map(() => 'attacker' as const),
