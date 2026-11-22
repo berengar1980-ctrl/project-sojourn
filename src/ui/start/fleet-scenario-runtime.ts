@@ -126,6 +126,7 @@ export interface FleetScenarioRuntime {
   readonly elapsedSeconds: number;
   readonly arrivedCount: number;
   readonly fleet: ParallelNativeDuels | null;
+  readonly completedEncounters: number;
   readonly worldContacts: ReturnType<ScenarioWorld['contacts']>;
   /** Advance elapsed simulation time and insert arrivals into the SAME battle. */
   tick(seconds: number): void;
@@ -167,6 +168,7 @@ export function createFleetScenarioRuntime(
   const joined = new Set<string>();
   let elapsedSeconds = 0;
   let fleet: ParallelNativeDuels | null = null;
+  let completedEncounters = 0;
   let incidentTarget: string | null = null;
   const witnessed = new Set<string>();
 
@@ -243,6 +245,9 @@ export function createFleetScenarioRuntime(
     get fleet() {
       return fleet;
     },
+    get completedEncounters() {
+      return completedEncounters;
+    },
     get worldContacts() {
       return world.contacts();
     },
@@ -262,9 +267,15 @@ export function createFleetScenarioRuntime(
           if (actor) world.syncFromCombat(actor);
         }
       }
+      if (fleet?.getSnapshot().finished) {
+        for (const id of joined) world.releaseCombat(id);
+        joined.clear();
+        fleet = null;
+        completedEncounters++;
+      }
     },
     finished() {
-      return arrived.size === roster.length && fleet !== null && fleet.getSnapshot().finished;
+      return arrived.size === roster.length && fleet === null && completedEncounters > 0;
     },
     nextArrivalSeconds() {
       const times = roster
