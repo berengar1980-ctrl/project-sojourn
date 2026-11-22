@@ -44,7 +44,9 @@ function canJoinWorldCombat(
     return true;
   }
   // The player is a valid defender, never an automatic aggressor against civilians.
-  return !!world.npc(opponent.id)?.pirate || incident !== 'none';
+  return world.npc(opponent.id)?.pirate
+    ? world.canAttack(opponent.id)
+    : incident !== 'none';
 }
 
 function firstHostilePair(
