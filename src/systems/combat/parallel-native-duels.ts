@@ -22,7 +22,7 @@ import type {
 
 export interface NativeDuelShip {
   readonly id: string;
-  readonly team: 'a' | 'b';
+  readonly team: string;
   readonly setup: StrategicCombatantSetup;
 }
 export interface ParallelNativeDuelSnapshot {
@@ -38,6 +38,8 @@ export interface ParallelNativeDuelSnapshot {
 export interface ParallelNativeDuels {
   readonly duels: readonly StrategicCombatService[];
   readonly supporters: readonly StrategicCombatService[];
+  /** Bring an existing campaign or test ship into the live battle exactly once. */
+  addShip(ship: NativeDuelShip, conflictKey?: string): boolean;
   tick(dt: number): ParallelNativeDuelSnapshot;
   getSnapshot(): ParallelNativeDuelSnapshot;
 }
@@ -230,7 +232,7 @@ export function createParallelNativeDuels(
   const escapedRecords = new Set<string>();
   // An encounter-aware policy may use individual ship IDs rather than broad
   // A/B test teams, allowing distinct player/NPC/drone/pirate relations.
-  const teams = new Map(
+  const teams = new Map<string, string>(
     ships.map((ship) => [ship.setup.id, conflictKeys?.get(ship.setup.id) ?? ship.team] as const)
   );
   const drivers: NativeFleetDriver[] = [
@@ -261,6 +263,50 @@ export function createParallelNativeDuels(
   return {
     duels: pairs,
     supporters,
+    addShip(ship, conflictKey) {
+      const id = ship.setup.id;
+      if (actors.some((actor) => actor.setup.id === id)) return false;
+      const affiliation = conflictKey ?? ship.team;
+      const target = actors
+        .filter(
+          (actor) =>
+            actor.hullHp > 0 &&
+            !escapedRecords.has(actor.setup.id) &&
+            (hostility(affiliation, teams.get(actor.setup.id)!) ||
+              hostility(teams.get(actor.setup.id)!, affiliation))
+        )
+        .sort((a, b) => a.setup.id.localeCompare(b.setup.id))[0];
+      if (!target) return false;
+      const shipIndex = actors.length;
+      const support = createStrategicCombatService(
+        ship.setup,
+        target.setup,
+        seed + shipIndex,
+        pairFields(
+          fleetArena,
+          obstacleSet(),
+          ship,
+          { id: target.setup.id, team: teams.get(target.setup.id)!, setup: target.setup },
+          clearCombatSpawn(fleetArena, {
+            x: fleetArena.width * 0.5,
+            y: fleetArena.height * ((shipIndex % 9) + 1) / 10,
+          }),
+          target.position
+        ),
+        undefined,
+        true,
+        target
+      );
+      const newActor = nativeActor(support, 'attacker');
+      supporters.push(support);
+      services.push(support);
+      actors.push(newActor);
+      drivers.push('attacker');
+      teams.set(id, affiliation);
+      radiusById.set(id, nativeFootprintRadius(newActor));
+      cachedSnapshot = null;
+      return true;
+    },
     getSnapshot,
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
