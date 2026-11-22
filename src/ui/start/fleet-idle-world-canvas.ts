@@ -24,17 +24,9 @@ export function createFleetIdleWorldCanvas(
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Fleet idle world canvas unavailable');
   const camera = new CombatCamera();
-  const backdrop = new CombatAsteroidBackdrop(
-    context,
-    arena as StrategicCombatSnapshot['arena']
-  );
+  const backdrop = new CombatAsteroidBackdrop(context, arena as StrategicCombatSnapshot['arena']);
   const bodies = new ProceduralSpaceBodyRenderer(context);
-  const paintContacts = createFleetWorldContactOverlay(
-    canvas,
-    contacts,
-    arena.width,
-    arena.height
-  );
+  const paintContacts = createFleetWorldContactOverlay(canvas, contacts, arena.width, arena.height);
   let active = false;
   let lastDrag: { x: number; y: number } | null = null;
   const draw = (): void => {
@@ -58,8 +50,7 @@ export function createFleetIdleWorldCanvas(
       bodies,
       arena.asteroids ?? [],
       camera.scale(width, height, arena.width, arena.height),
-      (point) =>
-        camera.project(point, width, height, arena.width, arena.height),
+      (point) => camera.project(point, width, height, arena.width, arena.height),
       context,
       performance.now() / 1000
     );
@@ -78,8 +69,7 @@ export function createFleetIdleWorldCanvas(
   };
   const pointerUp = (event: PointerEvent): void => {
     lastDrag = null;
-    if (canvas.hasPointerCapture(event.pointerId))
-      canvas.releasePointerCapture(event.pointerId);
+    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
   };
   const wheel = (event: WheelEvent): void => {
     event.preventDefault();
