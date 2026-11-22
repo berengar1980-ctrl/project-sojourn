@@ -2,6 +2,7 @@ import type { SectorNpcState, NpcJob } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import { createSectorNpcEconomyStates } from '../../data/economy/sector-npc-economy';
+import { getShipDefinition } from '../../systems/ships';
 import { generateMiningSpace } from '../../systems/local-space/local-space-generator';
 import { createNpcLocalMiningService } from '../../systems/npcs/npc-local-mining-service';
 import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc-combat-ai';
@@ -61,9 +62,10 @@ export function createFleetScenarioWorldBridge(
   const jobFor = (ship: FleetScenarioShip): NpcJob => {
     if (ship.group === 'pirates-yellow' || ship.group === 'pirates-red') return 'pirate';
     if (ship.group === 'drone') return 'patrol';
-    if (ship.draft.shipId.includes('miner')) return 'miner';
-    if (ship.draft.shipId.includes('salvag')) return 'salvager';
-    if (ship.draft.shipId.includes('freight')) return 'freighter';
+    const role = getShipDefinition(ship.draft.shipId)?.role;
+    if (role === 'mining') return 'miner';
+    if (role === 'salvage') return 'salvager';
+    if (role === 'freighter') return 'freighter';
     return 'patrol';
   };
   for (const ship of roster) {
