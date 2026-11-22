@@ -1,3 +1,4 @@
+import { FleetNativeShipSprites } from './fleet-native-ship-sprites';
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import {
   paintParallelNativeDuels,
@@ -11,7 +12,6 @@ import {
   paintNativeTractorThrows,
 } from './combat-native-weapon-painters';
 import {
-  DRONE_DIAMETER_PX,
   DRONE_ROTATION_PERIOD_SECONDS,
   drawDroneShield,
   drawDroneShieldHits,
@@ -60,7 +60,7 @@ export class FleetNativeCombatRenderer {
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly asteroidBackdrop: CombatAsteroidBackdrop;
   private readonly camera = new CombatCamera();
-  private readonly images = new Map<string, HTMLImageElement>();
+  private readonly sprites = new FleetNativeShipSprites(() => this.draw());
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
   private readonly paintedShips = new Set<string>();
   private readonly paintedDamage = new Set<string>();
@@ -184,18 +184,6 @@ export class FleetNativeCombatRenderer {
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
     this.draw();
   }
-  private image(shipId: string, securityDrone = false): HTMLImageElement | null {
-    const definition = getShipDefinition(shipId);
-    if (!definition && !securityDrone) return null;
-    const key = securityDrone ? 'security-drone-sprite' : shipId;
-    const cached = this.images.get(key);
-    if (cached) return cached;
-    const image = new Image();
-    image.onload = () => this.draw();
-    image.src = securityDrone ? '/drones/security-drone-gc87r8.webp' : definition!.sprite.assetUrl;
-    this.images.set(key, image);
-    return image;
-  }
   cameraPose(): CombatCameraPose {
     return this.camera.pose();
   }
@@ -226,31 +214,9 @@ export class FleetNativeCombatRenderer {
     width: number,
     height: number
   ): ShipScreenGeometry {
-    const isDrone = combatant.id.startsWith('security-drone:');
-    const image = this.image(combatant.shipId, isDrone);
-    const definition = getShipDefinition(combatant.shipId);
-    const nominalLength = definition?.nominalLengthMeters ?? 60;
-    const canvasScale = this.camera.scale(
-      width,
-      height,
-      this.model.arena.width,
-      this.model.arena.height
-    );
-    const shipWidth = isDrone ? DRONE_DIAMETER_PX * this.camera.zoom : nominalLength * canvasScale;
-    const aspect = isDrone
-      ? 1
-      : image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
-        ? image.naturalWidth / image.naturalHeight
-        : definition
-          ? definition.sprite.widthPx / definition.sprite.heightPx
-          : 2.2;
-    return {
-      center: this.screen(combatant.position, width, height),
-      width: shipWidth,
-      height: shipWidth / Math.max(0.35, aspect),
-      angle: combatant.headingRadians,
-    };
+    return this.sprites.geometry(combatant, width, height, this.camera, this.model.arena);
   }
+
   private draw(): void {
     if (!this.active) return;
     this.paintedShips.clear();
@@ -465,7 +431,7 @@ export class FleetNativeCombatRenderer {
       this.context,
       geometry,
       hullRatio,
-      this.image(combatant.shipId, isDrone),
+      this.sprites.image(combatant.shipId, isDrone),
       hardpoints,
       this.lighting
     );
