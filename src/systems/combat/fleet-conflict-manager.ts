@@ -24,9 +24,18 @@ export interface ConflictAttack {
   readonly witnessedBy: readonly string[];
 }
 
+export interface ConcessionViolation {
+  readonly offenderId: string;
+  /** Only drones that actually detected a violation may respond. */
+  readonly witnessedBy: readonly string[];
+  /** A warning alone is not an authorization for lethal force. */
+  readonly escalatedToHostility: boolean;
+}
+
 export interface ConflictManager {
   isHostile(sourceId: string, targetId: string): boolean;
   recordAttack(event: ConflictAttack): void;
+  recordConcessionViolation(event: ConcessionViolation): void;
   /** Replace event-specific state when a combat encounter ends. */
   clearEncounter(): void;
   /** A predicate usable by FleetCombat when its faction keys are ship IDs. */
@@ -105,6 +114,16 @@ export function createConflictManager(participants: readonly ConflictParticipant
           mark(witness.id, attackerId);
           mark(attackerId, witness.id);
         }
+      }
+    },
+    recordConcessionViolation({ offenderId, witnessedBy, escalatedToHostility }: ConcessionViolation): void {
+      const offender = member(offenderId);
+      if (offender.role === 'pirate' || !escalatedToHostility) return;
+      for (const id of new Set(witnessedBy)) {
+        const witness = member(id);
+        if (witness.role !== 'drone' || witness.id === offenderId) continue;
+        mark(witness.id, offenderId);
+        mark(offenderId, witness.id);
       }
     },
     clearEncounter(): void {
