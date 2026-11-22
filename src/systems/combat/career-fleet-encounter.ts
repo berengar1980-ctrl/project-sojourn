@@ -53,6 +53,8 @@ export interface CareerFleetEncounter {
 }
 
 /** Player/NPC campaign encounter backed by exactly the same native PvP fleet core. */
+// The campaign adapter owns the original combat services and real NPC references.
+// eslint-disable-next-line max-lines-per-function, complexity
 function createSectorFleetEncounter(
   firstSetup: StrategicCombatantSetup,
   enemy: SectorNpcState,
@@ -149,6 +151,8 @@ function createSectorFleetEncounter(
     fleet,
     combat: fleet.duels[0]!,
     members,
+    // Reinforcements use the same campaign sensory, hostility and actor ownership rules.
+    // eslint-disable-next-line complexity
     joinNearby(position, npcs, npcPosition, onJoin) {
       if (fleet.getSnapshot().finished) return;
       for (const npc of npcs) {
