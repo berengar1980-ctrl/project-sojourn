@@ -1,0 +1,33 @@
+name: Temporary FleetCombat regression formatter
+on:
+  push:
+    branches:
+      - fix/fleet-duel-lines-real-security-drones
+permissions:
+  contents: write
+concurrency:
+  group: fleet-regression-format
+  cancel-in-progress: true
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Apply Prettier
+        run: |
+          npx prettier --write src/systems/combat/native-fleet-engagements.ts src/systems/ships/security-drone-weapon-loadout.ts src/ui/start/fleet-scenario-roster.ts src/app/game-controller-security-drone-loadout.ts tests/combat/fleet-campaign-scenario.test.cjs tests/combat/fleet-engagement-markers.test.cjs
+      - name: Commit formatting
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src tests
+            git commit -m "style: format fleet engagement and Mk III security drone fixes"
+            git pull --rebase origin fix/fleet-duel-lines-real-security-drones
+            git push
+          fi
