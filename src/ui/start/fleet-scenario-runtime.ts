@@ -1,8 +1,6 @@
 import { getShipDefinition } from '../../systems/ships';
 import {
-  npcIsPiratePrey,
-  npcLooksHostileToPatrol,
-  rivalPirateGroups,
+  npcMayTargetNpc,
 } from '../../systems/npcs/npc-combat-ai';
 import {
   createConflictManager,
@@ -43,10 +41,10 @@ function canJoinWorldCombat(
   if (aggressor?.pirate) {
     if (!world.canAttack(ship.id)) return false;
     if (opponent.id === 'player') return true;
-    return !!victim && (rivalPirateGroups(aggressor, victim) || npcIsPiratePrey(victim));
+    return !!victim && npcMayTargetNpc(aggressor, victim);
   }
   if (aggressor?.job === 'patrol')
-    return world.canAttack(ship.id) && !!victim && npcLooksHostileToPatrol(victim);
+    return world.canAttack(ship.id) && !!victim && npcMayTargetNpc(aggressor, victim);
   if (
     world.npc(ship.id)?.job === 'miner' ||
     world.npc(ship.id)?.job === 'freighter' ||
