@@ -18,9 +18,8 @@ import { getShipDefinition } from '../ships';
 
 import {
   npcDefenseReaction,
-  npcIsPiratePrey,
-  npcLooksHostileToPatrol,
   npcMayInitiateAttack,
+  npcMayTargetNpc,
   rivalPirateGroups,
 } from '../npcs/npc-combat-ai';
 
@@ -138,16 +137,9 @@ function npcAttackTarget(
       .filter((candidate) => {
         if (candidate.id === attacker.id || runtime.options.protectsNpc?.(attacker, candidate))
           return false;
-        if (!attacker.pirate) return npcLooksHostileToPatrol(candidate);
-        if (rivalPirateGroups(attacker, candidate)) {
-          return (
-            candidate.hullHp > 0 &&
-            !candidate.combatMovement &&
-            (candidate.combatRecoverySeconds ?? 0) <= 0
-          );
-        }
-        // Keep existing target filters, but use the same geographic policy as player interception.
-        if (!npcIsPiratePrey(candidate)) return false;
+        if (!npcMayTargetNpc(attacker, candidate)) return false;
+        if (!attacker.pirate || rivalPirateGroups(attacker, candidate)) return true;
+        // Career geography and cargo rights remain additional world restrictions.
         return canRaidCivilianCargo(
           world,
           attacker,
