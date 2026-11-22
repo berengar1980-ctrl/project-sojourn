@@ -372,8 +372,8 @@ export function createParallelNativeDuels(
       return joined;
     },
     getActor: (id) => actors.find((actor) => actor.setup.id === id) ?? null,
-    setBystanders(ships) {
-      bystanders = ships.filter((ship) => !actors.some((actor) => actor.setup.id === ship.id));
+    setBystanders(contacts) {
+      bystanders = contacts.filter((ship) => !actors.some((actor) => actor.setup.id === ship.id));
     },
     getSnapshot,
     tick(seconds) {
