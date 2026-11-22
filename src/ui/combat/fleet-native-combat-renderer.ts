@@ -74,6 +74,7 @@ export class FleetNativeCombatRenderer {
   private readonly shieldImpacts = new ShieldImpactRenderer();
   private readonly autocannonBursts = new Map<string, AutocannonVisualBurst>();
   private model: StrategicCombatSnapshot;
+  private active = true;
   private parallelDuels: readonly StrategicCombatSnapshot[] = [];
   private supportingFromIndex = Number.POSITIVE_INFINITY;
   private readonly fleetMarkers = new FleetEngagementMarkerPainter();
@@ -102,6 +103,7 @@ export class FleetNativeCombatRenderer {
   }
   /** Retain sprite and camera resources, but reset transient effects for a new fight. */
   beginEncounter(model: StrategicCombatSnapshot): void {
+    this.active = true;
     this.model = model;
     this.parallelDuels = [];
     this.hiddenShipIds = new Set();
@@ -115,6 +117,10 @@ export class FleetNativeCombatRenderer {
     this.damageParticles.clear();
     this.destructionStartedAt = null;
     this.effectClock = new CombatEffectClock();
+  }
+  /** Pause native drawing while the normal mining/salvage scene owns the canvas. */
+  suspend(): void {
+    this.active = false;
   }
   update(
     model: StrategicCombatSnapshot,
@@ -246,6 +252,7 @@ export class FleetNativeCombatRenderer {
     };
   }
   private draw(): void {
+    if (!this.active) return;
     this.paintedShips.clear();
     this.paintedDamage.clear();
     const rect = this.canvas.getBoundingClientRect();
