@@ -1,5 +1,5 @@
 import { centerSalvageCamera } from './salvage-camera-centering';
-import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
+import { FleetNativeCombatRenderer } from '../combat/fleet-native-combat-renderer';
 import { pickNearestHitArea } from './salvage-hit-test';
 import { drawPlayerSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
@@ -29,7 +29,7 @@ import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { type NpcHitArea, SalvageSceneLayers, type WreckHitArea } from './salvage-scene-layers';
 export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
-  private sharedCombatRenderer: StrategicCombatRenderer | null = null;
+  private sharedCombatRenderer: FleetNativeCombatRenderer | null = null;
   protected readonly camera: MapCamera;
   protected readonly background: SpaceBackgroundRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
@@ -68,7 +68,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     if (model.combat) {
       if (!this.sharedCombatRenderer) {
-        this.sharedCombatRenderer = new StrategicCombatRenderer(
+        this.sharedCombatRenderer = new FleetNativeCombatRenderer(
           this.canvas,
           model.combat,
           (pose, width, height, timeSeconds) => {
