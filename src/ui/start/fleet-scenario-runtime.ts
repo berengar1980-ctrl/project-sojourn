@@ -285,6 +285,21 @@ export function createFleetScenarioRuntime(
         }
       }
       if (fleet?.getSnapshot().finished) {
+        // The world remains authoritative after the encounter: retain real hull
+        // and shield damage for later contacts instead of rebuilding full HP.
+        for (const id of joined) {
+          const actor = fleet.getActor(id);
+          const original = all.get(id);
+          if (!actor || !original) continue;
+          all.set(id, {
+            ...original,
+            setup: {
+              ...original.setup,
+              hullHp: Math.max(0, actor.hullHp),
+              shieldHp: Math.max(0, actor.shieldHp),
+            },
+          });
+        }
         const participants = [...joined].sort();
         for (let i = 0; i < participants.length; i++) {
           for (let j = i + 1; j < participants.length; j++) {
