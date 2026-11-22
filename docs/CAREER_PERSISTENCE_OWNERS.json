@@ -175,6 +175,10 @@
       "mode": "derived",
       "reason": "Extracted unchanged canonical in-memory snapshot projection of the existing strategic combat runtime; stores no new authoritative state."
     },
+    "src/systems/combat/native-fleet-reassignment.ts": {
+      "mode": "transient",
+      "reason": "Per-frame PvP FleetCombat only; selects nearest active battle and redirects a secondary attacker without new actor instances or career persistence."
+    },
     "src/systems/combat/native-fleet-retarget.ts": {
       "mode": "transient",
       "reason": "Guarded PvP Fleet-only survivor retarget of one existing live actor; no save or career world authority."
