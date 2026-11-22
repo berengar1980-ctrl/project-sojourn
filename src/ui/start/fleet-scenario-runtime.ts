@@ -214,7 +214,9 @@ export function createFleetScenarioRuntime(
     for (const id of drones) witnessed.add(id);
   };
   const connectWorldFighters = (): void => {
-    const active = [...arrived.keys()].map(atWorldPose);
+    const active = [...arrived.keys()]
+      .filter((id) => (all.get(id)?.setup.hullHp ?? 0) > 0)
+      .map(atWorldPose);
     if (!fleet) {
       const pair = firstHostilePair(active, conflict.hostility(), world, incident, completedPairs);
       if (!pair) return;
