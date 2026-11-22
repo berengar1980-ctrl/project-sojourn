@@ -1,4 +1,5 @@
 import { clearCombatSpawn } from './combat-field-spawns';
+import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import {
   defaultFleetHostility,
   hasActiveFleetHostilities,
@@ -47,6 +48,8 @@ export interface ParallelNativeDuels {
   readonly duels: readonly StrategicCombatService[];
   readonly supporters: readonly StrategicCombatService[];
   getActor(id: string): MutableCombatant | null;
+  /** World traffic is a physical bystander, not an automatically hostile combatant. */
+  setBystanders(ships: readonly StrategicCombatBystander[]): void;
   /** Bring an existing campaign or test ship into the live battle exactly once. */
   addShip(ship: NativeDuelShip, conflictKey?: string): boolean;
   tick(dt: number): ParallelNativeDuelSnapshot;
@@ -323,6 +326,7 @@ export function createParallelNativeDuels(
     ...supporters.map(() => 'attacker' as const),
   ];
   let elapsed = 0;
+  let bystanders: readonly StrategicCombatBystander[] = [];
   let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
   const radiusById = nativeFleetRadii(actors);
   const getSnapshot = (): ParallelNativeDuelSnapshot => {
@@ -368,6 +372,9 @@ export function createParallelNativeDuels(
       return joined;
     },
     getActor: (id) => actors.find((actor) => actor.setup.id === id) ?? null,
+    setBystanders(ships) {
+      bystanders = ships.filter((ship) => !actors.some((actor) => actor.setup.id === ship.id));
+    },
     getSnapshot,
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
@@ -387,6 +394,7 @@ export function createParallelNativeDuels(
         seed,
         elapsed,
         dt,
+        bystanders,
       });
       reassignNativeFleetTargets({
         services,
