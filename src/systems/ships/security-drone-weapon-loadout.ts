@@ -13,7 +13,9 @@ export function securityDroneMk3WeaponIds(
 ): string[] {
   const weapons = [...previous];
   const mounts = ship.sprite.hardpoints.weaponMounts ?? [];
-  const slots = mounts.length ? Math.max(...mounts.map((mount) => mount.slotIndex)) + 1 : weapons.length;
+  const slots = mounts.length
+    ? Math.max(...mounts.map((mount) => mount.slotIndex)) + 1
+    : weapons.length;
   const compatible = getCompatibleShipComponents('weapon', 3)
     .filter((part) => part.tier === 3 && part.weapon)
     .sort((a, b) => a.power - b.power || a.cost - b.cost);

@@ -111,9 +111,7 @@ assert.equal(fleetShipBadges(after.engagements).length, 4);
 // Once the original central opponent is destroyed, the survivor and a
 // dynamically joined one-sided attacker can become a real new 1v1.
 // The reinforcement is NOT one of the initial native duel services.
-const { activeNativeFleetEngagements } = load(
-  'src/systems/combat/native-fleet-engagements.ts'
-);
+const { activeNativeFleetEngagements } = load('src/systems/combat/native-fleet-engagements.ts');
 const mockShip = (id) => ({
   id,
   hullHp: 100,
@@ -135,15 +133,19 @@ const promoted = activeNativeFleetEngagements(
   new Set()
 );
 assert.equal(promoted.filter((link) => link.role === 'duel').length, 1);
-assert(promoted.some(
-  (link) =>
-    link.role === 'duel' &&
-    [link.sourceId, link.targetId].includes('survivor') &&
-    [link.sourceId, link.targetId].includes('reinforcement')
-), 'an extra ship can become the new solid-line 1v1 opponent');
-assert(promoted.some(
-  (link) => link.role === 'support' && link.sourceId === 'third'
-), 'remaining third-party attacks must retain their support line');
+assert(
+  promoted.some(
+    (link) =>
+      link.role === 'duel' &&
+      [link.sourceId, link.targetId].includes('survivor') &&
+      [link.sourceId, link.targetId].includes('reinforcement')
+  ),
+  'an extra ship can become the new solid-line 1v1 opponent'
+);
+assert(
+  promoted.some((link) => link.role === 'support' && link.sourceId === 'third'),
+  'remaining third-party attacks must retain their support line'
+);
 
 const calls = { dashed: [], badges: [], strokes: 0 };
 const painter = {

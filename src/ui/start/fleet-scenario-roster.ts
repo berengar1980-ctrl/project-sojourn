@@ -78,15 +78,17 @@ function randomDraft(group: FleetScenarioRole): { name: string; draft: DuelDraft
   const securityDrone = group === 'drone';
   const equipped = securityDrone ? securityDroneMk3WeaponIds(ship) : weaponIds;
   const reactor = securityDrone ? 'reactor3' : 'reactor4';
-  const reactorId = securityDrone && calculateShipModeEnergy({
-    reactor: [reactor],
-    engine: ['engine1'],
-    hull: ['hull3'],
-    shield: ['shield3'],
-    weapon: equipped.filter(Boolean),
-  }).combat > calculateShipModeEnergy({ reactor: [reactor] }).output
-    ? (createShipyardVariantId('reactor', reactor, 'performance', 100) ?? reactor)
-    : reactor;
+  const reactorId =
+    securityDrone &&
+    calculateShipModeEnergy({
+      reactor: [reactor],
+      engine: ['engine1'],
+      hull: ['hull3'],
+      shield: ['shield3'],
+      weapon: equipped.filter(Boolean),
+    }).combat > calculateShipModeEnergy({ reactor: [reactor] }).output
+      ? (createShipyardVariantId('reactor', reactor, 'performance', 100) ?? reactor)
+      : reactor;
   return {
     name: securityDrone ? 'Sicherheitsdrohne GC-87' : ship.name,
     draft: {
