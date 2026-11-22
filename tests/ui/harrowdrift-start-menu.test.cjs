@@ -73,7 +73,10 @@ assert(duel.includes('getAllShipDefinitions'), 'both players can select real shi
 const weaponCards = read('src/ui/start/duel-weapon-cards.ts');
 assert(weaponCards.includes('fitsWeaponHardpoint'), 'weapon choices respect ship JSON');
 assert(duel.includes('createStrategicCombatService'), 'duel starts existing combat engine');
-assert(duel.includes('createFleetNativeCombatPanel'), 'duel uses shared native FleetCombat visuals');
+assert(
+  duel.includes('createFleetNativeCombatPanel'),
+  'duel uses shared native FleetCombat visuals'
+);
 const labels = loadStandaloneTypeScriptModule(root, 'src/core/weapon-hardpoint-labels.ts');
 const hardpointFile = 'src/data/ships/patrol-60m-variant-01.hardpoints.json';
 const mounts = JSON.parse(read(hardpointFile)).weaponMounts;

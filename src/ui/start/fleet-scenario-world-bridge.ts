@@ -90,8 +90,9 @@ export function createFleetScenarioWorldBridge(
     if (ship.group === 'player') continue;
     const job = jobFor(ship);
     const template =
-      templates.find((candidate) => candidate.job === job && candidate.shipId === ship.draft.shipId) ??
-      templates.find((candidate) => candidate.job === job);
+      templates.find(
+        (candidate) => candidate.job === job && candidate.shipId === ship.draft.shipId
+      ) ?? templates.find((candidate) => candidate.job === job);
     if (!template) throw new Error('Missing career NPC template for ' + job);
     const npc: SectorNpcState = {
       ...structuredClone(template),

@@ -18,7 +18,10 @@ const salvagePlayer = read('src/ui/salvage/salvage-space-renderer.ts');
 const service = read('src/systems/combat/strategic-combat-service.ts');
 const bridge = read('src/app/game-controller-field-world-bridge.ts');
 
-assert(native.includes('drawCombatBeamVisual('), 'shared native FleetCombat painter owns beam visuals');
+assert(
+  native.includes('drawCombatBeamVisual('),
+  'shared native FleetCombat painter owns beam visuals'
+);
 assert(beam.includes("beam.family === 'pulse_laser'"));
 assert(beam.includes("beam.family === 'railgun'"));
 for (const field of [mining, salvage]) {

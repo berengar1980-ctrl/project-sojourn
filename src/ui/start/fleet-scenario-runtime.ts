@@ -44,9 +44,7 @@ function canJoinWorldCombat(
     return true;
   }
   // The player is a valid defender, never an automatic aggressor against civilians.
-  return world.npc(opponent.id)?.pirate
-    ? world.canAttack(opponent.id)
-    : incident !== 'none';
+  return world.npc(opponent.id)?.pirate ? world.canAttack(opponent.id) : incident !== 'none';
 }
 
 function firstHostilePair(
@@ -157,7 +155,10 @@ export function createFleetScenarioRuntime(
   const all = new Map(roster.map((ship, index) => [ship.id, nativeShip(ship, index)]));
   if (all.size !== roster.length) throw new Error('FleetCombat ship IDs must be unique');
   const world = createFleetScenarioWorldBridge(
-    roster, arena, seed, mapKind,
+    roster,
+    arena,
+    seed,
+    mapKind,
     new Map([...all].map(([id, ship]) => [id, ship.setup.hullHp]))
   );
   const conflict = createConflictManager(roster.map(participant));
