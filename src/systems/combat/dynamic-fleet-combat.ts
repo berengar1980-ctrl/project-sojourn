@@ -18,6 +18,23 @@ export function createDynamicFleetCombat(
   if (new Set(ships.map((ship) => ship.setup.id)).size !== ships.length)
     throw new Error('Native fleet encounter ship IDs must be unique');
   const key = (ship: NativeDuelShip): string => conflictKeys.get(ship.setup.id) ?? ship.team;
+  // Preserve the exact legacy 1v1 pairing and 5v5 scheduling in the PvP lab.
+  // Both paths still return the SAME native fleet simulation implementation.
+  if (
+    ships.every((ship) => ship.team === 'a' || ship.team === 'b') &&
+    ships.filter((ship) => ship.team === 'a').length <= 5 &&
+    ships.filter((ship) => ship.team === 'b').length <= 5 &&
+    ships.some((ship) => ship.team === 'a') &&
+    ships.some((ship) => ship.team === 'b') &&
+    ships.every((ship) =>
+      ships.some((other) =>
+        other !== ship &&
+        (hostility(key(ship), key(other)) || hostility(key(other), key(ship)))
+      )
+    )
+  ) {
+    return createParallelNativeDuels(ships, arena, seed, hostility, conflictKeys);
+  }
   const firstIndex = ships.findIndex((ship, index) =>
     ships.some(
       (other, otherIndex) =>
