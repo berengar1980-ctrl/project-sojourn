@@ -113,6 +113,7 @@ const background = read('src/ui/combat/combat-asteroid-backdrop.ts');
 const controller = read('src/app/game-controller-combat.ts');
 const fieldAdapter = read('src/systems/combat/field-combat-arena.ts');
 const service = read('src/systems/combat/strategic-combat-service.ts');
+const snapshot = read('src/systems/combat/strategic-combat-runtime-snapshot.ts');
 const arena = read('src/systems/combat/strategic-combat-arena.ts');
 const pvp = read('src/systems/combat/duel-arena-presets.ts');
 const rockPainter = read('src/ui/combat/combat-asteroid-renderer.ts');
@@ -130,7 +131,11 @@ assert.ok(
   controller.includes('field-combat-arena') && fieldAdapter.includes('backdropSeed: instance.seed'),
   'mining combat keeps the native field seed through the shared adapter'
 );
-assert.ok(service.includes('runtime.arena.backdropSeed'), 'snapshot carries field seed');
+assert.ok(
+  service.includes("from './strategic-combat-runtime-snapshot'"),
+  'combat service uses the shared native snapshot'
+);
+assert.ok(snapshot.includes('runtime.arena.backdropSeed'), 'snapshot carries field seed');
 assert.ok(arena.includes('arenaOptions.backdropSeed'), 'arena preserves field seed');
 assert.ok(
   pvp.includes('generateMiningSpace') && pvp.includes('miningFieldCombatArena(field'),

@@ -1676,3 +1676,104 @@ verwenden weiterhin die vorhandene separate Impulsphysik. Im laufenden
 Duell bleibt die native Kampfphysik zuständig. Das Drohnensprite ist von
 18 auf 12 Basispixel verkleinert; Schildradius, Sensorweite und Gameplaywerte
 bleiben unverändert.
+
+## Review-Log (2026-11-21): Zwei parallele native 1vs1-Duelle im PvP-Test (PR #381)
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs. Der
+FleetCombat-Testreiter bietet im ersten Schritt 2 gegen 2 an: Es laufen zwei
+bestehende `StrategicCombatService`-Duelle gleichzeitig auf derselben
+bereits vorhandenen PvP-Karte mit gemeinsamem Asteroiden-Tick. Die Flugwege,
+Waffenwinkel, Taktiken und Trefferregeln jedes Duells stammen aus der
+originalen 1vs1-Engine. Schiffe des jeweils anderen Duells werden als
+Bystander-Hüllenkontakte und Hindernisse der bisherigen Routen- und
+Schusslinienprüfung behandelt. Der originale Kampf-Renderer zeichnet die
+beiden Duell-Snapshots auf einem Canvas.
+
+Dies ist **nur eine begrenzte PvP-Testkopplung**; die Kampagne, Savegames,
+NPC-Ökonomie und die reguläre 1vs1-Steuerung behalten ihre bisherigen
+Funktionen. Der Fall 2 gegen 1 (gemeinsamer Verteidiger) und dynamische
+Zusammenschlüsse bleiben gesperrt, bis das 2-gegen-2-Verhalten praktisch
+verifiziert ist. Schüsse auf Drittparteien und echte Cross-Pair-Kollateralschäden
+sind nicht als abgeschlossen zu betrachten.
+
+## Review-Log (2026-11-21): FleetCombat-Testflotten von 1 bis 5 Schiffen
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Im FleetCombat-PvP-Test können beide Fraktionen unabhängig zwischen einem
+und fünf Schiffen wählen. Für jede Kombination entstehen die passenden
+Original-1vs1-Duelle und zusätzliche native Angreifer auf der gemeinsamen
+vorhandenen Karte. Unterstützer führen die vorhandene Kampf-KI, Flugphysik,
+Waffensteuerung und Effekte aus, ohne ihren bereits existierenden Gegner
+noch einmal als eigenständigen Verteidiger zu bewegen. Die Kampfansicht
+zeichnet gemeinsam genutzte Zielschiffe nur einmal.
+
+Die vollständige dynamische Zielneuzuordnung nach Gefechtsende sowie
+Cross-Pair-Kollateraltreffer bleiben gesonderte Ausbaustufen und werden
+nicht als abgeschlossen bezeichnet. Karriere, Speicherschema und reguläres
+1vs1-PvP bleiben unverändert.
+
+## Review-Log (2026-11-21): Native FleetCombat-Wracks und Fluchtabschluss
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Alle gleichzeitig laufenden 1vs1-Kämpfe benutzen im FleetCombat-Testlabor
+nun denselben sichtbaren Fluchtpunkt. Erfolgreich geflohene Schiffe werden
+einmalig aus der gemeinsamen Schiffsanzeige und Kollisionssicht entfernt.
+Zerstörte Schiffe werden durch jeweils ein physisches, driftendes 3D-Wrack
+ersetzt, das die vorhandene Asteroiden-/Schrott-Physik und Kollisionsprüfung
+verwendet. Die vorhandenen Rauch-/Feuerpartikel werden am Wrack und nicht an
+der verschwundenen Schiffshülle erzeugt, unabhängig von der gewählten Karte.
+
+Die Änderung betrifft nur den flüchtigen PvP-Test; Karriere-Speicherstände,
+NPC-Wirtschaft, originale 1vs1-Flugphysik und Waffenberechnungen bleiben
+unverändert. Dynamische Zielwechsel zwischen bereits beendeten Teilduellen
+und vollständige Schuss-Kollateraltreffer bleiben weiterhin separate Aufgaben.
+
+## Review-Log (2026-11-21): Schutz des originalen 1vs1-PvP-Modus
+
+**Keine Statusänderung** historischer Feature-IDs. Die Mehrschiff-Darstellung
+ist jetzt vollständig im separaten FleetCombat-Panel und -Renderer
+untergebracht. Der normale 1vs1-Renderer, das zugehörige Bedienpanel,
+die allgemeinen Schadenspartikel und die ursprüngliche
+Wrack-Übergangsdarstellung wurden bytegenau auf `main` zurückgesetzt.
+FleetCombat verwendet weiterhin die vorhandenen Schiffs-, Laser-,
+Asteroiden- und Kamerabausteine, ohne deren Standardpfade zu ersetzen.
+Ein neuer Isolationstest schützt die vier Quelldateien sowie die
+Unterscheidung der beiden UI-Einstiegspunkte und prüft den unveränderten
+Defaultpfad der 1vs1-Simulation. Nur explizit aktivierte Fleet-Parameter
+verwenden den gemeinsamen Welt-Tick. Kein Save-/Karriere-Schema-Wechsel.
+
+## Review-Log (2026-11-21): Native 1v2-Fortsetzung mit gemeinsamem Schiff
+
+**Keine Statusänderung** historischer Feature-IDs. Der erste 1v2-Schritt
+besteht aus einem unveränderten 1vs1-Paar und einem zusätzlichen Angreifer,
+der gegen dieselbe physische Schiffsinstanz kämpft. Stirbt oder entkommt
+der erste Gegner, setzt das überlebende Einzelschiff seinen Kampf gegen den
+nächsten noch aktiven Angreifer fort: Position, Hülle, Schild, Bewegung und
+Energiezustand bleiben erhalten; die neue Zielreferenz bekommt keine
+zusätzliche KI-/Cooldown-Autorität. Dies funktioniert ebenso für 2v1 mit
+einem einzelnen Verteidiger. 2v2 bleibt exakt zwei unabhängig gesteuerte
+1vs1-Paare auf einer gemeinsamen Karte.
+
+Regressionstests prüfen Instanzidentität, Cooldown-Einmaligkeit, die
+Folgezielübernahme, 2v2-Paarung und echten zusätzlichen Pulslaser-Schaden.
+Die separate FleetCombat-Darstellung unterdrückt doppelte Schiffssprites
+und Schadenspartikel. Reguläre 1vs1-GUI, Karriere-Speicherung und
+NPC-Wirtschaft bleiben unverändert. Diese PvP-Testausbaustufe garantiert
+noch keinen globalen automatischen Zielwechsel für beliebige N-vs-M-Gefechte.
+
+## Review-Log (2026-11-22): Nachrücken und Herauslösen in FleetCombat
+
+**Keine Statusänderung** der historischen Voidbound-/Sojourn-Feature-IDs.
+Die nativen PvP-Duelle bleiben zunächst unabhängig; beendet ein Schiff
+seinen Gegner durch Abschuss oder Flucht, kann der Überlebende in einen
+nahen laufenden Kampf nachrücken. Bei einem bestehenden 1v2 wird
+vorrangig ein zusätzlicher Angreifer abgefangen, der nicht das bisherige
+Fokusziel des befreundeten Schiffs ist. Dessen echter Combatant wird
+ohne zweite AI-Instanz auf das freie Schiff umgelenkt; beide
+Kontrollservices verwenden weiterhin die bestehenden 1vs1-Funktionen.
+
+Die Änderung gilt für Teamgrößen 1 bis 5 pro Seite.
+Neue Tests behandeln 2v2-Nachrücken, Flucht, 2v3-Herauslösen,
+Flucht des abgefangenen Angreifers, 3v3-Nähe und 5v5-Fortsetzung.
+Globale Kollateraltreffer/Traktorwirkung über mehrere Teilduelle
+sind weiterhin nicht Teil dieser Ausbaustufe.

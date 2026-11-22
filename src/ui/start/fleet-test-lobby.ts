@@ -1,7 +1,11 @@
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { DUEL_MAPS, type DuelMapKind } from '../../systems/combat/duel-arena-presets';
-import { fitsWeaponHardpoint, getAllShipDefinitions } from '../../systems/ships';
+import { fitsWeaponHardpoint, getAllShipDefinitions, getShipDefinition } from '../../systems/ships';
+import { duelCombatant } from './duel-combatant-setup';
+import { createParallelNativeDuels } from '../../systems/combat/parallel-native-duels';
+import { createDuelArena } from '../../systems/combat/duel-arena-presets';
+import { createFleetNativeCombatPanel } from '../combat/fleet-native-combat-panel';
 import type { DuelDraft } from './duel-combatant-setup';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 
@@ -23,7 +27,7 @@ function pick<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]!;
 }
 
-/** Preview-only loadouts. The FleetCombat runtime must consume these later, not the 1vs1 service. */
+/** Random native 1vs1 loadouts used directly by the parallel duel test. */
 export function createFleetTestRoster(countA: number, countB: number): FleetTestShip[] {
   const ships = getAllShipDefinitions();
   const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? []).filter((item) => item.tier === 1);
@@ -73,7 +77,7 @@ function labeledSelect(label: string, values: readonly { id: string; title: stri
 }
 
 function teamCount(label: string, initial: number) {
-  const choices = Array.from({ length: 10 }, (_, i) => ({
+  const choices = Array.from({ length: 5 }, (_, i) => ({
     id: String(i + 1),
     title: String(i + 1) + (i === 0 ? ' Schiff' : ' Schiffe'),
   }));
@@ -82,24 +86,129 @@ function teamCount(label: string, initial: number) {
   return result;
 }
 
-export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { destroy(): void } {
+function createParallelDuelLauncher(
+  root: HTMLElement,
+  lobby: HTMLElement,
+  onCombatActiveChange: (active: boolean) => void
+) {
+  let activePanel: ReturnType<typeof createFleetNativeCombatPanel> | null = null;
+  let frame = 0;
+  let stopped = false;
+  let generation = 0;
+  const stop = (): void => {
+    generation++;
+    cancelAnimationFrame(frame);
+    activePanel?.destroy();
+    activePanel = null;
+    onCombatActiveChange(false);
+  };
+  return {
+    start(config: FleetTestConfiguration): void {
+      if (stopped) return;
+      stop();
+      const current = generation;
+      const seed = Math.floor(Math.random() * 0x7fffffff);
+      const arena = createDuelArena(config.map, seed);
+      const ships = config.ships.map((ship, index) => {
+        const definition = getShipDefinition(ship.draft.shipId);
+        if (!definition) throw new Error('Unbekanntes Duellschiff: ' + ship.draft.shipId);
+        const setup = duelCombatant(index, ship.draft, definition);
+        return {
+          id: ship.id,
+          team: ship.team,
+          setup: { ...setup, id: ship.id, name: ship.id.toUpperCase() + ' · ' + ship.name },
+        };
+      });
+      const duels = createParallelNativeDuels(ships, arena, seed);
+      onCombatActiveChange(true);
+      activePanel = createFleetNativeCombatPanel({
+        root,
+        combat: duels.duels[0]!,
+        spectator: true,
+        parallelDuels: () => [
+          ...duels.getSnapshot().duels.slice(1),
+          ...duels.getSnapshot().supporters,
+        ],
+        parallelSupportStartIndex: duels.duels.length - 1,
+        parallelEscapedShipIds: () => duels.getSnapshot().escapedShipIds,
+        isComplete: () => duels.getSnapshot().finished,
+        encounterName:
+          config.ships.filter((ship) => ship.team === 'a').length +
+          ' gegen ' +
+          config.ships.filter((ship) => ship.team === 'b').length,
+        onReturn: () => {
+          stop();
+          root.replaceChildren(lobby);
+        },
+      });
+      let previous = performance.now();
+      const tick = (now: number): void => {
+        if (stopped || !activePanel || current !== generation) return;
+        const dt = Math.min((now - previous) / 1000, 0.08);
+        previous = now;
+        duels.tick(dt);
+        activePanel.update();
+        frame = requestAnimationFrame(tick);
+      };
+      frame = requestAnimationFrame(tick);
+    },
+    destroy(): void {
+      stopped = true;
+      stop();
+    },
+  };
+}
+
+function renderFleetRoster(roster: HTMLElement, config: FleetTestConfiguration): void {
+  roster.replaceChildren();
+  for (const team of ['a', 'b'] as const) {
+    const section = document.createElement('section');
+    section.className = 'harrow-duel__card';
+    const title = document.createElement('h2');
+    title.textContent = 'Fraktion ' + team.toUpperCase();
+    section.append(title);
+    for (const ship of config.ships.filter((entry) => entry.team === team)) {
+      const line = document.createElement('p');
+      const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
+      const equipped = ship.draft.weapons
+        .map((id) => weaponCatalog.find((item) => item.id === id)?.name)
+        .filter(Boolean);
+      const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft.mines[0]);
+      line.textContent = [
+        ship.id.toUpperCase() + ' · ' + ship.name,
+        equipped.join(', ') || 'Keine kompatiblen Waffenplätze',
+        mine?.name ?? 'Keine Mine',
+        'Reaktor Mk IV',
+      ].join(' | ');
+      section.append(line);
+    }
+    roster.append(section);
+  }
+}
+
+export function createFleetTestLobby(
+  root: HTMLElement,
+  onBack: () => void,
+  onCombatActiveChange: (active: boolean) => void = () => {}
+): { destroy(): void } {
   const shell = document.createElement('section');
   shell.className = 'harrow-duel harrow-fleet';
   const heading = document.createElement('h1');
   heading.textContent = 'FLEETCOMBAT · TESTLABOR';
   const description = document.createElement('p');
   description.textContent =
-    'Vorbereitung für Mehrschiffgefechte. Der neue Kampfkern wird erst im nächsten Schritt angebunden; bestehende 1vs1-Duelle bleiben unverändert.';
+    'Zwei Fraktionen mit jeweils 1 bis 5 Schiffen. Alle Teilnehmer nutzen die vorhandene ' +
+    '1vs1-Kampf-KI; zusätzliche Angreifer teilen sich die echten Ziele.';
   const map = labeledSelect('Kampfkarte', DUEL_MAPS);
   const teamA = teamCount('Fraktion A', 2);
-  const teamB = teamCount('Fraktion B', 1);
+  const teamB = teamCount('Fraktion B', 2);
   const options = document.createElement('div');
   options.className = 'harrow-fleet__options';
   options.append(map.wrapper, teamA.wrapper, teamB.wrapper);
   const capabilities = document.createElement('p');
   capabilities.className = 'harrow-fleet__capabilities';
   capabilities.textContent =
-    'Geplant: Rammen · Asteroidenwurf mit Traktorstrahl · dynamische Zielwechsel · Verstärkung';
+    'Gemeinsame Originalkarte: unabhängige 1vs1 und zusätzliche native Angreifer.';
   const roster = document.createElement('div');
   roster.className = 'harrow-fleet__roster';
   const actions = document.createElement('div');
@@ -109,9 +218,8 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   shuffle.textContent = 'Schiffe neu auslosen';
   const start = document.createElement('button');
   start.type = 'button';
-  start.textContent = 'FleetCombat starten (noch nicht verfügbar)';
-  start.disabled = true;
-  start.title = 'Wird aktiviert, sobald die Mehrschiff-Simulation implementiert ist';
+  start.textContent = 'FleetCombat starten';
+  start.title = 'Alle ausgewählten Schiffe auf einer gemeinsamen Karte starten';
   const back = document.createElement('button');
   back.type = 'button';
   back.textContent = 'Zurück zum Hauptmenü';
@@ -121,6 +229,7 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
   root.replaceChildren(shell);
 
   let config: FleetTestConfiguration;
+  const launcher = createParallelDuelLauncher(root, shell, onCombatActiveChange);
   const draw = (): void => {
     config = {
       map: map.control.value as DuelMapKind,
@@ -128,31 +237,24 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
       rammingEnabled: true,
       tractorAsteroidThrowEnabled: true,
     };
-    roster.replaceChildren();
-    for (const team of ['a', 'b'] as const) {
-      const section = document.createElement('section');
-      section.className = 'harrow-duel__card';
-      const title = document.createElement('h2');
-      title.textContent = 'Fraktion ' + team.toUpperCase();
-      section.append(title);
-      for (const ship of config.ships.filter((entry) => entry.team === team)) {
-        const line = document.createElement('p');
-        const weaponCatalog = SHIP_COMPONENT_CATALOG.weapon ?? [];
-        const equipped = ship.draft.weapons
-          .map((id) => weaponCatalog.find((item) => item.id === id)?.name)
-          .filter(Boolean);
-        const mine = SHIP_MINE_CATALOG.find((item) => item.id === ship.draft.mines[0]);
-        line.textContent = [
-          ship.id.toUpperCase() + ' · ' + ship.name,
-          equipped.join(', ') || 'Keine kompatiblen Waffenplätze',
-          mine?.name ?? 'Keine Mine',
-          'Reaktor Mk IV',
-        ].join(' | ');
-        section.append(line);
-      }
-      roster.append(section);
-    }
+    const countA = Number(teamA.control.value);
+    const countB = Number(teamB.control.value);
+    start.textContent = countA + ' vs ' + countB + ' starten';
+    start.disabled = false;
+    capabilities.textContent =
+      countA +
+      ' vs ' +
+      countB +
+      ': ' +
+      Math.min(countA, countB) +
+      ' native Duelle, ' +
+      Math.abs(countA - countB) +
+      ' zusätzliche Angreifer auf derselben Karte.';
+    renderFleetRoster(roster, config);
   };
+  start.addEventListener('click', () => {
+    if (!start.disabled) launcher.start(config);
+  });
   shuffle.addEventListener('click', draw);
   teamA.control.addEventListener('change', draw);
   teamB.control.addEventListener('change', draw);
@@ -161,5 +263,10 @@ export function createFleetTestLobby(root: HTMLElement, onBack: () => void): { d
     config = { ...config, map: map.control.value as DuelMapKind };
   });
   draw();
-  return { destroy: () => shell.remove() };
+  return {
+    destroy() {
+      launcher.destroy();
+      shell.remove();
+    },
+  };
 }

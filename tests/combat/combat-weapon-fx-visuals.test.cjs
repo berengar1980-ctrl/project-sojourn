@@ -101,6 +101,10 @@ const gameplay = fs.readFileSync(
   'utf8'
 );
 const snapshot = fs.readFileSync(
+  path.join(root, 'src/systems/combat/strategic-combat-runtime-snapshot.ts'),
+  'utf8'
+);
+const combatService = fs.readFileSync(
   path.join(root, 'src/systems/combat/strategic-combat-service.ts'),
   'utf8'
 );
@@ -108,9 +112,21 @@ const renderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
   'utf8'
 );
+const nativeWeaponPainters = fs.readFileSync(
+  path.join(root, 'src/ui/combat/combat-native-weapon-painters.ts'),
+  'utf8'
+);
+const fleetRenderer = fs.readFileSync(
+  path.join(root, 'src/ui/combat/fleet-native-combat-renderer.ts'),
+  'utf8'
+);
 const nativeBeam = fs.readFileSync(path.join(root, 'src/ui/combat/combat-beam-visual.ts'), 'utf8');
 assert(gameplay.includes('origin: { ...muzzle }'), 'projectiles remember actual weapon muzzles');
 assert(snapshot.includes('origin: { ...projectile.origin }'), 'origin is detached in snapshots');
+assert(
+  combatService.includes("from './strategic-combat-runtime-snapshot'"),
+  'native combat service uses the shared snapshot projection'
+);
 assert(
   renderer.includes('drawCombatBeamVisual(') && nativeBeam.includes('drawIonCannonArc('),
   'game renderer dispatches ion cannon lightning'
@@ -120,7 +136,9 @@ assert(
   'game renderer dispatches railgun lance'
 );
 assert(
-  renderer.includes('drawVisionAutocannon('),
+  renderer.includes('drawVisionAutocannon(') &&
+    fleetRenderer.includes('paintNativeAutocannonBursts(') &&
+    nativeWeaponPainters.includes('drawVisionAutocannon('),
   'game renderer dispatches upgraded seven-round autocannon salvo'
 );
 assert(

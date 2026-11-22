@@ -30,7 +30,7 @@ export function createCombatTestTabs(root: HTMLElement, onBack: () => void): { d
     current =
       mode === 'duel'
         ? createDuelLobby(content, onBack, setCombatActive)
-        : createFleetTestLobby(content, onBack);
+        : createFleetTestLobby(content, onBack, setCombatActive);
   };
   duelTab.addEventListener('click', () => show('duel'));
   fleetTab.addEventListener('click', () => show('fleet'));

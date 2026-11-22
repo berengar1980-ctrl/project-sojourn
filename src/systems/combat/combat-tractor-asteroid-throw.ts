@@ -252,8 +252,14 @@ function advanceRockPhase(rock: MutableThrownAsteroid, dt: number): void {
   rock.position.y += rock.velocity.y * dt;
 }
 
-export function advanceThrownAsteroids(runtime: StrategicCombatRuntime, dt: number): void {
-  for (const ship of [runtime.attacker, runtime.defender]) {
+export function advanceThrownAsteroids(
+  runtime: StrategicCombatRuntime,
+  dt: number,
+  owner: StrategicCombatSide | 'both' = 'both'
+): void {
+  for (const side of ['attacker', 'defender'] as const) {
+    if (owner !== 'both' && owner !== side) continue;
+    const ship = runtime[side];
     ship.tractorThrowCooldown = Math.max(0, (ship.tractorThrowCooldown ?? 0) - dt);
   }
   for (let index = runtime.thrownAsteroids.length - 1; index >= 0; index -= 1) {

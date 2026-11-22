@@ -170,6 +170,34 @@
     "src/systems/salvage/combat-destruction-wreck.ts": {
       "mode": "derived",
       "reason": "Pure wreck factory mutating an explicitly passed live salvage field; the field owns its spawned wrecks and this module retains no private state."
+    },
+    "src/systems/combat/strategic-combat-runtime-snapshot.ts": {
+      "mode": "derived",
+      "reason": "Extracted unchanged canonical in-memory snapshot projection of the existing strategic combat runtime; stores no new authoritative state."
+    },
+    "src/systems/combat/native-fleet-reassignment.ts": {
+      "mode": "transient",
+      "reason": "Per-frame PvP FleetCombat only; selects nearest active battle and redirects a secondary attacker without new actor instances or career persistence."
+    },
+    "src/systems/combat/native-fleet-retarget.ts": {
+      "mode": "transient",
+      "reason": "Guarded PvP Fleet-only survivor retarget of one existing live actor; no save or career world authority."
+    },
+    "src/systems/combat/native-fleet-advance.ts": {
+      "mode": "transient",
+      "reason": "Disposable PvP-only fleet frame coordinator for one shared asteroid world, original 1vs1 actors, physical wrecks and escape status; it persists nothing."
+    },
+    "src/systems/combat/native-fleet-wrecks.ts": {
+      "mode": "transient",
+      "reason": "Creates physical salvage-visual wreck debris solely inside a disposable native PvP fleet arena; no career world or save authority."
+    },
+    "src/systems/combat/native-duel-support-tick.ts": {
+      "mode": "transient",
+      "reason": "Original per-ship combat helpers driven for disposable extra PvP attackers; live target references are not persisted."
+    },
+    "src/systems/combat/parallel-native-duels.ts": {
+      "mode": "transient",
+      "reason": "Disposable PvP test coordinator of original 1vs1 services and one shared arena tick; it holds no career save state or checkpoint authority."
     }
   }
 }
