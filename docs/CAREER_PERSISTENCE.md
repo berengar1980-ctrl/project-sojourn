@@ -1085,3 +1085,27 @@ Boostanzeige, Duellübersicht, HUD und Meldungen) unter
 `sojourn.fleet-combat.display.v1`. Es verändert keine taktischen
 Eingaben und kein Karriere-Speicherschema. Das reguläre 1vs1
 behält seine unveränderte separate Kampfoberfläche.
+
+### Dynamische FleetCombat-Koordination in PvP und Kampagne (PR #384)
+
+Der gemeinsame Einstieg `dynamic-fleet-combat.ts` verwendet denselben
+nativen `StrategicCombatService` für die originale 1vs1-KI und die
+einseitig gesteuerten zusätzlichen Teilnehmer. `career-fleet-encounter.ts`
+übernimmt im laufenden Kampagnengefecht nahe NPCs (Patrouillen, Piraten,
+Sicherheitsdrohnen), sofern der kurzfristige `fleet-conflict-manager.ts`
+einen gültigen Feindkontakt meldet. Die Zielzuweisung und das Kampfbild
+sind unabhängig davon, ob das Gefecht aus PvP oder der Kampagne stammt.
+
+Der Fleet-Koordinator, seine aktuellen Zielreferenzen, die
+Konfliktbeziehungen und beobachteten Angriffe sind **flüchtige**
+Encounter-Daten. Die dauerhaften NPC-Rumpfwerte verbleiben im
+bestehenden `SectorNpcState`; neue wirtschaftliche oder rechtliche
+Besitzdaten werden nicht angelegt.
+
+**Wichtige Einschränkung:** Aktuell serialisiert der vorhandene
+Karriere-Kampfcheckpoint ausschließlich das ursprüngliche 1vs1-Duell.
+Zusätzlich beigetretene Flottenteilnehmer, ihre Zielverbindungen und
+vorübergehenden Feindschaften sind beim Laden eines laufenden
+Mehrparteiengefechts **nicht vollständig wiederherstellbar**.
+Ein vollständiger atomarer Fleet-Karrierecheckpoint samt Validierung
+und Restore-Test ist für Save/Load-Parität weiterhin erforderlich.
