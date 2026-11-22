@@ -58,7 +58,8 @@ export function createFleetIdleWorldCanvas(
       bodies,
       arena.asteroids ?? [],
       camera.scale(width, height, arena.width, arena.height),
-      (point) => camera.project(point, width, height, arena.width, arena.height),
+      (point) =>
+        camera.project(point, width, height, arena.width, arena.height),
       context,
       performance.now() / 1000
     );
