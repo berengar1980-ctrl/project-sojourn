@@ -1,4 +1,7 @@
-import type { StrategicCombatArenaOptions, StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
+import type {
+  StrategicCombatArenaOptions,
+  StrategicCombatSnapshot,
+} from '../../systems/combat/strategic-combat-types';
 import { CombatCamera, type CombatCameraPose } from '../combat/combat-camera';
 import { CombatAsteroidBackdrop } from '../combat/combat-asteroid-backdrop';
 import { drawCombatAsteroids } from '../combat/combat-asteroid-renderer';
@@ -74,7 +77,8 @@ export function createFleetIdleWorldCanvas(
   };
   const pointerUp = (event: PointerEvent): void => {
     lastDrag = null;
-    if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    if (canvas.hasPointerCapture(event.pointerId))
+      canvas.releasePointerCapture(event.pointerId);
   };
   const wheel = (event: WheelEvent): void => {
     event.preventDefault();
