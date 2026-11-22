@@ -301,10 +301,7 @@ function updateCombatActionButtons(
   if (surrenderButton) surrenderButton.disabled = model.winner !== null;
 }
 
-function createFleetMarkerLegend(
-  shell: HTMLElement,
-  enabled: boolean
-): HTMLInputElement | null {
+function createFleetMarkerLegend(shell: HTMLElement, enabled: boolean): HTMLInputElement | null {
   if (!enabled) return null;
   const legend = document.createElement('label');
   legend.className = 'combat-fleet-marker-legend';
