@@ -126,10 +126,7 @@ function nativeShip(ship: FleetScenarioShip, index: number): NativeDuelShip {
               ship.group === 'pirates-yellow' ? ('pirates' as const) : ('pirates2' as const),
           }
         : {}),
-      preferredTactic:
-        ship.group === 'npc' && (definition.role === 'mining' || definition.role === 'freighter')
-          ? 'flee'
-          : 'fight',
+      preferredTactic: 'fight',
     },
   };
 }
@@ -190,7 +187,9 @@ export function createFleetScenarioRuntime(
   const atWorldPose = (id: string): NativeDuelShip => {
     const ship = all.get(id)!;
     const pose = world.pose(id);
-    return pose ? { ...ship, ...pose } : ship;
+    const npc = world.npc(id);
+    const setup = npc ? { ...ship.setup, preferredTactic: world.defence(id) } : ship.setup;
+    return pose ? { ...ship, setup, ...pose } : { ...ship, setup };
   };
   const observeIncident = (): void => {
     if (incident === 'none') return;
