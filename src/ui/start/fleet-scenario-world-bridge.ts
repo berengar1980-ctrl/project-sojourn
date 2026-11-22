@@ -41,6 +41,8 @@ const WORLD_LOCATION = 'duel';
  * decision and physical waypoint routing are not reimplemented here.
  * The test state never mutates the real career sector or economy.
  */
+// Thin integration of existing campaign miners, drones, world routing and fleet AI.
+// eslint-disable-next-line max-lines-per-function
 export function createFleetScenarioWorldBridge(
   roster: readonly FleetScenarioShip[],
   arena: StrategicCombatArenaOptions,
@@ -280,6 +282,8 @@ export function createFleetScenarioWorldBridge(
       }
       threats.set(id, { ...aggressor });
     },
+    // Preserve the normal NPC roles: patrol, mining, flee or existing combat owner.
+    // eslint-disable-next-line complexity
     tick(dt: number, threat: WorldPoint | null) {
       // The campaign's existing mining and security services drive civilians
       // and drones until their native combat driver takes ownership.
