@@ -51,7 +51,7 @@ export function createFleetScenarioWorldBridge(
     'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field' = 'asteroid_field'
 ) {
   const field =
-    mapKind === 'scattered' || mapKind === 'asteroid_field'
+    (arena.asteroids?.length ?? 0) > 0 && (mapKind === 'scattered' || mapKind === 'asteroid_field')
       ? generateMiningSpace(
           WORLD_LOCATION,
           seed,
@@ -60,6 +60,9 @@ export function createFleetScenarioWorldBridge(
         )
       : null;
   const rocks: LocalAsteroid[] = field?.asteroids ?? [];
+  // Both services inspect the SAME campaign field geometry. Combat owns rock
+  // motion; miners and the drone observe that pose, never move it twice.
+  const combatRocks = new Map((arena.asteroids ?? []).map((body) => [body.id, body]));
   const templates = createSectorNpcEconomyStates();
   const arrived = new Set<string>();
   const engaged = new Set<string>();
@@ -287,6 +290,13 @@ export function createFleetScenarioWorldBridge(
     tick(dt: number, threat: WorldPoint | null) {
       // The campaign's existing mining and security services drive civilians
       // and drones until their native combat driver takes ownership.
+      for (const rock of rocks) {
+        const body = combatRocks.get(rock.id);
+        if (!body) continue;
+        rock.position = { ...body.position };
+        rock.rotation = body.rotation;
+        rock.physics.velocity = { ...body.velocity };
+      }
       miners.tick(dt);
       for (const [id, moving] of states) {
         if (!arrived.has(id) || engaged.has(id) || moving.npc.hullHp <= 0) continue;
