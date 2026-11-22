@@ -157,7 +157,7 @@ export function createFleetScenarioWorldBridge(
     if (id === 'player') return playerPose;
     const moving = states.get(id);
     if (!moving || !arrived.has(id)) return null;
-    if (moving.npc.job === 'miner' && !engaged.has(id)) {
+    if (moving.npc.job === 'miner' && !engaged.has(id) && !moving.npc.combatMovement) {
       const miner = miners.ships.find((entry) => entry.npcId === id);
       if (miner)
         return {
@@ -259,7 +259,22 @@ export function createFleetScenarioWorldBridge(
     },
     syncFromCombat,
     threaten(id: string, aggressor: WorldPoint) {
-      if (!engaged.has(id) && states.has(id)) threats.set(id, { ...aggressor });
+      if (engaged.has(id)) return;
+      const moving = states.get(id);
+      if (!moving) return;
+      if (moving.npc.job === 'miner' && !moving.npc.combatMovement) {
+        const original = pose(id);
+        if (original) {
+          moving.position = { ...original.position };
+          moving.headingRadians = original.headingRadians;
+          moving.speed = Math.hypot(original.velocity.x, original.velocity.y);
+        }
+        moving.npc.combatMovement = {
+          mode: 'flee', targetKind: 'npc', targetId: 'threat',
+          position: { ...moving.position }, headingRadians: moving.headingRadians, speed: moving.speed,
+        };
+      }
+      threats.set(id, { ...aggressor });
     },
     tick(dt: number, threat: WorldPoint | null) {
       // The campaign's existing mining and security services drive civilians
@@ -267,7 +282,7 @@ export function createFleetScenarioWorldBridge(
       miners.tick(dt);
       for (const [id, moving] of states) {
         if (!arrived.has(id) || engaged.has(id) || moving.npc.hullHp <= 0) continue;
-        if (moving.npc.job === 'miner') continue;
+        if (moving.npc.job === 'miner' && moving.npc.combatMovement?.mode !== 'flee') continue;
         if (id.startsWith('security-drone:')) {
           drones.get(id)?.tick(dt, rocks, [], [], threat ?? undefined);
           continue;
@@ -283,6 +298,12 @@ export function createFleetScenarioWorldBridge(
               ? threat
               : moving.waypoint;
         const arrivedAt = moveFieldShip(moving, destination, 110, dt, obstacles(), 65, 'patrol');
+        if (arrivedAt && moving.npc.combatMovement?.mode === 'flee') {
+          delete moving.npc.combatMovement;
+          threats.delete(id);
+          miners.syncCombatPose(id, moving.position, moving.headingRadians, moving.speed);
+          if (moving.npc.autonomy) moving.npc.autonomy.phase = 'working';
+        }
         if (arrivedAt) {
           const hash = hashId(
             id + ':' + Math.floor(dt * 1000) + ':' + Math.round(moving.position.x)
