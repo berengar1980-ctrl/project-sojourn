@@ -25,6 +25,7 @@ import {
   npcIsPiratePrey,
   npcLooksHostileToPatrol,
   npcMayInitiateAttack,
+  rivalPirateGroups,
 } from '../npcs/npc-combat-ai';
 
 import {
@@ -166,6 +167,13 @@ function npcAttackTarget(
         if (candidate.id === attacker.id || runtime.options.protectsNpc?.(attacker, candidate))
           return false;
         if (!attacker.pirate) return npcLooksHostileToPatrol(candidate);
+        if (rivalPirateGroups(attacker, candidate)) {
+          return (
+            candidate.hullHp > 0 &&
+            !candidate.combatMovement &&
+            (candidate.combatRecoverySeconds ?? 0) <= 0
+          );
+        }
         // Keep existing target filters, but use the same geographic policy as player interception.
         if (!npcIsPiratePrey(candidate)) return false;
         return canRaidCivilianCargo(
