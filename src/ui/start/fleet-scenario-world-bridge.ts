@@ -73,7 +73,7 @@ export function createFleetScenarioWorldBridge(
   const states = new Map<string, MovingNpc>();
   const drones = new Map<string, AsteroidSecurityDrone>();
   const playerStart = arena.attackerPosition ?? { x: arena.width * 0.5, y: arena.height * 0.5 };
-  const playerPose: FleetWorldPose = {
+  const playerPose = {
     position: { ...playerStart },
     headingRadians: arena.attackerHeadingRadians ?? 0,
     velocity: arena.attackerVelocity ?? { x: 0, y: 0 },
