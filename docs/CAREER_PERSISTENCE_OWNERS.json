@@ -222,6 +222,10 @@
     "src/systems/combat/star-map-engagement-fleet-resolution.ts": {
       "mode": "transient",
       "reason": "Reconciles transient battle outcomes into existing sector NPC and player ship state; owns no extra persisted state."
+    },
+    "src/systems/combat/star-map-engagement-runtime-types.ts": {
+      "mode": "derived",
+      "reason": "Type-only shared transient engagement runtime contract; no new state or checkpoint owner."
     }
   }
 }
