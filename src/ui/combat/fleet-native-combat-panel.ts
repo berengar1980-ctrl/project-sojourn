@@ -1,3 +1,5 @@
+import type { FleetWorldContact } from '../start/fleet-scenario-world-bridge';
+import { createFleetWorldContactOverlay } from './fleet-world-contact-overlay';
 import type {
   StrategicCombatService,
   StrategicCombatSnapshot,
@@ -26,6 +28,8 @@ interface FleetNativeCombatPanelOptions {
   readonly fleetEngagements?: () => readonly NativeFleetEngagement[];
   readonly spectator?: boolean;
   readonly isComplete?: () => boolean;
+  /** Noncombat campaign NPCs are rendered by the native fleet canvas, not another scene. */
+  readonly worldContacts?: () => readonly FleetWorldContact[];
 }
 
 function percent(current: number, maximum: number): number {
@@ -323,7 +327,16 @@ export function createFleetNativeCombatPanel(
   }
 
   grappleButton?.addEventListener('click', () => options.combat.fireGrapple('attacker'));
-  const renderer = new FleetNativeCombatRenderer(canvas, options.combat.getSnapshot());
+  const firstSnapshot = options.combat.getSnapshot();
+  const renderer = new FleetNativeCombatRenderer(
+    canvas,
+    firstSnapshot,
+    options.worldContacts
+      ? createFleetWorldContactOverlay(
+          canvas, options.worldContacts, firstSnapshot.arena.width, firstSnapshot.arena.height
+        )
+      : undefined
+  );
   const unbindCamera = bindCombatCamera(canvas, renderer);
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
