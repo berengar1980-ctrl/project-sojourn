@@ -270,8 +270,12 @@ export function createFleetScenarioWorldBridge(
           moving.speed = Math.hypot(original.velocity.x, original.velocity.y);
         }
         moving.npc.combatMovement = {
-          mode: 'flee', targetKind: 'npc', targetId: 'threat',
-          position: { ...moving.position }, headingRadians: moving.headingRadians, speed: moving.speed,
+          mode: 'flee',
+          targetKind: 'npc',
+          targetId: 'threat',
+          position: { ...moving.position },
+          headingRadians: moving.headingRadians,
+          speed: moving.speed,
         };
       }
       threats.set(id, { ...aggressor });
