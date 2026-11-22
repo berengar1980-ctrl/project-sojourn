@@ -1,5 +1,6 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
+import { createFleetNativeCombatPanel } from '../ui/combat/fleet-native-combat-panel';
 import { returnFromCombat } from './game-controller-combat-boarding';
 import {
   destroyControllerBoarding,
@@ -21,11 +22,23 @@ export function mountCombatScene(context: ControllerRuntimeContext, returnToMap:
   state.embeddedCombat = null;
   state.mode = 'combat';
   context.audio.clearPlayerRcs();
-  state.combatPanel = createStrategicCombatPanel({
-    root: context.root,
-    combat,
-    onReturn: () => returnFromCombat(context, combat, returnToMap),
-  });
+  const fleet = context.engagements.activePlayerFleet();
+  const onReturn = () => returnFromCombat(context, combat, returnToMap);
+  state.combatPanel = fleet
+    ? createFleetNativeCombatPanel({
+        root: context.root,
+        combat,
+        onReturn,
+        parallelDuels: () => [
+          ...fleet.getSnapshot().duels.slice(1),
+          ...fleet.getSnapshot().supporters,
+        ],
+        parallelSupportStartIndex: fleet.duels.length - 1,
+        parallelEscapedShipIds: () => fleet.getSnapshot().escapedShipIds,
+        fleetEngagements: () => fleet.getSnapshot().engagements,
+        isComplete: () => fleet.getSnapshot().finished,
+      })
+    : createStrategicCombatPanel({ root: context.root, combat, onReturn });
   state.shipSwitcher?.destroy();
   state.shipSwitcher = null;
 }
