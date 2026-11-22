@@ -40,6 +40,7 @@ const manager = createConflictManager([
   { id: 'drone', role: 'drone' },
   { id: 'pirate-a', role: 'pirate', pirateGroup: 'a' },
   { id: 'pirate-b', role: 'pirate', pirateGroup: 'b' },
+  { id: 'pirate-c', role: 'pirate', pirateGroup: 'c' },
 ]);
 manager.recordAttack({
   attackerId: 'player',
