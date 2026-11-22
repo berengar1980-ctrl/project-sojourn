@@ -158,6 +158,28 @@ assert(
     defenderScenario.worldContacts.some((ship) => ship.id === 'security-drone:test-1'),
   'a protective drone is present, but only joins when its patrol senses the incident'
 );
+// Completed native duels relinquish the physical actor to the same world NPC.
+// The scripted incident must not immediately restart an identical duel.
+const recovery = createFleetScenarioRuntime(
+  [entry('player', 'player', 0), entry('npc-1', 'npc', 0)],
+  arena,
+  2345,
+  'player-attacks-npc',
+  'empty'
+);
+assert(recovery.fleet, 'the incident enters the shared native duel');
+recovery.fleet.duels[0].surrender('attacker');
+recovery.tick(0.08);
+assert.equal(recovery.completedEncounters, 1);
+assert.equal(recovery.fleet, null, 'completed duel relinquishes its fleet owner');
+assert(
+  recovery.worldContacts.some((contact) => contact.id === 'npc-1'),
+  'surviving civilian is returned to the original world movement service'
+);
+recovery.tick(0.08);
+assert.equal(recovery.fleet, null, 'resolved scripted contact cannot endlessly restart');
+assert.equal(recovery.completedEncounters, 1);
+
 console.log(
   'PASS FleetCombat lab: fixed player, persistent native actors, true NPC world behavior and observed drone entry'
 );
