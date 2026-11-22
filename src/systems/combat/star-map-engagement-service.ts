@@ -521,7 +521,10 @@ export function createStarMapEngagementService(
     activePlayerCombat: () => runtime.playerCombat,
     activePlayerFleet: () => runtime.playerFleet?.fleet ?? null,
     activeNpcCombatSnapshots: () =>
-      [...runtime.backgroundCombats.values()].map((entry) => entry.combat.getSnapshot()),
+      [...runtime.backgroundCombats.values()].flatMap((entry) => [
+        ...entry.fleet.fleet.getSnapshot().duels,
+        ...entry.fleet.fleet.getSnapshot().supporters,
+      ]),
     activePlayerEnemy: () => runtime.playerEnemy,
     restorePlayerCareerCombat(combat, enemyId) {
       if (runtime.playerCombat || runtime.playerEnemy) {
