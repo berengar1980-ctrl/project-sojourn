@@ -1,3 +1,4 @@
+import type { ParallelNativeDuels } from './parallel-native-duels';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
 import type { ShipDefinition } from '../../core/ship-types';
@@ -23,6 +24,7 @@ export interface StarMapEngagementService {
   syncPlayerPursuitTarget(): void;
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
+  activePlayerFleet(): ParallelNativeDuels | null;
   activeNpcCombatSnapshots(): readonly StrategicCombatSnapshot[];
   activePlayerEnemy(): SectorNpcState | null;
   finishPlayerCombat(boardingOutcome?: BoardingOutcome): void;
