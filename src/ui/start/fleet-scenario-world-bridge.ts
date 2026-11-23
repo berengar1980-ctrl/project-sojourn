@@ -154,7 +154,7 @@ export function createFleetScenarioWorldBridge(
     seed,
     arena.width,
     arena.height,
-    trafficFor
+    (id) => trafficFor(id)
   );
   const pose = (id: string): FleetWorldPose | null => {
     if (id === 'player') return playerPose;
