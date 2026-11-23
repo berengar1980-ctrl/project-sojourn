@@ -1197,3 +1197,5 @@ entkommenen Schiffe gehören zur flüchtigen Gefechtssitzung.
 Beim Nahscan und Abbau regeln NPC-Miner ihren Abstand zum driftenden Ziel
 aus den vorhandenen Feldpositionen. Der Verkehrs-Checkpoint speichert weiterhin
 Ziel-ID, Position, Arbeitsphase und Scanfortschritt.
+
+Der Beitritt zu einem laufenden NPC-Gefecht überträgt dessen Laufzeitbesitz an den Spieler. Beteiligte NPCs und ihre Hull-Werte bleiben dieselben Karriereobjekte. Das Speicherformat bleibt unverändert.

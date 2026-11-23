@@ -1901,3 +1901,7 @@ für NPC-Miner während des Nahscans und Abbaus. Beendete Teilgefechte geben ihr
 Geschosse und Strahlen für die Darstellung frei. Das Testfeld übernimmt die
 verfügbare Höhe der Kampagnenkarte und kehrt nach dem Gefecht ins FleetCombat-Menü
 zurück. Der Chromium-Test prüft die Größe und Lage des Testfelds unter der Systemleiste.
+
+## Review-Log (2026-11-23) – Drohnenposition und Beitritt zu NPC-Gefechten
+
+Kampagne und PvP-Feldtest übernehmen beim manuellen Angriff auf einen kämpfenden NPC das laufende Feldgefecht. Der angeklickte Gegner behält Position, Schaden und KI. Feldkarten spiegeln nur Gefechte mit passendem Feld-Seed.

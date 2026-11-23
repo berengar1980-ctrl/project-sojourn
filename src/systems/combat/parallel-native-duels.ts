@@ -51,7 +51,7 @@ export interface ParallelNativeDuels {
   /** World traffic is a physical bystander, not an automatically hostile combatant. */
   setBystanders(ships: readonly StrategicCombatBystander[]): void;
   /** Bring an existing campaign or test ship into the live battle exactly once. */
-  addShip(ship: NativeDuelShip, conflictKey?: string): boolean;
+  addShip(ship: NativeDuelShip, conflictKey?: string, targetId?: string): boolean;
   tick(dt: number, beforePrimaryAttackerReplacement?: () => void): ParallelNativeDuelSnapshot;
   getSnapshot(): ParallelNativeDuelSnapshot;
 }
@@ -229,7 +229,8 @@ interface NativeFleetJoinContext {
 function joinNativeFleetShip(
   context: NativeFleetJoinContext,
   ship: NativeDuelShip,
-  conflictKey?: string
+  conflictKey?: string,
+  targetId?: string
 ): boolean {
   const { actors, teams, hostility, escaped, arena, seed, obstacleSet } = context;
   const id = ship.setup.id;
@@ -238,6 +239,7 @@ function joinNativeFleetShip(
   const target = actors
     .filter(
       (actor) =>
+        (!targetId || actor.setup.id === targetId) &&
         actor.hullHp > 0 &&
         !escaped.has(actor.setup.id) &&
         (hostility(affiliation, teams.get(actor.setup.id)!) ||
@@ -364,7 +366,7 @@ export function createParallelNativeDuels(
   return {
     duels: pairs,
     supporters,
-    addShip(ship, conflictKey) {
+    addShip(ship, conflictKey, targetId) {
       const joined = joinNativeFleetShip(
         {
           services,
@@ -380,7 +382,8 @@ export function createParallelNativeDuels(
           hostility,
         },
         ship,
-        conflictKey
+        conflictKey,
+        targetId
       );
       if (joined) cachedSnapshot = null;
       return joined;

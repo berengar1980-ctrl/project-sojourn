@@ -102,3 +102,71 @@ assert.equal(
 assert(engagements.activePlayerCombat(), 'direct local-space engagement must create combat');
 
 console.log('PASS pursuit, direct local engagement, NPC reaction and strategic combat start');
+
+// After the player's first duel, intervene in a second, still-running NPC fight.
+const fieldNpcs = data
+  .createSectorNpcEconomyStates()
+  .filter((npc) => !npc.travel)
+  .slice(0, 3);
+assert.equal(fieldNpcs.length, 3);
+const [pirate, civilian, firstEnemy] = fieldNpcs;
+const fieldSector = sectorModule.createNpcSectorService(mapModule.narrowsSector, fieldNpcs, {
+  getPlayerPosition: () => navigation.getSnapshot().currentPosition,
+});
+const field = engagementsModule.createStarMapEngagementService({
+  navigation,
+  sectorNpcs: fieldSector,
+  getPlayerShip: () => playerShip,
+  getPlayerCombatant: () => ({
+    id: 'player',
+    name: 'Player',
+    shipId: playerShip.id,
+    shieldHp: 120,
+    hullHp: 120,
+    weapons: [weapon],
+    hitChance: 1,
+    dodgeChance: 0,
+    damageMultiplier: 1,
+    criticalChance: 0,
+    cycleTimeMultiplier: 1,
+  }),
+  fieldWitness: () => null,
+  log: () => {},
+});
+const arena = {
+  width: 4200,
+  height: 2600,
+  backdropSeed: 40,
+  attackerPosition: { x: 1200, y: 1100 },
+  defenderPosition: { x: 1500, y: 1100 },
+  obstacles: [],
+  asteroids: [],
+};
+assert(field.engageNpcsInArena(pirate.id, civilian.id, arena));
+assert(field.engageNpcInArena(firstEnemy.id, arena));
+field.activePlayerFleet().getActor(firstEnemy.id).hullHp = 0;
+field.tick(0.08);
+field.finishPlayerCombat();
+const previous = field.activeNpcCombatSnapshots()[0];
+assert(previous.elapsedSeconds > 0);
+assert.equal(field.engageNpcInArena(pirate.id, { ...arena, backdropSeed: 41 }), false);
+const entry = { ...arena, attackerPosition: { x: 2000, y: 1500 } };
+assert(field.engageNpcInArena(pirate.id, entry));
+assert.equal(field.activeNpcCombatSnapshots().length, 0);
+const joined = field.activePlayerCombat();
+const original = field.activePlayerFleet().duels[0];
+assert.equal(joined.getParallelActor('defender'), original.getParallelActor('attacker'));
+assert.equal(original.getSnapshot().elapsedSeconds, previous.elapsedSeconds);
+assert.deepEqual(joined.getSnapshot().attacker.position, entry.attackerPosition);
+assert.equal(joined.getSnapshot().defender.id, pirate.id);
+field.tick(0.08);
+assert(Math.abs(original.getSnapshot().elapsedSeconds - previous.elapsedSeconds - 0.08) < 1e-6);
+assert(joined.getSnapshot().elapsedSeconds > 0);
+
+original.getParallelActor('attacker').hullHp = 0;
+field.tick(0.08);
+assert.equal(joined.getSnapshot().winner, 'attacker');
+assert.equal(joined.getSnapshot().outcomeReason, 'destruction');
+field.finishPlayerCombat();
+assert.equal(field.activePlayerCombat(), null);
+assert.notEqual(fieldSector.combatMode(civilian), 'engaged');

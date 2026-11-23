@@ -10,6 +10,14 @@ import {
 
 /** Wire local salvage traffic to existing authoritative career services. */
 export function salvageSecurityActions(context: ControllerRuntimeContext) {
+  const getNpcCombats = () => {
+    const field = context.state.salvageScene?.getField();
+    return field
+      ? (context.engagements.activeNpcCombatSnapshots?.() ?? []).filter(
+          (duel) => duel.arena.backdropSeed === field.seed
+        )
+      : [];
+  };
   return {
     resolveDrone: (field: Parameters<typeof careerSalvageDrone>[1]) =>
       careerSalvageDrone(context, field),
@@ -21,10 +29,10 @@ export function salvageSecurityActions(context: ControllerRuntimeContext) {
     },
     escapedFieldShipIds: () => context.engagements.escapedFieldShipIds(),
     getFleet: () => context.engagements.activePlayerFleet()?.getSnapshot() ?? null,
-    getNpcCombats: () => context.engagements.activeNpcCombatSnapshots?.() ?? [],
+    getNpcCombats,
     getFieldDuels: () =>
       localFieldDuels(
-        context.engagements.activeNpcCombatSnapshots?.() ?? [],
+        getNpcCombats(),
         context.state.embeddedCombat === 'salvage-space'
           ? context.engagements.activePlayerFleet()?.getSnapshot()
           : null

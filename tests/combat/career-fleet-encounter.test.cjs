@@ -170,3 +170,13 @@ for (const seedPirate of [pirate, newcomer]) {
   );
 }
 console.log('PASS campaign shared fleet sessions: player, NPC, pirates, patrols, drones join live');
+
+// A sector-space fight must never recruit the field's stationary drone by global distance.
+const strategic = createNpcFleetEncounter(pirate, miner, ships, undefined, {
+  positionOf: worldPosition,
+  headingOf: () => 0,
+  fieldWitness: () => physical,
+  fieldOwnsContact: (candidate) => candidate.id === drone.id,
+});
+strategic.joinNearby(worldPosition(), [drone], worldPosition);
+assert.equal(strategic.fleet.getActor(drone.id), null);
