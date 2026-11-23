@@ -32,9 +32,10 @@ export function drawFleetWorldMiningEffects(
   };
   const target = camera.project(impactWorld, width, height, arenaWidth, arenaHeight);
   const port = definition?.sprite.hardpoints.miningLasers[0];
-  const start = port && definition
-    ? projectHardpoint(port, definition.sprite.hardpoints, geometry)
-    : geometry.center;
+  const start =
+    port && definition
+      ? projectHardpoint(port, definition.sprite.hardpoints, geometry)
+      : geometry.center;
   drawMiningLaserBeam(context, start, target, Math.max(1, geometry.width / 100), 1, 0.55);
   miningEffects.drawImpactEffects(target, normal, performance.now() / 1000);
   const extraction = ship.miningOreCollection;
