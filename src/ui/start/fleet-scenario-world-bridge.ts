@@ -10,10 +10,12 @@ import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc
 import { hashId } from '../../systems/npcs/npc-mining-targets';
 import { createFleetWorldWorkers } from './fleet-world-workers';
 import { createFleetWorldTraffic } from './fleet-world-traffic';
+import { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
+import { resolveFleetWorldNeutralCollisions } from './fleet-world-neutral-collisions';
+import type { ShieldImpactEffect } from '../../core/shield-types';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { AsteroidSecurityDrone } from '../../systems/operations/asteroid-security-drone';
 import { moveFieldShip, type FieldRouteShip } from '../../systems/navigation/field-ship-routing';
-import { resolveShipShieldCollisions } from '../../systems/local-space/ship-shield-collision';
 import type {
   StrategicCombatArenaOptions,
   MutableCombatant,
@@ -31,6 +33,7 @@ export interface FleetWorldContact extends FleetWorldPose {
   readonly id: string;
   readonly shipId: string;
   readonly name: string;
+  readonly shieldImpacts?: readonly ShieldImpactEffect[];
 }
 
 interface MovingNpc extends FieldRouteShip {
@@ -84,6 +87,7 @@ export function createFleetScenarioWorldBridge(
   const threats = new Map<string, WorldPoint>();
   const states = new Map<string, MovingNpc>();
   const drones = new Map<string, AsteroidSecurityDrone>();
+  const neutralShields = createFleetWorldShieldContacts();
   const playerStart = arena.attackerPosition ?? { x: arena.width * 0.5, y: arena.height * 0.5 };
   const playerShip = getShipDefinition(roster.find((ship) => ship.id === 'player')!.draft.shipId);
   const playerPose = {
@@ -395,6 +399,7 @@ export function createFleetScenarioWorldBridge(
       }
       miners.tick(dt);
       salvagers?.tick(dt, undefined, true);
+      neutralShields.tick(dt);
       for (const [id, moving] of states) {
         if (!arrived.has(id) || departed.has(id) || engaged.has(id) || moving.npc.hullHp <= 0)
           continue;
@@ -453,25 +458,25 @@ export function createFleetScenarioWorldBridge(
           };
         }
       }
-      // Campaign local-ship collisions remain authoritative for noncombatants.
-      // Operate on their live states, not copies, and do not integrate motion twice.
-      const neutralBodies = [...states].flatMap(([id, moving]) => {
-        if (!arrived.has(id) || departed.has(id) || engaged.has(id) || moving.npc.hullHp <= 0)
-          return [];
-        const ship = getShipDefinition(moving.npc.shipId);
-        if (!ship) return [];
-        const state =
-          drones.get(id) ??
-          (moving.npc.job === 'miner' && moving.npc.combatMovement?.mode !== 'flee'
-            ? miners.ships.find((miner) => miner.npcId === id)
-            : undefined) ??
-          (moving.npc.job === 'salvager' && moving.npc.combatMovement?.mode !== 'flee'
-            ? salvagers?.ships.find((salvager) => salvager.npcId === id)
-            : undefined) ??
-          moving;
-        return [{ id, ship, state }];
-      });
-      resolveShipShieldCollisions(neutralBodies);
+      resolveFleetWorldNeutralCollisions(
+        states,
+        (id) => arrived.has(id) && !departed.has(id) && !engaged.has(id),
+        (id) => {
+          const moving = states.get(id);
+          if (!moving) return null;
+          return (
+            drones.get(id) ??
+            (moving.npc.job === 'miner' && moving.npc.combatMovement?.mode !== 'flee'
+              ? miners.ships.find((miner) => miner.npcId === id)
+              : undefined) ??
+            (moving.npc.job === 'salvager' && moving.npc.combatMovement?.mode !== 'flee'
+              ? salvagers?.ships.find((salvager) => salvager.npcId === id)
+              : undefined) ??
+            moving
+          );
+        },
+        neutralShields
+      );
     },
     contacts(): FleetWorldContact[] {
       const bystanders = [...states].flatMap(([id, value]) => {
@@ -479,7 +484,7 @@ export function createFleetScenarioWorldBridge(
           return [];
         const movement = pose(id);
         return movement
-          ? [{ id, name: value.npc.name, shipId: value.npc.shipId, ...movement }]
+          ? [{ id, name: value.npc.name, shipId: value.npc.shipId, ...movement, shieldImpacts: neutralShields.get(id) }]
           : [];
       });
       return engaged.has('player')
