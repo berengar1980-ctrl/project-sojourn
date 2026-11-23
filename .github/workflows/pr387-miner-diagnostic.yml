@@ -1,0 +1,15 @@
+name: PR387 focused miner diagnosis
+on:
+  push:
+    branches: [refactor/unify-all-combat-and-npc-runtime]
+jobs:
+  diagnosis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: node tests/operations/asteroid-field-world.test.cjs
