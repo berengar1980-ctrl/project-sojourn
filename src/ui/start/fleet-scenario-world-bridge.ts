@@ -10,6 +10,7 @@ import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc
 import { hashId } from '../../systems/npcs/npc-mining-targets';
 import { createFleetWorldWorkers } from './fleet-world-workers';
 import { createFleetWorldTraffic } from './fleet-world-traffic';
+import { fleetWorldContacts } from './fleet-world-contacts';
 import { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
 import { resolveFleetWorldNeutralCollisions } from './fleet-world-neutral-collisions';
 import type { ShieldImpactEffect } from '../../core/shield-types';
@@ -475,33 +476,22 @@ export function createFleetScenarioWorldBridge(
       );
     },
     contacts(): FleetWorldContact[] {
-      const bystanders = [...states].flatMap(([id, value]) => {
-        if (!arrived.has(id) || departed.has(id) || engaged.has(id) || value.npc.hullHp <= 0)
-          return [];
-        const movement = pose(id);
-        const miner = miners.ships.find((entry) => entry.npcId === id);
-        const target = miner?.laserActive
-          ? rocks.find((rock) => rock.id === miner.targetAsteroidId)?.position
-          : undefined;
-        return movement
-          ? [{
-              id, name: value.npc.name, shipId: value.npc.shipId, ...movement,
-              shieldImpacts: neutralShields.get(id),
-              ...(target ? { miningBeamTarget: target } : {}),
-            }]
-          : [];
-      });
-      return engaged.has('player')
-        ? bystanders
-        : [
-            {
+      return fleetWorldContacts(
+        states,
+        (id) => arrived.has(id) && !departed.has(id) && !engaged.has(id),
+        pose,
+        miners,
+        rocks,
+        neutralShields,
+        engaged.has('player')
+          ? null
+          : {
               id: 'player',
               name: 'Spieler',
               shipId: roster.find((ship) => ship.id === 'player')!.draft.shipId,
               ...playerPose,
-            },
-            ...bystanders,
-          ];
+            }
+      );
     },
   };
 }
