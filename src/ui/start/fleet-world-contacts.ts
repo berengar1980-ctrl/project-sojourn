@@ -21,7 +21,7 @@ export function fleetWorldContacts(
     if (!position) continue;
     const miner = miners.ships.find((ship) => ship.npcId === id);
     const target = miner?.laserActive
-      ? rocks.find((rock) => rock.id === miner.targetAsteroidId)?.position
+      ? rocks.find((rock) => rock.id === miner.targetAsteroidId)
       : undefined;
     contacts.push({
       id,
@@ -29,7 +29,13 @@ export function fleetWorldContacts(
       shipId: entry.npc.shipId,
       ...position,
       shieldImpacts: shields.get(id),
-      ...(target ? { miningBeamTarget: target } : {}),
+      ...(target
+        ? {
+            miningBeamTarget: target.position,
+            miningTargetRadius: target.radius,
+            ...(miner?.oreCollection ? { miningOreCollection: miner.oreCollection } : {}),
+          }
+        : {}),
     });
   }
   return player ? [player, ...contacts] : contacts;
