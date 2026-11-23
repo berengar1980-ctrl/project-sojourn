@@ -178,10 +178,7 @@ export class MiningEffectsRenderer {
     this.context.globalAlpha = 1;
 
     this.context.restore();
-    if (layer === 'above') {
-      this.drawImpactSparks(target, normal, timeSeconds);
-      this.drawImpactDust(target, normal, timeSeconds);
-    }
+    if (layer === 'above') this.drawImpactEffects(target, normal, timeSeconds);
   }
 
   drawTractorFields(
@@ -213,6 +210,12 @@ export class MiningEffectsRenderer {
     });
 
     this.context.restore();
+  }
+
+  /** Shared player/NPC impact painter for every local world and FleetCombat canvas. */
+  drawImpactEffects(target: ScreenPoint, normal: ScreenPoint, timeSeconds: number): void {
+    this.drawImpactSparks(target, normal, timeSeconds);
+    this.drawImpactDust(target, normal, timeSeconds);
   }
 
   private drawImpactSparks(target: ScreenPoint, normal: ScreenPoint, timeSeconds: number): void {
