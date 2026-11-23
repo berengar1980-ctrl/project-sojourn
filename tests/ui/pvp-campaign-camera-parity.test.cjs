@@ -69,7 +69,8 @@ const fleetPanel = fs.readFileSync(
   'utf8'
 );
 const idleMap = fs.readFileSync(path.join(root, 'src/ui/start/fleet-idle-world-canvas.ts'), 'utf8');
-assert(fleetLobby.includes('createFleetIdleWorldCanvas(canvas, arena'));
+assert(fleetLobby.includes('createFleetIdleWorldCanvas('));
+assert(fleetLobby.includes('(point) => session.navigatePlayer(point)'));
 assert(fleetLobby.includes('...(initialCameraPose ? { initialCameraPose } : {})'));
 assert(fleetLobby.includes('waiting.prepend(canvas)'));
 assert(fleetPanel.includes('makeCombatShell(options.root, options.canvas)'));
