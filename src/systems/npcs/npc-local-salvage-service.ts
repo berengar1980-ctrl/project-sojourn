@@ -58,6 +58,8 @@ export interface NpcLocalSalvageOptions {
   readonly locationId: string;
   readonly field: SalvageField;
   readonly salvagers: readonly SectorNpcState[];
+  /** Disable internal contacts when the shared world solves all physical ships once. */
+  readonly resolveLocalCollisions?: boolean;
   readonly recover: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly depart: (npc: SectorNpcState) => boolean;
   readonly canWorkWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
