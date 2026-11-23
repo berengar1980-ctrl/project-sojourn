@@ -160,7 +160,12 @@ function createSimulatorLauncher(
       const canvas = document.createElement('canvas');
       canvas.className = 'strategic-combat-map';
       canvas.setAttribute('aria-label', 'FleetCombat Einsatzgebiet');
-      idleWorld = createFleetIdleWorldCanvas(canvas, arena, () => session.worldContacts);
+      idleWorld = createFleetIdleWorldCanvas(
+        canvas,
+        arena,
+        () => session.worldContacts,
+        (point) => session.navigatePlayer(point)
+      );
       const cancel = document.createElement('button');
       cancel.type = 'button';
       cancel.textContent = 'Test beenden';
