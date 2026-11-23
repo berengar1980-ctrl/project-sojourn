@@ -157,6 +157,7 @@ export function createFleetScenarioWorldBridge(
       waypoint: { x: arena.width * 0.5, y: arena.height * 0.5 },
     });
   }
+  let trafficFor: ReturnType<typeof createFleetWorldTraffic> = () => [];
   const { miners, salvagers } = createFleetWorldWorkers(
     [...states.values()],
     rocks,
@@ -213,7 +214,7 @@ export function createFleetScenarioWorldBridge(
       },
     };
   };
-  const trafficFor = createFleetWorldTraffic(
+  trafficFor = createFleetWorldTraffic(
     states,
     (id) => pose(id)?.position ?? null,
     (id) => arrived.has(id) && !departed.has(id),
