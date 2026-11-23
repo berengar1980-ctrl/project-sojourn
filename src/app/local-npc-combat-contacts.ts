@@ -15,7 +15,9 @@ export function fieldNpcCombatViews(
   selectedNpcId: string | null
 ): LocalNpcShipView[] {
   const actors = new Map(
-    combats.flatMap((duel) => [duel.attacker, duel.defender]).map((actor) => [actor.id, actor] as const)
+    combats
+      .flatMap((duel) => [duel.attacker, duel.defender])
+      .map((actor) => [actor.id, actor] as const)
   );
   const visible = new Set<string>();
   const result: LocalNpcShipView[] = [];

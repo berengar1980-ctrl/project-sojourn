@@ -433,11 +433,13 @@ function resolveMinerCollisions(runtime: MinerRuntime, combatantId?: string): vo
   }
   resolveShipShieldObstacleCollisions(
     bodies.filter((body) => body.id !== 'player'),
-    rocks.filter((asteroid) => asteroid.routeBlocking).map((asteroid) => ({
-      id: asteroid.id,
-      position: asteroid.position,
-      radius: asteroid.collisionRadius ?? asteroid.radius,
-    }))
+    rocks
+      .filter((asteroid) => asteroid.routeBlocking)
+      .map((asteroid) => ({
+        id: asteroid.id,
+        position: asteroid.position,
+        radius: asteroid.collisionRadius ?? asteroid.radius,
+      }))
   );
 }
 
