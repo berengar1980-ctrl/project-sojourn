@@ -119,7 +119,24 @@ let sawScan = false;
 let sawMining = false;
 let sawExit = false;
 for (let step = 0; step < 10000 && !departed; step += 1) {
-  service.tick(0.08);
+  const before = service.ships[0];
+  if (before?.phase === 'scanning') {
+    const dx = asteroid.position.x - before.position.x;
+    const dy = asteroid.position.y - before.position.y;
+    const length = Math.hypot(dx, dy);
+    asteroid.position = {
+      x: asteroid.position.x + (dx / length) * 0.4,
+      y: asteroid.position.y + (dy / length) * 0.4,
+    };
+    const progress = before.scanProgress;
+    service.tick(0.08);
+    assert(
+      before.phase === 'mining' || (before.phase === 'scanning' && before.scanProgress > progress),
+      'nearby drifting ore must be scanned continuously'
+    );
+  } else {
+    service.tick(0.08);
+  }
   const ship = service.ships[0];
   if (!ship) continue;
   if (ship.phase === 'approaching') sawFlight = true;

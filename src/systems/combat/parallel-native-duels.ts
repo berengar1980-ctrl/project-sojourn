@@ -335,10 +335,20 @@ export function createParallelNativeDuels(
   const radiusById = nativeFleetRadii(actors);
   const getSnapshot = (): ParallelNativeDuelSnapshot => {
     if (cachedSnapshot) return cachedSnapshot;
-    const duels = pairs.map((service) => service.getSnapshot());
-    const additional = supporters.map((service) => service.getSnapshot());
-    const states = [...duels, ...additional];
     const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
+    const visibleState = (service: StrategicCombatService) => {
+      const state = service.getSnapshot();
+      if (
+        state.winner === null &&
+        !escaped.has(state.attacker.id) &&
+        !escaped.has(state.defender.id)
+      )
+        return state;
+      return { ...state, projectiles: [], beams: [], thrownAsteroids: [] };
+    };
+    const duels = pairs.map(visibleState);
+    const additional = supporters.map(visibleState);
+    const states = [...duels, ...additional];
     const engagements = activeNativeFleetEngagements(states, drivers, pairs.length, escaped);
     cachedSnapshot = {
       duels,

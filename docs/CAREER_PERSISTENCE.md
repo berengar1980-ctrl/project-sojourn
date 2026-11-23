@@ -1193,3 +1193,7 @@ wieder ihre lokale Tätigkeit. Entkommene Schiffe und kampfunfähige Besatzungen
 verwenden die bestehenden Reise- und Bergungsdaten. Der Feld-Seed bestimmt
 den Fluchtpunkt. Zeugen und die Liste der während eines laufenden Gefechts
 entkommenen Schiffe gehören zur flüchtigen Gefechtssitzung.
+
+Beim Nahscan und Abbau regeln NPC-Miner ihren Abstand zum driftenden Ziel
+aus den vorhandenen Feldpositionen. Der Verkehrs-Checkpoint speichert weiterhin
+Ziel-ID, Position, Arbeitsphase und Scanfortschritt.

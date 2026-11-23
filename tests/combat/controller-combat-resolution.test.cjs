@@ -202,5 +202,23 @@ simulatedMilliseconds += 2201;
 defeat.resolve();
 defeat.dismiss();
 assert.deepEqual(defeat.calls.at(-1), ['starMap']);
+for (const origin of ['local-space', 'salvage-space']) {
+  for (const playerHull of [72, 0]) {
+    const test = scenario(origin);
+    test.context.finishFieldExercise = () => test.calls.push(['fleet-menu']);
+    test.snapshot.attacker.hullHp = playerHull;
+    test.resolve();
+    simulatedMilliseconds += 2201;
+    test.resolve();
+    test.dismiss();
+    assert.deepEqual(test.calls.at(-1), ['fleet-menu']);
+    assert(!test.calls.some(([name]) => name === 'starMap'));
+  }
+  const test = scenario(origin, true);
+  test.context.finishFieldExercise = () => test.calls.push(['fleet-menu']);
+  test.resolve();
+  test.board('enemy_win');
+  assert.deepEqual(test.calls.at(-1), ['fleet-menu']);
+}
 globalThis.performance = originalPerformance;
 console.log('PASS combat events, explosion grace, boarding continuity and defeat return');

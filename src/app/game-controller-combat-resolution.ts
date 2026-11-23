@@ -103,6 +103,7 @@ function startEmbeddedBoarding(
     synchronizeLocalDefender(context, snapshot.defender);
   }
   startCombatBoarding(context, snapshot, (boardingOutcome) => {
+    if (context.finishFieldExercise) return context.finishFieldExercise();
     if (boardingOutcome === 'enemy_win') return scenes.starMap();
     if (origin === 'local-space') scenes.mining(true, true);
     else if (origin === 'salvage-space') scenes.salvage(true, preservedSalvageField, snapshot);
@@ -151,7 +152,7 @@ export function resolveControllerCombat(
     state.mode !== 'boarding' &&
     state.embeddedCombat === null
   ) {
-    mountCombatScene(context, () => scenes.starMap());
+    mountCombatScene(context, context.finishFieldExercise ?? scenes.starMap);
   }
   if (!activeCombat?.getSnapshot().winner || state.embeddedCombat === null) return;
   const snapshot = activeCombat.getSnapshot();
@@ -183,7 +184,8 @@ export function resolveControllerCombat(
   showCampaignCombatSummary(context.root, snapshot, () => {
     // Resolve the previous encounter before any further simulation frame.
     state.combatReengageSeconds = 8;
-    if (snapshot.attacker.hullHp <= 0) scenes.starMap();
     state.combatResultPending = false;
+    if (context.finishFieldExercise) return context.finishFieldExercise();
+    if (snapshot.attacker.hullHp <= 0) scenes.starMap();
   });
 }
