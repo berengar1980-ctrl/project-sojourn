@@ -160,6 +160,7 @@ export function createFleetScenarioWorldBridge(
     seed,
     width: arena.width,
     height: arena.height,
+    resolveLocalCollisions: false,
     miners: [...states.values()]
       .filter((entry) => entry.npc.job === 'miner')
       .map((entry) => entry.npc),
@@ -182,6 +183,7 @@ export function createFleetScenarioWorldBridge(
     ? createNpcLocalSalvageService({
         locationId: WORLD_LOCATION,
         field: salvageField,
+        resolveLocalCollisions: false,
         salvagers: [...states.values()]
           .filter((entry) => entry.npc.job === 'salvager')
           .map((entry) => entry.npc),
