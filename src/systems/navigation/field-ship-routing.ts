@@ -95,7 +95,17 @@ export function fieldRouteTarget(
   mode: 'grid' | 'patrol' = 'grid'
 ): WorldPoint | null {
   const saved = ship.routeState;
-  if (!saved || distance(saved.target, target) > 1 || saved.index >= saved.points.length) {
+  // A ship or drifting obstacle may have entered an already planned route.
+  // Invalidate the checkpointed path before attempting to move through it.
+  if (
+    saved &&
+    obstacles.some((obstacle) =>
+      blocked(ship.position, saved.points[saved.index] ?? target, obstacle, clearance)
+    )
+  )
+    delete ship.routeState;
+  const current = ship.routeState;
+  if (!current || distance(current.target, target) > 1 || current.index >= current.points.length) {
     const points = makeRoute(ship.position, target, obstacles, clearance, mode);
     if (points.length === 0) {
       delete ship.routeState;
