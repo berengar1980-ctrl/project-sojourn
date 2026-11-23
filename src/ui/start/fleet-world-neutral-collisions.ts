@@ -22,8 +22,5 @@ export function resolveFleetWorldNeutralCollisions(
     return ship && state ? [{ id, ship, state }] : [];
   });
   const headings = new Map(bodies.map((body) => [body.id, body.state.headingRadians] as const));
-  shieldEffects.register(
-    resolveShipShieldCollisions(bodies),
-    (id) => headings.get(id) ?? 0
-  );
+  shieldEffects.register(resolveShipShieldCollisions(bodies), (id) => headings.get(id) ?? 0);
 }
