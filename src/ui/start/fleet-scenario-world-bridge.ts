@@ -6,7 +6,11 @@ import { getShipDefinition, resolveShipLocalCruiseSpeed } from '../../systems/sh
 import { ensureNpcInstalledComponents } from '../../systems/npcs/npc-upgrade-service';
 import { generateMiningSpace } from '../../systems/local-space/local-space-generator';
 import { generateSalvageField } from '../../systems/salvage/salvage-field-generator';
-import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc-combat-ai';
+import {
+  npcDefenseReaction,
+  npcMayInitiateAttack,
+  npcMayTargetNpc,
+} from '../../systems/npcs/npc-combat-ai';
 import { hashId } from '../../systems/npcs/npc-mining-targets';
 import { createFleetWorldWorkers } from './fleet-world-workers';
 import { createFleetWorldTraffic } from './fleet-world-traffic';
@@ -389,13 +393,25 @@ export function createFleetScenarioWorldBridge(
           continue;
         }
         const danger = threats.get(id);
+        const patrolContact =
+          moving.npc.job === 'patrol'
+            ? [...states].flatMap(([otherId, other]) => {
+                if (!arrived.has(otherId) || departed.has(otherId)) return [];
+                if (!npcMayTargetNpc(moving.npc, other.npc)) return [];
+                const enemy = pose(otherId)?.position;
+                return enemy &&
+                  Math.hypot(enemy.x - moving.position.x, enemy.y - moving.position.y) < 650
+                  ? [enemy]
+                  : [];
+              })[0]
+            : undefined;
         const destination = fleetNpcDestination(
           moving.npc,
           moving.position,
           moving.waypoint,
           freightExit,
           danger,
-          threat,
+          patrolContact ?? threat,
           arena.width,
           arena.height
         );
