@@ -336,10 +336,20 @@ class LocalSalvageService implements NpcLocalSalvageService {
       if (
         !npc ||
         npc.hullHp <= 0 ||
-        (npc.combatRecoverySeconds ?? 0) > 0 ||
         npc.locationId !== this.options.locationId
       ) {
         this.ships.splice(index, 1);
+        continue;
+      }
+
+      // The native PvP combat actor owns this ship while engaged. Suspend
+      // work without moving the salvager or losing its field identity.
+      if (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
+        ship.speed = 0;
+        ship.salvageActive = false;
+        ship.targetWreckId = null;
+        ship.phase = 'approaching';
+        delete ship.routeState;
         continue;
       }
 
