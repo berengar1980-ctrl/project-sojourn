@@ -249,7 +249,10 @@ function advanceApproaching(
         point,
         localCruiseSpeed(npc),
         dt,
-        runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+        [
+          ...runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+          ...(runtime.options.getTrafficObstacles?.(npc.id) ?? []),
+        ],
         65
       )
     ) {
@@ -356,7 +359,10 @@ function advanceMiner(
       ship.exitPoint,
       localCruiseSpeed(npc),
       dt,
-      runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+      [
+          ...runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+          ...(runtime.options.getTrafficObstacles?.(npc.id) ?? []),
+        ],
       65
     )
   ) {
