@@ -20,7 +20,7 @@ export function createFleetWorldTraffic(
     });
     const currentPlayer = player();
     const playerShip = getShipDefinition(currentPlayer.shipId);
-    if (playerShip && id !== 'player')
+    if (playerShip && isActive('player') && id !== 'player')
       traffic.push({
         id: 'traffic:player',
         position: currentPlayer.position,

@@ -154,9 +154,10 @@ function bindCombatCamera(
 
 function makeCombatShell(root: HTMLElement, existingCanvas?: HTMLCanvasElement): HTMLElement {
   const shell = document.createElement('section');
-  shell.className = 'strategic-combat-shell';
+  if (existingCanvas) shell.style.display = 'contents';
+  else shell.className = 'strategic-combat-shell';
   shell.innerHTML = `
-    <canvas class="strategic-combat-map" aria-label="Lokaler Raumkampf"></canvas>
+    ${existingCanvas ? '' : '<canvas class="strategic-combat-map" aria-label="Lokaler Raumkampf"></canvas>'}
     <div class="combat-map-title">HARROWDRIFT // RAUMKAMPF <span class="combat-encounter-time"></span></div>
     <aside class="combat-hud combat-hud--player"></aside>
     <aside class="combat-hud combat-hud--enemy"></aside>
@@ -181,10 +182,8 @@ function makeCombatShell(root: HTMLElement, existingCanvas?: HTMLCanvasElement):
     <button class="strategic-combat-log-export" type="button">KAMPFLOG EXPORTIEREN</button>
     <button class="strategic-combat-return" type="button" hidden>ZUR STERNKARTE</button>
   `;
-  if (existingCanvas) {
-    shell.querySelector('.strategic-combat-map')?.replaceWith(existingCanvas);
-  }
-  root.replaceChildren(shell);
+  if (existingCanvas) root.append(shell);
+  else root.replaceChildren(shell);
 
   return shell;
 }
@@ -323,7 +322,7 @@ export function createFleetNativeCombatPanel(
   const parallelStatus = prepareParallelDuelPanel(shell, options);
   const displayMenu = createFleetDisplayMenu(shell);
 
-  const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
+  const canvas = options.canvas ?? shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
   const enemyHud = shell.querySelector<HTMLElement>('.combat-hud--enemy');
   const event = shell.querySelector<HTMLElement>('.strategic-combat-event');

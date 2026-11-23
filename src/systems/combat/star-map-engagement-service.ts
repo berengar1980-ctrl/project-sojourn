@@ -208,6 +208,11 @@ function updatePiratePlayerChase(runtime: EngagementRuntime): void {
     runtime.piratePlayerChase = null;
     return;
   }
+  if (runtime.options.mayInterceptPlayer?.(pirate) === false) {
+    runtime.options.sectorNpcs.recoverFromCombat(pirate, 'Abfangkurs beendet');
+    runtime.piratePlayerChase = null;
+    return;
+  }
   const playerPosition = runtime.options.navigation.getSnapshot().currentPosition;
   const piratePosition = runtime.options.sectorNpcs.livePosition(pirate);
   const pirateShip = getShipDefinition(pirate.shipId);
@@ -327,6 +332,7 @@ function engageNpc(
   if (runtime.playerCombat || runtime.options.isPlayerInCampaignSystem?.()) return false;
   const target = engagementNpc(runtime, npcId);
   if (!target || target.hullHp <= 0) return false;
+  if (target.combatMovement?.mode === 'engaged') return false;
   runtime.options.onPlayerAttack?.(target);
   beginPlayerCombat(runtime, target, arena, true);
   return runtime.playerCombat !== null;

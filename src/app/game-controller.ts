@@ -425,7 +425,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     onNpcCombatEnded: (snapshot, attacker) => {
       if (combatContext) recordCareerCombatWrecks(combatContext, snapshot, attacker.locationId);
     },
-    mayInterceptPlayer: () => !state.combatResultPending && state.combatReengageSeconds <= 0,
+    mayInterceptPlayer: () =>
+      state.mode === 'star-map' && !state.combatResultPending && state.combatReengageSeconds <= 0,
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
@@ -485,9 +486,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
     careerSnapshot: () => captureControllerCareer(context),
-    tick(deltaSeconds) {
-      tickController(context, deltaSeconds);
-    },
+    tick: (deltaSeconds) => tickController(context, deltaSeconds),
     destroy: () => {
       campaignServices.campaigns.destroy();
       destroyGameController(context, menu);

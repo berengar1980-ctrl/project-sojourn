@@ -78,7 +78,8 @@ assert.deepEqual(
   campaign.worldToScreen(point, 1600, 900),
   campaign.combat.project(point, 1600, 900, width, height)
 );
-assert(fleetLobby.includes('waiting.prepend(canvas)'));
+assert.equal(fleetLobby.split('root.replaceChildren(waiting)').length - 1, 1);
+assert(fleetPanel.includes('if (existingCanvas) root.append(shell)'));
 assert(fleetPanel.includes('makeCombatShell(options.root, options.canvas)'));
 assert(idleMap.includes('drawCombatAsteroids('));
 assert(idleMap.includes('createFleetWorldContactOverlay('));

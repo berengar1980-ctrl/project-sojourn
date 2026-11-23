@@ -111,6 +111,7 @@ function nativeShip(ship: FleetScenarioShip, index: number): NativeDuelShip {
 }
 
 export interface FleetScenarioRuntime {
+  readonly arena: DuelField['arena'];
   readonly ships: readonly FleetScenarioShip[];
   readonly totalCount: number;
   readonly elapsedSeconds: number;
@@ -141,7 +142,11 @@ export function createFleetScenarioRuntime(
   seed: number,
   incident: FleetScenarioIncident
 ): FleetScenarioRuntime {
-  const { arena } = field;
+  const arena = {
+    ...field.arena,
+    asteroids: [...(field.arena.asteroids ?? [])],
+    obstacles: [...(field.arena.obstacles ?? [])],
+  };
   if (roster.filter((ship) => ship.group === 'player').length !== 1)
     throw new Error('FleetCombat simulation requires exactly one player ship');
   const all = new Map(roster.map((ship, index) => [ship.id, nativeShip(ship, index)]));
@@ -236,6 +241,7 @@ export function createFleetScenarioRuntime(
   };
   deploy();
   return {
+    arena,
     ships: roster,
     totalCount: roster.length,
     get elapsedSeconds() {
@@ -295,6 +301,10 @@ export function createFleetScenarioRuntime(
             },
           });
         }
+        const bodies = fleet.getSnapshot().duels[0]!.arena.asteroids ?? [];
+        arena.asteroids.splice(0, arena.asteroids.length, ...bodies);
+        const remaining = new Set(bodies.map((body) => body.id));
+        arena.obstacles = arena.obstacles.filter((obstacle) => remaining.has(obstacle.id));
         const participants = [...joined].sort();
         for (let i = 0; i < participants.length; i++) {
           for (let j = i + 1; j < participants.length; j++) {

@@ -163,7 +163,7 @@ function createSimulatorLauncher(
       const camera = new CombatCamera();
       idleWorld = createFleetIdleWorldCanvas(
         canvas,
-        arena,
+        session.arena,
         camera,
         () => session.worldContacts,
         (point) => session.navigatePlayer(point),
@@ -180,7 +180,9 @@ function createSimulatorLauncher(
         root.replaceChildren(lobby);
       };
       cancel.addEventListener('click', returnToLobby);
-      waiting.append(canvas, heading, status, cancel);
+      const idleHud = document.createElement('div');
+      idleHud.append(heading, status, cancel);
+      waiting.append(canvas, idleHud);
       root.replaceChildren(waiting);
       idleWorld.activate();
       onCombatActiveChange(true);
@@ -189,8 +191,9 @@ function createSimulatorLauncher(
         const fleet = session.fleet;
         if (!fleet || panel) return;
         displayedFleet = fleet;
+        idleHud.hidden = true;
         panel = createFleetNativeCombatPanel({
-          root,
+          root: waiting,
           canvas,
           camera,
           combat: fleet.duels[0]!,
@@ -219,9 +222,7 @@ function createSimulatorLauncher(
           panel.destroy();
           panel = null;
           displayedFleet = null;
-          waiting.prepend(canvas);
-          root.replaceChildren(waiting);
-          idleWorld?.activate();
+          idleHud.hidden = false;
         }
         mountCombat();
         if (panel) {
