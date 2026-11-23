@@ -1,7 +1,7 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { NpcLocalMiningService } from '../../systems/npcs/npc-mining-targets';
-import type { FleetWorldContact, FleetWorldPose } from './fleet-scenario-world-bridge';
+import type { FleetWorldContact, FleetWorldPose } from './fleet-world-contact-types';
 import type { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
 
 /** Project the real world jobs and native shield contacts for both world and combat canvas. */
