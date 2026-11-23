@@ -374,6 +374,14 @@ export function createFleetScenarioWorldBridge(
         rock.rotation = body.rotation;
         rock.physics.velocity = { ...body.velocity };
       }
+      // Salvagers observe the exact wrecks drawn by the shared combat world.
+      // This is a pose handoff, not a second wreck physics simulation.
+      for (const wreck of salvageField?.wrecks ?? []) {
+        const body = combatRocks.get(wreck.id);
+        if (!body) continue;
+        wreck.position = { ...body.position };
+        wreck.rotation = body.rotation;
+      }
       miners.tick(dt);
       salvagers?.tick(dt, undefined, true);
       for (const [id, moving] of states) {
