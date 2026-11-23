@@ -266,7 +266,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
         workPoint(npc.id, wreck),
         localCruiseSpeed(npc),
         dt,
-        this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+        [
+          ...this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+          ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
+        ],
         65
       )
     ) {
@@ -382,7 +385,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
           ship.exitPoint,
           localCruiseSpeed(npc),
           dt,
-          this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+          [
+          ...this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+          ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
+        ],
           65
         )
       ) {
