@@ -393,8 +393,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
     const playerState = skipPlayer ? undefined : this.options.getPlayerShipState?.();
     const bodies: LocalShieldShipBody[] = this.ships.flatMap((local) => {
       const npc = this.byId.get(local.npcId);
-      if (local.npcId === combatantId || npc?.combatMovement || (npc?.hullHp ?? 0) <= 0)
-        return [];
+      if (local.npcId === combatantId || npc?.combatMovement || (npc?.hullHp ?? 0) <= 0) return [];
       const definition = getShipDefinition(local.shipId);
       return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
     });
