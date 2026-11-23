@@ -7,11 +7,6 @@ const { createFleetScenarioRoster } = loadStandaloneTypeScriptModule(
   root,
   'src/ui/start/fleet-scenario-roster.ts'
 );
-const { createFleetScenarioRuntime } = loadStandaloneTypeScriptModule(
-  root,
-  'src/ui/start/fleet-scenario-runtime.ts'
-);
-
 const groups = [
   { group: 'npc', initial: 1, joining: 2, afterSeconds: 5 },
   { group: 'pirates-yellow', initial: 1, joining: 1, afterSeconds: 10 },
@@ -19,6 +14,49 @@ const groups = [
   { group: 'drone', initial: 0, joining: 1, afterSeconds: 15 },
 ];
 const generated = createFleetScenarioRoster(groups);
+const { npcDefenseReaction } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/npcs/npc-combat-ai.ts'
+);
+const { getShipDefinition } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/ships/ship-registry.ts'
+);
+// This same NPC policy runs in the campaign and in the PvP/FleetCombat world.
+assert.equal(
+  npcDefenseReaction({ job: 'freighter', aggression: 100, hullHp: 100, hullMaxHp: 100 }),
+  'flee',
+  'even the most aggressive freight captain must prefer escape'
+);
+for (const [mapKind, role] of [
+  ['asteroid_field', 'mining'],
+  ['scrap_field', 'salvage'],
+  ['empty', 'freighter'],
+]) {
+  const workers = createFleetScenarioRoster(
+    [{ group: 'npc', initial: 2, joining: 0, afterSeconds: 0 }],
+    mapKind
+  ).filter((ship) => ship.group === 'npc');
+  assert.equal(
+    getShipDefinition(workers[0].draft.shipId).role,
+    role,
+    'first civilian worker must have a real campaign job for ' + mapKind
+  );
+}
+for (let pass = 0; pass < 50; pass += 1) {
+  const civilians = createFleetScenarioRoster([
+    { group: 'npc', initial: 10, joining: 10, afterSeconds: 5 },
+  ]).filter((ship) => ship.group === 'npc');
+  assert.equal(civilians.length, 20);
+  assert(
+    civilians.every((ship) => !ship.draft.shipId.startsWith('pirate-')),
+    'civilian NPC roster must never spawn pirate hulls, even if the random catalog offers them'
+  );
+  assert(
+    civilians.every((ship) => !ship.name.toLowerCase().includes('korsaren')),
+    'civilian display names must not claim to be pirates'
+  );
+}
 assert.equal(generated.length, 8);
 assert.equal(generated.filter((ship) => ship.id === 'player').length, 1);
 assert.equal(generated.find((ship) => ship.id === 'npc-2').arrivalSeconds, 5);
@@ -45,88 +83,125 @@ assert(
   'both marked pirate groups use real campaign pirate hulls'
 );
 
-const commonDraft = {
-  shipId: 'patrol-60m-variant-01',
-  weapons: [],
-  mines: [],
-  crewId: generated[0].draft.crewId,
-  reactorId: 'reactor4',
-  shieldId: 'shield1',
-  hullId: 'hull1',
+// Run the production scene and controller, substituting only the browser panels.
+require.extensions['.css'] = () => {};
+global.window = {
+  addEventListener() {},
+  removeEventListener() {},
+  localStorage: {
+    getItem() {
+      return null;
+    },
+  },
+  location: { search: '' },
 };
-const entry = (id, group, arrivalSeconds) => ({
-  id,
-  group,
-  name: id,
-  draft: commonDraft,
-  arrivalSeconds,
-});
-const arena = { width: 4200, height: 2600, obstacles: [], asteroids: [] };
-
-// Six-sided hostility can evolve without starting another battle or ticking
-// a target a second time.
-const roster = [
-  entry('player', 'player', 0),
-  entry('npc-1', 'npc', 0),
-  entry('pirates-yellow-1', 'pirates-yellow', 0),
-  entry('pirates-red-1', 'pirates-red', 0),
-  entry('security-drone:test-1', 'drone', 0.16),
-];
-const scenario = createFleetScenarioRuntime(roster, arena, 1234, 'none');
-const originalFleet = scenario.fleet;
-assert(originalFleet, 'pirate sighting starts a live encounter on the common map');
-assert.equal(scenario.arrivedCount, 4);
-assert.equal(originalFleet.getActor('security-drone:test-1'), null);
-const playerActor = originalFleet.getActor('player');
-assert(playerActor);
-assert.equal(originalFleet.getActor('pirates-yellow-1').setup.pirateMark, 'broken-spear');
-assert.equal(originalFleet.getActor('pirates-red-1').setup.pirateMark, 'black-tide');
-scenario.tick(0.08);
-scenario.tick(0.08);
-assert.equal(scenario.fleet, originalFleet, 'reinforcements keep the same native combat');
-assert(
-  originalFleet.getActor('security-drone:test-1'),
-  'security drone joins at its scheduled time'
-);
-assert.equal(originalFleet.getActor('player'), playerActor, 'the player is never recreated');
-assert.equal(scenario.nextArrivalSeconds(), null);
-assert.equal(scenario.arrivedCount, 5);
-assert.equal(originalFleet.duels.length, 1);
-assert.equal(originalFleet.supporters.length, 3);
-
-// A neutral player and a civilian are not forced into a duel until a pirate
-// arrives. Their actor identities are then unique on the same battlefield.
-const delayed = createFleetScenarioRuntime(
-  [
-    entry('player', 'player', 0),
-    entry('npc-1', 'npc', 0),
-    entry('pirates-yellow-1', 'pirates-yellow', 0.16),
-  ],
-  arena,
-  5678,
-  'none'
-);
-assert.equal(delayed.fleet, null);
-delayed.tick(0.08);
-assert.equal(delayed.fleet, null);
-delayed.tick(0.08);
-assert(delayed.fleet);
-assert(delayed.fleet.getActor('player'));
-assert(delayed.fleet.getActor('npc-1'));
-
-// In the player-attacks-NPC scenario the observing drone can engage the
-// attacker without changing its permanent anti-pirate policy.
-const defenderScenario = createFleetScenarioRuntime(
-  [
-    entry('player', 'player', 0),
-    entry('npc-1', 'npc', 0),
-    entry('security-drone:test-1', 'drone', 0),
-  ],
-  arena,
-  9012,
-  'player-attacks-npc'
-);
-assert(defenderScenario.fleet);
-assert(defenderScenario.fleet.getActor('security-drone:test-1'));
-assert.equal(defenderScenario.fleet.getSnapshot().finished, false);
-console.log('PASS FleetCombat lab: fixed player, markings, timed same-map joins and drone defence');
+let clock = 0;
+Object.defineProperty(performance, 'now', { value: () => clock });
+const panels = {};
+const panel = (name) => (options) => {
+  panels[name] = options.model;
+  return {
+    destroy() {},
+    update(model) {
+      panels[name] = model;
+    },
+  };
+};
+const replacements = {
+  'src/systems/audio/game-audio-service.ts': {
+    createGameAudioService: () => new Proxy({}, { get: () => () => {} }),
+  },
+  'src/app/game-controller-switcher-bridge.ts': { mountControllerShipSwitcher() {} },
+  'src/ui/local-space/local-space-panel.ts': { createLocalSpacePanel: panel('mining') },
+  'src/ui/salvage/salvage-space-panel.ts': { createSalvageSpacePanel: panel('salvage') },
+  'src/ui/settings/settings-menu.ts': {
+    createSettingsMenu(audio, exit, profile, save) {
+      assert.equal(save, undefined);
+      return { destroy() {} };
+    },
+  },
+};
+const load = (file) => loadStandaloneTypeScriptModule(root, file, replacements);
+const { prepareFleetField } = load('src/app/fleet-field-session.ts');
+const { createGameController } = load('src/app/game-controller.ts');
+const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
+const { createNavigationService } = load('src/systems/navigation/navigation-service.ts');
+const { createPlayerProfile } = load('src/core/player-profile.ts');
+for (const map of ['asteroid_field', 'scrap_field']) {
+  const stagedGroups = [
+    { group: 'npc', initial: 1, joining: 3, afterSeconds: 1 },
+    { group: 'drone', initial: 0, joining: 2, afterSeconds: 1 },
+  ];
+  const config = { map, incident: 'none', ships: createFleetScenarioRoster(stagedGroups, map) };
+  const session = prepareFleetField(config, 4321);
+  const prepare = session.exercise.prepare;
+  let ctx;
+  const game = createGameController({
+    root: { replaceChildren() {} },
+    ship: session.ship,
+    playerProfile: createPlayerProfile({
+      portraitId: 1,
+      captainName: 'Captain',
+      shipName: 'Probe',
+    }),
+    navigation: createNavigationService(
+      narrowsSector,
+      session.location.id,
+      session.ship.navigation.cruiseSpeed
+    ),
+    fieldExercise: {
+      ...session.exercise,
+      prepare(value) {
+        ctx = value;
+        prepare(value);
+      },
+    },
+    onReturnToMainMenu() {},
+  });
+  const mining = map === 'asteroid_field';
+  assert.equal(ctx.state.mode, mining ? 'local-space' : 'salvage-space');
+  assert.equal(ctx.economy.sectorNpcs.npcs.length, 1);
+  function advance(count) {
+    for (let n = 0; n < count; n++) {
+      clock += 80;
+      session.advance(0.08);
+      game.tick(0.08);
+    }
+  }
+  advance(10);
+  assert.equal(ctx.economy.sectorNpcs.npcs.length, 1);
+  advance(5);
+  assert.equal(ctx.economy.sectorNpcs.npcs.length, 6);
+  const body = (id) =>
+    mining
+      ? ctx.economy.localPirates.get(session.location.id).body(id)
+      : ctx.state.salvageScene.body(id);
+  const escort = 'security-drone:' + session.location.id + ':escort-2';
+  assert(body(escort), 'scheduled second drone has a physical field body');
+  assert(body('npc-2'), 'campaign field simulates the freighter');
+  assert(body('npc-3'), 'campaign field simulates the patrol');
+  const workers = mining
+    ? ctx.state.localNpcMining.ships.map((s) => s.npcId)
+    : ['npc-1', 'npc-4'].filter((id) => body(id));
+  assert.deepEqual(workers.sort(), ['npc-1', 'npc-4']);
+  assert.strictEqual(
+    mining ? ctx.state.localSpace.getSnapshot().instance : ctx.state.salvageScene.getField(),
+    mining ? session.exercise.mining : session.exercise.salvage
+  );
+  if (mining) {
+    const { startPlayerMiningCombat } = load('src/app/game-controller-mining-combat-action.ts');
+    startPlayerMiningCombat(ctx, 'npc-1');
+  } else ctx.state.salvageScene.attackNpc('npc-1');
+  assert(ctx.engagements.activePlayerFleet(), 'physical contact entered the career fleet');
+  advance(3);
+  assert.equal(
+    ctx.state.mode,
+    mining ? 'local-space' : 'salvage-space',
+    'combat stays on mounted campaign field'
+  );
+  assert(
+    panels[mining ? 'mining' : 'salvage'].combat,
+    'the mounted field presents the native combat snapshot'
+  );
+  game.destroy();
+}

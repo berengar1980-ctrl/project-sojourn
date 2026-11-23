@@ -1,3 +1,4 @@
+import { createSettingsMenu } from '../ui/settings/settings-menu';
 import type { SectorNpcState } from '../core/npc-types';
 import { registerSecurityDroneCombatants } from './game-controller-economy';
 import { captureCareerCustody } from '../systems/persistence/career-custody-checkpoint';
@@ -28,7 +29,7 @@ export function installControllerCareer(
     options.onCareerContextReady?.(context);
     saved.activate();
   }
-  fieldWorldFor(context);
+  fieldWorldFor(context, options.fieldExercise?.mining);
   if (!saved) {
     context.economy.salvageEvents.advanceDay(
       context.economy.situations.currentDay,
@@ -58,4 +59,17 @@ export function rememberMiningField(context: ControllerRuntimeContext): void {
   if (field) {
     context.economy.asteroidClaims.rememberField(field.sourceLocationId, field.asteroids);
   }
+}
+
+export function controllerSettings(
+  context: ControllerRuntimeContext,
+  options: GameControllerOptions
+) {
+  return createSettingsMenu(
+    context.audio,
+    options.onReturnToMainMenu,
+    context.state.playerProfile,
+    options.fieldExercise ? undefined : () => saveControllerCareer(context),
+    options.onLoadCareer
+  );
 }

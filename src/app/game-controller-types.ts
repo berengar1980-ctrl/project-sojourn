@@ -1,3 +1,6 @@
+import type { SalvageField } from '../core/salvage-types';
+import type { LocalSpaceInstance } from '../core/local-space-types';
+import type { SectorNpcState } from '../core/npc-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { PlayerProfile } from '../core/player-profile';
 
@@ -7,6 +10,12 @@ import type { CareerSnapshot } from '../systems/persistence/career-save-contract
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 
 export interface GameControllerOptions {
+  readonly fieldExercise?: {
+    readonly npcs: SectorNpcState[];
+    readonly mining?: LocalSpaceInstance;
+    readonly salvage?: SalvageField;
+    prepare(context: ControllerRuntimeContext): void;
+  };
   readonly root: HTMLElement;
   readonly ship: ShipDefinition;
   readonly playerProfile: PlayerProfile;
@@ -26,4 +35,14 @@ export interface GameController {
   profileSnapshot(): PlayerProfile;
   careerSnapshot(): CareerSnapshot;
   destroy(): void;
+}
+
+export function validateControllerRestore(options: GameControllerOptions): void {
+  const saved = options.restoredSession;
+  if (saved && saved.navigationWorld.navigation !== options.navigation) {
+    throw new Error('Career navigation must use the staged navigation authority');
+  }
+  if (saved && saved.commerce.ships.activeShipId !== options.ship.id) {
+    throw new Error('Career ship must match the staged active ship');
+  }
 }

@@ -1,4 +1,4 @@
-import type { FieldRouteState } from '../navigation/field-ship-routing';
+import type { FieldRouteState, FieldRouteObstacle } from '../navigation/field-ship-routing';
 import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
 import type {
   LocalAsteroid,
@@ -64,6 +64,10 @@ export interface NpcLocalMiningOptions {
   readonly width: number;
   readonly height: number;
   readonly miners: readonly SectorNpcState[];
+  /** Disable internal contact solving when a shared world handles all NPC collisions. */
+  readonly resolveLocalCollisions?: boolean;
+  /** Optional live ships to include in the same route planner as asteroid obstacles. */
+  readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
   readonly getAsteroids: () => readonly LocalAsteroid[];
   readonly mine: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly onAsteroidScanned?: (npc: SectorNpcState, asteroid: LocalAsteroid) => void;
@@ -83,7 +87,7 @@ const ENTRY_MARGIN = 18;
 
 const EXIT_MARGIN = 90;
 
-const APPROACH_DISTANCE = 105;
+export const NPC_MINING_SURFACE_DISTANCE = 48;
 
 export const FLIGHT_SPEED = 92;
 
@@ -180,7 +184,7 @@ export function chooseAsteroid(
 
 export function approachPoint(npcId: string, asteroid: LocalAsteroid): WorldPoint {
   const angle = ((hashId(npcId + ':' + asteroid.id) % 6283) / 1000) % (Math.PI * 2);
-  const radius = asteroid.radius + APPROACH_DISTANCE;
+  const radius = asteroid.radius + NPC_MINING_SURFACE_DISTANCE;
   return {
     x: asteroid.position.x + Math.cos(angle) * radius,
     y: asteroid.position.y + Math.sin(angle) * radius,
@@ -211,4 +215,24 @@ export function chooseEventChoice(
       risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
     )[0] ?? null
   );
+}
+
+export function checkMinerWorkRange(
+  ship: LocalNpcMinerState,
+  rocks: readonly LocalAsteroid[]
+): void {
+  if (ship.phase === 'scanning' || ship.phase === 'mining') {
+    const rock = rocks.find((body) => body.id === ship.targetAsteroidId);
+    if (
+      rock &&
+      Math.hypot(ship.position.x - rock.position.x, ship.position.y - rock.position.y) >
+        rock.radius + NPC_MINING_SURFACE_DISTANCE + 16
+    ) {
+      ship.phase = 'approaching';
+      ship.laserActive = false;
+      ship.scanProgress = 0;
+      delete ship.routeState;
+      delete ship.oreCollection;
+    }
+  }
 }

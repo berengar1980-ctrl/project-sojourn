@@ -16,16 +16,37 @@ export const DUEL_MAPS: readonly { id: DuelMapKind; title: string }[] = [
 ];
 
 /** Match actual career map geometry. Only the shared generators own density. */
-export function createDuelArena(kind: DuelMapKind, seed: number): StrategicCombatArenaOptions {
+export interface DuelField {
+  readonly mining: ReturnType<typeof generateMiningSpace> | null;
+  readonly salvage: ReturnType<typeof generateSalvageField> | null;
+  readonly arena: StrategicCombatArenaOptions;
+}
+
+export function createDuelField(kind: DuelMapKind, seed: number): DuelField {
   if (kind === 'empty')
-    return { width: COMBAT_MAP_WIDTH, height: COMBAT_MAP_HEIGHT, obstacles: [], asteroids: [] };
+    return {
+      mining: null,
+      salvage: null,
+      arena: { width: COMBAT_MAP_WIDTH, height: COMBAT_MAP_HEIGHT, obstacles: [], asteroids: [] },
+    };
   if (kind === 'scrap_scattered' || kind === 'scrap_field') {
     const density = kind === 'scrap_scattered' ? 'moderate' : 'standard';
-    return withClearCombatSpawns(
-      salvageFieldCombatArena(generateSalvageField('duel', seed, 2, density))
-    );
+    const salvage = generateSalvageField('duel', seed, 2, density);
+    return {
+      mining: null,
+      salvage,
+      arena: withClearCombatSpawns(salvageFieldCombatArena(salvage)),
+    };
   }
   const density = kind === 'scattered' ? 'sparse' : 'standard';
   const field = generateMiningSpace('duel', seed, undefined, density);
-  return withClearCombatSpawns(miningFieldCombatArena(field, { x: 0, y: 0 }));
+  return {
+    mining: field,
+    salvage: null,
+    arena: withClearCombatSpawns(miningFieldCombatArena(field, { x: 0, y: 0 })),
+  };
+}
+
+export function createDuelArena(kind: DuelMapKind, seed: number): StrategicCombatArenaOptions {
+  return createDuelField(kind, seed).arena;
 }

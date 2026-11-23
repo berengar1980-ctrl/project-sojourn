@@ -1,3 +1,4 @@
+import { fieldBattleMotion } from './game-controller-field-combat-pose';
 import type { SalvageField } from '../core/salvage-types';
 import type { WorldPoint } from '../core/world-types';
 import { salvageFieldCombatArena } from '../systems/combat/field-combat-arena';
@@ -18,13 +19,16 @@ export function engageSalvagePirate(
   const arena = salvageFieldCombatArena(field);
   if (targetId === 'player') {
     if (context.engagements.activePlayerCombat()) return false;
-    const started = context.engagements.engageNpcInArena(pirateId, {
-      ...arena,
-      attackerPosition: battlePosition(targetPosition),
-      defenderPosition: battlePosition(piratePosition),
-      attackerVelocity: { x: 0, y: 0 },
-      defenderVelocity: { x: 0, y: 0 },
-    });
+    const started = context.engagements.engageNpcInArena(
+      pirateId,
+      {
+        ...arena,
+        attackerPosition: battlePosition(targetPosition),
+        defenderPosition: battlePosition(piratePosition),
+        ...fieldBattleMotion(context, field.sourceLocationId, 'player', pirateId),
+      },
+      false
+    );
     if (started) {
       context.state.embeddedCombat = 'salvage-space';
       context.systemLog.write('PIRATEN > UEBERFALL IM WRACKFELD · KI-KAMPFMODUS');
@@ -35,8 +39,7 @@ export function engageSalvagePirate(
     ...arena,
     attackerPosition: battlePosition(piratePosition),
     defenderPosition: battlePosition(targetPosition),
-    attackerVelocity: { x: 0, y: 0 },
-    defenderVelocity: { x: 0, y: 0 },
+    ...fieldBattleMotion(context, field.sourceLocationId, pirateId, targetId),
   });
   if (started) context.systemLog.write('PIRATEN > NPC-GEFECHT IM WRACKFELD');
   return started;
@@ -65,8 +68,7 @@ export function engageSalvageDronePirate(
     ...salvageFieldCombatArena(field),
     attackerPosition: battlePosition(piratePosition),
     defenderPosition: battlePosition(dronePosition),
-    attackerVelocity: { x: 0, y: 0 },
-    defenderVelocity: { x: 0, y: 0 },
+    ...fieldBattleMotion(context, field.sourceLocationId, pirateId, droneId),
   });
   if (started) context.systemLog.write('SEC-01 > PIRAT IM WRACKFELD ERKANNT · DIREKTER ANGRIFF');
   return started;

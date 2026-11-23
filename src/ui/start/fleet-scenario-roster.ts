@@ -53,20 +53,30 @@ function pick<T>(items: readonly T[]): T {
   return items[Math.floor(Math.random() * items.length)]!;
 }
 
-function randomDraft(group: FleetScenarioRole): { name: string; draft: DuelDraft } {
+function randomDraft(
+  group: FleetScenarioRole,
+  workRole?: 'mining' | 'salvage' | 'freighter' | 'patrol'
+): { name: string; draft: DuelDraft } {
   const ships = getAllShipDefinitions();
   const pirateShips = [
     getShipDefinition('pirate-raider-60m'),
     getShipDefinition('pirate-reaver-80m'),
     getShipDefinition('pirate-marauder-120m'),
   ].filter((ship): ship is NonNullable<typeof ship> => ship !== null);
+  const civilianShips = ships.filter(
+    (candidate) =>
+      !candidate.id.startsWith('pirate-') && !candidate.name.toLowerCase().includes('korsaren')
+  );
+  const workShips = workRole ? civilianShips.filter((ship) => ship.role === workRole) : [];
   const matching =
     group === 'drone'
       ? ships.filter((ship) => ship.role === 'patrol')
       : group === 'pirates-yellow' || group === 'pirates-red'
         ? pirateShips
-        : ships;
-  const ship = pick(matching.length > 0 ? matching : ships);
+        : workShips.length > 0
+          ? workShips
+          : civilianShips;
+  const ship = pick(matching);
   const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? []).filter((item) => item.tier === 1);
   const mines = SHIP_MINE_CATALOG.filter((item) => item.tier === 1);
   const weaponIds = (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
@@ -108,7 +118,9 @@ function randomDraft(group: FleetScenarioRole): { name: string; draft: DuelDraft
 
 /** Generate all combatants, including future reinforcements, before battle start. */
 export function createFleetScenarioRoster(
-  settings: readonly FleetScenarioCounts[]
+  settings: readonly FleetScenarioCounts[],
+  mapKind:
+    'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field' = 'asteroid_field'
 ): FleetScenarioShip[] {
   const result: FleetScenarioShip[] = [
     { id: 'player', group: 'player', arrivalSeconds: 0, ...randomDraft('player') },
@@ -118,6 +130,14 @@ export function createFleetScenarioRoster(
     const joining = Math.min(10, Math.max(0, Math.trunc(setting.joining)));
     const afterSeconds = Math.max(0, Math.min(3600, setting.afterSeconds));
     for (let index = 0; index < initial + joining; index += 1) {
+      // Every world should contain working ships, not only arbitrarily armed hulls.
+      const workRoles: readonly ('mining' | 'salvage' | 'freighter' | 'patrol')[] =
+        mapKind === 'scrap_scattered' || mapKind === 'scrap_field'
+          ? ['salvage', 'freighter', 'patrol']
+          : mapKind === 'scattered' || mapKind === 'asteroid_field'
+            ? ['mining', 'freighter', 'patrol']
+            : ['freighter', 'patrol'];
+      const workRole = setting.group === 'npc' ? workRoles[index % workRoles.length] : undefined;
       result.push({
         id:
           setting.group === 'drone'
@@ -125,7 +145,7 @@ export function createFleetScenarioRoster(
             : setting.group + '-' + (index + 1),
         group: setting.group,
         arrivalSeconds: index < initial ? 0 : afterSeconds,
-        ...randomDraft(setting.group),
+        ...randomDraft(setting.group, workRole),
       });
     }
   }

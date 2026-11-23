@@ -176,6 +176,14 @@ function localNpcCombatSnapshots(
   });
 }
 
+function currentPlayerFleet(context: ControllerRuntimeContext) {
+  return context.engagements.activePlayerFleet?.()?.getSnapshot() ?? null;
+}
+
+function fieldDepartures(context: ControllerRuntimeContext) {
+  return context.engagements.escapedFieldShipIds?.() ?? new Set<string>();
+}
+
 export function controllerLocalModel(context: ControllerRuntimeContext) {
   const model = createControllerLocalModel(
     context.state.localSpace,
@@ -212,6 +220,7 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
           {
             id: contact.npcId,
             name: contact.name,
+            ...(contact.pirateMark && { pirateMark: contact.pirateMark }),
             position: contact.position,
             headingRadians: contact.headingRadians,
             speed: contact.speed,
@@ -224,11 +233,12 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
             spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
             hardpoints: definition.sprite.hardpoints,
             isSelected: context.state.selectedNpcId === contact.npcId,
-            isPirate: true,
+            isPirate: contact.pirate,
           },
         ];
       })
     : [];
+  const escaped = fieldDepartures(context);
   const drone = locationId ? context.economy.securityDrones.get(locationId) : null;
   const asteroids = model.asteroids.map((asteroid) => ({
     ...asteroid,
@@ -247,7 +257,8 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
   return {
     ...model,
     selectedAsteroidClaimOwner: owner,
-    npcShips: [...model.npcShips, ...pirateShips],
+    npcShips: [...model.npcShips, ...pirateShips].filter((ship) => !escaped.has(ship.id)),
+    fleet: currentPlayerFleet(context),
     npcCombats: localNpcCombatSnapshots(context, locationId),
     combatWrecks: locationId ? fieldWorldFor(context).combatWrecks(locationId) : [],
     asteroids,

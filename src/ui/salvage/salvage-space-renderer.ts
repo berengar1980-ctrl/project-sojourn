@@ -1,5 +1,5 @@
 import { centerSalvageCamera } from './salvage-camera-centering';
-import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
+import { FleetNativeCombatRenderer } from '../combat/fleet-native-combat-renderer';
 import { pickNearestHitArea } from './salvage-hit-test';
 import { drawPlayerSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawSalvageContainer3d } from './salvage-container-mesh';
@@ -18,7 +18,7 @@ import { drawDistressTow } from './distress-tow-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
-import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type ScreenPoint } from '../map/map-camera';
 import { PvPMapCamera } from '../combat/pvp-map-camera';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
@@ -29,8 +29,9 @@ import { SpaceBackgroundRenderer } from '../space/space-background-renderer';
 import { type NpcHitArea, SalvageSceneLayers, type WreckHitArea } from './salvage-scene-layers';
 export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
-  private sharedCombatRenderer: StrategicCombatRenderer | null = null;
-  protected readonly camera: MapCamera;
+  private sharedCombatRenderer: FleetNativeCombatRenderer | null = null;
+  private sharedCombatActive = false;
+  protected readonly camera: PvPMapCamera;
   protected readonly background: SpaceBackgroundRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
   protected readonly maneuverEffects = new ShipManeuverEffectsRenderer();
@@ -67,27 +68,38 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.model = model;
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     if (model.combat) {
+      const resumedCombat = this.sharedCombatRenderer !== null && !this.sharedCombatActive;
+      this.sharedCombatActive = true;
       if (!this.sharedCombatRenderer) {
-        this.sharedCombatRenderer = new StrategicCombatRenderer(
+        this.sharedCombatRenderer = new FleetNativeCombatRenderer(
           this.canvas,
           model.combat,
-          (pose, width, height, timeSeconds) => {
-            (this.camera as PvPMapCamera).restorePose(pose);
+          (_pose, width, height, timeSeconds) => {
             const battle = this.model.combat;
             if (!battle) return;
             const active = new Set([battle.attacker.id, battle.defender.id]);
+            for (const duel of this.model.fleet?.duels ?? []) {
+              active.add(duel.attacker.id);
+              active.add(duel.defender.id);
+            }
+            for (const duel of this.model.fleet?.supporters ?? []) active.add(duel.attacker.id);
             this.drawNpcShips(width, height, timeSeconds, active);
-          }
+          },
+          this.camera.combat,
+          (width, height, time) => this.drawField(width, height, time)
         );
-        this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
-      } else {
-        this.sharedCombatRenderer.update(model.combat);
+      } else if (resumedCombat) {
+        this.sharedCombatRenderer.beginEncounter(model.combat);
       }
+      this.sharedCombatRenderer.updateEncounter(model.combat, model.fleet);
       return;
     }
-    if (this.sharedCombatRenderer)
-      (this.camera as PvPMapCamera).restorePose(this.sharedCombatRenderer.cameraPose());
-    this.sharedCombatRenderer = null;
+    if (this.sharedCombatRenderer && this.sharedCombatActive) {
+      this.sharedCombatRenderer.suspend();
+    }
+    this.sharedCombatActive = false;
+    // Retain the same native sprite/asteroid/camera renderer for later contacts.
+    // Do not destroy and reload it after every duel or reinforcement.
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     const now = performance.now();
@@ -102,18 +114,18 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.canvas.width = Math.round(rect.width * ratio);
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
+    this.camera.setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
       centerSalvageCamera(this.camera, this.model.ship.position, rect.width, rect.height);
       this.hasFitted = true;
     }
     this.ensureShipImage(this.model.ship.spriteUrl);
     for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
-    if (this.sharedCombatRenderer) this.sharedCombatRenderer.resize();
+    if (this.sharedCombatActive && this.sharedCombatRenderer) this.sharedCombatRenderer.resize();
     else this.draw();
   }
   pan(dx: number, dy: number): void {
-    if (this.sharedCombatRenderer) {
+    if (this.sharedCombatActive && this.sharedCombatRenderer) {
       this.sharedCombatRenderer.pan(dx, dy);
       return;
     }
@@ -121,7 +133,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.draw();
   }
   zoomAt(deltaY: number, x: number, y: number): void {
-    if (this.sharedCombatRenderer) {
+    if (this.sharedCombatActive && this.sharedCombatRenderer) {
       this.sharedCombatRenderer.zoomAt(Math.exp(-deltaY * 0.00135), x, y);
       return;
     }
@@ -145,15 +157,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.shipImage.onload = () => this.draw();
     this.shipImage.src = url;
   }
-  protected draw(): void {
-    if (this.sharedCombatRenderer) return;
-    this.drawLocalScene();
-  }
-  private drawLocalScene(): void {
-    const rect = this.canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const timeSeconds = performance.now() / 1000;
+  protected drawField(width: number, height: number, timeSeconds: number): void {
     this.background.draw({
       width,
       height,
@@ -205,6 +209,17 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       if (hit) hitAreas.push(hit);
     }
     this.hitAreas = hitAreas;
+  }
+  protected draw(): void {
+    if (this.sharedCombatActive) return;
+    this.drawLocalScene();
+  }
+  private drawLocalScene(): void {
+    const rect = this.canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const timeSeconds = performance.now() / 1000;
+    this.drawField(width, height, timeSeconds);
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.distressParticles.drawScene(
       timeSeconds,

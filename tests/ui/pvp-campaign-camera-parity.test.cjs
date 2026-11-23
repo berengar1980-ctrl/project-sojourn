@@ -57,8 +57,19 @@ const salvage = fs.readFileSync(
 );
 for (const source of [mining, salvage]) {
   assert(source.includes('new PvPMapCamera(model.width, model.height)'));
-  assert(source.includes('new StrategicCombatRenderer('));
+  assert(source.includes('new FleetNativeCombatRenderer('));
   assert(source.includes('model.combat,'));
 }
 
-console.log('PASS PvP camera and combat renderer shared with career maps');
+// FleetCombat must not create a substitute battle before a hostile world contact.
+// The same physical canvas and camera carry neutral world and native combat.
+const exercise = fs.readFileSync(path.join(root, 'src/app/fleet-field-session.ts'), 'utf8');
+assert(exercise.includes('createGameController('));
+assert(!exercise.includes('new CombatCamera('));
+assert(!fs.existsSync(path.join(root, 'src/ui/start/fleet-idle-world-canvas.ts')));
+campaign.combat.pan(50, -30);
+assert.deepEqual(
+  campaign.worldToScreen(point, 1600, 900),
+  campaign.combat.project(point, 1600, 900, width, height)
+);
+console.log('PASS PvP camera and the same FleetNative renderer used in mining/salvage career maps');

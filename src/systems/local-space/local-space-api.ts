@@ -22,5 +22,5 @@ export interface LocalSpaceService {
   cancelMining(): LocalSpaceSnapshot;
   syncCombatPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot;
   tickCombatEnvironment(deltaSeconds: number): LocalSpaceSnapshot;
-  tick(deltaSeconds: number): LocalSpaceSnapshot;
+  tick(deltaSeconds: number, combatOwnsBodies?: boolean): LocalSpaceSnapshot;
 }

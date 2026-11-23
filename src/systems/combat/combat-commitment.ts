@@ -164,7 +164,7 @@ function chooseCommitmentTransition(
   }
   // Avoid re-entering a doomed escape immediately after abandoning it.
   if (elapsed - (ship.escapeAbandonedAt ?? -10000) < 24) return null;
-  if (strength < confidence && escape > 0.5) {
+  if (strength < confidence && escape > 0.5 && !ship.setup.id.startsWith('security-drone:')) {
     ship.tactic = 'flee';
     ship.strategy = null;
     delete ship.escapeGate;

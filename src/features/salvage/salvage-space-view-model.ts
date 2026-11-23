@@ -1,3 +1,4 @@
+import type { ParallelNativeDuelSnapshot } from '../../systems/combat/parallel-native-duels';
 import type { SecurityDroneSnapshot } from '../../systems/operations/asteroid-security-drone';
 import type { DistressRammingState } from '../../systems/salvage/distress-ramming-physics';
 import type { DistressTowState } from '../../systems/salvage/distress-tow-physics';
@@ -69,6 +70,7 @@ export interface SalvageWreckView {
 }
 
 export interface SalvageNpcShipView {
+  readonly pirateMark?: 'broken-spear' | 'black-tide';
   readonly id: string;
   readonly name: string;
   readonly position: WorldPoint;
@@ -119,6 +121,7 @@ export interface SalvageSpaceViewModel {
   readonly ship: SalvageShipView;
   readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly npcShips: readonly SalvageNpcShipView[];
+  readonly fleet?: ParallelNativeDuelSnapshot | null;
   readonly npcCombats?: readonly StrategicCombatSnapshot[];
   readonly securityDrone?: SecurityDroneSnapshot;
   readonly wrecks: readonly SalvageWreckView[];
@@ -168,7 +171,7 @@ function qualityLabel(quality: number): string {
   return 'MÄSSIG';
 }
 
-function cargoView(player: PlayerEconomyState): readonly SalvageCargoView[] {
+function cargoView(player: Pick<PlayerEconomyState, 'cargo'>): readonly SalvageCargoView[] {
   return Object.entries(player.cargo)
     .filter(([, lot]) => lot.qty > 0)
     .map(([resourceId, lot]) => ({
@@ -303,7 +306,7 @@ function npcShipViews(
 export function createSalvageSpaceViewModel(
   snapshot: SalvageLocalSpaceSnapshot,
   ship: ShipDefinition,
-  player: PlayerEconomyState,
+  player: Pick<PlayerEconomyState, 'cargo'>,
   looseComponents: readonly LooseShipComponent[],
   title: string,
   npcShips: readonly SalvageNpcShipView[] = [],

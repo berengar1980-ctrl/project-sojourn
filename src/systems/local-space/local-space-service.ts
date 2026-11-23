@@ -7,7 +7,6 @@ import type {
   MiningPhase,
   MiningResourceSelection,
 } from '../../core/local-space-types';
-import type { ShipHardpoints } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
   createShieldWorldGeometry,
@@ -48,8 +47,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private readonly approachSpeed: number;
   private readonly turnRateMultiplier: number;
   private readonly shield: ShieldWorldGeometry;
-  private readonly hardpoints: ShipHardpoints;
-  private readonly nominalLengthMeters: number;
   private readonly miningEnabled: boolean;
   private readonly miningCycleSeconds: number;
   private readonly shipSystems: ReturnType<typeof createLocalSpaceShipSystems>;
@@ -74,13 +71,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private shipLateralVelocity = 0;
   private readonly idleStationKeeping: IdleStationKeepingState;
 
-  constructor(options: LocalSpaceServiceOptions) {
+  constructor(private readonly options: LocalSpaceServiceOptions) {
     this.instance = options.instance;
     this.scanClock = new LocalSpaceScanClock(options.instance);
     this.approachSpeed = options.approachSpeed;
     this.turnRateMultiplier = options.turnRateMultiplier ?? 1;
-    this.hardpoints = options.hardpoints;
-    this.nominalLengthMeters = options.nominalLengthMeters;
     this.miningEnabled = options.mining?.enabled ?? true;
     this.miningCycleSeconds = Math.max(0.05, options.mining?.cycleSeconds ?? 0.42);
     this.shipSystems = createLocalSpaceShipSystems(options.systems, options.hardpoints);
@@ -274,12 +269,19 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-  tick(deltaSeconds: number): LocalSpaceSnapshot {
+  tick(deltaSeconds: number, combatOwnsBodies?: boolean): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     this.shipSystems.advance(clamped);
     this.scanClock.advanceLong(clamped);
-    integrateAsteroids(this.instance.asteroids, clamped, this.instance.width, this.instance.height);
-    resolveAsteroidCollisions(this.instance.asteroids);
+    if (!combatOwnsBodies) {
+      integrateAsteroids(
+        this.instance.asteroids,
+        clamped,
+        this.instance.width,
+        this.instance.height
+      );
+      resolveAsteroidCollisions(this.instance.asteroids);
+    }
 
     const asteroid = this.findAsteroid(this.activeTargetId());
     if (!asteroid && this.miningPhase !== 'idle') {
@@ -340,8 +342,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return calculateMiningImpact(
       this.instance.ship,
       asteroid,
-      this.hardpoints,
-      this.nominalLengthMeters
+      this.options.hardpoints,
+      this.options.nominalLengthMeters
     );
   }
 

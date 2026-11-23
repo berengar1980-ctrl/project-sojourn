@@ -1,3 +1,4 @@
+import { FleetNativeShipSprites } from './fleet-native-ship-sprites';
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import {
   paintParallelNativeDuels,
@@ -11,7 +12,6 @@ import {
   paintNativeTractorThrows,
 } from './combat-native-weapon-painters';
 import {
-  DRONE_DIAMETER_PX,
   DRONE_ROTATION_PERIOD_SECONDS,
   drawDroneShield,
   drawDroneShieldHits,
@@ -24,7 +24,10 @@ import type {
 } from './strategic-combat-renderer-types';
 import type { FleetDisplayPreferences } from './fleet-display-menu';
 import { FleetEngagementMarkerPainter } from './fleet-engagement-markers';
-import type { NativeFleetEngagement } from '../../systems/combat/parallel-native-duels';
+import type {
+  ParallelNativeDuelSnapshot,
+  NativeFleetEngagement,
+} from '../../systems/combat/parallel-native-duels';
 import { ramCameraImpulse } from './combat-ram-effect-renderer';
 import { CombatEffectClock } from './combat-effect-clock';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
@@ -59,8 +62,7 @@ export class FleetNativeCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly asteroidBackdrop: CombatAsteroidBackdrop;
-  private readonly camera = new CombatCamera();
-  private readonly images = new Map<string, HTMLImageElement>();
+  private readonly sprites = new FleetNativeShipSprites(() => this.draw());
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
   private readonly paintedShips = new Set<string>();
   private readonly paintedDamage = new Set<string>();
@@ -74,12 +76,13 @@ export class FleetNativeCombatRenderer {
   private readonly shieldImpacts = new ShieldImpactRenderer();
   private readonly autocannonBursts = new Map<string, AutocannonVisualBurst>();
   private model: StrategicCombatSnapshot;
+  private active = true;
   private parallelDuels: readonly StrategicCombatSnapshot[] = [];
   private supportingFromIndex = Number.POSITIVE_INFINITY;
   private readonly fleetMarkers = new FleetEngagementMarkerPainter();
   private readonly additionalSeenImpacts = new Map<number, number>();
   private readonly additionalImpacts = new Map<number, VisibleCombatImpact[]>();
-  private readonly effectClock = new CombatEffectClock();
+  private effectClock = new CombatEffectClock();
   private seenImpactSerial = -1;
   private readonly visibleImpacts: VisibleCombatImpact[] = [];
   constructor(
@@ -90,7 +93,9 @@ export class FleetNativeCombatRenderer {
       width: number,
       height: number,
       timeSeconds: number
-    ) => void
+    ) => void,
+    private readonly camera = new CombatCamera(),
+    private readonly drawField?: (width: number, height: number, time: number) => void
   ) {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Strategic combat canvas context unavailable.');
@@ -99,6 +104,36 @@ export class FleetNativeCombatRenderer {
     this.asteroidBackdrop = new CombatAsteroidBackdrop(context, model.arena);
     this.model = model;
     this.resize();
+  }
+  /** Retain sprite and camera resources, but reset transient effects for a new fight. */
+  beginEncounter(model: StrategicCombatSnapshot): void {
+    this.active = true;
+    this.model = model;
+    this.parallelDuels = [];
+    this.hiddenShipIds = new Set();
+    this.hiddenDamageIds = new Set();
+    this.supportingFromIndex = Number.POSITIVE_INFINITY;
+    this.seenImpactSerial = -1;
+    this.visibleImpacts.length = 0;
+    this.additionalSeenImpacts.clear();
+    this.additionalImpacts.clear();
+    this.autocannonBursts.clear();
+    this.damageParticles.clear();
+    this.destructionStartedAt = null;
+    this.effectClock = new CombatEffectClock();
+  }
+  /** Pause native drawing while the normal mining/salvage scene owns the canvas. */
+  suspend(): void {
+    this.active = false;
+  }
+  updateEncounter(model: StrategicCombatSnapshot, fleet?: ParallelNativeDuelSnapshot | null): void {
+    this.update(
+      fleet?.duels[0] ?? model,
+      fleet ? [...fleet.duels.slice(1), ...fleet.supporters] : [],
+      fleet ? fleet.duels.length - 1 : undefined,
+      fleet?.escapedShipIds,
+      fleet?.engagements
+    );
   }
   update(
     model: StrategicCombatSnapshot,
@@ -162,25 +197,6 @@ export class FleetNativeCombatRenderer {
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
     this.draw();
   }
-  private image(shipId: string, securityDrone = false): HTMLImageElement | null {
-    const definition = getShipDefinition(shipId);
-    if (!definition && !securityDrone) return null;
-    const key = securityDrone ? 'security-drone-sprite' : shipId;
-    const cached = this.images.get(key);
-    if (cached) return cached;
-    const image = new Image();
-    image.onload = () => this.draw();
-    image.src = securityDrone ? '/drones/security-drone-gc87r8.webp' : definition!.sprite.assetUrl;
-    this.images.set(key, image);
-    return image;
-  }
-  cameraPose(): CombatCameraPose {
-    return this.camera.pose();
-  }
-  restoreCameraPose(pose: CombatCameraPose): void {
-    this.camera.restorePose(pose);
-    this.draw();
-  }
   pan(dx: number, dy: number): void {
     this.camera.pan(dx, dy);
     this.draw();
@@ -204,43 +220,10 @@ export class FleetNativeCombatRenderer {
     width: number,
     height: number
   ): ShipScreenGeometry {
-    const isDrone = combatant.id.startsWith('security-drone:');
-    const image = this.image(combatant.shipId, isDrone);
-    const definition = getShipDefinition(combatant.shipId);
-    const nominalLength = definition?.nominalLengthMeters ?? 60;
-    const canvasScale = this.camera.scale(
-      width,
-      height,
-      this.model.arena.width,
-      this.model.arena.height
-    );
-    const shipWidth = isDrone ? DRONE_DIAMETER_PX * this.camera.zoom : nominalLength * canvasScale;
-    const aspect = isDrone
-      ? 1
-      : image && image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
-        ? image.naturalWidth / image.naturalHeight
-        : definition
-          ? definition.sprite.widthPx / definition.sprite.heightPx
-          : 2.2;
-    return {
-      center: this.screen(combatant.position, width, height),
-      width: shipWidth,
-      height: shipWidth / Math.max(0.35, aspect),
-      angle: combatant.headingRadians,
-    };
+    return this.sprites.geometry(combatant, width, height, this.camera, this.model.arena);
   }
-  private draw(): void {
-    this.paintedShips.clear();
-    this.paintedDamage.clear();
-    const rect = this.canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const timeSeconds = performance.now() / 1000;
-    const visualElapsed = this.effectClock.elapsed(timeSeconds);
-    this.context.clearRect(0, 0, width, height);
-    const shake = ramCameraImpulse(this.model.attacker, this.model.defender, visualElapsed);
-    this.context.save();
-    this.context.translate(shake.x, shake.y);
+
+  private drawArena(width: number, height: number, timeSeconds: number): void {
     drawCombatBackground(
       this.context,
       width,
@@ -257,6 +240,22 @@ export class FleetNativeCombatRenderer {
       this.context,
       timeSeconds
     );
+  }
+  private draw(): void {
+    if (!this.active) return;
+    this.paintedShips.clear();
+    this.paintedDamage.clear();
+    const rect = this.canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const timeSeconds = performance.now() / 1000;
+    const visualElapsed = this.effectClock.elapsed(timeSeconds);
+    this.context.clearRect(0, 0, width, height);
+    const shake = ramCameraImpulse(this.model.attacker, this.model.defender, visualElapsed);
+    this.context.save();
+    this.context.translate(shake.x, shake.y);
+    if (this.drawField) this.drawField(width, height, timeSeconds);
+    else this.drawArena(width, height, timeSeconds);
     paintNativeTractorThrows(
       this.context,
       this.model.winner === null ? this.model.thrownAsteroids : [],
@@ -442,7 +441,7 @@ export class FleetNativeCombatRenderer {
       this.context,
       geometry,
       hullRatio,
-      this.image(combatant.shipId, isDrone),
+      this.sprites.image(combatant.shipId, isDrone),
       hardpoints,
       this.lighting
     );

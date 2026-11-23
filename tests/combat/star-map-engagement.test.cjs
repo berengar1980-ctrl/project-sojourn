@@ -41,7 +41,7 @@ const sector = sectorModule.createNpcSectorService(mapModule.narrowsSector, npcs
   getPlayerPosition: () => navigation.getSnapshot().currentPosition,
 });
 
-assert.equal(ai.npcDefenseReaction(target), 'fight');
+assert.equal(ai.npcDefenseReaction(target), 'flee');
 target.aggression = 5;
 assert.equal(ai.npcDefenseReaction(target), 'flee');
 target.aggression = 100;
@@ -72,7 +72,7 @@ const engagements = engagementsModule.createStarMapEngagementService({
 
 assert.equal(engagements.attackNpc(target.id), true);
 assert.equal(navigation.getSnapshot().isPursuing, true);
-assert.equal(sector.combatMode(target), 'pursue');
+assert.equal(sector.combatMode(target), 'flee');
 
 for (let step = 0; step < 800 && !engagements.activePlayerCombat(); step += 1) {
   sector.tick(0.1);

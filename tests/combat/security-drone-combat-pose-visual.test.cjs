@@ -24,8 +24,8 @@ assert(
   'the patrol engine must not move a fighting drone away from its physics hitbox'
 );
 assert(
-  local.includes("id.startsWith('security-drone:')") &&
-    salvageLayers.includes("combat?.defender.id.startsWith('security-drone:')"),
+  local.includes('some(isStationedDrone)') &&
+    salvageLayers.includes('isStationedDrone(this.model.combat?.defender.id)'),
   'player combat uses the native drone sprite only once, without overlapping stale overlays'
 );
 assert(

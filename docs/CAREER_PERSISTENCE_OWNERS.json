@@ -230,6 +230,10 @@
     "src/systems/ships/security-drone-weapon-loadout.ts": {
       "mode": "derived",
       "reason": "Pure shared selection of compatible Mk III security-drone weapons, used by campaign and PvP; carries no saved state."
+    },
+    "src/systems/salvage/salvage-patrol-geometry.ts": {
+      "mode": "derived",
+      "reason": "Patrol markers and routing obstacles are computed from the current wreck field and own no independent saved state."
     }
   }
 }

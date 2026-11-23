@@ -13,6 +13,7 @@ interface RouteCandidate {
 }
 
 export interface RoutePlanningOptions {
+  readonly surfaceDistance?: number;
   readonly start: WorldPoint;
   readonly target: LocalAsteroid;
   readonly asteroids: readonly LocalAsteroid[];
@@ -364,7 +365,7 @@ function approachPoints(
 
 export function planMiningApproachRoute(options: RoutePlanningOptions): readonly WorldPoint[] {
   const obstacles = obstacleList(options.asteroids, options.target.id);
-  const miningRange = options.target.radius + 120;
+  const miningRange = options.target.radius + (options.surfaceDistance ?? 120);
   const candidates: RouteCandidate[] = [];
 
   for (const end of approachPoints(

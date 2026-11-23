@@ -1,6 +1,20 @@
+import type { CareerFleetEncounter } from './career-fleet-encounter';
+import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
 import { settleNpcCombatPirateLoot } from './npc-combatant-setup';
 import type { EngagementRuntime } from './star-map-engagement-runtime-types';
+
+function releaseNpc(
+  runtime: EngagementRuntime,
+  encounter: CareerFleetEncounter | null,
+  npc: SectorNpcState,
+  reason: string
+) {
+  const state = encounter?.fleet.getSnapshot();
+  const remainInField =
+    state?.duels[0]?.arena.backdropSeed !== undefined && !state.escapedShipIds.includes(npc.id);
+  runtime.options.sectorNpcs.recoverFromCombat(npc, reason, remainInField);
+}
 
 export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: number): void {
   for (const [key, entry] of [...runtime.backgroundCombats]) {
@@ -22,12 +36,9 @@ export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSecond
       runtime.options.onNpcCombatEnded?.(model, entry.first, entry.second);
       if (model.winner) settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
     }
-    runtime.options.sectorNpcs.recoverFromCombat(entry.first, 'Nach Gefecht');
     for (const npc of entry.fleet.members.values()) {
-      if (npc !== entry.first && npc !== entry.second)
-        runtime.options.sectorNpcs.recoverFromCombat(npc, 'Nach Flottengefecht');
+      releaseNpc(runtime, entry.fleet, npc, 'Nach Gefecht');
     }
-    runtime.options.sectorNpcs.recoverFromCombat(entry.second, 'Nach Gefecht');
     runtime.backgroundCombats.delete(key);
     runtime.options.log('NPC COMBAT > ' + model.lastEvent.toUpperCase());
   }
@@ -61,7 +72,7 @@ export function finishPlayerCombat(
   } else {
     const reason =
       boardingOutcome === 'player_win' ? 'Besatzung nach Enterkampf besiegt' : 'Nach Gefecht';
-    runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, reason);
+    releaseNpc(runtime, runtime.playerFleet, runtime.playerEnemy, reason);
   }
   if (!playerAlive) {
     const recovery = runtime.options.navigation.recoverToNearestDock();
@@ -73,7 +84,7 @@ export function finishPlayerCombat(
   if (runtime.playerFleet) {
     for (const member of runtime.playerFleet.members.values()) {
       if (member !== runtime.playerEnemy)
-        runtime.options.sectorNpcs.recoverFromCombat(member, 'Nach Flottengefecht');
+        releaseNpc(runtime, runtime.playerFleet, member, 'Nach Flottengefecht');
     }
   }
   runtime.playerFleet = null;

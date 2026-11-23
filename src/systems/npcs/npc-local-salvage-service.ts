@@ -1,4 +1,8 @@
-import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
+import {
+  moveFieldShip,
+  type FieldRouteState,
+  type FieldRouteObstacle,
+} from '../navigation/field-ship-routing';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
@@ -58,6 +62,9 @@ export interface NpcLocalSalvageOptions {
   readonly locationId: string;
   readonly field: SalvageField;
   readonly salvagers: readonly SectorNpcState[];
+  /** Disable internal contacts when the shared world solves all physical ships once. */
+  readonly resolveLocalCollisions?: boolean;
+  readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
   readonly recover: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly depart: (npc: SectorNpcState) => boolean;
   readonly canWorkWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
@@ -100,6 +107,13 @@ class LocalSalvageService implements NpcLocalSalvageService {
   private syncArrivals = (): void => {
     const active = new Set(this.ships.map((ship) => ship.npcId));
     for (const npc of this.options.salvagers) {
+      if (!this.byId.has(npc.id)) {
+        this.byId.set(npc.id, npc);
+        this.events.set(
+          npc.id,
+          createSalvageEventController(hashId(this.options.locationId + ':' + npc.id))
+        );
+      }
       if (active.has(npc.id) || !eligible(npc, this.options.locationId)) continue;
       const entry = seededLocalGate(
         this.options.field.width,
@@ -259,7 +273,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
         workPoint(npc.id, wreck),
         localCruiseSpeed(npc),
         dt,
-        this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+        [
+          ...this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+          ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
+        ],
         65
       )
     ) {
@@ -333,13 +350,19 @@ class LocalSalvageService implements NpcLocalSalvageService {
       const npc = this.byId.get(ship.npcId);
       // Keep the combatant under duel authority; do not remove or move it.
       if (ship.npcId === combatantId) continue;
-      if (
-        !npc ||
-        npc.hullHp <= 0 ||
-        (npc.combatRecoverySeconds ?? 0) > 0 ||
-        npc.locationId !== this.options.locationId
-      ) {
+      if (!npc || npc.hullHp <= 0 || npc.locationId !== this.options.locationId) {
         this.ships.splice(index, 1);
+        continue;
+      }
+
+      // The native PvP combat actor owns this ship while engaged. Suspend
+      // work without moving the salvager or losing its field identity.
+      if (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
+        ship.speed = 0;
+        ship.salvageActive = false;
+        ship.targetWreckId = null;
+        ship.phase = 'approaching';
+        delete ship.routeState;
         continue;
       }
 
@@ -369,7 +392,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
           ship.exitPoint,
           localCruiseSpeed(npc),
           dt,
-          this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+          [
+            ...this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+            ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
+          ],
           65
         )
       ) {
@@ -378,12 +404,14 @@ class LocalSalvageService implements NpcLocalSalvageService {
       }
     }
 
-    this.resolveLocalCollisions(combatantId, skipPlayer);
+    if (this.options.resolveLocalCollisions !== false)
+      this.resolveLocalCollisions(combatantId, skipPlayer);
   };
   private resolveLocalCollisions = (combatantId?: string, skipPlayer = false): void => {
     const playerState = skipPlayer ? undefined : this.options.getPlayerShipState?.();
     const bodies: LocalShieldShipBody[] = this.ships.flatMap((local) => {
-      if (local.npcId === combatantId) return [];
+      const npc = this.byId.get(local.npcId);
+      if (local.npcId === combatantId || npc?.combatMovement || (npc?.hullHp ?? 0) <= 0) return [];
       const definition = getShipDefinition(local.shipId);
       return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
     });

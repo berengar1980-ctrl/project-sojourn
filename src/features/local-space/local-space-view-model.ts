@@ -1,3 +1,4 @@
+import type { ParallelNativeDuelSnapshot } from '../../systems/combat/parallel-native-duels';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-service';
 import type { ShieldImpactEffect, ShieldState } from '../../core/shield-types';
 import type { ShipDefinition, ShipHardpoints } from '../../core/ship-types';
@@ -55,6 +56,7 @@ export interface LocalCargoResourceView {
 }
 
 export interface LocalNpcShipView {
+  readonly pirateMark?: 'broken-spear' | 'black-tide';
   readonly id: string;
   readonly name: string;
   readonly position: WorldPoint;
@@ -129,6 +131,7 @@ export interface LocalSpaceViewModel {
   readonly collectedOre: number;
   readonly cargoResources: readonly LocalCargoResourceView[];
   readonly combat: StrategicCombatSnapshot | null;
+  readonly fleet?: ParallelNativeDuelSnapshot | null;
   readonly npcCombats?: readonly StrategicCombatSnapshot[];
 }
 

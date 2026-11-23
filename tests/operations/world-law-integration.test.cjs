@@ -78,7 +78,7 @@ function createScenario() {
   rock.scanLevel = 'analyzed';
   assert(economy.asteroidClaims.register(location.id, rock, 'player', 1, 200000).ok);
   localMiner.phase = 'mining';
-  localMiner.position = { x: rock.position.x + rock.radius + 105, y: rock.position.y };
+  localMiner.position = { x: rock.position.x + rock.radius + 48, y: rock.position.y };
   localMiner.headingRadians = Math.PI;
   localMiner.targetAsteroidId = rock.id;
   localMiner.laserActive = true;

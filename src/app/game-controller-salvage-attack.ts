@@ -26,7 +26,11 @@ export interface SalvageNpcAttackArena {
 
 interface SalvageNpcAttackOptions {
   readonly sectorNpcs: readonly SectorNpcState[];
-  readonly onAttackNpc?: (id: string, arena: SalvageNpcAttackArena) => void;
+  readonly onAttackNpc?: (
+    id: string,
+    arena: SalvageNpcAttackArena,
+    playerInitiated?: boolean
+  ) => void;
 }
 
 /** Reuse the native PvP arena for player attacks on salvagers and pirates. */
@@ -36,26 +40,31 @@ export function attackSalvageNpc(
   service: SalvageLocalSpaceService,
   salvage: NpcLocalSalvageService,
   pirates: LocalPirateTraffic,
-  id: string
+  id: string,
+  playerInitiated = true
 ): void {
   const target =
     salvage.ships.find((entry) => entry.npcId === id) ??
     pirates.snapshot(options.sectorNpcs).find((entry) => entry.npcId === id);
   if (!target) return;
   const playerShip = service.getSnapshot().ship;
-  options.onAttackNpc?.(id, {
-    ...salvageFieldCombatArena(field),
-    attackerPosition: { ...playerShip.position },
-    defenderPosition: { ...target.position },
-    attackerHeadingRadians: playerShip.headingRadians,
-    defenderHeadingRadians: target.headingRadians,
-    defenderVelocity: {
-      x: Math.cos(target.headingRadians) * target.speed,
-      y: Math.sin(target.headingRadians) * target.speed,
+  options.onAttackNpc?.(
+    id,
+    {
+      ...salvageFieldCombatArena(field),
+      attackerPosition: { ...playerShip.position },
+      defenderPosition: { ...target.position },
+      attackerHeadingRadians: playerShip.headingRadians,
+      defenderHeadingRadians: target.headingRadians,
+      defenderVelocity: {
+        x: Math.cos(target.headingRadians) * target.speed,
+        y: Math.sin(target.headingRadians) * target.speed,
+      },
+      attackerVelocity: {
+        x: Math.cos(playerShip.headingRadians) * playerShip.speed,
+        y: Math.sin(playerShip.headingRadians) * playerShip.speed,
+      },
     },
-    attackerVelocity: {
-      x: Math.cos(playerShip.headingRadians) * playerShip.speed,
-      y: Math.sin(playerShip.headingRadians) * playerShip.speed,
-    },
-  });
+    playerInitiated
+  );
 }

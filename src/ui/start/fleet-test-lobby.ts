@@ -1,9 +1,4 @@
-import {
-  DUEL_MAPS,
-  createDuelArena,
-  type DuelMapKind,
-} from '../../systems/combat/duel-arena-presets';
-import { createFleetNativeCombatPanel } from '../combat/fleet-native-combat-panel';
+import { DUEL_MAPS, type DuelMapKind } from '../../systems/combat/duel-arena-presets';
 import {
   createFleetScenarioRoster,
   DEFAULT_FLEET_SCENARIO,
@@ -12,9 +7,7 @@ import {
   type FleetScenarioIncident,
   type FleetScenarioShip,
 } from './fleet-scenario-roster';
-import { createFleetScenarioRuntime } from './fleet-scenario-runtime';
-
-interface FleetTestConfiguration {
+export interface FleetTestConfiguration {
   readonly map: DuelMapKind;
   readonly incident: FleetScenarioIncident;
   readonly groups: readonly FleetScenarioCounts[];
@@ -106,105 +99,17 @@ function renderRoster(root: HTMLElement, config: FleetTestConfiguration): void {
   }
 }
 
-function createSimulatorLauncher(
+export type LaunchFleetField = (
   root: HTMLElement,
-  lobby: HTMLElement,
-  onCombatActiveChange: (active: boolean) => void
-) {
-  let panel: ReturnType<typeof createFleetNativeCombatPanel> | null = null;
-  let frame = 0;
-  let generation = 0;
-  let destroyed = false;
-  const stop = (): void => {
-    generation++;
-    cancelAnimationFrame(frame);
-    panel?.destroy();
-    panel = null;
-    onCombatActiveChange(false);
-  };
-  return {
-    start(config: FleetTestConfiguration): void {
-      if (destroyed) return;
-      stop();
-      const epoch = generation;
-      const seed = Math.floor(Math.random() * 0x7fffffff);
-      const arena = createDuelArena(config.map, seed);
-      const session = createFleetScenarioRuntime(config.ships, arena, seed, config.incident);
-      const waiting = document.createElement('section');
-      waiting.className = 'harrow-duel harrow-fleet';
-      const heading = document.createElement('h1');
-      heading.textContent = 'FLEETCOMBAT · EINSATZGEBIET';
-      const status = document.createElement('p');
-      const cancel = document.createElement('button');
-      cancel.type = 'button';
-      cancel.textContent = 'Test beenden';
-      const returnToLobby = (): void => {
-        stop();
-        root.replaceChildren(lobby);
-      };
-      cancel.addEventListener('click', returnToLobby);
-      waiting.append(heading, status, cancel);
-      root.replaceChildren(waiting);
-      onCombatActiveChange(true);
-
-      const mountCombat = (): void => {
-        const fleet = session.fleet;
-        if (!fleet || panel) return;
-        panel = createFleetNativeCombatPanel({
-          root,
-          combat: fleet.duels[0]!,
-          spectator: true,
-          parallelDuels: () => [
-            ...fleet.getSnapshot().duels.slice(1),
-            ...fleet.getSnapshot().supporters,
-          ],
-          parallelSupportStartIndex: fleet.duels.length - 1,
-          parallelEscapedShipIds: () => fleet.getSnapshot().escapedShipIds,
-          fleetEngagements: () => fleet.getSnapshot().engagements,
-          isComplete: () => session.finished(),
-          encounterName: 'KAMPAGNEN-SIMULATION',
-          onReturn: returnToLobby,
-        });
-      };
-      mountCombat();
-      let previous = performance.now();
-      const tick = (now: number): void => {
-        if (destroyed || epoch !== generation) return;
-        const dt = Math.min(Math.max(0, now - previous) / 1000, 0.08);
-        previous = now;
-        session.tick(dt);
-        mountCombat();
-        if (panel) {
-          panel.update();
-        } else {
-          const next = session.nextArrivalSeconds();
-          status.textContent =
-            'Schiffe im Einsatzgebiet: ' +
-            session.arrivedCount +
-            ' / ' +
-            session.totalCount +
-            ' · Warte auf feindlichen Kontakt. ' +
-            (next === null
-              ? 'Keine weiteren Verstärkungen vorgesehen.'
-              : 'Nächster Eintritt in ' +
-                Math.max(0, Math.ceil(next - session.elapsedSeconds)) +
-                ' Sekunden.');
-        }
-        frame = requestAnimationFrame(tick);
-      };
-      frame = requestAnimationFrame(tick);
-    },
-    destroy(): void {
-      destroyed = true;
-      stop();
-    },
-  };
-}
+  config: FleetTestConfiguration,
+  onExit: () => void
+) => { destroy(): void };
 
 export function createFleetTestLobby(
   root: HTMLElement,
   onBack: () => void,
-  onCombatActiveChange: (active: boolean) => void = () => {}
+  onCombatActiveChange: (active: boolean) => void,
+  launch: LaunchFleetField
 ): { destroy(): void } {
   const shell = document.createElement('section');
   shell.className = 'harrow-duel harrow-fleet';
@@ -249,7 +154,7 @@ export function createFleetTestLobby(
   shell.append(heading, description, options, groups, capabilities, actions, roster);
   root.replaceChildren(shell);
 
-  const launcher = createSimulatorLauncher(root, shell, onCombatActiveChange);
+  let session: ReturnType<LaunchFleetField> | null = null;
   let config: FleetTestConfiguration;
   const draw = (): void => {
     const counts = settings.map((entry) => ({
@@ -262,7 +167,7 @@ export function createFleetTestLobby(
       map: map.control.value as DuelMapKind,
       incident: incident.control.value as FleetScenarioIncident,
       groups: counts,
-      ships: createFleetScenarioRoster(counts),
+      ships: createFleetScenarioRoster(counts, map.control.value as DuelMapKind),
     };
     const startCount = config.ships.filter((ship) => ship.arrivalSeconds === 0).length;
     const laterCount = config.ships.length - startCount;
@@ -275,7 +180,14 @@ export function createFleetTestLobby(
     renderRoster(roster, config);
   };
   start.addEventListener('click', () => {
-    if (!start.disabled) launcher.start(config);
+    if (start.disabled || session) return;
+    onCombatActiveChange(true);
+    session = launch(root, config, () => {
+      session?.destroy();
+      session = null;
+      onCombatActiveChange(false);
+      root.replaceChildren(shell);
+    });
   });
   shuffle.addEventListener('click', draw);
   for (const entry of settings) {
@@ -284,13 +196,11 @@ export function createFleetTestLobby(
     entry.seconds.addEventListener('change', draw);
   }
   incident.control.addEventListener('change', draw);
-  map.control.addEventListener('change', () => {
-    config = { ...config, map: map.control.value as DuelMapKind };
-  });
+  map.control.addEventListener('change', draw);
   draw();
   return {
     destroy() {
-      launcher.destroy();
+      session?.destroy();
       shell.remove();
     },
   };

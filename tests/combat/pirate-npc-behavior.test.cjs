@@ -111,7 +111,7 @@ assert(
 assert(
   engagement.includes('function scanForPiratePlayerAttack(') &&
     engagement.includes("'Korsaren-Abfangkurs'") &&
-    engagement.includes('npcIsPiratePrey(candidate)') &&
+    engagement.includes('npcMayTargetNpc(attacker, candidate)') &&
     engagement.includes('settleNpcCombatPirateLoot(entry.first, entry.second, model.winner)') &&
     combatSetup.includes('export function transferPirateLoot(') &&
     combatSetup.includes('Math.min(10, Math.max(0, Math.floor(pirate.cargoCapacity - cargoUsed)))'),

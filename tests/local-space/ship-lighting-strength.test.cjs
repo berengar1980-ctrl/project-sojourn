@@ -23,8 +23,12 @@ const npcMap = fs.readFileSync(path.join(root, 'src/ui/map/npc-ship-map-renderer
 
 assert(lighting.includes('directionalStrength?: number'));
 assert(lighting.includes('options.directionalStrength ?? 1'));
-assert(local.match(/directionalStrength: 2\.05/g)?.length >= 2);
-assert(salvage.match(/directionalStrength: 2\.05/g)?.length >= 2);
+const fieldShip = readModuleSource(root, 'src/ui/ships/field-ship-sprite.ts');
+for (const field of [local, salvage]) {
+  assert(field.includes('directionalStrength: 2.05'), 'field player lighting');
+  assert(field.includes('drawFieldShipSprite('), 'field NPC lighting uses the shared painter');
+}
+assert(fieldShip.includes('directionalStrength: 2.05'));
 assert(combat.includes('drawCombatShipBody('));
 assert(combatDetails.includes('directionalStrength: 2.05'));
 assert(!playerMap.includes('directionalStrength: 2.05'));

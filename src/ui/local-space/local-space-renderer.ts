@@ -1,8 +1,10 @@
+import { isStationedDrone } from '../../systems/npcs/npc-combat-ai';
+import { pickNearestHitArea } from '../salvage/salvage-hit-test';
 import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-drone-visual';
 import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
 import { drawMiningCombatWrecks, type CombatWreckHitArea } from './local-combat-wreck-renderer';
 import { drawLocalNavigationRoute } from './local-space-navigation-route';
-import { StrategicCombatRenderer } from '../combat/strategic-combat-renderer';
+import { FleetNativeCombatRenderer } from '../combat/fleet-native-combat-renderer';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import { resizeMapCanvasBackingStore } from '../map/map-canvas-backing-store';
 import type {
@@ -11,7 +13,7 @@ import type {
 } from '../../features/local-space/local-space-view-model';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
-import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type ScreenPoint } from '../map/map-camera';
 import { PvPMapCamera } from '../combat/pvp-map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -32,8 +34,9 @@ import { MiningEffectsRenderer } from './mining-effects-renderer';
 import { drawLocalShortRangeScan, drawLocalLongRangeScan } from './local-space-scan-renderer';
 export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
-  private sharedCombatRenderer: StrategicCombatRenderer | null = null;
-  protected readonly camera: MapCamera;
+  private sharedCombatRenderer: FleetNativeCombatRenderer | null = null;
+  private sharedCombatActive = false;
+  protected readonly camera: PvPMapCamera;
   protected readonly miningEffects: MiningEffectsRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
   protected readonly hardpointDebug = new ShipHardpointDebugRenderer();
@@ -80,19 +83,25 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.model = model;
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     if (model.combat) {
+      const resumedCombat = this.sharedCombatRenderer !== null && !this.sharedCombatActive;
+      this.sharedCombatActive = true;
       if (!this.sharedCombatRenderer) {
-        this.sharedCombatRenderer = new StrategicCombatRenderer(
+        this.sharedCombatRenderer = new FleetNativeCombatRenderer(
           this.canvas,
           model.combat,
-          (pose, width, height, timeSeconds) => {
-            (this.camera as PvPMapCamera).restorePose(pose);
+          (_pose, width, height, timeSeconds) => {
             const battle = this.model.combat;
             if (!battle) return;
             const active = new Set([battle.attacker.id, battle.defender.id]);
+            for (const duel of this.model.fleet?.duels ?? []) {
+              active.add(duel.attacker.id);
+              active.add(duel.defender.id);
+            }
+            for (const duel of this.model.fleet?.supporters ?? []) active.add(duel.attacker.id);
             this.drawNpcShips(width, height, timeSeconds, active);
             // Native combat renders the drone at its authoritative hitbox.
             // Never paint a second, potentially stale drone over that fighter.
-            if (![...active].some((id) => id.startsWith('security-drone:'))) {
+            if (![...active].some(isStationedDrone)) {
               drawLocalSecurityDrone(
                 this.context,
                 this.camera,
@@ -110,18 +119,23 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
               width,
               height
             );
-          }
+          },
+          this.camera.combat,
+          (width, height, time) => this.drawField(width, height, time)
         );
-        this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
-      } else {
-        this.sharedCombatRenderer.update(model.combat);
+      } else if (resumedCombat) {
+        this.sharedCombatRenderer.beginEncounter(model.combat);
       }
+      this.sharedCombatRenderer.updateEncounter(model.combat, model.fleet);
       // The native PvP renderer owns combat; career bystanders remain in its scene overlay.
       return;
     }
-    if (this.sharedCombatRenderer)
-      (this.camera as PvPMapCamera).restorePose(this.sharedCombatRenderer.cameraPose());
-    this.sharedCombatRenderer = null;
+    if (this.sharedCombatRenderer && this.sharedCombatActive) {
+      this.sharedCombatRenderer.suspend();
+    }
+    this.sharedCombatActive = false;
+    // Retain the same native sprite/asteroid/camera renderer for later contacts.
+    // Do not destroy and reload it after every duel or reinforcement.
     this.ensureShipImage(model.ship.spriteUrl);
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
@@ -131,7 +145,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     resizeMapCanvasBackingStore(this.canvas, this.context, rect.width, rect.height, ratio);
 
-    (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
+    this.camera.setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
       this.camera.fit(rect.width, rect.height);
       this.hasFitted = true;
@@ -139,11 +153,11 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
 
     this.ensureShipImage(this.model.ship.spriteUrl);
     for (const npc of this.model.npcShips) this.ensureNpcImage(npc.spriteUrl);
-    if (this.sharedCombatRenderer) this.sharedCombatRenderer.resize();
+    if (this.sharedCombatActive && this.sharedCombatRenderer) this.sharedCombatRenderer.resize();
     else this.draw();
   }
   pan(dx: number, dy: number): void {
-    if (this.sharedCombatRenderer) {
+    if (this.sharedCombatActive && this.sharedCombatRenderer) {
       this.sharedCombatRenderer.pan(dx, dy);
       return;
     }
@@ -151,7 +165,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.draw();
   }
   zoomAt(deltaY: number, x: number, y: number): void {
-    if (this.sharedCombatRenderer) {
+    if (this.sharedCombatActive && this.sharedCombatRenderer) {
       this.sharedCombatRenderer.zoomAt(Math.exp(-deltaY * 0.00135), x, y);
       return;
     }
@@ -173,28 +187,13 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     return this.camera.screenToWorld({ x, y }, rect.width, rect.height);
   }
   pickNpc(x: number, y: number): string | null {
-    let best: NpcHitArea | null = null;
-    for (const area of this.npcHitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!best || area.radius < best.radius) best = area;
-    }
-    return best?.id ?? null;
+    return pickNearestHitArea(this.npcHitAreas, x, y);
   }
   pickAsteroid(x: number, y: number): string | null {
-    let best: AsteroidHitArea | null = null;
-    for (const area of this.hitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!best || area.radius < best.radius) best = area;
-    }
-    return best?.id ?? null;
+    return pickNearestHitArea(this.hitAreas, x, y);
   }
   pickCombatWreck(x: number, y: number): string | null {
-    let closest: CombatWreckHitArea | null = null;
-    for (const area of this.combatWreckHitAreas) {
-      if (Math.hypot(x - area.point.x, y - area.point.y) > area.radius) continue;
-      if (!closest || area.radius < closest.radius) closest = area;
-    }
-    return closest?.id ?? null;
+    return pickNearestHitArea(this.combatWreckHitAreas, x, y);
   }
   selectCombatWreck(id: string | null): void {
     this.selectedCombatWreckId = id;
@@ -206,17 +205,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.shipImage.onload = () => this.draw();
     this.shipImage.src = url;
   }
-  protected draw(): void {
-    if (this.sharedCombatRenderer) return;
-    measurePerformance('canvas.local.draw', () => this.drawFrame());
-  }
-
-  private drawFrame(): void {
-    const rect = this.canvas.getBoundingClientRect();
-    const { width, height } = rect;
-    const timeSeconds = performance.now() / 1000;
-    const geometry = this.shipGeometry(width, height);
-
+  protected drawField(width: number, height: number, timeSeconds: number): void {
     measurePerformance('canvas.local.background', () =>
       this.backgroundRenderer.draw({
         width,
@@ -251,6 +240,19 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       height,
       this.selectedCombatWreckId
     );
+  }
+  protected draw(): void {
+    if (this.sharedCombatActive) return;
+    measurePerformance('canvas.local.draw', () => this.drawFrame());
+  }
+
+  private drawFrame(): void {
+    const rect = this.canvas.getBoundingClientRect();
+    const { width, height } = rect;
+    const timeSeconds = performance.now() / 1000;
+    const geometry = this.shipGeometry(width, height);
+
+    this.drawField(width, height, timeSeconds);
     this.npcHitAreas = measurePerformance('canvas.local.npc-ships', () =>
       this.drawNpcShips(width, height, timeSeconds)
     );

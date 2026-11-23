@@ -1,14 +1,22 @@
+import { droneSeesTarget } from '../operations/asteroid-security-drone';
+import { seededLocalGate } from '../../core/local-space-exit';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../ships';
 import {
+  resolveShipShieldObstacleCollisions,
   resolveShipShieldCollisions,
   type LocalShieldShipBody,
   type ShipShieldCollision,
 } from '../local-space/ship-shield-collision';
+import { fieldInterceptRange, localArmedTraffic, rivalPirateGroups } from './npc-combat-ai';
 import { edgePoint, hashId } from './npc-mining-targets';
-import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
+import {
+  moveFieldShip,
+  type FieldRouteShip,
+  type FieldRouteState,
+} from '../navigation/field-ship-routing';
 import {
   stageLocalPirateCheckpoint,
   type LocalPirateCheckpoint,
@@ -16,6 +24,8 @@ import {
 
 export interface LocalPirateContact {
   readonly npcId: string;
+  readonly pirate: boolean;
+  readonly pirateMark?: SectorNpcState['pirateMark'];
   readonly shipId: string;
   readonly name: string;
   readonly position: WorldPoint;
@@ -137,6 +147,10 @@ export class LocalPirateTraffic {
     return instance;
   }
 
+  body(id: string): FieldRouteShip | undefined {
+    return this.ships.get(id);
+  }
+
   snapshot(npcs: readonly SectorNpcState[]): LocalPirateContact[] {
     const byId = new Map(npcs.map((npc) => [npc.id, npc]));
     return [...this.ships.values()].flatMap((ship) => {
@@ -145,6 +159,11 @@ export class LocalPirateTraffic {
       return [
         {
           npcId: npc.id,
+          pirate: npc.pirate === true,
+          ...(npc.pirate && {
+            pirateMark:
+              npc.pirateMark ?? (npc.factionId === 'pirates2' ? 'black-tide' : 'broken-spear'),
+          }),
           shipId: npc.shipId,
           name: npc.name,
           position: { ...ship.position },
@@ -158,7 +177,7 @@ export class LocalPirateTraffic {
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set<string>();
     for (const npc of pirates) {
-      if (npc.pirate && npc.hullHp > 0 && (!npc.travel || npc.combatMovement)) {
+      if (localArmedTraffic(npc) && npc.hullHp > 0 && (!npc.travel || npc.combatMovement)) {
         active.add(npc.id);
       }
     }
@@ -203,7 +222,8 @@ export class LocalPirateTraffic {
     miners: ReadonlyArray<{ npcId: string; position: WorldPoint; inCombat?: boolean }>,
     asteroids: readonly LocalAsteroid[],
     onIntercept: (pirateId: string, targetId: string | 'player', position: WorldPoint) => boolean,
-    combatantId?: string
+    combatantId?: string,
+    onFreighterExit?: (npc: SectorNpcState) => void
   ): void {
     const dt = Math.max(0, Math.min(0.25, deltaSeconds));
     for (const pirate of this.ships.values()) {
@@ -213,28 +233,21 @@ export class LocalPirateTraffic {
       // pirate traffic must not move or re-engage the active combatant.
       if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
       separateCoincidentSpawn(pirate, this.ships);
-      const targets = [
-        ...miners
-          .filter((miner) => miner.npcId !== pirate.npcId && !miner.inCombat)
-          .map((miner) => ({
-            id: miner.npcId,
-            position: miner.position,
-          })),
-        ...(player ? [{ id: 'player', position: player }] : []),
-      ];
-      targets.sort(
-        (a, b) =>
-          Math.hypot(a.position.x - pirate.position.x, a.position.y - pirate.position.y) -
-          Math.hypot(b.position.x - pirate.position.x, b.position.y - pirate.position.y)
-      );
-      const target = targets[0];
+      if (npc.job === 'freighter' && !npc.pirate) {
+        this.advanceFreighter(pirate, npc, dt, asteroids, onFreighterExit);
+        continue;
+      }
+      if (!npc.pirate) {
+        this.advancePatrol(pirate, npcs, asteroids, dt, onIntercept);
+        continue;
+      }
+      const target = this.nearestPrey(pirate, npc, npcs, miners, player);
       if (!target) continue;
       const distance = Math.hypot(
         target.position.x - pirate.position.x,
         target.position.y - pirate.position.y
       );
-      if (distance < 210) {
-        pirate.speed = 0;
+      if (distance <= fieldInterceptRange(npc.id, true)) {
         pirate.awaitingCombat = onIntercept(pirate.npcId, target.id, pirate.position);
         continue;
       }
@@ -258,12 +271,19 @@ export class LocalPirateTraffic {
             radius: 45,
           })),
       ];
-      let destination = target.position;
+      // Fly to interception distance. A worker can sit inside the navigation
+      // clearance of its asteroid even while the approach corridor is clear.
+      const standOff = Math.min(155, distance);
+      const interceptPoint = {
+        x: target.position.x + ((pirate.position.x - target.position.x) * standOff) / distance,
+        y: target.position.y + ((pirate.position.y - target.position.y) * standOff) / distance,
+      };
+      let destination = interceptPoint;
       const previousTarget = pirate.routeState?.target;
       if (previousTarget) {
         const movement = Math.hypot(
-          previousTarget.x - target.position.x,
-          previousTarget.y - target.position.y
+          previousTarget.x - interceptPoint.x,
+          previousTarget.y - interceptPoint.y
         );
         if (movement < 70) destination = previousTarget;
       }
@@ -288,12 +308,104 @@ export class LocalPirateTraffic {
     }
   }
 
+  private nearestPrey(
+    pirate: PirateRuntime,
+    npc: SectorNpcState,
+    npcs: readonly SectorNpcState[],
+    miners: ReadonlyArray<{ npcId: string; position: WorldPoint; inCombat?: boolean }>,
+    player: WorldPoint | null
+  ) {
+    const rivals = this.snapshot(
+      npcs.filter((other) => rivalPirateGroups(npc, other) && !other.combatRecoverySeconds)
+    );
+    const targets = [
+      ...rivals.map((other) => ({ id: other.npcId, position: other.position })),
+      ...this.snapshot(
+        npcs.filter(
+          (other) => other.job === 'freighter' && !other.pirate && !other.combatRecoverySeconds
+        )
+      ).map((other) => ({ id: other.npcId, position: other.position })),
+      ...miners
+        .filter((miner) => miner.npcId !== pirate.npcId)
+        .map((miner) => ({
+          id: miner.npcId,
+          position: miner.position,
+        })),
+      ...(player ? [{ id: 'player', position: player }] : []),
+    ];
+    targets.sort(
+      (a, b) =>
+        Math.hypot(a.position.x - pirate.position.x, a.position.y - pirate.position.y) -
+        Math.hypot(b.position.x - pirate.position.x, b.position.y - pirate.position.y)
+    );
+    return targets[0];
+  }
+  private advanceFreighter(
+    pirate: PirateRuntime,
+    npc: SectorNpcState,
+    dt: number,
+    asteroids: readonly LocalAsteroid[],
+    onFreighterExit?: (npc: SectorNpcState) => void
+  ) {
+    if (
+      moveFieldShip(
+        pirate,
+        seededLocalGate(this.width, this.height, this.seed),
+        110,
+        dt,
+        asteroids.filter((rock) => rock.routeBlocking),
+        65,
+        'patrol'
+      )
+    )
+      onFreighterExit?.(npc);
+  }
+  private advancePatrol(
+    ship: PirateRuntime,
+    npcs: readonly SectorNpcState[],
+    rocks: readonly LocalAsteroid[],
+    dt: number,
+    intercept: (attacker: string, target: string, position: WorldPoint) => boolean
+  ): void {
+    const hostiles = this.snapshot(
+      npcs.filter((npc) => npc.pirate && !npc.combatMovement && npc.hullHp > 0)
+    );
+    const distance = (p: WorldPoint) => Math.hypot(p.x - ship.position.x, p.y - ship.position.y);
+    const target = hostiles
+      .filter((contact) =>
+        ship.npcId.startsWith('security-drone:')
+          ? droneSeesTarget(ship.position, contact.position, rocks)
+          : distance(contact.position) < 650
+      )
+      .sort((a, b) => distance(a.position) - distance(b.position))[0];
+    if (
+      target &&
+      distance(target.position) <= fieldInterceptRange(ship.npcId, false) &&
+      intercept(ship.npcId, target.npcId, ship.position)
+    ) {
+      ship.awaitingCombat = true;
+      return;
+    }
+    const blockers = rocks.filter((rock) => rock.routeBlocking);
+    const bearing = Math.atan2(ship.position.y - this.height / 2, ship.position.x - this.width / 2);
+    for (let step = 1; step <= 8; step++) {
+      const angle = bearing + (step * Math.PI) / 4;
+      const point = (step === 1 && (target?.position ?? ship.routeState?.target)) || {
+        x: this.width * (0.5 + 0.3 * Math.cos(angle)),
+        y: this.height * (0.5 + 0.3 * Math.sin(angle)),
+      };
+      const arrived = moveFieldShip(ship, point, 118, dt, blockers, 40, 'patrol');
+      if (arrived || ship.routeState) return;
+    }
+  }
+
   /** Resolve solid pirate-to-ship shields after route movement. The duel owns
    * combatant poses, so only free-flying pirates participate.
    */
   resolveShipContacts(
     npcs: readonly SectorNpcState[],
-    otherShips: readonly LocalShieldShipBody[]
+    otherShips: readonly LocalShieldShipBody[],
+    rocks: readonly LocalAsteroid[] = []
   ): readonly ShipShieldCollision[] {
     const byId = new Map(npcs.map((npc) => [npc.id, npc]));
     const pirateIds = new Set<string>();
@@ -330,15 +442,23 @@ export class LocalPirateTraffic {
         };
       }
     }
+    resolveShipShieldObstacleCollisions(
+      pirates,
+      rocks.map((rock) => ({
+        id: rock.id,
+        position: rock.position,
+        radius: rock.collisionRadius ?? rock.radius,
+      }))
+    );
     return impacts;
   }
 
-  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number): void {
+  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed = 0): void {
     const ship = this.ships.get(npcId);
     if (!ship) return;
     ship.position = { ...position };
     ship.headingRadians = headingRadians;
-    ship.speed = 0;
+    ship.speed = speed;
     delete ship.routeState;
     // Keep the interception latch until the engagement has recovered.
   }

@@ -1,3 +1,4 @@
+import type { CombatCamera, CombatCameraPose } from './combat-camera';
 import type {
   StrategicCombatService,
   StrategicCombatSnapshot,
@@ -16,6 +17,9 @@ export interface FleetNativeCombatPanel {
 
 interface FleetNativeCombatPanelOptions {
   readonly root: HTMLElement;
+  /** Reuse the same physical canvas when an idle world becomes a battle. */
+  readonly canvas?: HTMLCanvasElement;
+  readonly camera?: CombatCamera;
   readonly combat: StrategicCombatService;
   readonly onReturn: () => void;
   readonly encounterName?: string;
@@ -26,6 +30,14 @@ interface FleetNativeCombatPanelOptions {
   readonly fleetEngagements?: () => readonly NativeFleetEngagement[];
   readonly spectator?: boolean;
   readonly isComplete?: () => boolean;
+  /** Noncombat campaign NPCs are rendered by the native fleet canvas, not another scene. */
+  readonly drawField?: (width: number, height: number, time: number) => void;
+  readonly drawWorldActors?: (
+    pose: CombatCameraPose,
+    width: number,
+    height: number,
+    timeSeconds: number
+  ) => void;
 }
 
 function percent(current: number, maximum: number): number {
@@ -141,11 +153,12 @@ function bindCombatCamera(
   };
 }
 
-function makeCombatShell(root: HTMLElement): HTMLElement {
+function makeCombatShell(root: HTMLElement, existingCanvas?: HTMLCanvasElement): HTMLElement {
   const shell = document.createElement('section');
-  shell.className = 'strategic-combat-shell';
+  if (existingCanvas) shell.style.display = 'contents';
+  else shell.className = 'strategic-combat-shell';
   shell.innerHTML = `
-    <canvas class="strategic-combat-map" aria-label="Lokaler Raumkampf"></canvas>
+    ${existingCanvas ? '' : '<canvas class="strategic-combat-map" aria-label="Lokaler Raumkampf"></canvas>'}
     <div class="combat-map-title">HARROWDRIFT // RAUMKAMPF <span class="combat-encounter-time"></span></div>
     <aside class="combat-hud combat-hud--player"></aside>
     <aside class="combat-hud combat-hud--enemy"></aside>
@@ -170,7 +183,8 @@ function makeCombatShell(root: HTMLElement): HTMLElement {
     <button class="strategic-combat-log-export" type="button">KAMPFLOG EXPORTIEREN</button>
     <button class="strategic-combat-return" type="button" hidden>ZUR STERNKARTE</button>
   `;
-  root.replaceChildren(shell);
+  if (existingCanvas) root.append(shell);
+  else root.replaceChildren(shell);
 
   return shell;
 }
@@ -305,11 +319,11 @@ function updateCombatActionButtons(
 export function createFleetNativeCombatPanel(
   options: FleetNativeCombatPanelOptions
 ): FleetNativeCombatPanel {
-  const shell = makeCombatShell(options.root);
+  const shell = makeCombatShell(options.root, options.canvas);
   const parallelStatus = prepareParallelDuelPanel(shell, options);
   const displayMenu = createFleetDisplayMenu(shell);
 
-  const canvas = shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
+  const canvas = options.canvas ?? shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
   const enemyHud = shell.querySelector<HTMLElement>('.combat-hud--enemy');
   const event = shell.querySelector<HTMLElement>('.strategic-combat-event');
@@ -323,8 +337,15 @@ export function createFleetNativeCombatPanel(
   }
 
   grappleButton?.addEventListener('click', () => options.combat.fireGrapple('attacker'));
-  const renderer = new FleetNativeCombatRenderer(canvas, options.combat.getSnapshot());
-  const unbindCamera = bindCombatCamera(canvas, renderer);
+  const firstSnapshot = options.combat.getSnapshot();
+  const renderer = new FleetNativeCombatRenderer(
+    canvas,
+    firstSnapshot,
+    options.drawWorldActors,
+    options.camera,
+    options.drawField
+  );
+  const unbindCamera = options.camera ? undefined : bindCombatCamera(canvas, renderer);
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
 
@@ -390,9 +411,10 @@ export function createFleetNativeCombatPanel(
   return {
     update: render,
     destroy() {
+      renderer.suspend();
       if (defeatReturnTimer !== null) clearTimeout(defeatReturnTimer);
       resizeObserver.disconnect();
-      unbindCamera();
+      unbindCamera?.();
       shell.remove();
     },
   };

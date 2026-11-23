@@ -1,4 +1,5 @@
 import { clearCombatSpawn } from './combat-field-spawns';
+import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import {
   defaultFleetHostility,
   hasActiveFleetHostilities,
@@ -28,6 +29,10 @@ export interface NativeDuelShip {
   readonly id: string;
   readonly team: string;
   readonly setup: StrategicCombatantSetup;
+  /** Existing world-space pose when a ship hands off to native combat. */
+  readonly position?: CombatPoint;
+  readonly velocity?: CombatPoint;
+  readonly headingRadians?: number;
 }
 export interface ParallelNativeDuelSnapshot {
   readonly duels: readonly StrategicCombatSnapshot[];
@@ -43,9 +48,11 @@ export interface ParallelNativeDuels {
   readonly duels: readonly StrategicCombatService[];
   readonly supporters: readonly StrategicCombatService[];
   getActor(id: string): MutableCombatant | null;
+  /** World traffic is a physical bystander, not an automatically hostile combatant. */
+  setBystanders(ships: readonly StrategicCombatBystander[]): void;
   /** Bring an existing campaign or test ship into the live battle exactly once. */
   addShip(ship: NativeDuelShip, conflictKey?: string): boolean;
-  tick(dt: number): ParallelNativeDuelSnapshot;
+  tick(dt: number, beforePrimaryAttackerReplacement?: () => void): ParallelNativeDuelSnapshot;
   getSnapshot(): ParallelNativeDuelSnapshot;
 }
 
@@ -98,8 +105,12 @@ function pairFields(
     obstacles,
     attackerPosition: from,
     defenderPosition: to,
-    attackerHeadingRadians: ship.team === 'a' ? 0 : Math.PI,
-    defenderHeadingRadians: target.team === 'a' ? 0 : Math.PI,
+    attackerHeadingRadians:
+      ship.headingRadians ?? arena.attackerHeadingRadians ?? (ship.team === 'a' ? 0 : Math.PI),
+    defenderHeadingRadians:
+      target.headingRadians ?? arena.defenderHeadingRadians ?? (target.team === 'a' ? 0 : Math.PI),
+    ...(ship.velocity ? { attackerVelocity: ship.velocity } : {}),
+    ...(target.velocity ? { defenderVelocity: target.velocity } : {}),
   };
 }
 
@@ -128,8 +139,12 @@ function createNativeDuelServices(
         obstacleSet(),
         ship,
         target,
-        fieldStart(arena, 'a', index, first.length),
-        fieldStart(arena, 'b', index, second.length)
+        ship.position ??
+          (index === 0 ? arena.attackerPosition : undefined) ??
+          fieldStart(arena, 'a', index, first.length),
+        target.position ??
+          (index === 0 ? arena.defenderPosition : undefined) ??
+          fieldStart(arena, 'b', index, second.length)
       ),
       undefined,
       true
@@ -164,7 +179,7 @@ function createNativeDuelServices(
           team: entry.ship.team === 'a' ? 'b' : 'a',
           setup: targetActor.setup,
         },
-        fieldStart(arena, entry.ship.team, entry.index, entry.size),
+        entry.ship.position ?? fieldStart(arena, entry.ship.team, entry.index, entry.size),
         targetActor.position
       ),
       undefined,
@@ -188,8 +203,12 @@ function nativeFleetFinished(
   actors: readonly MutableCombatant[],
   escaped: ReadonlySet<string>,
   factions: ReadonlyMap<string, string>,
-  hostility: FleetHostility
+  hostility: FleetHostility,
+  services: readonly StrategicCombatService[]
 ): boolean {
+  // A surrendered duel is over even if both hulls remain intact and hostile.
+  // Never resurrect an already resolved battle merely because the participants survived.
+  if (services.every((service) => service.getSnapshot().winner !== null)) return true;
   return !hasActiveFleetHostilities(actors, escaped, factions, hostility);
 }
 
@@ -236,10 +255,11 @@ function joinNativeFleetShip(
       obstacleSet(),
       ship,
       { id: target.setup.id, team: teams.get(target.setup.id)!, setup: target.setup },
-      clearCombatSpawn(arena, {
-        x: arena.width * 0.5,
-        y: (arena.height * ((shipIndex % 9) + 1)) / 10,
-      }),
+      ship.position ??
+        clearCombatSpawn(arena, {
+          x: arena.width * 0.5,
+          y: (arena.height * ((shipIndex % 9) + 1)) / 10,
+        }),
       target.position
     ),
     undefined,
@@ -310,6 +330,7 @@ export function createParallelNativeDuels(
     ...supporters.map(() => 'attacker' as const),
   ];
   let elapsed = 0;
+  let bystanders: readonly StrategicCombatBystander[] = [];
   let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
   const radiusById = nativeFleetRadii(actors);
   const getSnapshot = (): ParallelNativeDuelSnapshot => {
@@ -325,7 +346,7 @@ export function createParallelNativeDuels(
       elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
       engagements,
-      finished: nativeFleetFinished(actors, escaped, teams, hostility),
+      finished: nativeFleetFinished(actors, escaped, teams, hostility, services),
     };
     return cachedSnapshot;
   };
@@ -355,8 +376,11 @@ export function createParallelNativeDuels(
       return joined;
     },
     getActor: (id) => actors.find((actor) => actor.setup.id === id) ?? null,
+    setBystanders(contacts) {
+      bystanders = contacts.filter((ship) => !actors.some((actor) => actor.setup.id === ship.id));
+    },
     getSnapshot,
-    tick(seconds) {
+    tick(seconds, beforePrimaryAttackerReplacement) {
       if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
       const dt = Math.min(seconds, 0.08);
       cachedSnapshot = null;
@@ -374,8 +398,10 @@ export function createParallelNativeDuels(
         seed,
         elapsed,
         dt,
+        bystanders,
       });
       reassignNativeFleetTargets({
+        ...(beforePrimaryAttackerReplacement ? { beforePrimaryAttackerReplacement } : {}),
         services,
         drivers,
         ships: actors,

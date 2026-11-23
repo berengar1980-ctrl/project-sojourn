@@ -1,5 +1,4 @@
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
-import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import { createFleetNativeCombatPanel } from '../ui/combat/fleet-native-combat-panel';
 import { returnFromCombat } from './game-controller-combat-boarding';
 import {
@@ -38,7 +37,7 @@ export function mountCombatScene(context: ControllerRuntimeContext, returnToMap:
         fleetEngagements: () => fleet.getSnapshot().engagements,
         isComplete: () => fleet.getSnapshot().finished,
       })
-    : createStrategicCombatPanel({ root: context.root, combat, onReturn });
+    : createFleetNativeCombatPanel({ root: context.root, combat, onReturn });
   state.shipSwitcher?.destroy();
   state.shipSwitcher = null;
 }

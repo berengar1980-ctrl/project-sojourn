@@ -8,7 +8,7 @@ import { CombatCamera, type CombatCameraPose } from './combat-camera';
  * StrategicCombatRenderer directly.
  */
 export class PvPMapCamera extends MapCamera {
-  private readonly combat = new CombatCamera();
+  readonly combat = new CombatCamera();
 
   constructor(
     private readonly arenaWidth: number,
@@ -23,7 +23,6 @@ export class PvPMapCamera extends MapCamera {
 
   restorePose(pose: CombatCameraPose): void {
     this.combat.restorePose(pose);
-    this.setViewport(this.viewWidth, this.viewHeight);
   }
 
   override fit(_viewWidth: number, _viewHeight: number, _bounds?: MapBounds): void {
@@ -59,18 +58,11 @@ export class PvPMapCamera extends MapCamera {
 
   override scale(value: number): number {
     // Callers provide dimensions through fit/updateViewport before drawing.
-    return value * this.lastScale;
-  }
-
-  private lastScale = 1;
-
-  /** Update the pixel-per-world-unit projection for operations and hit testing. */
-  setViewport(width: number, height: number): void {
-    this.lastScale = this.combat.scale(width, height, this.arenaWidth, this.arenaHeight);
+    return value * this.getZoom();
   }
 
   override getZoom(): number {
-    return this.lastScale;
+    return this.combat.scale(this.viewWidth, this.viewHeight, this.arenaWidth, this.arenaHeight);
   }
 
   override getRelativeZoom(): number {
@@ -91,6 +83,5 @@ export class PvPMapCamera extends MapCamera {
   setViewDimensions(width: number, height: number): void {
     this.viewWidth = width;
     this.viewHeight = height;
-    this.setViewport(width, height);
   }
 }

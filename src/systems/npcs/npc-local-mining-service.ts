@@ -4,11 +4,8 @@ import { seededLocalGate } from '../../core/local-space-exit';
 import { cloneCareerJson } from '../persistence/career-save-contract';
 import { stageLocalMinerCheckpoint } from './npc-local-mining-checkpoint';
 import type { LocalAsteroid } from '../../core/local-space-types';
-
 import type { SectorNpcState } from '../../core/npc-types';
-
 import type { WorldPoint } from '../../core/world-types';
-
 import { createMiningEventController } from '../local-space/mining-event-service';
 
 import {
@@ -28,6 +25,8 @@ import {
   FLIGHT_SPEED,
   chooseAsteroid,
   MINING_AMOUNT,
+  NPC_MINING_SURFACE_DISTANCE,
+  checkMinerWorkRange,
   cargoUsed,
   chooseEventChoice,
   approachPoint,
@@ -37,14 +36,12 @@ import {
   hashId,
 } from './npc-mining-targets';
 
-export type { LocalNpcMiningPhase } from './npc-mining-targets';
-
-export type { LocalNpcMinerState } from './npc-mining-targets';
-
-export type { NpcLocalMiningService } from './npc-mining-targets';
-
-export type { NpcLocalMiningOptions } from './npc-mining-targets';
-
+export type {
+  LocalNpcMiningPhase,
+  LocalNpcMinerState,
+  NpcLocalMiningService,
+  NpcLocalMiningOptions,
+} from './npc-mining-targets';
 function localCruiseSpeed(npc: SectorNpcState): number {
   const ship = getShipDefinition(npc.shipId);
   return ship ? resolveShipLocalCruiseSpeed(ship, ensureNpcInstalledComponents(npc)) : FLIGHT_SPEED;
@@ -73,6 +70,13 @@ function beginExit(runtime: MinerRuntime, ship: LocalNpcMinerState): void {
 function syncArrivals(runtime: MinerRuntime): void {
   const active = new Set(runtime.ships.map((ship) => ship.npcId));
   for (const npc of runtime.options.miners) {
+    if (!runtime.byId.has(npc.id)) {
+      runtime.byId.set(npc.id, npc);
+      runtime.events.set(
+        npc.id,
+        createMiningEventController(hashId(runtime.options.locationId + ':' + npc.id))
+      );
+    }
     if (active.has(npc.id) || !eligibleMiner(npc, runtime.options.locationId)) continue;
     const entry = seededLocalGate(
       runtime.options.width,
@@ -123,6 +127,7 @@ function assignTarget(
   const route = planMiningApproachRoute({
     start: ship.position,
     target: asteroid,
+    surfaceDistance: NPC_MINING_SURFACE_DISTANCE,
     asteroids: runtime.options.getAsteroids(),
     clearance: 65,
     width: runtime.options.width,
@@ -242,14 +247,23 @@ function advanceApproaching(
       assignTarget(runtime, ship, npc);
       return;
     }
-    const point = ship.routeState?.target ?? approachPoint(npc.id, asteroid);
+    const saved = ship.routeState?.target;
+    const range = asteroid.radius + NPC_MINING_SURFACE_DISTANCE;
+    const point =
+      saved &&
+      Math.abs(Math.hypot(saved.x - asteroid.position.x, saved.y - asteroid.position.y) - range) <=
+        12
+        ? saved
+        : approachPoint(npc.id, asteroid);
+    const validBlocker = (rock: LocalAsteroid) => rock.routeBlocking && rock.id !== asteroid.id;
+    const rockBlockers = runtime.options.getAsteroids().filter(validBlocker);
     if (
       moveFieldShip(
         ship,
         point,
         localCruiseSpeed(npc),
         dt,
-        runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+        [...rockBlockers, ...(runtime.options.getTrafficObstacles?.(npc.id) ?? [])],
         65
       )
     ) {
@@ -336,6 +350,7 @@ function advanceMiner(
   npc: SectorNpcState,
   dt: number
 ): boolean {
+  checkMinerWorkRange(ship, runtime.options.getAsteroids());
   if (ship.phase === 'entering' && !assignTarget(runtime, ship, npc)) return false;
   if (ship.phase === 'approaching') {
     advanceApproaching(runtime, ship, npc, dt);
@@ -356,7 +371,10 @@ function advanceMiner(
       ship.exitPoint,
       localCruiseSpeed(npc),
       dt,
-      runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+      [
+        ...runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+        ...(runtime.options.getTrafficObstacles?.(npc.id) ?? []),
+      ],
       65
     )
   ) {
@@ -428,7 +446,8 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     }
     if (advanceMiner(runtime, ship, npc, dt)) runtime.ships.splice(index, 1);
   }
-  resolveMinerCollisions(runtime, combatantId);
+  if (runtime.options.resolveLocalCollisions !== false)
+    resolveMinerCollisions(runtime, combatantId);
 }
 
 export function createNpcLocalMiningService(

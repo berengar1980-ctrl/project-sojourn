@@ -81,9 +81,11 @@ function simulate(seed) {
     seed,
     arena
   );
+  const digest = require('node:crypto').createHash('sha256');
   const trace = [];
   for (let frame = 0; frame < 180; frame += 1) {
     const snapshot = combat.tick(0.08);
+    digest.update(JSON.stringify(snapshot));
     for (const ship of [snapshot.attacker, snapshot.defender]) {
       assert(Number.isFinite(ship.position.x) && Number.isFinite(ship.position.y));
       assert(ship.position.x >= 0 && ship.position.x <= arena.width);
@@ -112,12 +114,19 @@ function simulate(seed) {
     ]);
     if (snapshot.winner) break;
   }
-  return trace;
+  return { trace, digest: digest.digest('hex') };
 }
+// Complete per-tick snapshots through the winner, recorded on pre-PR main f8f6569.
+const reference = new Map([
+  [7, 'd3b828fc26aa241214dec3739a6a80c3b5f7e30bd38c0b2b25fd32d40e65f5f6'],
+  [19, '1c1b539e3b9f6a03b8951f62305e8fa374d2e82a3e161fde570c448f4dead49f'],
+  [1337, '8cfc04d473ddee560c8b954458b9907b9c4e42759f16d189b73c8e88893e11ad'],
+]);
 for (const seed of [7, 19, 1337]) {
   const first = simulate(seed);
   const repeat = simulate(seed);
   assert.deepEqual(first, repeat, 'combined weapons/mines/obstacles reproduce for seed ' + seed);
-  assert(first.length > 20, 'battle simulation advances beyond opening exchanges');
+  assert.equal(first.digest, reference.get(seed), 'pre-integration 1vs1 replay for seed ' + seed);
+  assert(first.trace.length > 20, 'battle simulation advances beyond opening exchanges');
 }
 console.log('PASS multi-seed combined weapons, minefield and asteroid simulation');

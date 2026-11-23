@@ -1137,3 +1137,59 @@ Speicherwerte. Die Anpassung der temporären Duell-Verbindungslinien betrifft
 nur den berechneten FleetCombat-Snapshot und wird nicht gespeichert.
 Laufende Mehrparteiengefechte bleiben hinsichtlich des zusätzlichen
 Fleet-Zustands weiterhin nicht vollständig checkpoint-/restore-fähig.
+
+### Einheitliche native Kampfphysik und NPC-Weltzustand (PR #387)
+
+Die Kampagne besitzt weiterhin die maßgeblichen `SectorNpcState`- und
+`combatMovement`-Daten. Der gemeinsame native FleetCombat-Akteur
+übernimmt bei Kampfbeginn Position, Flugrichtung und Geschwindigkeit,
+wird während des Kampfes nur einmal physisch simuliert und synchronisiert
+seine tatsächliche Bewegung auf den bestehenden NPC-Zustand zurück.
+Die Umrechnung zwischen strategischen Sektorkoordinaten und lokalen
+Kampfkoordinaten bleibt als temporärer Offset beim Encounter, ohne
+neues Speicherfeld oder konkurrierende Bewegungsinstanz.
+
+Für das PvP-Testlabor werden temporäre NPC-Profile aus den vorhandenen
+`createSectorNpcEconomyStates`-Vorlagen kopiert. Ihre lokalen Miner
+verwenden den bestehenden `createNpcLocalMiningService`, die
+Sicherheitsdrohnen die vorhandene `AsteroidSecurityDrone`, beide mit
+dem gemeinsamen Feld-Routing. Diese Daten werden **nicht** in der
+Karriere persistiert und greifen nicht auf deren Wirtschaft zu.
+
+Die bereits dokumentierte Save/Load-Grenze bleibt bestehen:
+Zusätzliche Mehrparteien-Flottenakteure, kurzfristige Feindschaften
+und ihre Zuordnungen sind noch nicht vollständig durch das
+Karriere-Kampfcheckpoint erfasst. Die Änderungen in diesem Branch
+beheben **nicht** diese separate Persistenzlücke.
+
+Das Fleet-Labor hält das erzeugte Asteroiden- oder Wrackfeld für die gesamte Sitzung.
+Arbeitsdienste buchen Fracht und Abflug über dieselben NPC-Wirtschaftstransaktionen wie
+in der Karriere. Feldbestände, Fracht und Kamera des Labors sind sitzungsgebunden.
+Die Karriere verwendet weiterhin ihre bestehenden Feld- und Wirtschaftseigentümer.
+
+Scheidet der Spieler aus einem laufenden Mehrparteiengefecht aus, behält die
+Kampagne sein letztes Kampfergebnis für Hüllenschaden, Position und Rückkehr.
+Das Ergebnis gilt bis zur Auflösung des Gefechts und wird bei einem Zielwechsel
+des überlebenden Gegners nicht überschrieben. Dieser Zwischenstand ist nur im
+laufenden Gefecht verfügbar.
+
+Patrouillenschiffe und Piraten verwenden im lokalen Feld denselben Verkehrsdienst.
+Bestehende Feld-Checkpoints können weiterhin geladen werden. Die Liste der
+Verkehrsschiffe kann zusätzlich reguläre Patrouillen enthalten. Die Rolle und
+das Piratenabzeichen stammen aus dem zugehörigen Sektor-NPC. Gespeicherte Miner
+prüfen ihren Abstand zum aktuellen Asteroiden, bevor Scan oder Abbau weiterlaufen.
+Die Testaufstellung verwendet die Kampagnen-Gefechtsverwaltung im isolierten Feld.
+
+Das FleetCombat-Testlabor startet eine isolierte Kampagnensitzung mit vorgegebener
+Feldkarte und NPC-Aufstellung. Nur der Zeitplan der Ankünfte und der ausgelöste
+Testangriff gehören zur Lobby. Das Testlabor bietet keinen Schreibzugriff auf
+den Karriere-Spielstand. Die Kampagnen-Feldverwaltung besitzt auch die lokalen
+Posen durchfliegender Frachter und zusätzlicher Begleitdrohnen. Beide werden
+wie Patrouillen im bestehenden Verkehrs-Checkpoint erfasst.
+
+Nach einem Feldgefecht behalten überlebende Schiffe im Feld ihre Position und
+Geschwindigkeit im vorhandenen Verkehrs-Checkpoint. Sektor-NPCs übernehmen
+wieder ihre lokale Tätigkeit. Entkommene Schiffe und kampfunfähige Besatzungen
+verwenden die bestehenden Reise- und Bergungsdaten. Der Feld-Seed bestimmt
+den Fluchtpunkt. Zeugen und die Liste der während eines laufenden Gefechts
+entkommenen Schiffe gehören zur flüchtigen Gefechtssitzung.

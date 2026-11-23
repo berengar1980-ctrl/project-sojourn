@@ -1,5 +1,10 @@
+import { validateControllerRestore } from './game-controller-types';
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
-import { advanceControllerFieldWorld, fieldWorldFor } from './game-controller-field-world-bridge';
+import {
+  advanceControllerFieldWorld,
+  fieldEngagementHooks,
+  fieldWorldFor,
+} from './game-controller-field-world-bridge';
 import {
   inspectLegalDockArrival,
   reportLegalDeparture,
@@ -24,13 +29,12 @@ import { createShipOperatingService } from '../systems/ships/ship-operating-cost
 import { createFuelJourneyService } from './game-controller-fuel-journey';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
-import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
 import { captureControllerCareer } from './game-controller-career-capture';
 import {
   installControllerCareer,
-  saveControllerCareer,
+  controllerSettings,
   rememberMiningField,
 } from './game-controller-career-install';
 import { createInitialControllerState } from './game-controller-initial-state';
@@ -317,9 +321,9 @@ function mountControllerSalvage(
     audio: context.audio,
     selectedNpcId: state.selectedNpcId,
     onSelectNpc: (id) => (state.selectedNpcId = id),
-    onAttackNpc: (id, arena) => {
+    onAttackNpc: (id, arena, playerInitiated = true) => {
       state.selectedNpcId = id;
-      if (context.engagements.engageNpcInArena(id, arena)) {
+      if (context.engagements.engageNpcInArena(id, arena, playerInitiated)) {
         state.embeddedCombat = 'salvage-space';
         context.systemLog.write('COMBAT > GEFECHT IM WRACKFELD');
       }
@@ -330,7 +334,9 @@ function mountControllerSalvage(
         : null,
     isCombatActive: () => state.embeddedCombat === 'salvage-space',
     onCombatBystanders: (bystanders) =>
-      context.engagements.activePlayerCombat()?.setBystanders(bystanders),
+      (
+        context.engagements.activePlayerFleet() ?? context.engagements.activePlayerCombat()
+      )?.setBystanders(bystanders),
     onCombatGrapple: () => context.engagements.activePlayerCombat()?.fireGrapple('attacker'),
     onCombatTactic: (tactic) =>
       context.engagements.activePlayerCombat()?.setTactic('attacker', tactic),
@@ -391,18 +397,22 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   }
 }
 
+function mountInitialScene(context: ControllerRuntimeContext, options: GameControllerOptions) {
+  if (options.fieldExercise) {
+    options.fieldExercise.prepare(context);
+    if (options.fieldExercise.salvage)
+      mountControllerSalvage(context, true, options.fieldExercise.salvage);
+    else mountControllerMining(context);
+  } else mountControllerStarMap(context);
+}
 export function createGameController(options: GameControllerOptions): GameController {
   const saved = options.restoredSession;
-  if (saved && saved.navigationWorld.navigation !== options.navigation) {
-    throw new Error('Career navigation must use the staged navigation authority');
-  }
-  if (saved && saved.commerce.ships.activeShipId !== options.ship.id) {
-    throw new Error('Career ship must match the staged active ship');
-  }
+  validateControllerRestore(options);
   const systemLog = createControllerLog();
+  const log = (message: string) => systemLog.write(message);
   const economy = saved
-    ? controllerEconomyFromCareer(saved, (message) => systemLog.write(message))
-    : createControllerEconomy(options.navigation, (message) => systemLog.write(message));
+    ? controllerEconomyFromCareer(saved, log)
+    : createControllerEconomy(options.navigation, log, undefined, options.fieldExercise?.npcs);
   if (!saved) economy.smuggling.activateShip(options.ship.id);
   const state = createInitialControllerState(options, economy);
 
@@ -418,12 +428,15 @@ export function createGameController(options: GameControllerOptions): GameContro
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     world: () => engagementWorld(),
+    inStarMap: () => state.mode === 'star-map',
+    ...fieldEngagementHooks(() => combatContext),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
     onNpcCombatEnded: (snapshot, attacker) => {
       if (combatContext) recordCareerCombatWrecks(combatContext, snapshot, attacker.locationId);
     },
-    mayInterceptPlayer: () => !state.combatResultPending && state.combatReengageSeconds <= 0,
+    mayInterceptPlayer: () =>
+      state.mode === 'star-map' && !state.combatResultPending && state.combatReengageSeconds <= 0,
     getPlayerShip: () => state.activeShip,
     getPlayerCombatant: () =>
       servicedPlayerCombatant(state.activeShip, crew, loadouts, shipOperations),
@@ -472,20 +485,12 @@ export function createGameController(options: GameControllerOptions): GameContro
   };
   combatContext = context;
   installControllerCareer(context, options);
-  const menu = createSettingsMenu(
-    context.audio,
-    options.onReturnToMainMenu,
-    state.playerProfile,
-    () => saveControllerCareer(context),
-    options.onLoadCareer
-  );
-  mountControllerStarMap(context);
+  const menu = controllerSettings(context, options);
+  mountInitialScene(context, options);
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
     careerSnapshot: () => captureControllerCareer(context),
-    tick(deltaSeconds) {
-      tickController(context, deltaSeconds);
-    },
+    tick: (deltaSeconds) => tickController(context, deltaSeconds),
     destroy: () => {
       campaignServices.campaigns.destroy();
       destroyGameController(context, menu);

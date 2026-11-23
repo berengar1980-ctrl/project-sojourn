@@ -274,7 +274,8 @@ assert(
   'real salvage fragments must reach the shared tractor-throw combat arena'
 );
 assert(
-  controller.includes('invalidateSalvagePhysics'),
+  controller.includes('syncSalvageCombatField(context.field, combat)') &&
+    fieldCombat.includes('invalidateSalvagePhysics(field)'),
   'thrown scrap must not respawn after combat'
 );
 assert(

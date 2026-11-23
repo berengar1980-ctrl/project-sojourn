@@ -1,3 +1,7 @@
+import { fieldBattleMotion } from './game-controller-field-combat-pose';
+import type { SectorNpcState } from '../core/npc-types';
+import { distance } from '../systems/local-space/local-space-motion';
+import { fieldInterceptRange, localArmedTraffic } from '../systems/npcs/npc-combat-ai';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import {
   detectedSecurityPirate,
@@ -33,6 +37,46 @@ function pirateMiningContacts(context: ControllerRuntimeContext, field: Asteroid
   });
 }
 
+function engagePatrolContact(
+  context: ControllerRuntimeContext,
+  field: AsteroidFieldRuntime,
+  pirateId: string,
+  targetId: string,
+  piratePosition: { x: number; y: number },
+  arena: ReturnType<typeof localMiningCombatArena>
+): boolean {
+  const enemy = field.pirates
+    .snapshot(context.economy.sectorNpcs.npcs)
+    .find((ship) => ship.npcId === targetId);
+  return (
+    !!enemy &&
+    context.engagements.engageNpcsInArena(pirateId, targetId, {
+      ...arena,
+      attackerPosition: piratePosition,
+      defenderPosition: enemy.position,
+      defenderHeadingRadians: enemy.headingRadians,
+      ...fieldBattleMotion(context, field.locationId, pirateId, targetId),
+    })
+  );
+}
+
+function droneCanProtectMiner(
+  field: AsteroidFieldRuntime,
+  protector: SectorNpcState | undefined,
+  piratePosition: { x: number; y: number }
+): boolean {
+  const drone = field.drone;
+  return Boolean(
+    drone.snapshot().operational &&
+    protector &&
+    protector.hullHp > 0 &&
+    !protector.combatMovement &&
+    distance(drone.snapshot().position, piratePosition) <=
+      fieldInterceptRange(protector.id, false) &&
+    drone.detect(piratePosition, field.instance.asteroids)
+  );
+}
+
 export function tickFieldPirates(
   context: ControllerRuntimeContext,
   seconds: number,
@@ -45,7 +89,7 @@ export function tickFieldPirates(
     state.localSpace?.getSnapshot().instance === field.instance ? state.localSpace : null;
   const traffic = field.pirates;
   const pirates = economy.sectorNpcs.npcs.filter(
-    (npc) => npc.pirate && npc.locationId === locationId
+    (npc) => localArmedTraffic(npc) && npc.locationId === locationId
   );
   // Keep the active duel defender rendered, even when strategic combat marks
   // it as combatMovement. Other combatants still use normal sector transitions.
@@ -53,7 +97,7 @@ export function tickFieldPirates(
   traffic.tick(
     seconds,
     pirates,
-    canLocalPiratesTargetPlayer(context)
+    state.embeddedCombat === 'local-space' || canLocalPiratesTargetPlayer(context)
       ? (space?.getSnapshot().instance.ship.position ?? null)
       : null,
     pirateMiningContacts(context, field),
@@ -66,14 +110,20 @@ export function tickFieldPirates(
         space?.getShipWorldVelocity() ?? { x: 0, y: 0 },
         field.combatWrecks
       );
+      if (traffic.body(targetId))
+        return engagePatrolContact(context, field, pirateId, targetId, piratePosition, arena);
       if (targetId === 'player') {
-        if (!space || context.engagements.activePlayerCombat()) return false;
-        const engaged = context.engagements.engageNpcInArena(pirateId, {
-          ...arena,
-          defenderPosition: piratePosition,
-          defenderHeadingRadians: 0,
-          defenderVelocity: { x: 0, y: 0 },
-        });
+        if (!space || !canLocalPiratesTargetPlayer(context)) return false;
+        const engaged = context.engagements.engageNpcInArena(
+          pirateId,
+          {
+            ...arena,
+            defenderPosition: piratePosition,
+            defenderHeadingRadians: 0,
+            ...fieldBattleMotion(context, locationId, 'player', pirateId),
+          },
+          false
+        );
         if (engaged) {
           state.embeddedCombat = 'local-space';
           space.cancelMining();
@@ -84,27 +134,22 @@ export function tickFieldPirates(
       const miner = field.miners.ships.find((ship) => ship.npcId === targetId);
       if (!miner) return false;
       const minerNpc = economy.sectorNpcs.npcs.find((npc) => npc.id === targetId);
-      if (!minerNpc || minerNpc.hullHp <= 0) return false;
+      if (!minerNpc || minerNpc.combatMovement || minerNpc.hullHp <= 0) return false;
       const drone = field.drone;
       const protector = economy.sectorNpcs.npcs.find(
         (npc) => npc.id === 'security-drone:' + locationId
       );
-      const protecting = Boolean(
-        drone?.snapshot().operational &&
-        protector &&
-        protector.hullHp > 0 &&
-        drone.detect(piratePosition, field.instance.asteroids)
-      );
+      const protecting = droneCanProtectMiner(field, protector, piratePosition);
       const defenderId = protecting ? protector!.id : targetId;
-      const defenderPosition = protecting ? drone!.snapshot().position : miner.position;
+      const defenderPosition = protecting ? drone.snapshot().position : miner.position;
       const combatArena = {
         ...arena,
         attackerPosition: piratePosition,
         attackerHeadingRadians: 0,
         attackerVelocity: { x: 0, y: 0 },
         defenderPosition,
-        defenderHeadingRadians: protecting ? 0 : miner.headingRadians,
-        defenderVelocity: { x: 0, y: 0 },
+        defenderHeadingRadians: protecting ? drone.headingRadians : miner.headingRadians,
+        ...fieldBattleMotion(context, locationId, pirateId, defenderId),
       };
       const started = context.engagements.engageNpcsInArena(pirateId, defenderId, combatArena);
       if (started) {
@@ -118,9 +163,19 @@ export function tickFieldPirates(
       }
       return started;
     },
-    combatantId
+    combatantId,
+    (npc) => {
+      if (npc.homePortId)
+        economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
+    }
   );
   resolvePirateFieldShipContacts(context, field);
+  recoverFieldDrone(context, field);
+}
+
+function recoverFieldDrone(context: ControllerRuntimeContext, field: AsteroidFieldRuntime): void {
+  const { economy } = context;
+  const locationId = field.locationId;
   const drone = field.drone;
   const defender = economy.sectorNpcs.npcs.find((npc) => npc.id === 'security-drone:' + locationId);
   if (drone && defender && defender.hullHp <= 0 && drone.snapshot().operational) {
@@ -262,12 +317,16 @@ function handlePlayerDroneFine(
       field.combatWrecks
     );
     if (
-      !context.engagements.engageNpcInArena(defender.id, {
-        ...arena,
-        defenderPosition: { ...drone.snapshot().position },
-        defenderHeadingRadians: 0,
-        defenderVelocity: { x: 0, y: 0 },
-      })
+      !context.engagements.engageNpcInArena(
+        defender.id,
+        {
+          ...arena,
+          defenderPosition: { ...drone.snapshot().position },
+          defenderHeadingRadians: 0,
+          defenderVelocity: { x: 0, y: 0 },
+        },
+        false
+      )
     )
       return;
     context.state.embeddedCombat = 'local-space';

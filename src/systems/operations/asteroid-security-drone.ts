@@ -24,7 +24,7 @@ export interface SecurityDroneSnapshot {
   readonly shieldContactSeconds: number;
 }
 const DRONE_CRUISE = 115;
-const DRONE_SCAN_RADIUS = 460;
+export const DRONE_SCAN_RADIUS = 460;
 
 /** Physical patrol and line-of-sight based claim enforcement.
  * A ship is reported only while it is actively mining a protected asteroid.
@@ -115,6 +115,22 @@ export class AsteroidSecurityDrone {
     this.position = { ...position };
     delete this.routeState;
     this.operational = operational;
+    // Resuming a physical drone must not send every unit to the same first
+    // patrol corner regardless of the sector position where it materialized.
+    let nearest = 0;
+    for (let index = 1; index < this.patrol.length; index++) {
+      const distance = Math.hypot(
+        this.patrol[index]!.x - position.x,
+        this.patrol[index]!.y - position.y
+      );
+      const best = Math.hypot(
+        this.patrol[nearest]!.x - position.x,
+        this.patrol[nearest]!.y - position.y
+      );
+      if (distance < best) nearest = index;
+    }
+    this.nextWaypoint = nearest;
+    this.retryAfterSeconds = 0;
   }
 
   tick(
@@ -241,30 +257,51 @@ export class AsteroidSecurityDrone {
   }
 
   private canSee(point: WorldPoint, asteroids: readonly LocalAsteroid[]): boolean {
-    const dx = point.x - this.position.x;
-    const dy = point.y - this.position.y;
-    const distanceSquared = dx * dx + dy * dy;
-    if (distanceSquared > this.scanRadius * this.scanRadius) return false;
-    if (distanceSquared < 1) return true;
-    // Asteroids blocking the physical sensor ray shield illegal miners.
-    for (const asteroid of asteroids) {
-      if (!asteroid.routeBlocking) continue;
-      const t = Math.max(
-        0,
-        Math.min(
-          1,
-          ((asteroid.position.x - this.position.x) * dx +
-            (asteroid.position.y - this.position.y) * dy) /
-            distanceSquared
-        )
-      );
-      if (t <= 0.02 || t >= 0.98) continue;
-      const closestX = this.position.x + t * dx;
-      const closestY = this.position.y + t * dy;
-      const radius = asteroid.radius * 0.9;
-      if (Math.hypot(closestX - asteroid.position.x, closestY - asteroid.position.y) < radius)
-        return false;
-    }
-    return true;
+    return droneSeesTarget(this.position, point, asteroids, this.scanRadius);
   }
+}
+
+export function droneSeesTarget(
+  position: WorldPoint,
+  point: WorldPoint,
+  asteroids: readonly LocalAsteroid[],
+  scanRadius = DRONE_SCAN_RADIUS
+): boolean {
+  const dx = point.x - position.x;
+  const dy = point.y - position.y;
+  const distanceSquared = dx * dx + dy * dy;
+  if (distanceSquared > scanRadius * scanRadius) return false;
+  if (distanceSquared < 1) return true;
+  // Asteroids blocking the physical sensor ray shield illegal miners.
+  for (const asteroid of asteroids) {
+    if (!asteroid.routeBlocking) continue;
+    const t = Math.max(
+      0,
+      Math.min(
+        1,
+        ((asteroid.position.x - position.x) * dx + (asteroid.position.y - position.y) * dy) /
+          distanceSquared
+      )
+    );
+    if (t <= 0.02 || t >= 0.98) continue;
+    const closestX = position.x + t * dx;
+    const closestY = position.y + t * dy;
+    const radius = asteroid.radius * 0.9;
+    if (Math.hypot(closestX - asteroid.position.x, closestY - asteroid.position.y) < radius)
+      return false;
+  }
+  return true;
+}
+
+export function securityPirateApproach(
+  dronePosition: WorldPoint,
+  piratePosition: WorldPoint
+): WorldPoint {
+  const dx = dronePosition.x - piratePosition.x;
+  const dy = dronePosition.y - piratePosition.y;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  return {
+    x: piratePosition.x + (dx / length) * 125,
+    y: piratePosition.y + (dy / length) * 125,
+  };
 }

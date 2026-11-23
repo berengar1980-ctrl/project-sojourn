@@ -1863,3 +1863,33 @@ in eine gemeinsame zustandslose Auswahlfunktion überführt. Mk-III-Hülle,
 -Schild und Reaktor sowie die bekannten Fraktionsregeln bleiben erhalten.
 Die Behebung ergänzt keine neuen Kampagnen-Speicherfelder und ändert die
 bekannte Einschränkung beim Restore laufender Mehrparteiengefechte nicht.
+
+## Review-Log (2026-11-22): Vereinheitlichung von 1vs1, FleetCombat und Kampagne (PR #387)
+
+**Keine abgeschlossene Statusänderung** an historischen Feature-IDs. Alle drei
+Kampf-Ansichten verwenden den bestehenden `FleetNativeCombatRenderer`, der
+seinerseits dieselben Schiffs-/Waffen-/Physikressourcen wie die native
+`StrategicCombatService`-Engine zeichnet. Die ursprüngliche 1vs1-KI,
+Treffer- und Flugphysik bleiben unverändert; die Kampagne und das
+Fleet-Testlabor verwenden die gemeinsame Mehrschiff-Koordination.
+
+Die Fleet-Testlabor-Welt wird nun vom vorhandenen
+`createNpcLocalMiningService`, `AsteroidSecurityDrone`,
+`npcDefenseReaction`/`npcMayInitiateAttack` und `moveFieldShip`
+angetrieben. Neutrale Schiffe dürfen arbeiten, patrouillieren oder
+fliehen, statt beim bloßen Erscheinen in einen Kampf eingebucht zu
+werden. Der gemeinsame Fleet-Renderer zeichnet sie weiterhin auf
+derselben Kampfkarte. Die Kampagne überträgt Schiffspositionen,
+Flugrichtung und Geschwindigkeit beim Kampfstart und beim Nachrücken;
+die Kampfposition des autoritativen NPC-Akteurs wird anschließend
+zum bestehenden `combatMovement` zurückgeschrieben.
+
+**Noch nicht gleichgesetzt:** Die vollständige Karriere-Ökonomie
+(Handelsmärkte, Aufträge, Konzessionsrecht) wird bewusst nicht als
+zweite Kopie im PvP-Testlabor gestartet. Der Test stellt diese
+Nebenwirkungen nicht als echte Karriereereignisse dar. Ein im
+Kampagnenmodus begonnener Mehrparteienkampf kann weiterhin nicht
+vollständig gespeichert und wiederhergestellt werden. Außerdem
+kann die PvP-Warteansicht ohne feindlichen Erstkontakt noch nicht
+denselben aktiven Kampf-Canvas wie eine laufende Begegnung anzeigen.
+Diese Grenzen bleiben offene Paritätspunkte, keine implizit erledigten Features.

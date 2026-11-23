@@ -48,6 +48,15 @@ export function buildCombatArena(
   arenaOptions?: StrategicCombatArenaOptions
 ): StrategicCombatArenaOptions {
   const arena = createArenaOptions(arenaOptions);
+  return { ...arena, exitPoint: arenaOptions?.exitPoint ?? combatEscapeGate(arena, seed) };
+}
+
+/** The very same perimeter gate is visible before and during FleetCombat. */
+export function combatEscapeGate(
+  arena: StrategicCombatArenaOptions,
+  seed: number
+): { x: number; y: number } {
+  if (arena.exitPoint) return arena.exitPoint;
   // One seeded perimeter sample, not a "furthest from pursuer" selection.
   // The old four-candidate scoring concentrated almost every gate on the left.
   const random = createRng(hashSeed(String(seed) + ':combat-exit'));
@@ -77,9 +86,5 @@ export function buildCombatArena(
       break;
     preferredGate = sample();
   }
-  const escapeArena: StrategicCombatArenaOptions = {
-    ...arena,
-    exitPoint: arenaOptions?.exitPoint ?? preferredGate,
-  };
-  return escapeArena;
+  return preferredGate;
 }

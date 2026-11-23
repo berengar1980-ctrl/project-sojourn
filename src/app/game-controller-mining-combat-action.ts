@@ -4,7 +4,11 @@ import { localMiningCombatArena } from './game-controller-combat';
 import { controllerLocalModel } from './game-controller-models';
 
 /** Enter the native duel from a mining map while keeping nearby wreck obstacles. */
-export function startPlayerMiningCombat(context: ControllerRuntimeContext, id: string): void {
+export function startPlayerMiningCombat(
+  context: ControllerRuntimeContext,
+  id: string,
+  playerInitiated = true
+): void {
   const { state } = context;
   state.selectedNpcId = id;
   const local = state.localSpace?.getSnapshot();
@@ -20,15 +24,19 @@ export function startPlayerMiningCombat(context: ControllerRuntimeContext, id: s
     state.localSpace!.getShipWorldVelocity(),
     fieldWorldFor(context).combatWrecks(local.instance.sourceLocationId)
   );
-  const started = context.engagements.engageNpcInArena(id, {
-    ...arena,
-    defenderPosition: { ...target.position },
-    defenderHeadingRadians: target.headingRadians,
-    defenderVelocity: {
-      x: Math.cos(target.headingRadians) * target.speed,
-      y: Math.sin(target.headingRadians) * target.speed,
+  const started = context.engagements.engageNpcInArena(
+    id,
+    {
+      ...arena,
+      defenderPosition: { ...target.position },
+      defenderHeadingRadians: target.headingRadians,
+      defenderVelocity: {
+        x: Math.cos(target.headingRadians) * target.speed,
+        y: Math.sin(target.headingRadians) * target.speed,
+      },
     },
-  });
+    playerInitiated
+  );
   if (started) {
     state.embeddedCombat = 'local-space';
     context.systemLog.write('COMBAT > GEFECHT IM ASTEROIDENFELD');

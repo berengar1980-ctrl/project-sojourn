@@ -1,8 +1,12 @@
 import { createDuelLobby } from './duel-lobby';
-import { createFleetTestLobby } from './fleet-test-lobby';
+import { createFleetTestLobby, type LaunchFleetField } from './fleet-test-lobby';
 
 /** Only the test UI is shared. The existing 1vs1 runtime stays untouched. */
-export function createCombatTestTabs(root: HTMLElement, onBack: () => void): { destroy(): void } {
+export function createCombatTestTabs(
+  root: HTMLElement,
+  onBack: () => void,
+  launch: LaunchFleetField
+): { destroy(): void } {
   const container = document.createElement('div');
   container.className = 'harrow-combat-tests';
   const tabs = document.createElement('nav');
@@ -30,7 +34,7 @@ export function createCombatTestTabs(root: HTMLElement, onBack: () => void): { d
     current =
       mode === 'duel'
         ? createDuelLobby(content, onBack, setCombatActive)
-        : createFleetTestLobby(content, onBack, setCombatActive);
+        : createFleetTestLobby(content, onBack, setCombatActive, launch);
   };
   duelTab.addEventListener('click', () => show('duel'));
   fleetTab.addEventListener('click', () => show('fleet'));

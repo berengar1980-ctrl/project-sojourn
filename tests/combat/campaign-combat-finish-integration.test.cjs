@@ -59,7 +59,8 @@ assert(
 );
 assert(boarding.includes('showCampaignCombatSummary'), 'show boarding result before scene return');
 assert(
-  salvage.includes('getField(): SalvageField'),
+  source('src/app/game-controller-salvage-types.ts').includes('getField(): SalvageField') &&
+    salvage.includes('getField() {'),
   'salvage scene exposes live field for restoration'
 );
 assert(resolution.includes('showCampaignCombatSummary'), 'embedded fights show outcome summary');

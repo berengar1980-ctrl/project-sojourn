@@ -9,7 +9,7 @@ const lobby = read('src/ui/start/duel-lobby.ts');
 const tabs = read('src/ui/start/combat-test-tabs.ts');
 const fleet = read('src/ui/start/fleet-test-lobby.ts');
 const roster = read('src/ui/start/fleet-scenario-roster.ts');
-const runtime = read('src/ui/start/fleet-scenario-runtime.ts');
+const runtime = read('src/app/fleet-field-session.ts');
 const bootstrap = read('src/app/bootstrap.ts');
 const core = read('src/systems/combat/strategic-combat-service.ts');
 assert(!lobby.includes('DUEL_ENCOUNTERS'));
@@ -30,7 +30,8 @@ assert(roster.includes('fitsWeaponHardpoint'), 'weapons respect mount sizes');
 const fleetFactory = read('src/systems/combat/dynamic-fleet-combat.ts');
 const parallel = read('src/systems/combat/parallel-native-duels.ts');
 assert(
-  runtime.includes('createDynamicFleetCombat(') &&
+  runtime.includes('createGameController(') &&
+    read('src/systems/combat/career-fleet-encounter.ts').includes('createDynamicFleetCombat(') &&
     fleetFactory.includes('createParallelNativeDuels(') &&
     parallel.includes('createStrategicCombatService('),
   'FleetCombat laboratory must share the original native 1vs1 services'
@@ -40,7 +41,7 @@ assert(fleet.includes('Nachrücker') && fleet.includes('Nach Sekunden'));
 assert(fleet.includes('FLEET_SCENARIO_GROUPS'));
 assert(!fleet.includes('teamA') && !fleet.includes('teamB'), 'old A/B controls removed');
 assert(
-  runtime.includes('fleet.addShip(') && runtime.includes('arrivalSeconds'),
+  runtime.includes('session.advance(seconds)') && runtime.includes('game.tick(seconds)'),
   'reinforcements join the same running fleet at their scheduled simulation times'
 );
 assert(

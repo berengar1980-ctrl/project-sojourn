@@ -8,6 +8,7 @@ import {
 import { createCharacterEditor } from '../ui/start/character-editor';
 import { createCampaignLoadingScreen } from '../ui/start/campaign-loading';
 import { withPlayerShipName, type PlayerProfile } from '../core/player-profile';
+import { launchFleetField } from './fleet-field-session';
 import { createCombatTestTabs } from '../ui/start/combat-test-tabs';
 import { createGameAudioService } from '../systems/audio/game-audio-service';
 import { narrowsSector } from '../data/maps/narrows-sector';
@@ -154,10 +155,14 @@ function showMainMenu(root: HTMLElement, selection: CampaignSelection): void {
         () => navigate('campaign')
       );
     } else if (action === 'pvp') {
-      current = createCombatTestTabs(root, () => {
-        current?.destroy();
-        showMainMenu(root, selection);
-      });
+      current = createCombatTestTabs(
+        root,
+        () => {
+          current?.destroy();
+          showMainMenu(root, selection);
+        },
+        launchFleetField
+      );
     } else if (action === 'options') {
       showStartOptions(root, () => showMainMenu(root, selection));
     } else {

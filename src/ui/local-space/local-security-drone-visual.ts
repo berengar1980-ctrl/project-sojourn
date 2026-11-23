@@ -1,3 +1,5 @@
+import { isStationedDrone } from '../../systems/npcs/npc-combat-ai';
+import { DRONE_SCAN_RADIUS } from '../../systems/operations/asteroid-security-drone';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera } from '../map/map-camera';
 import type { ShieldImpactEffect } from '../../core/shield-types';
@@ -33,12 +35,13 @@ export function drawDroneShield(
 
 /** A background NPC duel owns shield hits while the patrol drone is fighting. */
 export function localDroneShieldHits(
-  combats: readonly StrategicCombatSnapshot[] = []
+  combats: readonly StrategicCombatSnapshot[] = [],
+  id?: string
 ): readonly ShieldImpactEffect[] {
   for (const duel of combats) {
     if (duel.winner) continue;
     const drone = [duel.attacker, duel.defender].find((ship) =>
-      ship.id.startsWith('security-drone:')
+      id ? ship.id === id : isStationedDrone(ship.id)
     );
     if (drone) return drone.shieldImpacts;
   }
@@ -123,4 +126,29 @@ export function drawLocalSecurityDrone(
     ctx.fill();
   }
   ctx.restore();
+}
+
+export function drawFieldEscort(
+  ctx: CanvasRenderingContext2D,
+  camera: MapCamera,
+  npc: { id: string; position: { x: number; y: number } },
+  width: number,
+  height: number,
+  time: number,
+  combats: readonly StrategicCombatSnapshot[] = []
+) {
+  drawLocalSecurityDrone(
+    ctx,
+    camera,
+    { position: npc.position, operational: true, scanRadius: DRONE_SCAN_RADIUS },
+    width,
+    height,
+    time,
+    localDroneShieldHits(combats, npc.id)
+  );
+  return {
+    id: npc.id,
+    point: camera.worldToScreen(npc.position, width, height),
+    radius: Math.max(18, (DRONE_DIAMETER_PX * camera.getRelativeZoom()) / 2),
+  };
 }

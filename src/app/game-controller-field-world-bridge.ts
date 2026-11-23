@@ -1,3 +1,6 @@
+import type { SectorNpcState } from '../core/npc-types';
+import { localFieldDuels } from '../systems/combat/dynamic-fleet-combat';
+import { syncMiningCombatField } from '../systems/combat/field-combat-arena';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import {
@@ -10,7 +13,50 @@ import {
   recordNpcAsteroidTheft,
 } from './game-controller-field-miner-events';
 import { tickFieldPirates, tickFieldSecurity } from './game-controller-security';
-import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
+import type {
+  CombatVisualAsteroid,
+  StrategicCombatSnapshot,
+} from '../systems/combat/strategic-combat-types';
+
+import type { FieldWitness } from '../systems/combat/career-fleet-encounter';
+import { droneSeesTarget } from '../systems/operations/asteroid-security-drone';
+import { salvageDroneObstacleAsteroids, salvageDroneCanSee } from './game-controller-salvage-drone';
+import { careerSalvageDrone } from './game-controller-salvage-drone-world';
+
+function escortWitness(
+  context: ControllerRuntimeContext,
+  locationId: string,
+  id: string,
+  target: Parameters<FieldWitness>[2]
+) {
+  const salvage = context.state.salvageScene?.getField();
+  const field = fieldWorldFor(context).field(locationId);
+  const body = context.economy.localPirates.get(locationId)?.body(id);
+  const rocks =
+    salvage?.sourceLocationId === locationId
+      ? salvageDroneObstacleAsteroids(salvage)
+      : field?.instance.asteroids;
+  return body && rocks && droneSeesTarget(body.position, target, rocks) ? body : null;
+}
+export function fieldWitnessFor(
+  context: ControllerRuntimeContext | null,
+  ...[locationId, npc, target]: Parameters<FieldWitness>
+): ReturnType<FieldWitness> {
+  if (!context || npc.locationId !== locationId || npc.travel) return null;
+  const salvage = context.state.salvageScene?.getField();
+  const field = fieldWorldFor(context).field(locationId);
+  if (npc.id.startsWith('security-drone:')) {
+    if (npc.id !== 'security-drone:' + locationId) {
+      return escortWitness(context, locationId, npc.id, target);
+    }
+    if (salvage?.sourceLocationId === locationId) {
+      const drone = careerSalvageDrone(context, salvage);
+      return salvageDroneCanSee(drone, salvage, target) ? drone : null;
+    }
+    return field?.drone.detect(target, field.instance.asteroids) ? field.drone : null;
+  }
+  return context.economy.localPirates.get(locationId)?.body(npc.id) ?? null;
+}
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
 
@@ -30,7 +76,10 @@ export function bindCareerFieldWorld(
 }
 
 /** Create once per campaign; world state lives independently of mounted scenes. */
-export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldWorld {
+export function fieldWorldFor(
+  context: ControllerRuntimeContext,
+  initial?: AsteroidFieldRuntime['instance']
+): AsteroidFieldWorld {
   const previous = fieldWorlds.get(context);
   if (previous) return previous;
   const { economy, state } = context;
@@ -43,9 +92,11 @@ export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldW
         seed: instance.seed,
         width: instance.width,
         height: instance.height,
-        miners: economy.sectorNpcs.npcs.filter(
-          (npc) => npc.job === 'miner' && npc.workLocationId === location.id
-        ),
+        get miners() {
+          return economy.sectorNpcs.npcs.filter(
+            (npc) => npc.job === 'miner' && npc.workLocationId === location.id
+          );
+        },
         getAsteroids: () => instance.asteroids,
         mine: (npc, resourceId, requested) => economy.npcs.mineLocal(npc, resourceId, requested),
         onAsteroidScanned: (npc, asteroid) =>
@@ -60,7 +111,10 @@ export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldW
           const scene = state.localSpace?.getSnapshot().instance;
           return scene?.sourceLocationId === location.id ? scene.ship : undefined;
         },
-      })
+      }),
+    undefined,
+    undefined,
+    initial
   );
   fieldWorlds.set(context, fields);
   for (const location of narrowsSector.locations) {
@@ -77,9 +131,10 @@ export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldW
  */
 function syncNpcDuelFieldPoses(
   context: ControllerRuntimeContext,
-  field: AsteroidFieldRuntime
+  field: AsteroidFieldRuntime,
+  duels: readonly StrategicCombatSnapshot[]
 ): void {
-  for (const duel of context.engagements.activeNpcCombatSnapshots?.() ?? []) {
+  for (const duel of duels) {
     for (const combatant of [duel.attacker, duel.defender]) {
       const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === combatant.id);
       if (npc?.locationId !== field.locationId) continue;
@@ -89,7 +144,12 @@ function syncNpcDuelFieldPoses(
         combatant.headingRadians,
         combatant.speed
       );
-      field.pirates.syncCombatPose(combatant.id, combatant.position, combatant.headingRadians);
+      field.pirates.syncCombatPose(
+        combatant.id,
+        combatant.position,
+        combatant.headingRadians,
+        combatant.speed
+      );
       if (combatant.id === 'security-drone:' + field.locationId) {
         field.drone.restore(combatant.position, combatant.hullHp > 0);
         field.drone.headingRadians = combatant.headingRadians;
@@ -112,6 +172,40 @@ function syncCombatWreckPoses(
   }
 }
 
+function setFieldBystanders(
+  context: ControllerRuntimeContext,
+  field: AsteroidFieldRuntime,
+  activeCombat: StrategicCombatSnapshot
+): void {
+  const fighters = new Set([activeCombat.attacker.id, activeCombat.defender.id]);
+  const bystanders = [
+    ...field.miners.ships.map((ship) => ({
+      id: ship.npcId,
+      shipId: ship.shipId,
+      position: { ...ship.position },
+      headingRadians: ship.headingRadians,
+    })),
+    ...field.pirates.snapshot(context.economy.sectorNpcs.npcs).map((ship) => ({
+      id: ship.npcId,
+      shipId: ship.shipId,
+      position: ship.position,
+      headingRadians: ship.headingRadians,
+    })),
+    ...context.economy.sectorNpcs.npcs
+      .filter((npc) => npc.id === 'security-drone:' + field.locationId)
+      .filter((npc) => npc.hullHp > 0 && field.drone.snapshot().operational)
+      .map((npc) => ({
+        id: npc.id,
+        shipId: npc.shipId,
+        position: field.drone.snapshot().position,
+        headingRadians: field.drone.headingRadians,
+      })),
+  ].filter((ship) => !fighters.has(ship.id));
+  const fleet = context.engagements.activePlayerFleet?.();
+  if (fleet) fleet.setBystanders(bystanders);
+  else context.engagements.activePlayerCombat()?.setBystanders(bystanders);
+}
+
 /** All field operations advance on the campaign clock, not only during local rendering. */
 export function advanceControllerFieldWorld(
   context: ControllerRuntimeContext,
@@ -124,54 +218,21 @@ export function advanceControllerFieldWorld(
     context.state.embeddedCombat === 'local-space'
       ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
       : null;
+  const background = context.engagements.activeNpcCombatSnapshots?.() ?? [];
+  const fleet = combat ? context.engagements.activePlayerFleet?.()?.getSnapshot() : null;
+  const localDuels = localFieldDuels(background, fleet);
   const fieldWorld = fieldWorldFor(context);
   fieldWorld.tick(deltaSeconds, localId, (field, seconds) => {
     const activeCombat = field.locationId === localId ? combat : null;
     if (activeCombat) {
       // NPC miners and passing pirates are solid ship bodies inside embedded
       // combat, but they are not combat targets or alternate PvP combatants.
-      const fighters = new Set([activeCombat.attacker.id, activeCombat.defender.id]);
-      const bystanders = [
-        ...field.miners.ships.map((ship) => ({
-          id: ship.npcId,
-          shipId: ship.shipId,
-          position: { ...ship.position },
-          headingRadians: ship.headingRadians,
-        })),
-        ...field.pirates.snapshot(context.economy.sectorNpcs.npcs).map((ship) => ({
-          id: ship.npcId,
-          shipId: ship.shipId,
-          position: ship.position,
-          headingRadians: ship.headingRadians,
-        })),
-        ...context.economy.sectorNpcs.npcs
-          .filter((npc) => npc.id === 'security-drone:' + field.locationId)
-          .filter((npc) => npc.hullHp > 0 && field.drone.snapshot().operational)
-          .map((npc) => ({
-            id: npc.id,
-            shipId: npc.shipId,
-            position: field.drone.snapshot().position,
-            headingRadians: field.drone.headingRadians,
-          })),
-      ].filter((ship) => !fighters.has(ship.id));
-      context.engagements.activePlayerCombat()?.setBystanders(bystanders);
+      setFieldBystanders(context, field, activeCombat);
       // The duel advances physical asteroids; copy their authoritative poses
       // instead of integrating the same bodies a second time.
       const combatAsteroids = activeCombat.arena.asteroids ?? [];
       const bodies = new Map(combatAsteroids.map((body) => [body.id, body]));
-      for (let index = field.instance.asteroids.length - 1; index >= 0; index -= 1) {
-        const asteroid = field.instance.asteroids[index]!;
-        const body = bodies.get(asteroid.id);
-        if (!body) {
-          // Thrown or destroyed bodies must not remain as ghost obstacles.
-          field.instance.asteroids.splice(index, 1);
-          continue;
-        }
-        asteroid.position = { ...body.position };
-        asteroid.rotation = body.rotation;
-        asteroid.physics.velocity = { ...body.velocity };
-        asteroid.physics.angularVelocity = body.angularVelocity;
-      }
+      syncMiningCombatField(field.instance.asteroids, bodies);
       syncCombatWreckPoses(field, bodies);
       context.state.localSpace?.syncCombatPose(
         activeCombat.attacker.position,
@@ -179,9 +240,10 @@ export function advanceControllerFieldWorld(
         activeCombat.attacker.speed
       );
     }
-    syncNpcDuelFieldPoses(context, field);
+    const duels = activeCombat ? localDuels : background;
+    syncNpcDuelFieldPoses(context, field, duels);
     field.miners.tick(seconds, activeCombat?.defender.id);
-    if (activeCombat?.defender.id.startsWith('security-drone:')) {
+    if (activeCombat?.defender.id === 'security-drone:' + field.locationId) {
       field.drone.restore(activeCombat.defender.position, activeCombat.defender.hullHp > 0);
     }
     const defenderId = activeCombat?.defender.id;
@@ -192,14 +254,15 @@ export function advanceControllerFieldWorld(
       field.pirates.syncCombatPose(
         activeCombat.defender.id,
         activeCombat.defender.position,
-        activeCombat.defender.headingRadians
+        activeCombat.defender.headingRadians,
+        activeCombat.defender.speed
       );
     }
     tickFieldPirates(context, seconds, field, activeCombat?.defender.id);
     // The combat engine owns drone motion while it is fighting.
     // A second patrol tick would jump its sprite away from the hitbox.
     const droneId = 'security-drone:' + field.locationId;
-    const droneFightingNpc = (context.engagements.activeNpcCombatSnapshots?.() ?? []).some(
+    const droneFightingNpc = duels.some(
       (duel) => duel.attacker.id === droneId || duel.defender.id === droneId
     );
     if (activeCombat?.defender.id !== droneId && !droneFightingNpc) {
@@ -214,4 +277,17 @@ export function advanceControllerFieldWorld(
     deltaSeconds,
     context.state.embeddedCombat === 'local-space' ? localId : salvageLocation
   );
+}
+
+function activeFieldContact(context: ControllerRuntimeContext | null, npc: SectorNpcState) {
+  if (!context || npc.travel) return false;
+  if (context.state.mode !== 'local-space' && context.state.mode !== 'salvage-space') return false;
+  return npc.locationId === context.navigation.getSnapshot().currentLocationId;
+}
+
+export function fieldEngagementHooks(get: () => ControllerRuntimeContext | null) {
+  return {
+    fieldOwnsContact: (npc: SectorNpcState) => activeFieldContact(get(), npc),
+    fieldWitness: (...args: Parameters<FieldWitness>) => fieldWitnessFor(get(), ...args),
+  };
 }
