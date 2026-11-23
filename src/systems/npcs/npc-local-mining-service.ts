@@ -250,7 +250,9 @@ function advanceApproaching(
         localCruiseSpeed(npc),
         dt,
         [
-          ...runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+          ...runtime.options.getAsteroids().filter(
+            (rock) => rock.routeBlocking && rock.id !== asteroid.id
+          ),
           ...(runtime.options.getTrafficObstacles?.(npc.id) ?? []),
         ],
         65
