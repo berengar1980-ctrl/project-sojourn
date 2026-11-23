@@ -28,6 +28,8 @@ import {
   FLIGHT_SPEED,
   chooseAsteroid,
   MINING_AMOUNT,
+  NPC_MINING_SURFACE_DISTANCE,
+  checkMinerWorkRange,
   cargoUsed,
   chooseEventChoice,
   approachPoint,
@@ -123,6 +125,7 @@ function assignTarget(
   const route = planMiningApproachRoute({
     start: ship.position,
     target: asteroid,
+    surfaceDistance: NPC_MINING_SURFACE_DISTANCE,
     asteroids: runtime.options.getAsteroids(),
     clearance: 65,
     width: runtime.options.width,
@@ -242,7 +245,14 @@ function advanceApproaching(
       assignTarget(runtime, ship, npc);
       return;
     }
-    const point = ship.routeState?.target ?? approachPoint(npc.id, asteroid);
+    const saved = ship.routeState?.target;
+    const range = asteroid.radius + NPC_MINING_SURFACE_DISTANCE;
+    const point =
+      saved &&
+      Math.abs(Math.hypot(saved.x - asteroid.position.x, saved.y - asteroid.position.y) - range) <=
+        12
+        ? saved
+        : approachPoint(npc.id, asteroid);
     const validBlocker = (rock: LocalAsteroid) => rock.routeBlocking && rock.id !== asteroid.id;
     const rockBlockers = runtime.options.getAsteroids().filter(validBlocker);
     if (
@@ -338,6 +348,7 @@ function advanceMiner(
   npc: SectorNpcState,
   dt: number
 ): boolean {
+  checkMinerWorkRange(ship, runtime.options.getAsteroids());
   if (ship.phase === 'entering' && !assignTarget(runtime, ship, npc)) return false;
   if (ship.phase === 'approaching') {
     advanceApproaching(runtime, ship, npc, dt);

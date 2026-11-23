@@ -1,17 +1,30 @@
-import type {
-  StrategicCombatArenaOptions,
-  StrategicCombatSnapshot,
-} from '../../systems/combat/strategic-combat-types';
+import { LocalSpaceRenderer } from '../local-space/local-space-renderer';
+import { SalvageSpaceRenderer } from '../salvage/salvage-space-renderer';
+import type { FleetScenarioRuntime } from './fleet-scenario-runtime';
+import type { StrategicCombatArenaOptions } from '../../systems/combat/strategic-combat-types';
 import type { CombatCamera, CombatCameraPose } from '../combat/combat-camera';
-import { CombatAsteroidBackdrop } from '../combat/combat-asteroid-backdrop';
 import { drawCombatAsteroids } from '../combat/combat-asteroid-renderer';
-import { drawCombatBackground } from '../combat/combat-background-renderer';
 import { drawCombatEscapeGate } from '../combat/combat-escape-gate-renderer';
 import { drawNavigationRoutePoints } from '../local-space/local-space-navigation-route';
 import { createFleetWorldContactOverlay } from '../combat/fleet-world-contact-overlay';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import type { FleetWorldContact } from './fleet-scenario-world-bridge';
 import type { WorldPoint } from '../../core/world-types';
+
+function campaignFieldPainter(
+  canvas: HTMLCanvasElement,
+  camera: CombatCamera,
+  field: FleetScenarioRuntime['fieldView']
+) {
+  if (field.kind === 'mining') {
+    const renderer = new LocalSpaceRenderer(canvas, field.model(), true);
+    return (width: number, height: number, time: number) =>
+      renderer.paintFieldLayer(field.model(), camera.pose(), width, height, time);
+  }
+  const renderer = new SalvageSpaceRenderer(canvas, field.model(), true);
+  return (width: number, height: number, time: number) =>
+    renderer.paintFieldLayer(field.model(), camera.pose(), width, height, time);
+}
 
 /**
  * Renders the same combat map and native ship painter while no encounter owns
@@ -26,11 +39,12 @@ export function createFleetIdleWorldCanvas(
   contacts: () => readonly FleetWorldContact[],
   navigatePlayer: (target: WorldPoint) => void,
   navigation: () => { route: readonly WorldPoint[]; target: WorldPoint | null },
-  combatVisible: () => boolean
+  combatVisible: () => boolean,
+  field: FleetScenarioRuntime['fieldView']
 ) {
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Fleet idle world canvas unavailable');
-  const backdrop = new CombatAsteroidBackdrop(context, arena as StrategicCombatSnapshot['arena']);
+  const drawTerrain = campaignFieldPainter(canvas, camera, field);
   const bodies = new ProceduralSpaceBodyRenderer(context);
   const paintContacts = createFleetWorldContactOverlay(canvas, contacts, arena.width, arena.height);
   const drawActors = (
@@ -45,6 +59,17 @@ export function createFleetIdleWorldCanvas(
         camera.project(point, width, height, arena.width, arena.height)
       );
     paintContacts(pose, width, height, timeSeconds);
+  };
+  const drawField = (width: number, height: number, time: number) => {
+    drawTerrain(width, height, time);
+    drawCombatAsteroids(
+      bodies,
+      (arena.asteroids ?? []).filter((body) => body.id.startsWith('fleet-wreck:')),
+      camera.scale(width, height, arena.width, arena.height),
+      (point) => camera.project(point, width, height, arena.width, arena.height),
+      context,
+      performance.now() / 1000
+    );
   };
   let active = false;
   let lastDrag: { x: number; y: number } | null = null;
@@ -64,16 +89,7 @@ export function createFleetIdleWorldCanvas(
     }
     context.setTransform(ratio, 0, 0, ratio, 0, 0);
     context.clearRect(0, 0, width, height);
-    drawCombatBackground(context, width, height, 'fleet-world', 'fleet-world');
-    backdrop.draw(width, height, camera);
-    drawCombatAsteroids(
-      bodies,
-      arena.asteroids ?? [],
-      camera.scale(width, height, arena.width, arena.height),
-      (point) => camera.project(point, width, height, arena.width, arena.height),
-      context,
-      performance.now() / 1000
-    );
+    drawField(width, height, performance.now() / 1000);
     if (arena.exitPoint)
       drawCombatEscapeGate(
         context,
@@ -121,6 +137,7 @@ export function createFleetIdleWorldCanvas(
   return {
     draw,
     drawActors,
+    drawField,
     activate(): void {
       if (active) return;
       active = true;

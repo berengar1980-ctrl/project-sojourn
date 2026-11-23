@@ -27,3 +27,13 @@ export interface GameController {
   careerSnapshot(): CareerSnapshot;
   destroy(): void;
 }
+
+export function validateControllerRestore(options: GameControllerOptions): void {
+  const saved = options.restoredSession;
+  if (saved && saved.navigationWorld.navigation !== options.navigation) {
+    throw new Error('Career navigation must use the staged navigation authority');
+  }
+  if (saved && saved.commerce.ships.activeShipId !== options.ship.id) {
+    throw new Error('Career ship must match the staged active ship');
+  }
+}

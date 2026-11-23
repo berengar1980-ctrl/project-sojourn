@@ -1,5 +1,6 @@
 import { drawSalvageWorkEffect } from '../salvage/salvage-work-effect-renderer';
-import { drawTargetDetailScan } from '../local-operations/scan-effects';
+import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
+import { drawNpcMinerScan, drawTargetDetailScan } from '../local-operations/scan-effects';
 import { getShipDefinition } from '../../systems/ships';
 import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-renderer';
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
@@ -20,6 +21,41 @@ function imageFor(url: string, images: Map<string, HTMLImageElement>): HTMLImage
   return sprite;
 }
 
+function drawWorkerSalvage(
+  context: CanvasRenderingContext2D,
+  miningCamera: PvPMapCamera,
+  ship: FleetWorldContact,
+  definition: ReturnType<typeof getShipDefinition>,
+  geometry: ShipScreenGeometry,
+  width: number,
+  height: number,
+  timeSeconds: number
+): void {
+  const wreck = ship.salvageTarget;
+  if (definition && wreck) {
+    if (wreck.scanProgress !== null)
+      drawTargetDetailScan(
+        context,
+        miningCamera.worldToScreen(wreck.position, width, height),
+        Math.max(14, miningCamera.scale(wreck.radius) + 9),
+        wreck.scanProgress,
+        timeSeconds
+      );
+    else
+      drawSalvageWorkEffect(
+        context,
+        miningCamera,
+        geometry,
+        definition.sprite.hardpoints,
+        wreck.position,
+        false,
+        0,
+        width,
+        height,
+        timeSeconds
+      );
+  }
+}
 /** Reuses exactly the combat sprite/lighting painter for moving noncombat NPCs. */
 export function createFleetWorldContactOverlay(
   canvas: HTMLCanvasElement,
@@ -71,6 +107,14 @@ export function createFleetWorldContactOverlay(
         drone ? undefined : definition?.sprite.hardpoints,
         lighting
       );
+      if (ship.pirateMark) drawPirateInsignia(context, ship.pirateMark, geometry);
+      if (ship.scanTarget)
+        drawNpcMinerScan(
+          context,
+          miningCamera.worldToScreen(ship.scanTarget.position, width, height),
+          ship.scanTarget.progress,
+          timeSeconds
+        );
       if (!drone && definition && (ship.shieldImpacts?.length ?? 0) > 0)
         shieldImpacts.draw(
           context,
@@ -92,30 +136,16 @@ export function createFleetWorldContactOverlay(
           timeSeconds
         );
       }
-      const wreck = ship.salvageTarget;
-      if (definition && wreck) {
-        if (wreck.scanProgress !== null)
-          drawTargetDetailScan(
-            context,
-            miningCamera.worldToScreen(wreck.position, width, height),
-            Math.max(14, miningCamera.scale(wreck.radius) + 9),
-            wreck.scanProgress,
-            timeSeconds
-          );
-        else
-          drawSalvageWorkEffect(
-            context,
-            miningCamera,
-            geometry,
-            definition.sprite.hardpoints,
-            wreck.position,
-            false,
-            0,
-            width,
-            height,
-            timeSeconds
-          );
-      }
+      drawWorkerSalvage(
+        context,
+        miningCamera,
+        ship,
+        definition,
+        geometry,
+        width,
+        height,
+        timeSeconds
+      );
       drawCombatShipCaption(context, ship.name, 1, geometry);
     }
   };

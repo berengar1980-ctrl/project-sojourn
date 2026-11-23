@@ -31,6 +31,7 @@ interface FleetNativeCombatPanelOptions {
   readonly spectator?: boolean;
   readonly isComplete?: () => boolean;
   /** Noncombat campaign NPCs are rendered by the native fleet canvas, not another scene. */
+  readonly drawField?: (width: number, height: number, time: number) => void;
   readonly drawWorldActors?: (
     pose: CombatCameraPose,
     width: number,
@@ -341,7 +342,8 @@ export function createFleetNativeCombatPanel(
     canvas,
     firstSnapshot,
     options.drawWorldActors,
-    options.camera
+    options.camera,
+    options.drawField
   );
   const unbindCamera = options.camera ? undefined : bindCombatCamera(canvas, renderer);
   const resizeObserver = new ResizeObserver(() => renderer.resize());

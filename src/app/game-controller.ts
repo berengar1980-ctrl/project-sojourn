@@ -1,5 +1,10 @@
+import { validateControllerRestore } from './game-controller-types';
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
-import { advanceControllerFieldWorld, fieldWorldFor } from './game-controller-field-world-bridge';
+import {
+  advanceControllerFieldWorld,
+  fieldWitnessFor,
+  fieldWorldFor,
+} from './game-controller-field-world-bridge';
 import {
   inspectLegalDockArrival,
   reportLegalDeparture,
@@ -395,12 +400,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 
 export function createGameController(options: GameControllerOptions): GameController {
   const saved = options.restoredSession;
-  if (saved && saved.navigationWorld.navigation !== options.navigation) {
-    throw new Error('Career navigation must use the staged navigation authority');
-  }
-  if (saved && saved.commerce.ships.activeShipId !== options.ship.id) {
-    throw new Error('Career ship must match the staged active ship');
-  }
+  validateControllerRestore(options);
   const systemLog = createControllerLog();
   const economy = saved
     ? controllerEconomyFromCareer(saved, (message) => systemLog.write(message))
@@ -420,6 +420,8 @@ export function createGameController(options: GameControllerOptions): GameContro
     navigation: options.navigation,
     sectorNpcs: economy.sectorNpcs,
     world: () => engagementWorld(),
+    inStarMap: () => state.mode === 'star-map',
+    fieldWitness: (...args) => fieldWitnessFor(combatContext, ...args),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
     onNpcCombatEnded: (snapshot, attacker) => {

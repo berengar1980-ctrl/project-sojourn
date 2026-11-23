@@ -2,19 +2,20 @@ import {
   syncMiningCombatField,
   syncSalvageCombatField,
 } from '../../systems/combat/field-combat-arena';
-import type { SectorNpcState, NpcJob } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
-import { createSectorNpcEconomyStates } from '../../data/economy/sector-npc-economy';
 import { getShipDefinition, resolveShipLocalCruiseSpeed } from '../../systems/ships';
 import { ensureNpcInstalledComponents } from '../../systems/npcs/npc-upgrade-service';
 import type { DuelField } from '../../systems/combat/duel-arena-presets';
-import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc-combat-ai';
-import { hashId } from '../../systems/npcs/npc-mining-targets';
 import { createFleetWorldWorkers } from './fleet-world-workers';
 import { createFleetWorldTraffic } from './fleet-world-traffic';
-import { fleetNpcDestination } from './fleet-world-destination';
-import { fleetPatrolContact } from './fleet-world-patrol-contact';
+import { seedScenarioNpcs, type MovingNpc } from './fleet-scenario-npcs';
+import { LocalPirateTraffic } from '../../systems/npcs/npc-local-pirate-service';
+import { localArmedTraffic, fieldInterceptRange } from '../../systems/npcs/npc-combat-ai';
+import {
+  salvageDroneObstacleAsteroids,
+  salvagePatrolMarkers,
+} from '../../systems/salvage/salvage-patrol-geometry';
 import { createFleetWorldPlayerFlight } from './fleet-world-player-flight';
 import { fleetWorldContacts } from './fleet-world-contacts';
 import { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
@@ -23,20 +24,18 @@ import type { FleetWorldContact, FleetWorldPose } from './fleet-world-contact-ty
 export type { FleetWorldContact, FleetWorldPose } from './fleet-world-contact-types';
 import { advanceCombatAsteroids } from '../../systems/combat/combat-asteroid-motion';
 import { seededLocalGate } from '../../core/local-space-exit';
-import { AsteroidSecurityDrone } from '../../systems/operations/asteroid-security-drone';
-import { moveFieldShip, type FieldRouteShip } from '../../systems/navigation/field-ship-routing';
+import {
+  AsteroidSecurityDrone,
+  securityPirateApproach,
+} from '../../systems/operations/asteroid-security-drone';
+import { moveFieldShip } from '../../systems/navigation/field-ship-routing';
 import type {
   StrategicCombatArenaOptions,
   MutableCombatant,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-types';
-import { duelInstalledComponents } from './duel-combatant-setup';
 import type { FleetScenarioShip } from './fleet-scenario-roster';
-interface MovingNpc extends FieldRouteShip {
-  readonly npc: SectorNpcState;
-  waypoint: WorldPoint;
-}
-const WORLD_LOCATION = 'duel';
+
 /**
  * Test-labor adapter to the existing campaign services. The miner's mining
  * AI, the security drone's actual patrol/sensors, the faction defence
@@ -55,12 +54,10 @@ export function createFleetScenarioWorldBridge(
   const rocks: LocalAsteroid[] = field.mining?.asteroids ?? [];
   const salvageField = field.salvage;
   const combatRocks = new Map((arena.asteroids ?? []).map((body) => [body.id, body]));
-  const templates = createSectorNpcEconomyStates();
   const arrived = new Set<string>();
   const departed = new Set<string>();
   const freightExit = arena.exitPoint ?? seededLocalGate(arena.width, arena.height, seed);
   const engaged = new Set<string>();
-  const threats = new Map<string, WorldPoint>();
   const states = new Map<string, MovingNpc>();
   const drones = new Map<string, AsteroidSecurityDrone>();
   const neutralShields = createFleetWorldShieldContacts();
@@ -72,69 +69,7 @@ export function createFleetScenarioWorldBridge(
     headingRadians: playerFlight.state.headingRadians,
     velocity: playerFlight.velocity(),
   });
-  const jobFor = (ship: FleetScenarioShip): NpcJob => {
-    if (ship.group === 'pirates-yellow' || ship.group === 'pirates-red') return 'pirate';
-    if (ship.group === 'drone') return 'patrol';
-    const role = getShipDefinition(ship.draft.shipId)?.role;
-    if (role === 'mining') return 'miner';
-    if (role === 'salvage') return 'salvager';
-    if (role === 'freighter') return 'freighter';
-    return 'patrol';
-  };
-  for (const ship of roster) {
-    if (ship.group === 'player') continue;
-    const job = jobFor(ship);
-    const template =
-      templates.find(
-        (candidate) => candidate.job === job && candidate.shipId === ship.draft.shipId
-      ) ?? templates.find((candidate) => candidate.job === job);
-    if (!template) throw new Error('Missing career NPC template for ' + job);
-    const npc: SectorNpcState = {
-      ...structuredClone(template),
-      id: ship.id,
-      name: ship.name,
-      shipId: ship.draft.shipId,
-      job,
-      role: job === 'pirate' || job === 'patrol' ? 'patrol' : job,
-      locationId: WORLD_LOCATION,
-      workLocationId: WORLD_LOCATION,
-      workResourceIds: [],
-      hullHp: hullById.get(ship.id) ?? template.hullMaxHp,
-      hullMaxHp: hullById.get(ship.id) ?? template.hullMaxHp,
-      installedComponents: duelInstalledComponents(ship.draft),
-      pirate: job === 'pirate',
-      ...(ship.group === 'pirates-yellow'
-        ? { factionId: 'pirates' as const, pirateMark: 'broken-spear' as const }
-        : {}),
-      ...(ship.group === 'pirates-red'
-        ? { factionId: 'pirates2' as const, pirateMark: 'black-tide' as const }
-        : {}),
-      ...(job === 'miner' || job === 'salvager'
-        ? {
-            autonomy: {
-              phase: 'ready' as const,
-              secondsRemaining: 0,
-              lastLocationId: WORLD_LOCATION,
-              wasTravelling: false,
-            },
-          }
-        : {}),
-    };
-    const code = hashId(ship.id + ':' + seed);
-    const angle = ((code % 6283) / 1000) % (Math.PI * 2);
-    const radius = 200 + ((code >>> 7) % 260);
-    const initial = {
-      x: Math.max(180, Math.min(arena.width - 180, playerStart.x + Math.cos(angle) * radius)),
-      y: Math.max(180, Math.min(arena.height - 180, playerStart.y + Math.sin(angle) * radius)),
-    };
-    states.set(ship.id, {
-      npc,
-      position: initial,
-      headingRadians: angle + Math.PI,
-      speed: 0,
-      waypoint: { x: arena.width * 0.5, y: arena.height * 0.5 },
-    });
-  }
+  seedScenarioNpcs(states, roster, arena, playerStart, hullById, seed);
   let trafficFor: ReturnType<typeof createFleetWorldTraffic> = () => [];
   const { miners, salvagers } = createFleetWorldWorkers(
     [...states.values()],
@@ -146,6 +81,12 @@ export function createFleetScenarioWorldBridge(
     (id) => trafficFor(id),
     (id) => departed.add(id)
   );
+  const armed = new LocalPirateTraffic(arena.width, arena.height, seed);
+  const armedNpcs = () =>
+    [...states.values()]
+      .map((entry) => entry.npc)
+      .filter((npc) => arrived.has(npc.id) && !departed.has(npc.id) && localArmedTraffic(npc));
+  const routingRocks = () => (salvageField ? salvageDroneObstacleAsteroids(salvageField) : rocks);
   const pose = (id: string): FleetWorldPose | null => {
     if (id === 'player') return playerPose();
     const moving = states.get(id);
@@ -174,6 +115,16 @@ export function createFleetScenarioWorldBridge(
           },
         };
     }
+    const armedShip = armed.body(id);
+    if (armedShip && !engaged.has(id))
+      return {
+        position: armedShip.position,
+        headingRadians: armedShip.headingRadians,
+        velocity: {
+          x: Math.cos(armedShip.headingRadians) * armedShip.speed,
+          y: Math.sin(armedShip.headingRadians) * armedShip.speed,
+        },
+      };
     const drone = drones.get(id);
     if (drone && !engaged.has(id))
       return {
@@ -207,10 +158,18 @@ export function createFleetScenarioWorldBridge(
     arrived.add(id);
     const moving = states.get(id);
     if (!moving) return;
+    if (localArmedTraffic(moving.npc)) {
+      armed.reconcile(armedNpcs());
+      armed.syncCombatPose(id, moving.position, moving.headingRadians);
+    }
     if ((moving.npc.job === 'miner' || moving.npc.job === 'salvager') && moving.npc.autonomy)
       moving.npc.autonomy.phase = 'working';
     if (id.startsWith('security-drone:')) {
-      const drone = new AsteroidSecurityDrone(arena.width, arena.height, rocks);
+      const drone = new AsteroidSecurityDrone(
+        arena.width,
+        arena.height,
+        salvageField ? salvagePatrolMarkers(salvageField) : rocks
+      );
       drone.restore(moving.position, true);
       drones.set(id, drone);
     }
@@ -230,6 +189,7 @@ export function createFleetScenarioWorldBridge(
     }
     const moving = states.get(actor.setup.id);
     if (!moving) return;
+    armed.syncCombatPose(actor.setup.id, actor.position, actor.headingRadians);
     moving.position = { ...actor.position };
     moving.headingRadians = actor.headingRadians;
     moving.speed = actor.speed;
@@ -266,6 +226,7 @@ export function createFleetScenarioWorldBridge(
     }
   };
   return {
+    fieldView: playerFlight.fieldView,
     deploy,
     pose,
     navigatePlayer: (target: WorldPoint) => {
@@ -279,20 +240,12 @@ export function createFleetScenarioWorldBridge(
     isActive: (id: string) => arrived.has(id) && !departed.has(id),
     isEngaged: (id: string) => engaged.has(id),
     npc: (id: string) => states.get(id)?.npc ?? null,
-    defence: (id: string) => {
-      const npc = states.get(id)?.npc;
-      return npc ? npcDefenseReaction(npc) : 'fight';
-    },
-    canAttack: (id: string) => {
-      const npc = states.get(id)?.npc;
-      return !!npc && npcMayInitiateAttack(npc);
-    },
-    canDroneSee: (id: string, point: WorldPoint) => drones.get(id)?.detect(point, rocks) ?? false,
+    canDroneSee: (id: string, point: WorldPoint) =>
+      drones.get(id)?.detect(point, routingRocks()) ?? false,
     markEngaged(id: string, targetId: string) {
       if (engaged.has(id)) return;
       const current = pose(id);
       engaged.add(id);
-      threats.delete(id);
       const moving = states.get(id);
       if (!moving) return;
       if (current) {
@@ -323,7 +276,6 @@ export function createFleetScenarioWorldBridge(
       const moving = states.get(id);
       if (!moving) return;
       delete moving.npc.combatMovement;
-      threats.delete(id);
       if (moving.npc.hullHp <= 0) return;
       if (moving.npc.job === 'salvager') {
         salvagers?.syncCombatPose(id, moving.position, moving.headingRadians, moving.speed);
@@ -342,34 +294,9 @@ export function createFleetScenarioWorldBridge(
         }
       }
     },
-    threaten(id: string, aggressor: WorldPoint) {
-      if (engaged.has(id)) return;
-      const moving = states.get(id);
-      if (!moving) return;
-      if (
-        (moving.npc.job === 'miner' || moving.npc.job === 'salvager') &&
-        !moving.npc.combatMovement
-      ) {
-        const original = pose(id);
-        if (original) {
-          moving.position = { ...original.position };
-          moving.headingRadians = original.headingRadians;
-          moving.speed = Math.hypot(original.velocity.x, original.velocity.y);
-        }
-        moving.npc.combatMovement = {
-          mode: 'flee',
-          targetKind: 'npc',
-          targetId: 'threat',
-          position: { ...moving.position },
-          headingRadians: moving.headingRadians,
-          speed: moving.speed,
-        };
-      }
-      threats.set(id, { ...aggressor });
-    },
     // Preserve the normal NPC roles: patrol, mining, flee or existing combat owner.
     // eslint-disable-next-line complexity, max-lines-per-function
-    tick(dt: number, threat: WorldPoint | null) {
+    tick(dt: number, onContact?: (source: string, target: string) => boolean) {
       // The campaign's existing mining and security services drive civilians
       // and drones until their native combat driver takes ownership.
       if (!engaged.has('player') && !departed.has('player'))
@@ -379,6 +306,30 @@ export function createFleetScenarioWorldBridge(
       miners.tick(dt);
       salvagers?.tick(dt, undefined, true);
       neutralShields.tick(dt);
+      const trafficNpcs = armedNpcs();
+      armed.reconcile(trafficNpcs);
+      const solids = routingRocks();
+      armed.tick(
+        dt,
+        trafficNpcs,
+        departed.has('player') ? null : playerFlight.state.position,
+        miners.ships
+          .map((ship) => ({
+            npcId: ship.npcId,
+            position: ship.position,
+            inCombat: engaged.has(ship.npcId),
+          }))
+          .concat(
+            (salvagers?.ships ?? []).map((ship) => ({
+              npcId: ship.npcId,
+              position: ship.position,
+              inCombat: engaged.has(ship.npcId),
+            }))
+          ),
+        solids,
+        (source, target) => onContact?.(source, target) ?? false
+      );
+
       for (const [id, moving] of states) {
         if (!arrived.has(id) || departed.has(id) || engaged.has(id) || moving.npc.hullHp <= 0)
           continue;
@@ -388,26 +339,33 @@ export function createFleetScenarioWorldBridge(
         )
           continue;
         if (id.startsWith('security-drone:')) {
-          drones.get(id)?.tick(dt, rocks, [], [], threat ?? undefined);
+          const drone = drones.get(id)!;
+          const pirate = armed
+            .snapshot(trafficNpcs.filter((npc) => npc.pirate))
+            .filter((ship) => drone.detect(ship.position, solids))
+            .sort(
+              (a, b) =>
+                Math.hypot(a.position.x - drone.position.x, a.position.y - drone.position.y) -
+                Math.hypot(b.position.x - drone.position.x, b.position.y - drone.position.y)
+            )[0];
+          drone.tick(
+            dt,
+            solids,
+            [],
+            trafficFor(id),
+            pirate ? securityPirateApproach(drone.position, pirate.position) : undefined
+          );
+          if (
+            pirate &&
+            Math.hypot(
+              drone.position.x - pirate.position.x,
+              drone.position.y - pirate.position.y
+            ) <= fieldInterceptRange(id, false)
+          )
+            onContact?.(id, pirate.npcId);
           continue;
         }
-        const danger = threats.get(id);
-        const patrolContact = fleetPatrolContact(
-          moving.npc,
-          moving.position,
-          [...states.values()].map((entry) => entry.npc),
-          (otherId) => pose(otherId)?.position ?? null
-        );
-        const destination = fleetNpcDestination(
-          moving.npc,
-          moving.position,
-          moving.waypoint,
-          freightExit,
-          danger,
-          patrolContact ?? threat,
-          arena.width,
-          arena.height
-        );
+        if (moving.npc.job !== 'freighter') continue;
         const definition = getShipDefinition(moving.npc.shipId);
         const speed = definition
           ? resolveShipLocalCruiseSpeed(definition, ensureNpcInstalledComponents(moving.npc))
@@ -415,33 +373,14 @@ export function createFleetScenarioWorldBridge(
         const traffic = trafficFor(id);
         const arrivedAt = moveFieldShip(
           moving,
-          destination,
+          freightExit,
           speed,
           dt,
           [...obstacles(), ...traffic],
           65,
           'patrol'
         );
-        if (arrivedAt && moving.npc.job === 'freighter') {
-          departed.add(id);
-          continue;
-        }
-        if (arrivedAt && moving.npc.combatMovement?.mode === 'flee') {
-          delete moving.npc.combatMovement;
-          threats.delete(id);
-          miners.syncCombatPose(id, moving.position, moving.headingRadians, moving.speed);
-          salvagers?.syncCombatPose(id, moving.position, moving.headingRadians, moving.speed);
-          if (moving.npc.autonomy) moving.npc.autonomy.phase = 'working';
-        }
-        if (arrivedAt) {
-          const hash = hashId(
-            id + ':' + Math.floor(dt * 1000) + ':' + Math.round(moving.position.x)
-          );
-          moving.waypoint = {
-            x: arena.width * (0.2 + (hash % 600) / 1000),
-            y: arena.height * (0.2 + ((hash >>> 10) % 600) / 1000),
-          };
-        }
+        if (arrivedAt) departed.add(id);
       }
       resolveFleetWorldNeutralCollisions(
         states,
@@ -450,6 +389,7 @@ export function createFleetScenarioWorldBridge(
           const moving = states.get(id);
           if (!moving) return null;
           return (
+            armed.body(id) ??
             drones.get(id) ??
             (moving.npc.job === 'miner' && moving.npc.combatMovement?.mode !== 'flee'
               ? miners.ships.find((miner) => miner.npcId === id)

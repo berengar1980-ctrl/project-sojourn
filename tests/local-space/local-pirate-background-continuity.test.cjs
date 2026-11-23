@@ -54,6 +54,6 @@ assert.equal(field.exportState().ships.length, 1, 'no new ship spawned on recove
 
 const model = read('src/app/game-controller-models.ts');
 const render = read('src/ui/local-space/local-space-scene-layers.ts');
-assert(model.includes('isPirate: true'), 'pirates must be tagged in the view-model');
+assert(model.includes('isPirate: contact.pirate'), 'pirates must be tagged in the view-model');
 assert(render.includes('this.context.fillText(') && render.includes("'KORSAR'"));
 console.log('PASS pirate contact persists through NPC combat and is identified on local map');

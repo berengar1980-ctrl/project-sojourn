@@ -45,6 +45,7 @@ const optionsFor = (npc, rock) => ({
 const original = createNpcLocalMiningService(optionsFor(miner, asteroid));
 assert.equal(original.ships.length, 1);
 const ship = original.ships[0];
+ship.position = { x: asteroid.position.x + asteroid.radius + 48, y: asteroid.position.y };
 ship.phase = 'scanning';
 ship.targetAsteroidId = asteroid.id;
 ship.scanProgress = 0.99;

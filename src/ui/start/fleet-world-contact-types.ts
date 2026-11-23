@@ -12,6 +12,8 @@ export interface FleetWorldContact extends FleetWorldPose {
   readonly shipId: string;
   readonly name: string;
   readonly shieldImpacts?: readonly ShieldImpactEffect[];
+  readonly pirateMark?: 'broken-spear' | 'black-tide';
+  readonly scanTarget?: { readonly position: WorldPoint; readonly progress: number };
   readonly miningTarget?: { readonly position: WorldPoint; readonly radius: number };
   readonly salvageTarget?: {
     readonly position: WorldPoint;

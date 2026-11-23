@@ -18,13 +18,17 @@ export function engageSalvagePirate(
   const arena = salvageFieldCombatArena(field);
   if (targetId === 'player') {
     if (context.engagements.activePlayerCombat()) return false;
-    const started = context.engagements.engageNpcInArena(pirateId, {
-      ...arena,
-      attackerPosition: battlePosition(targetPosition),
-      defenderPosition: battlePosition(piratePosition),
-      attackerVelocity: { x: 0, y: 0 },
-      defenderVelocity: { x: 0, y: 0 },
-    });
+    const started = context.engagements.engageNpcInArena(
+      pirateId,
+      {
+        ...arena,
+        attackerPosition: battlePosition(targetPosition),
+        defenderPosition: battlePosition(piratePosition),
+        attackerVelocity: { x: 0, y: 0 },
+        defenderVelocity: { x: 0, y: 0 },
+      },
+      false
+    );
     if (started) {
       context.state.embeddedCombat = 'salvage-space';
       context.systemLog.write('PIRATEN > UEBERFALL IM WRACKFELD · KI-KAMPFMODUS');

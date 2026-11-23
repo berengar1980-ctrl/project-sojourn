@@ -30,7 +30,9 @@ assert(roster.includes('fitsWeaponHardpoint'), 'weapons respect mount sizes');
 const fleetFactory = read('src/systems/combat/dynamic-fleet-combat.ts');
 const parallel = read('src/systems/combat/parallel-native-duels.ts');
 assert(
-  runtime.includes('createDynamicFleetCombat(') &&
+  runtime.includes('createCareerFleetEncounter(') &&
+    runtime.includes('createNpcFleetEncounter(') &&
+    read('src/systems/combat/career-fleet-encounter.ts').includes('createDynamicFleetCombat(') &&
     fleetFactory.includes('createParallelNativeDuels(') &&
     parallel.includes('createStrategicCombatService('),
   'FleetCombat laboratory must share the original native 1vs1 services'
@@ -40,7 +42,7 @@ assert(fleet.includes('Nachrücker') && fleet.includes('Nach Sekunden'));
 assert(fleet.includes('FLEET_SCENARIO_GROUPS'));
 assert(!fleet.includes('teamA') && !fleet.includes('teamB'), 'old A/B controls removed');
 assert(
-  runtime.includes('fleet.addShip(') && runtime.includes('arrivalSeconds'),
+  runtime.includes('encounter!.joinNearby(') && runtime.includes('arrivalSeconds'),
   'reinforcements join the same running fleet at their scheduled simulation times'
 );
 assert(

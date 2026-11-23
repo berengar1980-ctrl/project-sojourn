@@ -6,6 +6,25 @@ import type { NpcLocalMiningService } from '../../systems/npcs/npc-mining-target
 import type { FleetWorldContact, FleetWorldPose } from './fleet-world-contact-types';
 import type { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
 
+function miningContact(miners: NpcLocalMiningService, id: string, rocks: readonly LocalAsteroid[]) {
+  const miner = miners.ships.find((ship) => ship.npcId === id);
+  const target =
+    miner && (miner.laserActive || miner.phase === 'scanning')
+      ? rocks.find((rock) => rock.id === miner.targetAsteroidId)
+      : undefined;
+  return {
+    ...(target && miner?.phase === 'scanning'
+      ? { scanTarget: { position: target.position, progress: miner.scanProgress } }
+      : {}),
+    ...(target && miner?.laserActive
+      ? {
+          miningTarget: { position: target.position, radius: target.radius },
+          ...(miner?.oreCollection ? { oreCollection: miner.oreCollection } : {}),
+        }
+      : {}),
+  };
+}
+
 /** Project the real world jobs and native shield contacts for both world and combat canvas. */
 export function fleetWorldContacts(
   states: ReadonlyMap<string, { readonly npc: SectorNpcState }>,
@@ -23,10 +42,6 @@ export function fleetWorldContacts(
     if (!active(id) || entry.npc.hullHp <= 0) continue;
     const position = pose(id);
     if (!position) continue;
-    const miner = miners.ships.find((ship) => ship.npcId === id);
-    const target = miner?.laserActive
-      ? rocks.find((rock) => rock.id === miner.targetAsteroidId)
-      : undefined;
     const salvager = salvagers?.ships.find((ship) => ship.npcId === id);
     const wreck =
       salvager && (salvager.salvageActive || salvager.phase === 'scanning')
@@ -47,12 +62,8 @@ export function fleetWorldContacts(
       shipId: entry.npc.shipId,
       ...position,
       shieldImpacts: shields.get(id),
-      ...(target
-        ? {
-            miningTarget: { position: target.position, radius: target.radius },
-            ...(miner?.oreCollection ? { oreCollection: miner.oreCollection } : {}),
-          }
-        : {}),
+      ...(entry.npc.pirate && entry.npc.pirateMark ? { pirateMark: entry.npc.pirateMark } : {}),
+      ...miningContact(miners, id, rocks),
     });
   }
   return player ? [player, ...contacts] : contacts;

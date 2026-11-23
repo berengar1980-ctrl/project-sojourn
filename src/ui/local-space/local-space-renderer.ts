@@ -58,7 +58,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected scanLabelsVisible = true;
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    model: LocalSpaceViewModel
+    model: LocalSpaceViewModel,
+    fieldLayerOnly = false
   ) {
     super();
     const context = canvas.getContext('2d');
@@ -76,7 +77,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       model.height
     );
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
-    this.resize();
+    if (!fieldLayerOnly) this.resize();
   }
   update(model: LocalSpaceViewModel): void {
     this.model = model;
@@ -119,7 +120,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
               height
             );
           },
-          this.camera.combat
+          this.camera.combat,
+          (width, height, time) => this.drawField(width, height, time)
         );
       } else if (resumedCombat) {
         this.sharedCombatRenderer.beginEncounter(model.combat);
@@ -203,17 +205,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.shipImage.onload = () => this.draw();
     this.shipImage.src = url;
   }
-  protected draw(): void {
-    if (this.sharedCombatActive) return;
-    measurePerformance('canvas.local.draw', () => this.drawFrame());
-  }
-
-  private drawFrame(): void {
-    const rect = this.canvas.getBoundingClientRect();
-    const { width, height } = rect;
-    const timeSeconds = performance.now() / 1000;
-    const geometry = this.shipGeometry(width, height);
-
+  protected drawField(width: number, height: number, timeSeconds: number): void {
     measurePerformance('canvas.local.background', () =>
       this.backgroundRenderer.draw({
         width,
@@ -248,6 +240,19 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       height,
       this.selectedCombatWreckId
     );
+  }
+  protected draw(): void {
+    if (this.sharedCombatActive) return;
+    measurePerformance('canvas.local.draw', () => this.drawFrame());
+  }
+
+  private drawFrame(): void {
+    const rect = this.canvas.getBoundingClientRect();
+    const { width, height } = rect;
+    const timeSeconds = performance.now() / 1000;
+    const geometry = this.shipGeometry(width, height);
+
+    this.drawField(width, height, timeSeconds);
     this.npcHitAreas = measurePerformance('canvas.local.npc-ships', () =>
       this.drawNpcShips(width, height, timeSeconds)
     );

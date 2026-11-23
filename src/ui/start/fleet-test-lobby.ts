@@ -168,7 +168,8 @@ function createSimulatorLauncher(
         () => session.worldContacts,
         (point) => session.navigatePlayer(point),
         () => session.playerNavigation,
-        () => panel !== null
+        () => panel !== null,
+        session.fieldView
       );
       const cancel = document.createElement('button');
       cancel.type = 'button';
@@ -208,6 +209,7 @@ function createSimulatorLauncher(
           isComplete: () => session.finished(),
           encounterName: 'KAMPAGNEN-SIMULATION',
           drawWorldActors: idleWorld!.drawActors,
+          drawField: idleWorld!.drawField,
           onReturn: returnToLobby,
         });
       };

@@ -284,3 +284,16 @@ export class AsteroidSecurityDrone {
     return true;
   }
 }
+
+export function securityPirateApproach(
+  dronePosition: WorldPoint,
+  piratePosition: WorldPoint
+): WorldPoint {
+  const dx = dronePosition.x - piratePosition.x;
+  const dy = dronePosition.y - piratePosition.y;
+  const length = Math.max(1, Math.hypot(dx, dy));
+  return {
+    x: piratePosition.x + (dx / length) * 125,
+    y: piratePosition.y + (dy / length) * 125,
+  };
+}

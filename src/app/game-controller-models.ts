@@ -228,7 +228,7 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
             spriteAspectRatio: definition.sprite.widthPx / definition.sprite.heightPx,
             hardpoints: definition.sprite.hardpoints,
             isSelected: context.state.selectedNpcId === contact.npcId,
-            isPirate: true,
+            isPirate: contact.pirate,
           },
         ];
       })

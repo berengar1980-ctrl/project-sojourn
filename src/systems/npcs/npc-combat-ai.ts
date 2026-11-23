@@ -2,8 +2,18 @@ import type { SectorNpcState } from '../../core/npc-types';
 
 export type NpcDefenseReaction = 'fight' | 'flee';
 
+export function fieldInterceptRange(id: string, pirate: boolean): number {
+  if (id.startsWith('security-drone:')) return 145;
+  return pirate ? 210 : 180;
+}
+
+export function localArmedTraffic(npc: SectorNpcState): boolean {
+  return npc.pirate || (npc.job === 'patrol' && !npc.id.startsWith('security-drone:'));
+}
+
 export function npcDefenseReaction(npc: SectorNpcState): NpcDefenseReaction {
   // Freight operators protect their cargo by escaping, never by accepting a duel.
+  if (npc.id?.startsWith('security-drone:')) return 'fight';
   if (npc.job === 'freighter') return 'flee';
   const hullRatio = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;
   const roleBonus = npc.job === 'patrol' || npc.pirate ? 28 : 0;

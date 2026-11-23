@@ -1,3 +1,4 @@
+import { localArmedTraffic } from './npc-combat-ai';
 import type { FieldRouteState } from '../navigation/field-ship-routing';
 import type { WorldPoint } from '../../core/world-types';
 import type { SectorNpcState } from '../../core/npc-types';
@@ -54,7 +55,7 @@ function validShip(value: unknown, width: number, height: number): boolean {
 }
 
 function validEntries(snapshot: LocalPirateCheckpoint, npcs: readonly SectorNpcState[]): boolean {
-  const known = new Map(npcs.filter((npc) => npc.pirate).map((npc) => [npc.id, npc]));
+  const known = new Map(npcs.filter(localArmedTraffic).map((npc) => [npc.id, npc]));
   const seen = new Set<string>();
   for (const ship of snapshot.ships) {
     const npc = known.get(ship.npcId);

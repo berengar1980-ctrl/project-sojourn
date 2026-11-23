@@ -73,6 +73,37 @@ assert.equal(lost.outcomeReason, 'destruction');
 session.tick(0.08);
 assert.deepEqual(session.combat.getSnapshot().attacker.position, lost.attacker.position);
 
+// A sector neighbor can join an embedded fight only from its own visible field body.
+let seen = false;
+const physical = { position: { x: 2030, y: 1305 }, headingRadians: 1.1 };
+const local = createCareerFleetEncounter(
+  player,
+  miner,
+  ships,
+  true,
+  {
+    ...area,
+    attackerPosition: { x: 1900, y: 1300 },
+    defenderPosition: { x: 2000, y: 1300 },
+  },
+  {
+    positionOf: worldPosition,
+    headingOf: () => 0,
+    fieldWitness: (_, candidate) => (seen && candidate.id === drone.id ? physical : null),
+  }
+);
+local.joinNearby(worldPosition(), ships, worldPosition);
+assert.equal(local.fleet.getActor(drone.id), null);
+seen = true;
+local.joinNearby(worldPosition(), ships, worldPosition);
+const actor = local.fleet.getActor(drone.id);
+assert.deepEqual(actor.position, physical.position);
+assert.equal(actor.headingRadians, physical.headingRadians);
+actor.hullHp = 1;
+for (let i = 0; i < 300; i++) {
+  local.tick(0.08);
+  assert.notEqual(actor.tactic, 'flee');
+}
 // Background NPC fights share the very same coordinator. Nearby security
 // and a capable patrol should oppose pirates without separate combat code.
 const victim = npc('victim', 'freighter', 10);

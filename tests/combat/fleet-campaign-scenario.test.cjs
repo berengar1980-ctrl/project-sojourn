@@ -124,9 +124,9 @@ const roster = [
   aggressivePirate('pirates-red-1', 'pirates-red', 0),
   entry('security-drone:test-1', 'drone', 0.16),
 ];
-const scenario = createFleetScenarioRuntime(roster, field, 1234, 'none');
+const scenario = createFleetScenarioRuntime(roster, field, 1234, 'player-attacks-npc');
 const firstFleet = scenario.fleet;
-assert(firstFleet, 'a live pirate contact starts the common native fleet engine');
+assert(firstFleet, 'a witnessed incident starts the common campaign fleet engine');
 assert.equal(scenario.arrivedCount, 4);
 const actorsAtStart = [
   ...firstFleet.duels.flatMap((service) => [
@@ -152,6 +152,23 @@ assert(
 );
 assert(Number.isFinite(playerActor.position.x) && Number.isFinite(playerActor.position.y));
 assert(Number.isFinite(originalPlayerPosition.x));
+
+// Unscripted pirates start outside weapons contact and must physically intercept.
+const approach = createFleetScenarioRuntime([roster[0], roster[2]], field, 1234, 'none');
+assert.equal(approach.fleet, null);
+for (let i = 0; i < 900 && !approach.fleet; i++) approach.tick(0.08);
+assert(approach.fleet?.getActor('player'));
+assert(approach.fleet.getActor(roster[2].id).setup.pirateMark);
+const patrolFlight = createFleetScenarioRuntime([roster[0], roster[1]], field, 1234, 'none');
+const trail = new Set();
+for (let i = 0; i < 1800; i++) {
+  patrolFlight.tick(0.08);
+  const patrol = patrolFlight.worldContacts.find((ship) => ship.id === roster[1].id);
+  assert(!patrol.pirateMark);
+  if (i > 900)
+    trail.add(Math.round(patrol.position.x / 100) + ',' + Math.round(patrol.position.y / 100));
+}
+assert(trail.size > 10, 'patrol continues to visit distinct positions after its first waypoint');
 
 // A neutral miner does not get converted into a combat AI merely because
 // another vessel is fighting nearby. Its world movement is still simulated.
@@ -246,9 +263,34 @@ for (const kind of ['asteroid_field', 'scrap_field']) {
   world.deploy('player');
   world.deploy(worker.id);
   let working = false;
+  let scanned = false;
+  let displaced = false;
   for (let frame = 0; frame < 5000 && world.isActive(worker.id); frame++) {
     world.tick(0.08, null);
     const contact = world.contacts().find((ship) => ship.id === worker.id);
+    if (contact?.scanTarget) scanned = true;
+    if (contact?.miningTarget) {
+      const target = contact.miningTarget;
+      assert(scanned);
+      assert(
+        Math.hypot(target.position.x - contact.position.x, target.position.y - contact.position.y) -
+          target.radius <=
+          65
+      );
+      if (!displaced) {
+        const rock = site.mining.asteroids.find((body) => body.position === target.position);
+        const amount = stock();
+        rock.position.x += 350;
+        world.tick(0.08);
+        assert.equal(
+          world.contacts().find((actor) => actor.id === worker.id)?.miningTarget,
+          undefined
+        );
+        assert.equal(stock(), amount);
+        rock.position.x -= 350;
+        displaced = true;
+      }
+    }
     working ||= Boolean(contact?.miningTarget || contact?.salvageTarget?.scanProgress === null);
   }
   assert(working, kind + ' exposes the active work effect');

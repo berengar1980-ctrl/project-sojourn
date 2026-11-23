@@ -1,12 +1,13 @@
+import { npcCombatant } from '../../systems/combat/npc-combatant-setup';
 import type { DuelField } from '../../systems/combat/duel-arena-presets';
 import { getShipDefinition } from '../../systems/ships';
 import type { WorldPoint } from '../../core/world-types';
-import { npcMayTargetNpc } from '../../systems/npcs/npc-combat-ai';
 import {
-  createConflictManager,
-  npcConflictParticipant,
-} from '../../systems/combat/fleet-conflict-manager';
-import { createDynamicFleetCombat } from '../../systems/combat/dynamic-fleet-combat';
+  createCareerFleetEncounter,
+  createNpcFleetEncounter,
+  type CareerFleetEncounter,
+  type CareerFleetWorldPose,
+} from '../../systems/combat/career-fleet-encounter';
 import type {
   NativeDuelShip,
   ParallelNativeDuels,
@@ -17,80 +18,10 @@ import type { FleetScenarioIncident, FleetScenarioShip } from './fleet-scenario-
 
 type ScenarioWorld = ReturnType<typeof createFleetScenarioWorldBridge>;
 
-function scenarioDistance(a: NativeDuelShip, b: NativeDuelShip): number {
-  if (!a.position || !b.position) return Infinity;
-  return Math.hypot(a.position.x - b.position.x, a.position.y - b.position.y);
-}
-
-/** World and combat use the same campaign NPC reaction and drone LOS services. */
-// eslint-disable-next-line complexity
-function canJoinWorldCombat(
-  ship: NativeDuelShip,
-  opponent: NativeDuelShip,
-  world: ScenarioWorld,
-  incident: FleetScenarioIncident
-): boolean {
-  if (scenarioDistance(ship, opponent) > 650) return false;
-  const aggressor = world.npc(ship.id);
-  const victim = world.npc(opponent.id);
-  if (aggressor?.hullHp !== undefined && aggressor.hullHp <= 0) return false;
-  if (victim?.hullHp !== undefined && victim.hullHp <= 0) return false;
-  if (ship.id.startsWith('security-drone:'))
-    return !!opponent.position && world.canDroneSee(ship.id, opponent.position);
-  if (aggressor?.pirate) {
-    if (!world.canAttack(ship.id)) return false;
-    if (opponent.id === 'player') return true;
-    return !!victim && npcMayTargetNpc(aggressor, victim);
-  }
-  if (aggressor?.job === 'patrol')
-    return world.canAttack(ship.id) && !!victim && npcMayTargetNpc(aggressor, victim, true);
-  if (
-    world.npc(ship.id)?.job === 'miner' ||
-    world.npc(ship.id)?.job === 'freighter' ||
-    world.npc(ship.id)?.job === 'salvager'
-  ) {
-    // The campaign's defence score determines a response to an attack, not
-    // permission for a neutral civilian to initiate one. The actual aggressor
-    // or scripted incident creates the hostile pair.
-    if (world.defence(ship.id) === 'flee' && opponent.position)
-      world.threaten(ship.id, opponent.position);
-    return false;
-  }
-  // The player is a valid defender, never an automatic aggressor against civilians.
-  return victim?.pirate ? world.canAttack(opponent.id) : incident !== 'none';
-}
-
-function firstHostilePair(
-  available: readonly NativeDuelShip[],
-  hostility: (source: string, target: string) => boolean,
-  world: ScenarioWorld,
-  incident: FleetScenarioIncident,
-  completedPairs: ReadonlySet<string>
-): readonly [NativeDuelShip, NativeDuelShip] | null {
-  for (const source of available) {
-    const target = available.find(
-      (other) =>
-        other !== source &&
-        !completedPairs.has([source.id, other.id].sort().join('|')) &&
-        (hostility(source.id, other.id) || hostility(other.id, source.id)) &&
-        (canJoinWorldCombat(source, other, world, incident) ||
-          canJoinWorldCombat(other, source, world, incident))
-    );
-    if (target) return [source, target];
-  }
-  return null;
-}
-
 function nativeShip(ship: FleetScenarioShip, index: number): NativeDuelShip {
   const definition = getShipDefinition(ship.draft.shipId);
   if (!definition) throw new Error('Unbekanntes FleetCombat-Schiff: ' + ship.draft.shipId);
   const setup = duelCombatant(index, ship.draft, definition);
-  const pirateMark =
-    ship.group === 'pirates-yellow'
-      ? ('broken-spear' as const)
-      : ship.group === 'pirates-red'
-        ? ('black-tide' as const)
-        : null;
   return {
     id: ship.id,
     team: ship.group,
@@ -98,19 +29,13 @@ function nativeShip(ship: FleetScenarioShip, index: number): NativeDuelShip {
       ...setup,
       id: ship.id,
       name: ship.id.toUpperCase() + ' · ' + ship.name,
-      ...(pirateMark ? { pirateMark } : {}),
-      ...(pirateMark
-        ? {
-            factionId:
-              ship.group === 'pirates-yellow' ? ('pirates' as const) : ('pirates2' as const),
-          }
-        : {}),
       preferredTactic: 'fight',
     },
   };
 }
 
 export interface FleetScenarioRuntime {
+  readonly fieldView: ScenarioWorld['fieldView'];
   readonly arena: DuelField['arena'];
   readonly ships: readonly FleetScenarioShip[];
   readonly totalCount: number;
@@ -158,77 +83,105 @@ export function createFleetScenarioRuntime(
     field,
     new Map([...all].map(([id, ship]) => [id, ship.setup.hullHp]))
   );
-  const conflict = createConflictManager(
-    roster.map((ship) =>
-      ship.group === 'player'
-        ? { id: ship.id, role: 'player' }
-        : npcConflictParticipant(world.npc(ship.id)!)
-    )
-  );
-  const identities = new Map(roster.map((ship) => [ship.id, ship.id]));
+  for (const [id, ship] of all) {
+    const npc = world.npc(id);
+    const setup = npc && npcCombatant(npc);
+    if (setup) all.set(id, { ...ship, setup });
+  }
+  const npcs = roster.flatMap((ship) => world.npc(ship.id) ?? []);
+  const positions: CareerFleetWorldPose = {
+    positionOf: (npc) => world.pose(npc.id)!.position,
+    headingOf: (npc) => world.pose(npc.id)!.headingRadians,
+    fieldWitness: (_location, npc, target) => {
+      const pose = world.pose(npc.id);
+      if (!world.isActive(npc.id) || !pose) return null;
+      return !npc.id.startsWith('security-drone:') || world.canDroneSee(npc.id, target)
+        ? pose
+        : null;
+    },
+  };
+  let encounter: CareerFleetEncounter | null = null;
   const arrived = new Map<string, NativeDuelShip>();
   const joined = new Set<string>();
   const completedPairs = new Set<string>();
   let elapsedSeconds = 0;
   let fleet: ParallelNativeDuels | null = null;
   let completedEncounters = 0;
-  let incidentTarget: string | null = null;
-  const witnessed = new Set<string>();
-
+  let pending: readonly [string, string] | null = null;
+  let scripted = false;
+  const requestCombat = (from: string, to: string) => {
+    if (
+      fleet ||
+      pending ||
+      !world.isActive(from) ||
+      !world.isActive(to) ||
+      completedPairs.has([from, to].sort().join('|'))
+    )
+      return false;
+    pending = [from, to];
+    return true;
+  };
   const atWorldPose = (id: string): NativeDuelShip => {
     const ship = all.get(id)!;
     const pose = world.pose(id);
-    const npc = world.npc(id);
-    const setup = npc ? { ...ship.setup, preferredTactic: world.defence(id) } : ship.setup;
-    return pose ? { ...ship, setup, ...pose } : { ...ship, setup };
+    return pose ? { ...ship, ...pose } : ship;
   };
   const observeIncident = (): void => {
-    if (incident === 'none') return;
-    if (!incidentTarget) {
-      incidentTarget =
-        roster.find((ship) => ship.group === 'npc' && arrived.has(ship.id))?.id ?? null;
-    }
-    if (!incidentTarget) return;
-    const drones = roster
-      .filter((ship) => {
-        if (ship.group !== 'drone' || !arrived.has(ship.id) || witnessed.has(ship.id)) return false;
-        const victim = atWorldPose(incidentTarget!);
-        return !!victim.position && world.canDroneSee(ship.id, victim.position);
-      })
-      .map((ship) => ship.id);
-    const attackerId = incident === 'player-attacks-npc' ? 'player' : incidentTarget;
-    const victimId = incident === 'player-attacks-npc' ? incidentTarget : 'player';
-    conflict.recordAttack({ attackerId, victimId, witnessedBy: drones });
-    for (const id of drones) witnessed.add(id);
+    if (scripted || incident === 'none') return;
+    const target = roster.find((ship) => ship.group === 'npc' && arrived.has(ship.id));
+    if (!target) return;
+    scripted =
+      incident === 'player-attacks-npc'
+        ? requestCombat('player', target.id)
+        : requestCombat(target.id, 'player');
   };
   const connectWorldFighters = (): void => {
-    const active = [...arrived.keys()]
-      .filter((id) => world.isActive(id) && (all.get(id)?.setup.hullHp ?? 0) > 0)
-      .map(atWorldPose);
     if (!fleet) {
-      const pair = firstHostilePair(active, conflict.hostility(), world, incident, completedPairs);
-      if (!pair) return;
-      fleet = createDynamicFleetCombat(pair, arena, seed, conflict.hostility(), identities);
+      if (!pending) return;
+      const [initiator, victim] = pending;
+      pending = null;
+      const pair = (victim === 'player' ? [victim, initiator] : [initiator, victim]).map(
+        atWorldPose
+      );
+      const first = pair[0]!;
+      const second = pair[1]!;
+      const map = {
+        ...arena,
+        attackerPosition: first.position!,
+        defenderPosition: second.position!,
+        attackerHeadingRadians: first.headingRadians!,
+        defenderHeadingRadians: second.headingRadians!,
+        attackerVelocity: first.velocity!,
+        defenderVelocity: second.velocity!,
+      };
+      const enemy = world.npc(second.id)!;
+      encounter =
+        first.id === 'player'
+          ? createCareerFleetEncounter(
+              first.setup,
+              enemy,
+              npcs,
+              initiator === 'player',
+              map,
+              positions
+            )
+          : createNpcFleetEncounter(world.npc(first.id)!, enemy, npcs, map, positions);
+      fleet = encounter.fleet;
       for (const ship of pair) {
         joined.add(ship.id);
-        world.markEngaged(ship.id, ship.id === pair[0].id ? pair[1].id : pair[0].id);
+        world.markEngaged(ship.id, ship.id === first.id ? second.id : first.id);
       }
     }
-    for (const ship of active) {
-      if (joined.has(ship.id)) continue;
-      const target = active.find(
-        (other) =>
-          joined.has(other.id) &&
-          other !== ship &&
-          (conflict.isHostile(ship.id, other.id) || conflict.isHostile(other.id, ship.id)) &&
-          canJoinWorldCombat(ship, other, world, incident)
-      );
-      if (!target) continue;
-      if (fleet.addShip(ship, ship.id)) {
-        joined.add(ship.id);
-        world.markEngaged(ship.id, target.id);
+    const anchor = fleet.duels[0]!.getSnapshot().defender;
+    encounter!.joinNearby(
+      anchor.position,
+      npcs.filter((npc) => world.isActive(npc.id)),
+      positions.positionOf,
+      (npc) => {
+        joined.add(npc.id);
+        world.markEngaged(npc.id, anchor.id);
       }
-    }
+    );
   };
   const deploy = (): void => {
     for (const ship of roster) {
@@ -242,6 +195,7 @@ export function createFleetScenarioRuntime(
   deploy();
   return {
     arena,
+    fieldView: world.fieldView,
     ships: roster,
     totalCount: roster.length,
     get elapsedSeconds() {
@@ -270,15 +224,11 @@ export function createFleetScenarioRuntime(
       const dt = Math.min(seconds, 0.08);
       elapsedSeconds += dt;
       deploy();
-      const pirateThreat = [...joined]
-        .filter((id) => world.npc(id)?.pirate)
-        .map((id) => fleet?.getActor(id)?.position)
-        .find((position) => position !== undefined);
-      const threat = pirateThreat ?? null;
-      world.tick(dt, threat);
+      world.tick(dt, requestCombat);
       if (fleet && !fleet.getSnapshot().finished) {
         fleet.setBystanders(world.contacts().filter((contact) => !joined.has(contact.id)));
-        const frame = fleet.tick(dt);
+        encounter!.tick(dt);
+        const frame = fleet.getSnapshot();
         world.syncCombatField(frame.duels[0]!);
         for (const id of joined) {
           const actor = fleet.getActor(id);
@@ -315,6 +265,7 @@ export function createFleetScenarioRuntime(
         for (const id of joined)
           world.releaseCombat(id, escaped.has(id) || (all.get(id)?.setup.hullHp ?? 0) <= 0);
         joined.clear();
+        encounter = null;
         fleet = null;
         completedEncounters++;
       }

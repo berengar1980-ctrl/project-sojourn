@@ -1,3 +1,5 @@
+import type { CombatCameraPose } from '../combat/combat-camera';
+import type { PvPMapCamera } from '../combat/pvp-map-camera';
 import { drawTargetDetailScan } from '../local-operations/scan-effects';
 import {
   drawLocalSecurityDrone,
@@ -10,7 +12,7 @@ import type {
   SalvageNpcShipView,
   SalvageSpaceViewModel,
 } from '../../features/salvage/salvage-space-view-model';
-import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type ScreenPoint } from '../map/map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
@@ -39,7 +41,20 @@ export function hashId(id: string): number {
 }
 export abstract class SalvageSceneLayers {
   protected abstract model: SalvageSpaceViewModel;
-  protected abstract camera: MapCamera;
+  protected abstract camera: PvPMapCamera;
+  protected abstract drawField(width: number, height: number, time: number): void;
+  paintFieldLayer(
+    model: SalvageSpaceViewModel,
+    pose: CombatCameraPose,
+    width: number,
+    height: number,
+    time: number
+  ): void {
+    this.model = model;
+    this.camera.setViewDimensions(width, height);
+    this.camera.restorePose(pose);
+    this.drawField(width, height, time);
+  }
   protected abstract ensureNpcImage(url: string): HTMLImageElement;
   protected abstract engineEffects: ShipEngineEffectsRenderer;
   protected abstract context: CanvasRenderingContext2D;

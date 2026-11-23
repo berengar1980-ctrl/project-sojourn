@@ -17,6 +17,28 @@ import type {
   StrategicCombatSnapshot,
 } from '../systems/combat/strategic-combat-types';
 
+import type { FieldWitness } from '../systems/combat/career-fleet-encounter';
+import { salvageDroneCanSee } from './game-controller-salvage-drone';
+import { careerSalvageDrone } from './game-controller-salvage-drone-world';
+
+export function fieldWitnessFor(
+  context: ControllerRuntimeContext | null,
+  ...[locationId, npc, target]: Parameters<FieldWitness>
+): ReturnType<FieldWitness> {
+  if (!context || npc.locationId !== locationId || npc.travel) return null;
+  const salvage = context.state.salvageScene?.getField();
+  const field = fieldWorldFor(context).field(locationId);
+  if (npc.id.startsWith('security-drone:')) {
+    if (npc.id !== 'security-drone:' + locationId) return null;
+    if (salvage?.sourceLocationId === locationId) {
+      const drone = careerSalvageDrone(context, salvage);
+      return salvageDroneCanSee(drone, salvage, target) ? drone : null;
+    }
+    return field?.drone.detect(target, field.instance.asteroids) ? field.drone : null;
+  }
+  return context.economy.localPirates.get(locationId)?.snapshot([npc])[0] ?? null;
+}
+
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
 
 /** Install the already staged field authority instead of generating new ore/NPCs. */

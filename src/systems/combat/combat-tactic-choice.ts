@@ -25,7 +25,7 @@ export function updateAiTactic(
   const aggression = clamp(combatant.setup.aiAggression ?? 50, 0, 100);
   const range = distance(combatant.position, enemy.position);
 
-  if (hullRatio <= 0.3 && aggression < 88) {
+  if (hullRatio <= 0.3 && aggression < 88 && !combatant.setup.id.startsWith('security-drone:')) {
     combatant.tactic = 'flee';
     return;
   }

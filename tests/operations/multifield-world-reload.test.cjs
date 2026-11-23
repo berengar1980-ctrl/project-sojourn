@@ -88,7 +88,7 @@ function prepareMining(world) {
         entry.kind === 'resource' && entry.deposits.some((deposit) => deposit.oreRemaining > 5)
     );
     assert(rock);
-    ship.position = { x: rock.position.x + rock.radius + 100, y: rock.position.y };
+    ship.position = { x: rock.position.x + rock.radius + 48, y: rock.position.y };
     ship.phase = 'mining';
     ship.targetAsteroidId = rock.id;
     ship.laserActive = true;

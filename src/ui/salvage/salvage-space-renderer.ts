@@ -53,7 +53,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   private lastFrameAt = -Infinity;
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    model: SalvageSpaceViewModel
+    model: SalvageSpaceViewModel,
+    fieldLayerOnly = false
   ) {
     super();
     const context = canvas.getContext('2d');
@@ -62,7 +63,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.model = model;
     this.camera = new PvPMapCamera(model.width, model.height);
     this.background = new SpaceBackgroundRenderer(context, model.backgroundSeed);
-    this.resize();
+    if (!fieldLayerOnly) this.resize();
   }
   update(model: SalvageSpaceViewModel): void {
     this.model = model;
@@ -85,7 +86,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
             for (const duel of this.model.fleet?.supporters ?? []) active.add(duel.attacker.id);
             this.drawNpcShips(width, height, timeSeconds, active);
           },
-          this.camera.combat
+          this.camera.combat,
+          (width, height, time) => this.drawField(width, height, time)
         );
       } else if (resumedCombat) {
         this.sharedCombatRenderer.beginEncounter(model.combat);
@@ -156,15 +158,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.shipImage.onload = () => this.draw();
     this.shipImage.src = url;
   }
-  protected draw(): void {
-    if (this.sharedCombatActive) return;
-    this.drawLocalScene();
-  }
-  private drawLocalScene(): void {
-    const rect = this.canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const timeSeconds = performance.now() / 1000;
+  protected drawField(width: number, height: number, timeSeconds: number): void {
     this.background.draw({
       width,
       height,
@@ -216,6 +210,17 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       if (hit) hitAreas.push(hit);
     }
     this.hitAreas = hitAreas;
+  }
+  protected draw(): void {
+    if (this.sharedCombatActive) return;
+    this.drawLocalScene();
+  }
+  private drawLocalScene(): void {
+    const rect = this.canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const timeSeconds = performance.now() / 1000;
+    this.drawField(width, height, timeSeconds);
     this.npcHitAreas = this.drawNpcShips(width, height, timeSeconds);
     this.distressParticles.drawScene(
       timeSeconds,

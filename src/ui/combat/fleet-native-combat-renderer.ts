@@ -94,7 +94,8 @@ export class FleetNativeCombatRenderer {
       height: number,
       timeSeconds: number
     ) => void,
-    private readonly camera = new CombatCamera()
+    private readonly camera = new CombatCamera(),
+    private readonly drawField?: (width: number, height: number, time: number) => void
   ) {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Strategic combat canvas context unavailable.');
@@ -127,7 +128,7 @@ export class FleetNativeCombatRenderer {
   }
   updateEncounter(model: StrategicCombatSnapshot, fleet?: ParallelNativeDuelSnapshot | null): void {
     this.update(
-      model,
+      fleet?.duels[0] ?? model,
       fleet ? [...fleet.duels.slice(1), ...fleet.supporters] : [],
       fleet ? fleet.duels.length - 1 : undefined,
       fleet?.escapedShipIds,
@@ -196,13 +197,6 @@ export class FleetNativeCombatRenderer {
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
     this.draw();
   }
-  cameraPose(): CombatCameraPose {
-    return this.camera.pose();
-  }
-  restoreCameraPose(pose: CombatCameraPose): void {
-    this.camera.restorePose(pose);
-    this.draw();
-  }
   pan(dx: number, dy: number): void {
     this.camera.pan(dx, dy);
     this.draw();
@@ -229,19 +223,7 @@ export class FleetNativeCombatRenderer {
     return this.sprites.geometry(combatant, width, height, this.camera, this.model.arena);
   }
 
-  private draw(): void {
-    if (!this.active) return;
-    this.paintedShips.clear();
-    this.paintedDamage.clear();
-    const rect = this.canvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    const timeSeconds = performance.now() / 1000;
-    const visualElapsed = this.effectClock.elapsed(timeSeconds);
-    this.context.clearRect(0, 0, width, height);
-    const shake = ramCameraImpulse(this.model.attacker, this.model.defender, visualElapsed);
-    this.context.save();
-    this.context.translate(shake.x, shake.y);
+  private drawArena(width: number, height: number, timeSeconds: number): void {
     drawCombatBackground(
       this.context,
       width,
@@ -258,6 +240,22 @@ export class FleetNativeCombatRenderer {
       this.context,
       timeSeconds
     );
+  }
+  private draw(): void {
+    if (!this.active) return;
+    this.paintedShips.clear();
+    this.paintedDamage.clear();
+    const rect = this.canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const timeSeconds = performance.now() / 1000;
+    const visualElapsed = this.effectClock.elapsed(timeSeconds);
+    this.context.clearRect(0, 0, width, height);
+    const shake = ramCameraImpulse(this.model.attacker, this.model.defender, visualElapsed);
+    this.context.save();
+    this.context.translate(shake.x, shake.y);
+    if (this.drawField) this.drawField(width, height, timeSeconds);
+    else this.drawArena(width, height, timeSeconds);
     paintNativeTractorThrows(
       this.context,
       this.model.winner === null ? this.model.thrownAsteroids : [],

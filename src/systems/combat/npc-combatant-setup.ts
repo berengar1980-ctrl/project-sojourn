@@ -100,7 +100,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     aiControlled: true,
     aiAggression: npc.aggression,
     ...(npc.factionId ? { factionId: npc.factionId } : {}),
-    ...(npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
+    ...(npc.pirate && npc.pirateMark ? { pirateMark: npc.pirateMark } : {}),
   };
 }
 

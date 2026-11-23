@@ -1172,3 +1172,10 @@ Kampagne sein letztes Kampfergebnis für Hüllenschaden, Position und Rückkehr.
 Das Ergebnis gilt bis zur Auflösung des Gefechts und wird bei einem Zielwechsel
 des überlebenden Gegners nicht überschrieben. Dieser Zwischenstand ist nur im
 laufenden Gefecht verfügbar.
+
+Patrouillenschiffe und Piraten verwenden im lokalen Feld denselben Verkehrsdienst.
+Bestehende Feld-Checkpoints können weiterhin geladen werden. Die Liste der
+Verkehrsschiffe kann zusätzlich reguläre Patrouillen enthalten. Die Rolle und
+das Piratenabzeichen stammen aus dem zugehörigen Sektor-NPC. Gespeicherte Miner
+prüfen ihren Abstand zum aktuellen Asteroiden, bevor Scan oder Abbau weiterlaufen.
+Die Testaufstellung verwendet die Kampagnen-Gefechtsverwaltung im isolierten Feld.

@@ -1,3 +1,6 @@
+import type { CombatCameraPose } from '../combat/combat-camera';
+import type { PvPMapCamera } from '../combat/pvp-map-camera';
+import { drawNpcMinerScan } from '../local-operations/scan-effects';
 import { drawMiningChunkVisual, type MiningEffectsRenderer } from './mining-effects-renderer';
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
@@ -5,7 +8,7 @@ import type {
   LocalNpcShipView,
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
-import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type ScreenPoint } from '../map/map-camera';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
 import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
@@ -24,7 +27,20 @@ export { hashId } from './local-space-visual-hash';
 export abstract class LocalSpaceSceneLayers {
   protected abstract context: CanvasRenderingContext2D;
   protected abstract model: LocalSpaceViewModel;
-  protected abstract camera: MapCamera;
+  protected abstract camera: PvPMapCamera;
+  protected abstract drawField(width: number, height: number, time: number): void;
+  paintFieldLayer(
+    model: LocalSpaceViewModel,
+    pose: CombatCameraPose,
+    width: number,
+    height: number,
+    time: number
+  ): void {
+    this.model = model;
+    this.camera.setViewDimensions(width, height);
+    this.camera.restorePose(pose);
+    this.drawField(width, height, time);
+  }
   protected abstract ensureNpcImage(url: string): HTMLImageElement;
   protected abstract engineEffects: ShipEngineEffectsRenderer;
   protected abstract miningEffects: MiningEffectsRenderer;
@@ -193,18 +209,7 @@ export abstract class LocalSpaceSceneLayers {
     timeSeconds: number
   ): void {
     const target = this.camera.worldToScreen(targetWorld, width, height);
-    const radius = 10 + progress * 28;
-    this.context.save();
-    this.context.strokeStyle = `rgba(116, 235, 248, ${0.52 + Math.sin(timeSeconds * 10) * 0.16})`;
-    this.context.lineWidth = 1.2;
-    this.context.beginPath();
-    this.context.arc(target.x, target.y, radius, 0, Math.PI * 2);
-    this.context.stroke();
-    // A scan is an expanding pulse at the rock, not a permanent blue tow line.
-    this.context.beginPath();
-    this.context.arc(target.x, target.y, radius * 0.48, 0, Math.PI * 2);
-    this.context.stroke();
-    this.context.restore();
+    drawNpcMinerScan(this.context, target, progress, timeSeconds);
   }
   protected drawChunks(width: number, height: number): void {
     for (const chunk of this.model.chunks) {

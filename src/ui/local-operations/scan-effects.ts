@@ -70,3 +70,23 @@ export function drawTargetDetailScan(
   context.stroke();
   context.restore();
 }
+
+export function drawNpcMinerScan(
+  context: CanvasRenderingContext2D,
+  target: { x: number; y: number },
+  progress: number,
+  timeSeconds: number
+): void {
+  const radius = 10 + progress * 28;
+  context.save();
+  context.strokeStyle = `rgba(116, 235, 248, ${0.52 + Math.sin(timeSeconds * 10) * 0.16})`;
+  context.lineWidth = 1.2;
+  context.beginPath();
+  context.arc(target.x, target.y, radius, 0, Math.PI * 2);
+  context.stroke();
+  // A scan is an expanding pulse at the rock, not a permanent blue tow line.
+  context.beginPath();
+  context.arc(target.x, target.y, radius * 0.48, 0, Math.PI * 2);
+  context.stroke();
+  context.restore();
+}

@@ -1,3 +1,4 @@
+import { fieldInterceptRange } from '../systems/npcs/npc-combat-ai';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { AsteroidFieldRuntime } from '../systems/operations/asteroid-field-world';
 import type { WorldPoint } from '../core/world-types';
@@ -48,7 +49,7 @@ export function interceptSecurityPirate(
   const drone = field.drone;
   const position = drone.snapshot().position;
   const gap = Math.hypot(position.x - pirate.position.x, position.y - pirate.position.y);
-  if (gap > 145) return false;
+  if (gap > fieldInterceptRange('security-drone:' + field.locationId, false)) return false;
   const defender = context.economy.sectorNpcs.npcs.find(
     (npc) => npc.id === 'security-drone:' + field.locationId
   );
@@ -72,15 +73,4 @@ export function interceptSecurityPirate(
   return started;
 }
 
-export function securityPirateApproach(
-  dronePosition: WorldPoint,
-  piratePosition: WorldPoint
-): WorldPoint {
-  const dx = dronePosition.x - piratePosition.x;
-  const dy = dronePosition.y - piratePosition.y;
-  const length = Math.max(1, Math.hypot(dx, dy));
-  return {
-    x: piratePosition.x + (dx / length) * 125,
-    y: piratePosition.y + (dy / length) * 125,
-  };
-}
+export { securityPirateApproach } from '../systems/operations/asteroid-security-drone';

@@ -1,3 +1,5 @@
+import { createLocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
+import { createSalvageSpaceViewModel } from '../../features/salvage/salvage-space-view-model';
 import type { WorldPoint } from '../../core/world-types';
 import type { DuelField } from '../../systems/combat/duel-arena-presets';
 import { createLocalSpaceService } from '../../systems/local-space/local-space-service';
@@ -37,6 +39,11 @@ export function createFleetWorldPlayerFlight(field: DuelField, draft: DuelDraft,
     const state = service.syncCombatPose(position, heading, 0).ship;
     return {
       state,
+      fieldView: {
+        kind: 'salvage' as const,
+        model: () =>
+          createSalvageSpaceViewModel(service.getSnapshot(), ship, { cargo: {} }, [], 'Wrackfeld'),
+      },
       navigate: (point: WorldPoint) => service.startNavigation(point),
       navigation: () => service.getSnapshot(),
       restore: (point: WorldPoint, angle: number, speed: number) =>
@@ -74,6 +81,10 @@ export function createFleetWorldPlayerFlight(field: DuelField, draft: DuelDraft,
   service.syncCombatPose(position, heading, 0);
   return {
     state: instance.ship,
+    fieldView: {
+      kind: 'mining' as const,
+      model: () => createLocalSpaceViewModel(service.getSnapshot(), ship, 'Asteroidenfeld'),
+    },
     navigate(point: WorldPoint) {
       const plan = planPointRoute(service.getPointRouteOptions(point));
       service.startNavigation(point, plan.route);

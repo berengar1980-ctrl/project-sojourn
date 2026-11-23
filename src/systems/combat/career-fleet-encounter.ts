@@ -1,4 +1,4 @@
-import { npcMayInitiateAttack } from '../npcs/npc-combat-ai';
+import { fieldInterceptRange, npcMayInitiateAttack } from '../npcs/npc-combat-ai';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createConflictManager, npcConflictParticipant } from './fleet-conflict-manager';
@@ -16,7 +16,14 @@ import type {
 
 const CONTACT_RANGE = 650;
 
+export type FieldWitness = (
+  locationId: string,
+  npc: SectorNpcState,
+  target: WorldPoint
+) => { position: WorldPoint; headingRadians: number } | null;
+
 export interface CareerFleetWorldPose {
+  readonly fieldWitness?: FieldWitness;
   /** Authoritative world position; never mutate it from a renderer. */
   readonly positionOf: (npc: SectorNpcState) => WorldPoint;
   readonly headingOf: (npc: SectorNpcState) => number;
@@ -97,7 +104,9 @@ function createSectorFleetEncounter(
         team: 'a',
         setup: firstSetup,
         ...(firstPosition ? { position: firstPosition } : {}),
-        ...(firstNpc && worldPose ? { headingRadians: worldPose.headingOf(firstNpc) } : {}),
+        ...(firstNpc && worldPose
+          ? { headingRadians: arena?.attackerHeadingRadians ?? worldPose.headingOf(firstNpc) }
+          : {}),
       },
       {
         id: enemy.id,
@@ -166,8 +175,16 @@ function createSectorFleetEncounter(
           (npc.combatRecoverySeconds ?? 0) > 0
         )
           continue;
-        const spot = npcPosition(npc);
-        if (Math.hypot(spot.x - position.x, spot.y - position.y) > CONTACT_RANGE) continue;
+        const localWitness = arena && worldPose?.fieldWitness;
+        const center = localWitness ? fleet.getActor(enemy.id)!.position : position;
+        const contact = localWitness?.(enemy.locationId, npc, center);
+        if (localWitness && !contact) continue;
+        const spot = contact?.position ?? npcPosition(npc);
+        if (
+          Math.hypot(spot.x - center.x, spot.y - center.y) >
+          (localWitness ? fieldInterceptRange(npc.id, npc.pirate === true) : CONTACT_RANGE)
+        )
+          continue;
         const kind = npcConflictParticipant(npc);
         if (
           kind.role !== 'pirate' &&
@@ -188,12 +205,13 @@ function createSectorFleetEncounter(
         const anchorActor = fleet.getActor(enemy.id);
         const anchorWorld = worldPose?.positionOf(enemy);
         const arrival =
-          worldPose && anchorActor && anchorWorld
+          contact?.position ??
+          (worldPose && anchorActor && anchorWorld
             ? {
                 x: anchorActor.position.x + spot.x - anchorWorld.x,
                 y: anchorActor.position.y + spot.y - anchorWorld.y,
               }
-            : undefined;
+            : undefined);
         if (
           fleet.addShip(
             {
@@ -201,7 +219,9 @@ function createSectorFleetEncounter(
               team: kind.role,
               setup,
               ...(arrival ? { position: arrival } : {}),
-              ...(worldPose ? { headingRadians: worldPose.headingOf(npc) } : {}),
+              ...(worldPose
+                ? { headingRadians: contact?.headingRadians ?? worldPose.headingOf(npc) }
+                : {}),
             },
             npc.id
           )
@@ -209,8 +229,8 @@ function createSectorFleetEncounter(
           const actor = fleet.getActor(npc.id);
           if (actor && worldPose)
             worldOffsets.set(npc.id, {
-              x: spot.x - actor.position.x,
-              y: spot.y - actor.position.y,
+              x: npcPosition(npc).x - actor.position.x,
+              y: npcPosition(npc).y - actor.position.y,
             });
           members.set(npc.id, npc);
           onJoin?.(npc);

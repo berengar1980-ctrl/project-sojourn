@@ -189,6 +189,7 @@ function beginPlayerCombat(
     playerInitiated,
     arena,
     {
+      ...(runtime.options.fieldWitness ? { fieldWitness: runtime.options.fieldWitness } : {}),
       positionOf: (npc) => runtime.options.sectorNpcs.livePosition(npc),
       headingOf: (npc) => runtime.options.sectorNpcs.liveHeading(npc),
       playerPosition: runtime.options.navigation.getSnapshot().currentPosition,
@@ -232,7 +233,7 @@ function updatePiratePlayerChase(runtime: EngagementRuntime): void {
 
 function updatePlayerChase(runtime: EngagementRuntime): void {
   const chase = runtime.playerChase;
-  if (!chase || runtime.playerCombat) return;
+  if (!chase || runtime.playerCombat || runtime.options.inStarMap?.() === false) return;
   const target = engagementNpc(runtime, chase.targetId);
   if (!target || target.hullHp <= 0) {
     runtime.options.navigation.stopPursuit();
@@ -276,6 +277,7 @@ function beginBackgroundCombat(
     runtime.options.sectorNpcs.npcs,
     arena,
     {
+      ...(runtime.options.fieldWitness ? { fieldWitness: runtime.options.fieldWitness } : {}),
       positionOf: (npc) => runtime.options.sectorNpcs.livePosition(npc),
       headingOf: (npc) => runtime.options.sectorNpcs.liveHeading(npc),
     }
@@ -327,14 +329,15 @@ function updateNpcChases(runtime: EngagementRuntime): void {
 function engageNpc(
   runtime: EngagementRuntime,
   npcId: string,
-  arena?: StrategicCombatArenaOptions
+  arena?: StrategicCombatArenaOptions,
+  playerInitiated = true
 ): boolean {
   if (runtime.playerCombat || runtime.options.isPlayerInCampaignSystem?.()) return false;
   const target = engagementNpc(runtime, npcId);
   if (!target || target.hullHp <= 0) return false;
   if (target.combatMovement?.mode === 'engaged') return false;
-  runtime.options.onPlayerAttack?.(target);
-  beginPlayerCombat(runtime, target, arena, true);
+  if (playerInitiated) runtime.options.onPlayerAttack?.(target);
+  beginPlayerCombat(runtime, target, arena, playerInitiated);
   return runtime.playerCombat !== null;
 }
 
@@ -413,7 +416,8 @@ export function createStarMapEngagementService(
 
   return {
     engageNpcNow: (npcId) => engageNpc(runtime, npcId),
-    engageNpcInArena: (npcId, arena) => engageNpc(runtime, npcId, arena),
+    engageNpcInArena: (npcId, arena, playerInitiated) =>
+      engageNpc(runtime, npcId, arena, playerInitiated),
     engageNpcsInArena: (attackerId, defenderId, arena) => {
       if (attackerId === defenderId) return false;
       const attacker = engagementNpc(runtime, attackerId);

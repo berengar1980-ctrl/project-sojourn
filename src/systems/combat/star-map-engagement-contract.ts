@@ -1,3 +1,4 @@
+import type { FieldWitness } from './career-fleet-encounter';
 import type { ParallelNativeDuels } from './parallel-native-duels';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
@@ -15,7 +16,11 @@ import type {
 export interface StarMapEngagementService {
   attackNpc(npcId: string): boolean;
   engageNpcNow(npcId: string): boolean;
-  engageNpcInArena(npcId: string, arena: StrategicCombatArenaOptions): boolean;
+  engageNpcInArena(
+    npcId: string,
+    arena: StrategicCombatArenaOptions,
+    playerInitiated?: boolean
+  ): boolean;
   engageNpcsInArena(
     attackerId: string,
     defenderId: string,
@@ -32,6 +37,8 @@ export interface StarMapEngagementService {
 }
 
 export interface StarMapEngagementOptions {
+  readonly fieldWitness?: FieldWitness;
+  readonly inStarMap?: () => boolean;
   readonly mayInitiateAttack?: (npc: SectorNpcState) => boolean;
   /** Restricts attacks on the player only; NPC battles remain independent. */
   readonly mayInterceptPlayer?: (npc: SectorNpcState) => boolean;
