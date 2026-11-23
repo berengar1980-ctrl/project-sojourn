@@ -92,7 +92,6 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     else mountControllerStarMap(context);
   });
 }
-
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
   const { state } = context;
   rememberMiningField(context);

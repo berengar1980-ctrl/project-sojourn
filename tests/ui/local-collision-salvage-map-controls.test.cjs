@@ -10,6 +10,7 @@ const root = path.resolve(__dirname, '../..');
 const mapPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts'), 'utf8');
 const mapRenderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 const miningNpc = readModuleSource(root, 'src/systems/npcs/npc-local-mining-service.ts');
+const miningContacts = readModuleSource(root, 'src/systems/npcs/npc-local-mining-contacts.ts');
 const salvageNpc = fs.readFileSync(
   path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
   'utf8'
@@ -25,8 +26,10 @@ assert(
   'star map must offer a persistent names on/off toggle'
 );
 assert(
-  miningNpc.includes('resolveShipShieldObstacleCollisions') &&
-    miningNpc.includes('options.getAsteroids().map'),
+  miningNpc.includes('resolveMinerCollisions(') &&
+    miningContacts.includes('resolveShipShieldObstacleCollisions') &&
+    miningContacts.includes('filter((asteroid) => asteroid.routeBlocking)') &&
+    miningContacts.includes('resolveFieldDebrisContacts'),
   'NPC miners must collide with local asteroids'
 );
 assert(

@@ -1206,7 +1206,7 @@ Kleine, nicht routenblockierende Trümmer werden von lokalen NPC-Minern
 über dieselbe kontaktbasierte Impulsregel wie bei den Sicherheitsdrohnen
 beiseitegeschoben. Ihre bereits vorhandenen Positionen und
 `physics.velocity` werden weiterhin vom `AsteroidFieldWorld`-Checkpoint
-gespeichert; die neue `field-debris-contact.ts` besitzt keinen eigenen
+gespeichert; die neuen `field-debris-contact.ts` und `npc-local-mining-contacts.ts` besitzen keinen eigenen
 Zustand. Große Asteroiden bleiben solide Routenhindernisse.
 
 Während nativer NPC-Gefechte besitzt ausschließlich der native

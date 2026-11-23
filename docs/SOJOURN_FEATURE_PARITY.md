@@ -1905,3 +1905,15 @@ zurück. Der Chromium-Test prüft die Größe und Lage des Testfelds unter der S
 ## Review-Log (2026-11-23) – Drohnenposition und Beitritt zu NPC-Gefechten
 
 Kampagne und PvP-Feldtest übernehmen beim manuellen Angriff auf einen kämpfenden NPC das laufende Feldgefecht. Der angeklickte Gegner behält Position, Schaden und KI. Feldkarten spiegeln nur Gefechte mit passendem Feld-Seed.
+
+## Review-Log (2026-11-23) – Feld-NPC-Kollision und Darstellung (PR #390)
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs. Kleine,
+bewegliche Trümmer werden bei NPC-Minern durch die bestehende gemeinsame
+Kontaktphysik aus dem Weg gedrückt; große, routenblockierende Asteroiden
+bleiben feste Hindernisse. Ein kämpfender NPC bleibt während der Übergabe
+an die native Kampfphysik unter seiner Identität und Weltposition sichtbar.
+Optionale Performance-Proben erfassen Phasen der laufenden Simulation,
+ohne Spiel- oder Save-Semantik zu verändern. Keine neue Kampf-Engine,
+keine Änderung der vorhandenen 1vs1-Mechanik. Die unregelmäßige
+Drohnen-Schussdarstellung und Langzeitruckler sind separat zu verifizieren.

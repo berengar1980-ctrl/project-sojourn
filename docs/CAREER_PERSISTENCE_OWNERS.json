@@ -238,6 +238,10 @@
     "src/systems/local-space/field-debris-contact.ts": {
       "mode": "derived",
       "reason": "Stateless shared contact physics for lightweight field debris; authoritative existing asteroid positions and velocities are checkpointed by the field world."
+    },
+    "src/systems/npcs/npc-local-mining-contacts.ts": {
+      "mode": "derived",
+      "reason": "Stateless shared miner contact solver operating on already persisted NPC field positions and asteroid state; no independent checkpoint owner."
     }
   }
 }
