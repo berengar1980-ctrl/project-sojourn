@@ -1,3 +1,4 @@
+import type { StrategicCombatArenaOptions } from './strategic-combat-types';
 import type { CareerFleetEncounter } from './career-fleet-encounter';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
@@ -90,4 +91,26 @@ export function finishPlayerCombat(
   runtime.playerFleet = null;
   runtime.playerCombat = null;
   runtime.playerEnemy = null;
+}
+
+export function joinBackgroundCombat(
+  runtime: EngagementRuntime,
+  target: SectorNpcState,
+  arena: StrategicCombatArenaOptions
+): boolean {
+  for (const [key, entry] of runtime.backgroundCombats) {
+    if (!entry.fleet.members.has(target.id)) continue;
+    const combat = entry.fleet.joinPlayer(runtime.options.getPlayerCombatant(), target.id, arena);
+    if (!combat) return false;
+    runtime.backgroundCombats.delete(key);
+    runtime.playerFleet = entry.fleet;
+    runtime.playerCombat = combat;
+    runtime.playerEnemy = target;
+    runtime.playerChase = null;
+    runtime.options.navigation.stopPursuit();
+    runtime.options.onPlayerAttack?.(target);
+    runtime.options.log('COMBAT > FLOTTENGEFECHT · ANGRIFF AUF ' + target.name.toUpperCase());
+    return true;
+  }
+  return false;
 }

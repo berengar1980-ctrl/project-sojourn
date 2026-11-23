@@ -169,7 +169,10 @@ function localNpcCombatSnapshots(
   locationId: string | null | undefined
 ) {
   const npcs = context.economy.sectorNpcs.npcs;
+  const fieldSeed = context.state.localSpace?.getSnapshot().instance.seed;
+  if (fieldSeed === undefined) return [];
   return (context.engagements.activeNpcCombatSnapshots?.() ?? []).filter((duel) => {
+    if (duel.arena.backdropSeed !== fieldSeed) return false;
     const first = npcs.find((npc) => npc.id === duel.attacker.id);
     const second = npcs.find((npc) => npc.id === duel.defender.id);
     return first?.locationId === locationId && second?.locationId === locationId;

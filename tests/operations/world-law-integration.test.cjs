@@ -185,3 +185,28 @@ function remoteTheftAndPursuitTest() {
 }
 
 remoteTheftAndPursuitTest();
+
+// A sector duel at Greyrock uses different coordinates from the Greyrock mining field.
+{
+  const { context, field, location, miner } = createScenario();
+  context.state.mode = 'local-space';
+  context.state.localSpace = {
+    getSnapshot: () => ({ instance: field.instance, laserActive: false }),
+  };
+  const far = { x: 50, y: 50 };
+  const drone = {
+    id: 'security-drone:' + location.id,
+    position: far,
+    hullHp: 100,
+    headingRadians: 0,
+    speed: 0,
+  };
+  const duel = { arena: {}, attacker: drone, defender: { ...drone, id: miner.id } };
+  context.engagements.activeNpcCombatSnapshots = () => [duel];
+  const before = { ...field.drone.position };
+  advanceControllerFieldWorld(context, 0.08);
+  assert(Math.hypot(before.x - field.drone.position.x, before.y - field.drone.position.y) < 100);
+  duel.arena.backdropSeed = field.instance.seed;
+  advanceControllerFieldWorld(context, 0.08);
+  assert.deepEqual(field.drone.position, far);
+}

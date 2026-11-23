@@ -28,6 +28,7 @@ import type { StrategicCombatArenaOptions } from './strategic-combat-service';
 import { npcCombatant } from './npc-combatant-setup';
 import {
   finishPlayerCombat,
+  joinBackgroundCombat,
   resolveBackgroundCombats,
 } from './star-map-engagement-fleet-resolution';
 import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
@@ -194,6 +195,9 @@ function beginPlayerCombat(
     playerInitiated,
     arena,
     {
+      ...(runtime.options.fieldOwnsContact && {
+        fieldOwnsContact: runtime.options.fieldOwnsContact,
+      }),
       ...(runtime.options.fieldWitness ? { fieldWitness: runtime.options.fieldWitness } : {}),
       positionOf: (npc) => runtime.options.sectorNpcs.livePosition(npc),
       headingOf: (npc) => runtime.options.sectorNpcs.liveHeading(npc),
@@ -282,6 +286,9 @@ function beginBackgroundCombat(
     runtime.options.sectorNpcs.npcs,
     arena,
     {
+      ...(runtime.options.fieldOwnsContact && {
+        fieldOwnsContact: runtime.options.fieldOwnsContact,
+      }),
       ...(runtime.options.fieldWitness ? { fieldWitness: runtime.options.fieldWitness } : {}),
       positionOf: (npc) => runtime.options.sectorNpcs.livePosition(npc),
       headingOf: (npc) => runtime.options.sectorNpcs.liveHeading(npc),
@@ -340,7 +347,8 @@ function engageNpc(
   if (runtime.playerCombat || runtime.options.isPlayerInCampaignSystem?.()) return false;
   const target = engagementNpc(runtime, npcId);
   if (!target || target.hullHp <= 0) return false;
-  if (target.combatMovement?.mode === 'engaged') return false;
+  if (target.combatMovement?.mode === 'engaged')
+    return Boolean(playerInitiated && arena && joinBackgroundCombat(runtime, target, arena));
   if (playerInitiated) runtime.options.onPlayerAttack?.(target);
   beginPlayerCombat(runtime, target, arena, playerInitiated);
   return runtime.playerCombat !== null;

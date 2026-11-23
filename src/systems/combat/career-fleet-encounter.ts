@@ -25,6 +25,7 @@ export type FieldWitness = (
 
 export interface CareerFleetWorldPose {
   readonly fieldWitness?: FieldWitness;
+  readonly fieldOwnsContact?: (npc: SectorNpcState) => boolean;
   /** Authoritative world position; never mutate it from a renderer. */
   readonly positionOf: (npc: SectorNpcState) => WorldPoint;
   readonly headingOf: (npc: SectorNpcState) => number;
@@ -35,6 +36,11 @@ export interface CareerFleetEncounter {
   readonly fleet: ParallelNativeDuels;
   readonly combat: StrategicCombatService;
   readonly members: ReadonlyMap<string, SectorNpcState>;
+  joinPlayer(
+    player: StrategicCombatantSetup,
+    targetId: string,
+    field: StrategicCombatArenaOptions
+  ): StrategicCombatService | null;
   /** Witnessed reinforcements enter without cloning or reticking any ship. */
   joinNearby(
     position: WorldPoint,
@@ -188,6 +194,54 @@ function createSectorFleetEncounter(
       ? { ...primary, getSnapshot: () => playerResult ?? primary.getSnapshot() }
       : primary,
     members,
+    joinPlayer(player, targetId, field) {
+      const state = fleet.getSnapshot();
+      const target = fleet.getActor(targetId);
+      if (
+        field.backdropSeed === undefined ||
+        field.backdropSeed !== arena?.backdropSeed ||
+        !field.attackerPosition ||
+        !target ||
+        target.hullHp <= 0 ||
+        state.finished ||
+        state.escapedShipIds.includes(targetId) ||
+        fleet.getActor(player.id)
+      )
+        return null;
+      conflict.include({ id: player.id, role: 'player' });
+      conflict.recordAttack({ attackerId: player.id, victimId: targetId, witnessedBy: [] });
+      const joined = fleet.addShip(
+        {
+          id: player.id,
+          team: 'player',
+          setup: player,
+          position: field.attackerPosition,
+          ...(field.attackerVelocity && { velocity: field.attackerVelocity }),
+          ...(field.attackerHeadingRadians !== undefined && {
+            headingRadians: field.attackerHeadingRadians,
+          }),
+        },
+        player.id,
+        targetId
+      );
+      if (!joined) return null;
+      const service = fleet.supporters[fleet.supporters.length - 1]!;
+      return {
+        ...service,
+        getSnapshot() {
+          const duel = service.getSnapshot();
+          if (duel.winner !== null) return duel;
+          const result = fleet.getSnapshot();
+          if (!result.finished) return duel;
+          // The shared opponent can depart through the original NPC duel.
+          if (result.escapedShipIds.includes(duel.defender.id))
+            return { ...duel, winner: 'attacker', outcomeReason: 'escape' };
+          if (duel.defender.hullHp <= 0)
+            return { ...duel, winner: 'attacker', outcomeReason: 'destruction' };
+          return duel;
+        },
+      };
+    },
     // Reinforcements use the same campaign sensory, hostility and actor ownership rules.
     // eslint-disable-next-line complexity
     joinNearby(position, npcs, npcPosition, onJoin) {
@@ -212,6 +266,7 @@ function createSectorFleetEncounter(
         )
           continue;
         const localWitness = arena && worldPose?.fieldWitness;
+        if (!arena && worldPose?.fieldOwnsContact?.(npc)) continue;
         // Field pirates already pursue prey. The sector's aggression threshold
         // governs starting a hunt, not joining a fight they physically reach.
         if (

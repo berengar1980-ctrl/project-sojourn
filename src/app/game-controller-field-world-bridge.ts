@@ -240,7 +240,9 @@ export function advanceControllerFieldWorld(
         activeCombat.attacker.speed
       );
     }
-    const duels = activeCombat ? localDuels : background;
+    const duels = (activeCombat ? localDuels : background).filter(
+      (duel) => duel.arena.backdropSeed === field.instance.seed
+    );
     syncNpcDuelFieldPoses(context, field, duels);
     field.miners.tick(seconds, activeCombat?.defender.id);
     if (activeCombat?.defender.id === 'security-drone:' + field.locationId) {
@@ -281,6 +283,7 @@ export function advanceControllerFieldWorld(
 
 function activeFieldContact(context: ControllerRuntimeContext | null, npc: SectorNpcState) {
   if (!context || npc.travel) return false;
+  if (npc.id === 'security-drone:' + npc.locationId) return true;
   if (context.state.mode !== 'local-space' && context.state.mode !== 'salvage-space') return false;
   return npc.locationId === context.navigation.getSnapshot().currentLocationId;
 }
