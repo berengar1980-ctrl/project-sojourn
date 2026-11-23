@@ -87,6 +87,7 @@ export function createFleetScenarioWorldBridge(
   const states = new Map<string, MovingNpc>();
   const drones = new Map<string, AsteroidSecurityDrone>();
   const playerStart = arena.attackerPosition ?? { x: arena.width * 0.5, y: arena.height * 0.5 };
+  const playerShip = getShipDefinition(roster.find((ship) => ship.id === 'player')!.draft.shipId);
   const playerPose = {
     position: { ...playerStart },
     headingRadians: arena.attackerHeadingRadians ?? 0,
@@ -424,7 +425,6 @@ export function createFleetScenarioWorldBridge(
             otherId === id ||
             !arrived.has(otherId) ||
             departed.has(otherId) ||
-            engaged.has(otherId) ||
             other.npc.hullHp <= 0
           )
             return [];
@@ -434,6 +434,13 @@ export function createFleetScenarioWorldBridge(
             ? [{ id: 'traffic:' + otherId, position, radius: definition.nominalLengthMeters * 0.5 }]
             : [];
         });
+        if (playerShip) {
+          traffic.push({
+            id: 'traffic:player',
+            position: playerPose.position,
+            radius: playerShip.nominalLengthMeters * 0.5,
+          });
+        }
         const arrivedAt = moveFieldShip(
           moving,
           destination,
