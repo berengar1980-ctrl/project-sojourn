@@ -442,6 +442,11 @@ body.app-has-system-bar .harrow-combat-tests {
 .harrow-combat-tests.is-combat-active > .harrow-combat-tabs {
   display: none;
 }
+.fleet-field-session {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
 .harrow-combat-tabs__content > .strategic-combat-shell {
   width: 100%;
   height: 100%;

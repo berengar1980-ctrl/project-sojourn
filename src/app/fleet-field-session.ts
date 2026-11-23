@@ -99,7 +99,7 @@ export function prepareFleetField(config: FleetTestConfiguration, seed: number) 
 export const launchFleetField: LaunchFleetField = (root, config, onExit) => {
   const session = prepareFleetField(config, Math.floor(Math.random() * 0x7fffffff));
   const scene = document.createElement('div');
-  scene.style.cssText = 'position:absolute;inset:0';
+  scene.className = 'fleet-field-session';
   const exit = document.createElement('button');
   exit.textContent = 'Test beenden';
   exit.style.cssText = 'position:absolute;bottom:12px;right:12px;z-index:100';

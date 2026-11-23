@@ -26,7 +26,7 @@ import {
   chooseAsteroid,
   MINING_AMOUNT,
   NPC_MINING_SURFACE_DISTANCE,
-  checkMinerWorkRange,
+  holdMinerWorkRange,
   cargoUsed,
   chooseEventChoice,
   approachPoint,
@@ -350,7 +350,7 @@ function advanceMiner(
   npc: SectorNpcState,
   dt: number
 ): boolean {
-  checkMinerWorkRange(ship, runtime.options.getAsteroids());
+  holdMinerWorkRange(ship, runtime.options.getAsteroids(), dt);
   if (ship.phase === 'entering' && !assignTarget(runtime, ship, npc)) return false;
   if (ship.phase === 'approaching') {
     advanceApproaching(runtime, ship, npc, dt);

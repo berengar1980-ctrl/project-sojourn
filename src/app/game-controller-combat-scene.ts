@@ -23,11 +23,13 @@ export function mountCombatScene(context: ControllerRuntimeContext, returnToMap:
   context.audio.clearPlayerRcs();
   const fleet = context.engagements.activePlayerFleet();
   const onReturn = () => returnFromCombat(context, combat, returnToMap);
+  const returnOptions = context.finishFieldExercise ? { returnLabel: 'ZUM FLEETCOMBAT-MENÜ' } : {};
   state.combatPanel = fleet
     ? createFleetNativeCombatPanel({
         root: context.root,
         combat,
         onReturn,
+        ...returnOptions,
         parallelDuels: () => [
           ...fleet.getSnapshot().duels.slice(1),
           ...fleet.getSnapshot().supporters,
@@ -37,7 +39,7 @@ export function mountCombatScene(context: ControllerRuntimeContext, returnToMap:
         fleetEngagements: () => fleet.getSnapshot().engagements,
         isComplete: () => fleet.getSnapshot().finished,
       })
-    : createFleetNativeCombatPanel({ root: context.root, combat, onReturn });
+    : createFleetNativeCombatPanel({ root: context.root, combat, onReturn, ...returnOptions });
   state.shipSwitcher?.destroy();
   state.shipSwitcher = null;
 }

@@ -22,6 +22,7 @@ interface FleetNativeCombatPanelOptions {
   readonly camera?: CombatCamera;
   readonly combat: StrategicCombatService;
   readonly onReturn: () => void;
+  readonly returnLabel?: string;
   readonly encounterName?: string;
   /** Additional native 1vs1 snapshots sharing the same existing map renderer. */
   readonly parallelDuels?: () => readonly StrategicCombatSnapshot[];
@@ -224,9 +225,9 @@ function bindCombatOrders(
   });
 }
 
-function combatReturnLabel(model: StrategicCombatSnapshot): string {
+function combatReturnLabel(model: StrategicCombatSnapshot, returnLabel = 'ZUR STERNKARTE'): string {
   if (model.winner !== null && model.attacker.hullHp <= 0) return 'SCHIFF ZERSTÖRT · BERGUNG...';
-  return model.boardingInitiator ? 'ENTERKAMPF STARTEN' : 'ZUR STERNKARTE';
+  return model.boardingInitiator ? 'ENTERKAMPF STARTEN' : returnLabel;
 }
 
 function prepareParallelDuelPanel(
@@ -282,7 +283,7 @@ function updateCombatReturnButton(
     ? complete
       ? 'ZUM TESTLABOR'
       : 'TEST BEENDEN'
-    : combatReturnLabel(model);
+    : combatReturnLabel(model, options.returnLabel);
   button.disabled =
     !options.spectator && defeatStartedAt !== null && performance.now() - defeatStartedAt < 2200;
 }
@@ -374,6 +375,7 @@ export function createFleetNativeCombatPanel(
       !options.spectator &&
       model.winner !== null &&
       model.attacker.hullHp <= 0 &&
+      (options.isComplete?.() ?? true) &&
       defeatReturnTimer === null
     ) {
       defeatReturnStartedAt = performance.now();

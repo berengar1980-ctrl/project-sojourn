@@ -139,6 +139,22 @@ async function verifyExtendedCareer(page, errors, after) {
   assert.deepEqual(errors, [], 'Extended browser session must not throw page errors');
 }
 
+async function verifyFleetFieldLayout(page) {
+  await page.goto(url);
+  await page.locator('[data-action="pvp"]').click();
+  await page.getByRole('button', { name: 'FleetCombat · Test' }).click();
+  await page.getByLabel('Kampfkarte').selectOption('asteroid_field');
+  await page.getByRole('button', { name: 'Simulation starten' }).click();
+  const scene = page.locator('.fleet-field-session > .local-space-shell');
+  await scene.waitFor();
+  const bounds = await scene.boundingBox();
+  const app = await page.locator('#app').boundingBox();
+  assert.equal(bounds.y, app.y, 'Fleet field starts below the same system bar as campaign');
+  assert.equal(bounds.height, app.height, 'Fleet field uses the campaign viewport height');
+  await page.getByRole('button', { name: 'Test beenden', exact: true }).click();
+  await page.getByRole('button', { name: 'Simulation starten' }).waitFor();
+}
+
 async function run() {
   const browser = await chromium.launch({ headless: true, args: ['--disable-dev-shm-usage'] });
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -147,6 +163,7 @@ async function run() {
   page.on('pageerror', (error) => errors.push(error.message));
 
   try {
+    await verifyFleetFieldLayout(page);
     await page.goto(url);
     await page.locator('[data-action="campaign"]').click();
     await page.locator('[name="captainName"]').fill('Reload Browser Tester');

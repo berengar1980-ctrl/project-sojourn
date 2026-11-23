@@ -142,6 +142,20 @@ assert(
   uneven.getSnapshot().escapedShipIds.includes('b-4'),
   'support attackers must disappear after a successful escape without moving their target'
 );
+// A finished supporting duel freezes its native last frame while the fleet keeps moving.
+const support = uneven.supporters[2];
+const previousSnapshot = support.getSnapshot;
+support.getSnapshot = () => ({
+  ...previousSnapshot(),
+  projectiles: [{ id: 91 }],
+  beams: [{ id: 92 }],
+  thrownAsteroids: [{ id: 93 }],
+});
+uneven.tick(0.08);
+const presented = uneven.getSnapshot().supporters[2];
+assert.deepEqual(presented.projectiles, []);
+assert.deepEqual(presented.beams, []);
+assert.deepEqual(presented.thrownAsteroids, []);
 const overlay = fs.readFileSync(
   path.join(root, 'src/ui/combat/fleet-native-combat-renderer.ts'),
   'utf8'

@@ -217,22 +217,32 @@ export function chooseEventChoice(
   );
 }
 
-export function checkMinerWorkRange(
+/** Maintain working distance on the current side of a drifting asteroid. */
+export function holdMinerWorkRange(
   ship: LocalNpcMinerState,
-  rocks: readonly LocalAsteroid[]
+  rocks: readonly LocalAsteroid[],
+  dt: number
 ): void {
-  if (ship.phase === 'scanning' || ship.phase === 'mining') {
-    const rock = rocks.find((body) => body.id === ship.targetAsteroidId);
-    if (
-      rock &&
-      Math.hypot(ship.position.x - rock.position.x, ship.position.y - rock.position.y) >
-        rock.radius + NPC_MINING_SURFACE_DISTANCE + 16
-    ) {
-      ship.phase = 'approaching';
-      ship.laserActive = false;
-      ship.scanProgress = 0;
-      delete ship.routeState;
-      delete ship.oreCollection;
-    }
+  if (ship.phase !== 'scanning' && ship.phase !== 'mining') return;
+  const rock = rocks.find((body) => body.id === ship.targetAsteroidId);
+  if (!rock) return;
+  const dx = ship.position.x - rock.position.x;
+  const dy = ship.position.y - rock.position.y;
+  const centerDistance = Math.hypot(dx, dy);
+  const offset = centerDistance - rock.radius - NPC_MINING_SURFACE_DISTANCE;
+  if (offset > 16) {
+    ship.phase = 'approaching';
+    ship.laserActive = false;
+    ship.scanProgress = 0;
+    delete ship.routeState;
+    delete ship.oreCollection;
+    return;
   }
+  if (centerDistance === 0) return;
+  const correction = Math.max(-16 * dt, Math.min(16 * dt, offset));
+  ship.position = {
+    x: ship.position.x - (dx / centerDistance) * correction,
+    y: ship.position.y - (dy / centerDistance) * correction,
+  };
+  ship.headingRadians = Math.atan2(-dy, -dx);
 }

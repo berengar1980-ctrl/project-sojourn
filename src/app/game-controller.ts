@@ -415,7 +415,6 @@ export function createGameController(options: GameControllerOptions): GameContro
     : createControllerEconomy(options.navigation, log, undefined, options.fieldExercise?.npcs);
   if (!saved) economy.smuggling.activateShip(options.ship.id);
   const state = createInitialControllerState(options, economy);
-
   const crew = saved?.crew ?? createCrewRosterService(state.playerProfile);
   const loadouts = saved?.commerce.ships.loadouts ?? createShipLoadoutService();
   const shipOperations =
@@ -470,6 +469,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   foreignWorld = () => campaignServices.world.inForeignSystem();
   engagementWorld = () => campaignServices.world.world();
   const context: ControllerRuntimeContext = {
+    ...(options.fieldExercise && { finishFieldExercise: options.onReturnToMainMenu }),
     root: options.root,
     navigation: options.navigation,
     systemLog,

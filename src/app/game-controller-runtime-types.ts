@@ -61,6 +61,7 @@ export interface ControllerRuntimeState {
 }
 
 export interface ControllerRuntimeContext {
+  readonly finishFieldExercise?: () => void;
   readonly root: HTMLElement;
   readonly navigation: NavigationService;
   readonly systemLog: SystemLogService;
