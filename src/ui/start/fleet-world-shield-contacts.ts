@@ -51,10 +51,7 @@ export function createFleetWorldShieldContacts() {
         else impacts.delete(id);
       }
     },
-    register(
-      collisions: readonly ShipShieldCollision[],
-      heading: (id: string) => number
-    ) {
+    register(collisions: readonly ShipShieldCollision[], heading: (id: string) => number) {
       for (const collision of collisions) {
         record(
           collision.firstId,
