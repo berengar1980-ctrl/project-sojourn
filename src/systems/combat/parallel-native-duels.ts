@@ -203,8 +203,12 @@ function nativeFleetFinished(
   actors: readonly MutableCombatant[],
   escaped: ReadonlySet<string>,
   factions: ReadonlyMap<string, string>,
-  hostility: FleetHostility
+  hostility: FleetHostility,
+  services: readonly StrategicCombatService[]
 ): boolean {
+  // A surrendered duel is over even if both hulls remain intact and hostile.
+  // Never resurrect an already resolved battle merely because the participants survived.
+  if (services.every((service) => service.getSnapshot().winner !== null)) return true;
   return !hasActiveFleetHostilities(actors, escaped, factions, hostility);
 }
 
@@ -342,7 +346,7 @@ export function createParallelNativeDuels(
       elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
       escapedShipIds: [...escaped],
       engagements,
-      finished: nativeFleetFinished(actors, escaped, teams, hostility),
+      finished: nativeFleetFinished(actors, escaped, teams, hostility, services),
     };
     return cachedSnapshot;
   };
