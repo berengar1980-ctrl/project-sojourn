@@ -141,6 +141,7 @@ export interface FleetScenarioRuntime {
   readonly completedEncounters: number;
   readonly worldContacts: ReturnType<ScenarioWorld['contacts']>;
   navigatePlayer(point: WorldPoint): void;
+  readonly playerNavigation: ReturnType<ScenarioWorld['playerNavigation']>;
   /** Advance elapsed simulation time and insert arrivals into the SAME battle. */
   tick(seconds: number): void;
   /** Has the battle ended with no future scheduled contact? */
@@ -271,6 +272,9 @@ export function createFleetScenarioRuntime(
     },
     navigatePlayer(point) {
       if (!fleet) world.navigatePlayer(point);
+    },
+    get playerNavigation() {
+      return world.playerNavigation();
     },
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return;
