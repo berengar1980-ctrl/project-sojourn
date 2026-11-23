@@ -1,7 +1,7 @@
 name: PR387 focused miner diagnosis
 on:
-  push:
-    branches: [refactor/unify-all-combat-and-npc-runtime]
+  pull_request:
+    branches: [main]
 jobs:
   diagnosis:
     runs-on: ubuntu-latest
