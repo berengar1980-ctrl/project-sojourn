@@ -386,9 +386,9 @@ class LocalSalvageService implements NpcLocalSalvageService {
           localCruiseSpeed(npc),
           dt,
           [
-          ...this.options.field.wrecks.filter((entry) => entry.sectionVariant),
-          ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
-        ],
+            ...this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+            ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
+          ],
           65
         )
       ) {
