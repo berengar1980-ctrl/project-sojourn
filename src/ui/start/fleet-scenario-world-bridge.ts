@@ -266,6 +266,7 @@ export function createFleetScenarioWorldBridge(
     deploy,
     pose,
     navigatePlayer: (target: WorldPoint) => playerFlight.navigate(target),
+    playerNavigation: () => ({ route: playerFlight.route(), target: playerFlight.destination() }),
     isArrived: (id: string) => arrived.has(id) && !departed.has(id),
     isActive: (id: string) => id === 'player' || (arrived.has(id) && !departed.has(id)),
     isEngaged: (id: string) => engaged.has(id),
