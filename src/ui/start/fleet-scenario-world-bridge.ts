@@ -75,8 +75,6 @@ export function createFleetScenarioWorldBridge(
           mapKind === 'scrap_scattered' ? 'moderate' : 'standard'
         )
       : null;
-  // Both services inspect the SAME campaign field geometry. Combat owns rock
-  // motion; miners and the drone observe that pose, never move it twice.
   const combatRocks = new Map((arena.asteroids ?? []).map((body) => [body.id, body]));
   const templates = createSectorNpcEconomyStates();
   const arrived = new Set<string>();
@@ -222,7 +220,7 @@ export function createFleetScenarioWorldBridge(
     states,
     (id) => pose(id)?.position ?? null,
     (id) => arrived.has(id) && !departed.has(id),
-    { shipId: roster.find((ship) => ship.id === 'player')!.draft.shipId, position: playerPose.position }
+    () => ({ shipId: roster.find((ship) => ship.id === 'player')!.draft.shipId, position: playerPose.position })
   );
   const deploy = (id: string): void => {
     if (arrived.has(id)) return;
