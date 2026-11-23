@@ -41,7 +41,7 @@ const sector = sectorModule.createNpcSectorService(mapModule.narrowsSector, npcs
   getPlayerPosition: () => navigation.getSnapshot().currentPosition,
 });
 
-assert.equal(ai.npcDefenseReaction(target), 'fight');
+assert.equal(ai.npcDefenseReaction(target), 'flee');
 target.aggression = 5;
 assert.equal(ai.npcDefenseReaction(target), 'flee');
 target.aggression = 100;
