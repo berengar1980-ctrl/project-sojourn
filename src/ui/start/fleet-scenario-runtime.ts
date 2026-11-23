@@ -280,7 +280,6 @@ export function createFleetScenarioRuntime(
       if (!Number.isFinite(seconds) || seconds <= 0) return;
       const dt = Math.min(seconds, 0.08);
       elapsedSeconds += dt;
-      const fight = fleet?.getSnapshot().duels[0];
       const pirateThreat = [...joined]
         .filter((id) => world.npc(id)?.pirate)
         .map((id) => fleet?.getActor(id)?.position)
