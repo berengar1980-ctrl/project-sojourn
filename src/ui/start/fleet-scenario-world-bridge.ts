@@ -9,6 +9,7 @@ import { generateSalvageField } from '../../systems/salvage/salvage-field-genera
 import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc-combat-ai';
 import { hashId } from '../../systems/npcs/npc-mining-targets';
 import { createFleetWorldWorkers } from './fleet-world-workers';
+import { createFleetWorldTraffic } from './fleet-world-traffic';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { AsteroidSecurityDrone } from '../../systems/operations/asteroid-security-drone';
 import { moveFieldShip, type FieldRouteShip } from '../../systems/navigation/field-ship-routing';
@@ -217,27 +218,12 @@ export function createFleetScenarioWorldBridge(
       },
     };
   };
-  // The same traffic list is consumed by miners, salvagers and ordinary NPCs.
-  // Engaged actors are obstacles here, but the PvP engine remains their sole mover.
-  const trafficFor = (id: string) => {
-    const traffic = [...states].flatMap(([otherId, other]) => {
-      if (otherId === id || !arrived.has(otherId) || departed.has(otherId) || other.npc.hullHp <= 0)
-        return [];
-      const position = pose(otherId)?.position;
-      const otherShip = getShipDefinition(other.npc.shipId);
-      return position && otherShip
-        ? [{ id: 'traffic:' + otherId, position, radius: otherShip.nominalLengthMeters * 0.5 }]
-        : [];
-    });
-    if (playerShip && id !== 'player') {
-      traffic.push({
-        id: 'traffic:player',
-        position: playerPose.position,
-        radius: playerShip.nominalLengthMeters * 0.5,
-      });
-    }
-    return traffic;
-  };
+  const trafficFor = createFleetWorldTraffic(
+    states,
+    (id) => pose(id)?.position ?? null,
+    (id) => arrived.has(id) && !departed.has(id),
+    { shipId: roster.find((ship) => ship.id === 'player')!.draft.shipId, position: playerPose.position }
+  );
   const deploy = (id: string): void => {
     if (arrived.has(id)) return;
     arrived.add(id);
