@@ -422,7 +422,10 @@ export function createFleetScenarioWorldBridge(
                 x: Math.max(180, Math.min(arena.width - 180, moving.position.x * 2 - danger.x)),
                 y: Math.max(180, Math.min(arena.height - 180, moving.position.y * 2 - danger.y)),
               }
-            : threat && moving.npc.pirate && npcMayInitiateAttack(moving.npc)
+            : threat &&
+                (moving.npc.pirate ||
+                  (moving.npc.job === 'patrol' && npcDefenseReaction(moving.npc) === 'fight')) &&
+                npcMayInitiateAttack(moving.npc)
               ? threat
               : moving.npc.job === 'freighter'
                 ? freightExit
