@@ -1,3 +1,4 @@
+import { fieldBattleMotion } from './game-controller-field-combat-pose';
 import { fieldInterceptRange } from '../systems/npcs/npc-combat-ai';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { AsteroidFieldRuntime } from '../systems/operations/asteroid-field-world';
@@ -63,7 +64,7 @@ export function interceptSecurityPirate(
     attackerVelocity: { x: 0, y: 0 },
     defenderPosition: { ...position },
     defenderHeadingRadians: drone.headingRadians,
-    defenderVelocity: { x: 0, y: 0 },
+    ...fieldBattleMotion(context, field.locationId, pirate.id, defender.id),
   });
   if (started) {
     context.systemLog.write(

@@ -36,6 +36,7 @@ export function salvagePirateShips(traffic: LocalPirateTraffic, npcs: readonly S
       {
         id: pirate.npcId,
         name: pirate.name,
+        ...(pirate.pirateMark && { pirateMark: pirate.pirateMark }),
         position: pirate.position,
         headingRadians: pirate.headingRadians,
         speed: pirate.speed,

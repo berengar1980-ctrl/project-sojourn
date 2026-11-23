@@ -84,6 +84,22 @@ function restoredCombatWrecks(
   return restored;
 }
 
+function createFieldInstance(
+  location: WorldLocation,
+  claims: AsteroidClaimRegistry,
+  initial?: LocalSpaceInstance
+) {
+  const seed = claims.seedFor(location.id, () =>
+    initial?.sourceLocationId === location.id
+      ? initial.seed
+      : hashId('sojourn-field:' + location.id)
+  );
+  const instance =
+    initial?.sourceLocationId === location.id
+      ? initial
+      : generateMiningSpace(location.id, seed, location.minedResourceIds);
+  return instance;
+}
 export class AsteroidFieldWorld {
   private readonly fields = new Map<string, AsteroidFieldRuntime>();
   private backgroundAccumulator = 0;
@@ -95,7 +111,8 @@ export class AsteroidFieldWorld {
     claims: AsteroidClaimRegistry,
     miners: CareerMinerFactory,
     checkpoint?: CareerAsteroidFieldCheckpoint,
-    npcs: readonly SectorNpcState[] = []
+    npcs: readonly SectorNpcState[] = [],
+    initial?: LocalSpaceInstance
   ) {
     if (checkpoint) {
       if (
@@ -126,8 +143,8 @@ export class AsteroidFieldWorld {
     }
     for (const location of locations) {
       if (!location.activities.mine) continue;
-      const seed = claims.seedFor(location.id, () => hashId('sojourn-field:' + location.id));
-      const instance = generateMiningSpace(location.id, seed, location.minedResourceIds);
+      const instance = createFieldInstance(location, claims, initial);
+      const seed = instance.seed;
       claims.restoreField(location.id, instance.asteroids);
       const saved = checkpoint?.fields[location.id];
       if (!this.combatWrecksByLocation.has(location.id))

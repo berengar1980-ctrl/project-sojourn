@@ -70,6 +70,7 @@ export interface SalvageWreckView {
 }
 
 export interface SalvageNpcShipView {
+  readonly pirateMark?: 'broken-spear' | 'black-tide';
   readonly id: string;
   readonly name: string;
   readonly position: WorldPoint;

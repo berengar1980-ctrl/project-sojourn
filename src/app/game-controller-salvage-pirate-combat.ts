@@ -1,3 +1,4 @@
+import { fieldBattleMotion } from './game-controller-field-combat-pose';
 import type { SalvageField } from '../core/salvage-types';
 import type { WorldPoint } from '../core/world-types';
 import { salvageFieldCombatArena } from '../systems/combat/field-combat-arena';
@@ -24,8 +25,7 @@ export function engageSalvagePirate(
         ...arena,
         attackerPosition: battlePosition(targetPosition),
         defenderPosition: battlePosition(piratePosition),
-        attackerVelocity: { x: 0, y: 0 },
-        defenderVelocity: { x: 0, y: 0 },
+        ...fieldBattleMotion(context, field.sourceLocationId, 'player', pirateId),
       },
       false
     );
@@ -39,8 +39,7 @@ export function engageSalvagePirate(
     ...arena,
     attackerPosition: battlePosition(piratePosition),
     defenderPosition: battlePosition(targetPosition),
-    attackerVelocity: { x: 0, y: 0 },
-    defenderVelocity: { x: 0, y: 0 },
+    ...fieldBattleMotion(context, field.sourceLocationId, pirateId, targetId),
   });
   if (started) context.systemLog.write('PIRATEN > NPC-GEFECHT IM WRACKFELD');
   return started;
@@ -69,8 +68,7 @@ export function engageSalvageDronePirate(
     ...salvageFieldCombatArena(field),
     attackerPosition: battlePosition(piratePosition),
     defenderPosition: battlePosition(dronePosition),
-    attackerVelocity: { x: 0, y: 0 },
-    defenderVelocity: { x: 0, y: 0 },
+    ...fieldBattleMotion(context, field.sourceLocationId, pirateId, droneId),
   });
   if (started) context.systemLog.write('SEC-01 > PIRAT IM WRACKFELD ERKANNT · DIREKTER ANGRIFF');
   return started;

@@ -25,6 +25,7 @@ export interface SalvagePirateResponseOptions {
   readonly salvagers: NpcLocalSalvageService['ships'];
   readonly playerPosition: WorldPoint;
   readonly playerRadius: number;
+  readonly onFreighterExit?: (npc: SectorNpcState) => void;
   readonly dt: number;
   readonly playerCombat: StrategicCombatSnapshot | null;
   readonly npcCombats?: readonly StrategicCombatSnapshot[];
@@ -133,7 +134,8 @@ function advancePirateTraffic(
         ? (options.onPirateAttack?.(pirateId, targetId, position, targetPosition) ?? false)
         : false;
     },
-    options.playerCombat?.defender.id
+    options.playerCombat?.defender.id,
+    options.onFreighterExit
   );
 }
 

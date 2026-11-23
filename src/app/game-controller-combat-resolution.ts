@@ -1,3 +1,4 @@
+import { isStationedDrone } from '../systems/npcs/npc-combat-ai';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { SalvageField } from '../core/salvage-types';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
@@ -25,7 +26,7 @@ function synchronizeLocalDefender(
     hullHp: number;
   }
 ): void {
-  if (defender.id.startsWith('security-drone:')) {
+  if (isStationedDrone(defender.id)) {
     const locationId = defender.id.slice('security-drone:'.length);
     const drone = context.economy.securityDrones.get(locationId);
     if (drone) {
@@ -120,6 +121,24 @@ function awaitEmbeddedCombatResult(
   );
 }
 
+function restoreSurvivingDrone(
+  context: ControllerRuntimeContext,
+  snapshot: StrategicCombatSnapshot
+) {
+  if (snapshot.defender.id.startsWith('security-drone:') && snapshot.defender.hullHp > 0) {
+    const securityNpc = context.economy.sectorNpcs.npcs.find(
+      (npc) => npc.id === snapshot.defender.id
+    );
+    if (securityNpc) {
+      securityNpc.locationId =
+        securityNpc.workLocationId ?? snapshot.defender.id.slice('security-drone:'.length);
+      delete securityNpc.travel;
+      delete securityNpc.combatMovement;
+      securityNpc.activityId = 'patrol';
+      securityNpc.activity = 'Lokale Konzessionsüberwachung';
+    }
+  }
+}
 export function resolveControllerCombat(
   context: ControllerRuntimeContext,
   scenes: CombatReturnScenes
@@ -158,18 +177,7 @@ export function resolveControllerCombat(
   recordCareerCombatWrecks(context, snapshot, originLocationId ?? null);
   emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
-  if (snapshot.defender.id.startsWith('security-drone:') && snapshot.defender.hullHp > 0) {
-    const securityNpc = context.economy.sectorNpcs.npcs.find(
-      (npc) => npc.id === snapshot.defender.id
-    );
-    if (securityNpc) {
-      securityNpc.locationId = snapshot.defender.id.slice('security-drone:'.length);
-      delete securityNpc.travel;
-      delete securityNpc.combatMovement;
-      securityNpc.activityId = 'patrol';
-      securityNpc.activity = 'Lokale Konzessionsüberwachung';
-    }
-  }
+  restoreSurvivingDrone(context, snapshot);
   state.embeddedCombat = null;
   state.combatResultPending = true;
   showCampaignCombatSummary(context.root, snapshot, () => {

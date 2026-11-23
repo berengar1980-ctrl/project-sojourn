@@ -135,7 +135,11 @@ function npcAttackTarget(
   return (
     runtime.options.sectorNpcs.npcs
       .filter((candidate) => {
-        if (candidate.id === attacker.id || runtime.options.protectsNpc?.(attacker, candidate))
+        if (
+          candidate.id === attacker.id ||
+          runtime.options.fieldOwnsContact?.(candidate) ||
+          runtime.options.protectsNpc?.(attacker, candidate)
+        )
           return false;
         if (!npcMayTargetNpc(attacker, candidate)) return false;
         if (!attacker.pirate || rivalPirateGroups(attacker, candidate)) return true;
@@ -161,6 +165,7 @@ function npcAttackTarget(
 function scanForNpcAttacks(runtime: EngagementRuntime): void {
   for (const attacker of runtime.options.sectorNpcs.npcs) {
     if (
+      runtime.options.fieldOwnsContact?.(attacker) ||
       runtime.options.mayInitiateAttack?.(attacker) === false ||
       !npcMayInitiateAttack(attacker) ||
       runtime.npcChases.has(attacker.id)

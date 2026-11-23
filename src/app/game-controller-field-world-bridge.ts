@@ -1,3 +1,4 @@
+import type { SectorNpcState } from '../core/npc-types';
 import { localFieldDuels } from '../systems/combat/dynamic-fleet-combat';
 import { syncMiningCombatField } from '../systems/combat/field-combat-arena';
 import { narrowsSector } from '../data/maps/narrows-sector';
@@ -18,9 +19,25 @@ import type {
 } from '../systems/combat/strategic-combat-types';
 
 import type { FieldWitness } from '../systems/combat/career-fleet-encounter';
-import { salvageDroneCanSee } from './game-controller-salvage-drone';
+import { droneSeesTarget } from '../systems/operations/asteroid-security-drone';
+import { salvageDroneObstacleAsteroids, salvageDroneCanSee } from './game-controller-salvage-drone';
 import { careerSalvageDrone } from './game-controller-salvage-drone-world';
 
+function escortWitness(
+  context: ControllerRuntimeContext,
+  locationId: string,
+  id: string,
+  target: Parameters<FieldWitness>[2]
+) {
+  const salvage = context.state.salvageScene?.getField();
+  const field = fieldWorldFor(context).field(locationId);
+  const body = context.economy.localPirates.get(locationId)?.body(id);
+  const rocks =
+    salvage?.sourceLocationId === locationId
+      ? salvageDroneObstacleAsteroids(salvage)
+      : field?.instance.asteroids;
+  return body && rocks && droneSeesTarget(body.position, target, rocks) ? body : null;
+}
 export function fieldWitnessFor(
   context: ControllerRuntimeContext | null,
   ...[locationId, npc, target]: Parameters<FieldWitness>
@@ -29,7 +46,9 @@ export function fieldWitnessFor(
   const salvage = context.state.salvageScene?.getField();
   const field = fieldWorldFor(context).field(locationId);
   if (npc.id.startsWith('security-drone:')) {
-    if (npc.id !== 'security-drone:' + locationId) return null;
+    if (npc.id !== 'security-drone:' + locationId) {
+      return escortWitness(context, locationId, npc.id, target);
+    }
     if (salvage?.sourceLocationId === locationId) {
       const drone = careerSalvageDrone(context, salvage);
       return salvageDroneCanSee(drone, salvage, target) ? drone : null;
@@ -57,7 +76,10 @@ export function bindCareerFieldWorld(
 }
 
 /** Create once per campaign; world state lives independently of mounted scenes. */
-export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldWorld {
+export function fieldWorldFor(
+  context: ControllerRuntimeContext,
+  initial?: AsteroidFieldRuntime['instance']
+): AsteroidFieldWorld {
   const previous = fieldWorlds.get(context);
   if (previous) return previous;
   const { economy, state } = context;
@@ -70,9 +92,11 @@ export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldW
         seed: instance.seed,
         width: instance.width,
         height: instance.height,
-        miners: economy.sectorNpcs.npcs.filter(
-          (npc) => npc.job === 'miner' && npc.workLocationId === location.id
-        ),
+        get miners() {
+          return economy.sectorNpcs.npcs.filter(
+            (npc) => npc.job === 'miner' && npc.workLocationId === location.id
+          );
+        },
         getAsteroids: () => instance.asteroids,
         mine: (npc, resourceId, requested) => economy.npcs.mineLocal(npc, resourceId, requested),
         onAsteroidScanned: (npc, asteroid) =>
@@ -87,7 +111,10 @@ export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldW
           const scene = state.localSpace?.getSnapshot().instance;
           return scene?.sourceLocationId === location.id ? scene.ship : undefined;
         },
-      })
+      }),
+    undefined,
+    undefined,
+    initial
   );
   fieldWorlds.set(context, fields);
   for (const location of narrowsSector.locations) {
@@ -211,7 +238,7 @@ export function advanceControllerFieldWorld(
     const duels = activeCombat ? localDuels : background;
     syncNpcDuelFieldPoses(context, field, duels);
     field.miners.tick(seconds, activeCombat?.defender.id);
-    if (activeCombat?.defender.id.startsWith('security-drone:')) {
+    if (activeCombat?.defender.id === 'security-drone:' + field.locationId) {
       field.drone.restore(activeCombat.defender.position, activeCombat.defender.hullHp > 0);
     }
     const defenderId = activeCombat?.defender.id;
@@ -244,4 +271,17 @@ export function advanceControllerFieldWorld(
     deltaSeconds,
     context.state.embeddedCombat === 'local-space' ? localId : salvageLocation
   );
+}
+
+function activeFieldContact(context: ControllerRuntimeContext | null, npc: SectorNpcState) {
+  if (!context || npc.travel) return false;
+  if (context.state.mode !== 'local-space' && context.state.mode !== 'salvage-space') return false;
+  return npc.locationId === context.navigation.getSnapshot().currentLocationId;
+}
+
+export function fieldEngagementHooks(get: () => ControllerRuntimeContext | null) {
+  return {
+    fieldOwnsContact: (npc: SectorNpcState) => activeFieldContact(get(), npc),
+    fieldWitness: (...args: Parameters<FieldWitness>) => fieldWitnessFor(get(), ...args),
+  };
 }

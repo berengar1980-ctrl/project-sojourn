@@ -2,7 +2,7 @@ import { validateControllerRestore } from './game-controller-types';
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
 import {
   advanceControllerFieldWorld,
-  fieldWitnessFor,
+  fieldEngagementHooks,
   fieldWorldFor,
 } from './game-controller-field-world-bridge';
 import {
@@ -29,13 +29,12 @@ import { createShipOperatingService } from '../systems/ships/ship-operating-cost
 import { createFuelJourneyService } from './game-controller-fuel-journey';
 import { createLocalSpacePanel } from '../ui/local-space/local-space-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
-import { createSettingsMenu } from '../ui/settings/settings-menu';
 import { createControllerEconomy } from './game-controller-economy';
 import { controllerEconomyFromCareer } from './game-controller-career-economy';
 import { captureControllerCareer } from './game-controller-career-capture';
 import {
   installControllerCareer,
-  saveControllerCareer,
+  controllerSettings,
   rememberMiningField,
 } from './game-controller-career-install';
 import { createInitialControllerState } from './game-controller-initial-state';
@@ -322,9 +321,9 @@ function mountControllerSalvage(
     audio: context.audio,
     selectedNpcId: state.selectedNpcId,
     onSelectNpc: (id) => (state.selectedNpcId = id),
-    onAttackNpc: (id, arena) => {
+    onAttackNpc: (id, arena, playerInitiated = true) => {
       state.selectedNpcId = id;
-      if (context.engagements.engageNpcInArena(id, arena)) {
+      if (context.engagements.engageNpcInArena(id, arena, playerInitiated)) {
         state.embeddedCombat = 'salvage-space';
         context.systemLog.write('COMBAT > GEFECHT IM WRACKFELD');
       }
@@ -398,13 +397,22 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   }
 }
 
+function mountInitialScene(context: ControllerRuntimeContext, options: GameControllerOptions) {
+  if (options.fieldExercise) {
+    options.fieldExercise.prepare(context);
+    if (options.fieldExercise.salvage)
+      mountControllerSalvage(context, true, options.fieldExercise.salvage);
+    else mountControllerMining(context);
+  } else mountControllerStarMap(context);
+}
 export function createGameController(options: GameControllerOptions): GameController {
   const saved = options.restoredSession;
   validateControllerRestore(options);
   const systemLog = createControllerLog();
+  const log = (message: string) => systemLog.write(message);
   const economy = saved
-    ? controllerEconomyFromCareer(saved, (message) => systemLog.write(message))
-    : createControllerEconomy(options.navigation, (message) => systemLog.write(message));
+    ? controllerEconomyFromCareer(saved, log)
+    : createControllerEconomy(options.navigation, log, undefined, options.fieldExercise?.npcs);
   if (!saved) economy.smuggling.activateShip(options.ship.id);
   const state = createInitialControllerState(options, economy);
 
@@ -421,7 +429,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     sectorNpcs: economy.sectorNpcs,
     world: () => engagementWorld(),
     inStarMap: () => state.mode === 'star-map',
-    fieldWitness: (...args) => fieldWitnessFor(combatContext, ...args),
+    ...fieldEngagementHooks(() => combatContext),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
     onNpcCombatEnded: (snapshot, attacker) => {
@@ -477,14 +485,8 @@ export function createGameController(options: GameControllerOptions): GameContro
   };
   combatContext = context;
   installControllerCareer(context, options);
-  const menu = createSettingsMenu(
-    context.audio,
-    options.onReturnToMainMenu,
-    state.playerProfile,
-    () => saveControllerCareer(context),
-    options.onLoadCareer
-  );
-  mountControllerStarMap(context);
+  const menu = controllerSettings(context, options);
+  mountInitialScene(context, options);
   return {
     profileSnapshot: () => snapshotPlayerProfile(state.playerProfile),
     careerSnapshot: () => captureControllerCareer(context),

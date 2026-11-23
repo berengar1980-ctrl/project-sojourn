@@ -1,3 +1,4 @@
+import { isStationedDrone } from '../../systems/npcs/npc-combat-ai';
 import { pickNearestHitArea } from '../salvage/salvage-hit-test';
 import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-drone-visual';
 import { drawLocalNpcCombatEffects } from './local-space-npc-combat-effects';
@@ -58,8 +59,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected scanLabelsVisible = true;
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    model: LocalSpaceViewModel,
-    fieldLayerOnly = false
+    model: LocalSpaceViewModel
   ) {
     super();
     const context = canvas.getContext('2d');
@@ -77,7 +77,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       model.height
     );
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
-    if (!fieldLayerOnly) this.resize();
+    this.resize();
   }
   update(model: LocalSpaceViewModel): void {
     this.model = model;
@@ -101,7 +101,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
             this.drawNpcShips(width, height, timeSeconds, active);
             // Native combat renders the drone at its authoritative hitbox.
             // Never paint a second, potentially stale drone over that fighter.
-            if (![...active].some((id) => id.startsWith('security-drone:'))) {
+            if (![...active].some(isStationedDrone)) {
               drawLocalSecurityDrone(
                 this.context,
                 this.camera,

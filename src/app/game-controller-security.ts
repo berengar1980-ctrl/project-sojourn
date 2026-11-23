@@ -1,3 +1,4 @@
+import { fieldBattleMotion } from './game-controller-field-combat-pose';
 import type { SectorNpcState } from '../core/npc-types';
 import { distance } from '../systems/local-space/local-space-motion';
 import { fieldInterceptRange, localArmedTraffic } from '../systems/npcs/npc-combat-ai';
@@ -54,6 +55,7 @@ function engagePatrolContact(
       attackerPosition: piratePosition,
       defenderPosition: enemy.position,
       defenderHeadingRadians: enemy.headingRadians,
+      ...fieldBattleMotion(context, field.locationId, pirateId, targetId),
     })
   );
 }
@@ -118,7 +120,7 @@ export function tickFieldPirates(
             ...arena,
             defenderPosition: piratePosition,
             defenderHeadingRadians: 0,
-            defenderVelocity: { x: 0, y: 0 },
+            ...fieldBattleMotion(context, locationId, 'player', pirateId),
           },
           false
         );
@@ -147,7 +149,7 @@ export function tickFieldPirates(
         attackerVelocity: { x: 0, y: 0 },
         defenderPosition,
         defenderHeadingRadians: protecting ? drone.headingRadians : miner.headingRadians,
-        defenderVelocity: { x: 0, y: 0 },
+        ...fieldBattleMotion(context, locationId, pirateId, defenderId),
       };
       const started = context.engagements.engageNpcsInArena(pirateId, defenderId, combatArena);
       if (started) {
@@ -161,7 +163,11 @@ export function tickFieldPirates(
       }
       return started;
     },
-    combatantId
+    combatantId,
+    (npc) => {
+      if (npc.homePortId)
+        economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
+    }
   );
   resolvePirateFieldShipContacts(context, field);
   recoverFieldDrone(context, field);

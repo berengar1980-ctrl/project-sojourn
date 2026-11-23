@@ -39,6 +39,7 @@ export interface StarMapEngagementService {
 export interface StarMapEngagementOptions {
   readonly fieldWitness?: FieldWitness;
   readonly inStarMap?: () => boolean;
+  readonly fieldOwnsContact?: (npc: SectorNpcState) => boolean;
   readonly mayInitiateAttack?: (npc: SectorNpcState) => boolean;
   /** Restricts attacks on the player only; NPC battles remain independent. */
   readonly mayInterceptPlayer?: (npc: SectorNpcState) => boolean;

@@ -28,10 +28,12 @@ export function createNpcSalvageRuntime(
   return createNpcLocalSalvageService({
     locationId: options.location.id,
     field,
-    salvagers: options.sectorNpcs.filter(
-      (npc) =>
-        npcOperationalRoleAllowed(npc, 'salvage') && npc.workLocationId === options.location.id
-    ),
+    get salvagers() {
+      return options.sectorNpcs.filter(
+        (npc) =>
+          npcOperationalRoleAllowed(npc, 'salvage') && npc.workLocationId === options.location.id
+      );
+    },
     canWorkWreck: (npc, wreck) => {
       const claim = options.wreckClaims.claim(field.id, wreck.id, options.getCurrentDay());
       return !claim || claim.ownerId === npc.id;

@@ -1,10 +1,4 @@
-import { CombatCamera } from '../combat/combat-camera';
-import {
-  DUEL_MAPS,
-  createDuelField,
-  type DuelMapKind,
-} from '../../systems/combat/duel-arena-presets';
-import { createFleetNativeCombatPanel } from '../combat/fleet-native-combat-panel';
+import { DUEL_MAPS, type DuelMapKind } from '../../systems/combat/duel-arena-presets';
 import {
   createFleetScenarioRoster,
   DEFAULT_FLEET_SCENARIO,
@@ -13,11 +7,7 @@ import {
   type FleetScenarioIncident,
   type FleetScenarioShip,
 } from './fleet-scenario-roster';
-import { createFleetScenarioRuntime } from './fleet-scenario-runtime';
-import { createFleetIdleWorldCanvas } from './fleet-idle-world-canvas';
-import { combatEscapeGate } from '../../systems/combat/strategic-combat-arena';
-
-interface FleetTestConfiguration {
+export interface FleetTestConfiguration {
   readonly map: DuelMapKind;
   readonly incident: FleetScenarioIncident;
   readonly groups: readonly FleetScenarioCounts[];
@@ -109,156 +99,17 @@ function renderRoster(root: HTMLElement, config: FleetTestConfiguration): void {
   }
 }
 
-// The launcher owns both the idle world clock and successive native battles.
-// eslint-disable-next-line max-lines-per-function
-function createSimulatorLauncher(
+export type LaunchFleetField = (
   root: HTMLElement,
-  lobby: HTMLElement,
-  onCombatActiveChange: (active: boolean) => void
-) {
-  let panel: ReturnType<typeof createFleetNativeCombatPanel> | null = null;
-  let idleWorld: ReturnType<typeof createFleetIdleWorldCanvas> | null = null;
-  let displayedFleet: ReturnType<typeof createFleetScenarioRuntime>['fleet'] = null;
-  let frame = 0;
-  let generation = 0;
-  let destroyed = false;
-  const stop = (): void => {
-    generation++;
-    cancelAnimationFrame(frame);
-    idleWorld?.deactivate();
-    idleWorld = null;
-    panel?.destroy();
-    panel = null;
-    displayedFleet = null;
-    onCombatActiveChange(false);
-  };
-  return {
-    // eslint-disable-next-line max-lines-per-function
-    start(config: FleetTestConfiguration): void {
-      if (destroyed) return;
-      stop();
-      const epoch = generation;
-      const seed = Math.floor(Math.random() * 0x7fffffff);
-      const field = createDuelField(config.map, seed);
-      const arena = { ...field.arena, exitPoint: combatEscapeGate(field.arena, seed) };
-      const session = createFleetScenarioRuntime(
-        config.ships,
-        { ...field, arena },
-        seed,
-        config.incident
-      );
-      const waiting = document.createElement('section');
-      waiting.className = 'strategic-combat-shell';
-      const heading = document.createElement('div');
-      heading.className = 'combat-map-title';
-      heading.textContent = 'FLEETCOMBAT · EINSATZGEBIET';
-      const status = document.createElement('div');
-      status.className = 'combat-parallel-duels-status';
-      status.style.cssText =
-        'position:absolute;top:50px;left:14px;z-index:3;padding:8px 11px;' +
-        'background:rgba(10,20,27,.88);color:#d8e7ee;font:12px monospace';
-      const canvas = document.createElement('canvas');
-      canvas.className = 'strategic-combat-map';
-      canvas.setAttribute('aria-label', 'FleetCombat Einsatzgebiet');
-      const camera = new CombatCamera();
-      idleWorld = createFleetIdleWorldCanvas(
-        canvas,
-        session.arena,
-        camera,
-        () => session.worldContacts,
-        (point) => session.navigatePlayer(point),
-        () => session.playerNavigation,
-        () => panel !== null,
-        session.fieldView
-      );
-      const cancel = document.createElement('button');
-      cancel.type = 'button';
-      cancel.textContent = 'Test beenden';
-      cancel.className = 'strategic-combat-return';
-      cancel.hidden = false;
-      const returnToLobby = (): void => {
-        stop();
-        root.replaceChildren(lobby);
-      };
-      cancel.addEventListener('click', returnToLobby);
-      const idleHud = document.createElement('div');
-      idleHud.append(heading, status, cancel);
-      waiting.append(canvas, idleHud);
-      root.replaceChildren(waiting);
-      idleWorld.activate();
-      onCombatActiveChange(true);
-
-      const mountCombat = (): void => {
-        const fleet = session.fleet;
-        if (!fleet || panel) return;
-        displayedFleet = fleet;
-        idleHud.hidden = true;
-        panel = createFleetNativeCombatPanel({
-          root: waiting,
-          canvas,
-          camera,
-          combat: fleet.duels[0]!,
-          spectator: true,
-          parallelDuels: () => [
-            ...fleet.getSnapshot().duels.slice(1),
-            ...fleet.getSnapshot().supporters,
-          ],
-          parallelSupportStartIndex: fleet.duels.length - 1,
-          parallelEscapedShipIds: () => fleet.getSnapshot().escapedShipIds,
-          fleetEngagements: () => fleet.getSnapshot().engagements,
-          isComplete: () => session.finished(),
-          encounterName: 'KAMPAGNEN-SIMULATION',
-          drawWorldActors: idleWorld!.drawActors,
-          drawField: idleWorld!.drawField,
-          onReturn: returnToLobby,
-        });
-      };
-      mountCombat();
-      let previous = performance.now();
-      const tick = (now: number): void => {
-        if (destroyed || epoch !== generation) return;
-        const dt = Math.min(Math.max(0, now - previous) / 1000, 0.08);
-        previous = now;
-        session.tick(dt);
-        if (panel && displayedFleet !== session.fleet) {
-          panel.destroy();
-          panel = null;
-          displayedFleet = null;
-          idleHud.hidden = false;
-        }
-        mountCombat();
-        if (panel) {
-          panel.update();
-        } else {
-          idleWorld?.draw();
-          const next = session.nextArrivalSeconds();
-          status.textContent =
-            'Schiffe im Einsatzgebiet: ' +
-            session.arrivedCount +
-            ' / ' +
-            session.totalCount +
-            ' · Warte auf feindlichen Kontakt. ' +
-            (next === null
-              ? 'Keine weiteren Verstärkungen vorgesehen.'
-              : 'Nächster Eintritt in ' +
-                Math.max(0, Math.ceil(next - session.elapsedSeconds)) +
-                ' Sekunden.');
-        }
-        frame = requestAnimationFrame(tick);
-      };
-      frame = requestAnimationFrame(tick);
-    },
-    destroy(): void {
-      destroyed = true;
-      stop();
-    },
-  };
-}
+  config: FleetTestConfiguration,
+  onExit: () => void
+) => { destroy(): void };
 
 export function createFleetTestLobby(
   root: HTMLElement,
   onBack: () => void,
-  onCombatActiveChange: (active: boolean) => void = () => {}
+  onCombatActiveChange: (active: boolean) => void,
+  launch: LaunchFleetField
 ): { destroy(): void } {
   const shell = document.createElement('section');
   shell.className = 'harrow-duel harrow-fleet';
@@ -303,7 +154,7 @@ export function createFleetTestLobby(
   shell.append(heading, description, options, groups, capabilities, actions, roster);
   root.replaceChildren(shell);
 
-  const launcher = createSimulatorLauncher(root, shell, onCombatActiveChange);
+  let session: ReturnType<LaunchFleetField> | null = null;
   let config: FleetTestConfiguration;
   const draw = (): void => {
     const counts = settings.map((entry) => ({
@@ -329,7 +180,14 @@ export function createFleetTestLobby(
     renderRoster(roster, config);
   };
   start.addEventListener('click', () => {
-    if (!start.disabled) launcher.start(config);
+    if (start.disabled || session) return;
+    onCombatActiveChange(true);
+    session = launch(root, config, () => {
+      session?.destroy();
+      session = null;
+      onCombatActiveChange(false);
+      root.replaceChildren(shell);
+    });
   });
   shuffle.addEventListener('click', draw);
   for (const entry of settings) {
@@ -342,7 +200,7 @@ export function createFleetTestLobby(
   draw();
   return {
     destroy() {
-      launcher.destroy();
+      session?.destroy();
       shell.remove();
     },
   };

@@ -32,7 +32,7 @@ for (const [file, baseline] of Object.entries(untouched)) {
 
 const originalPanel = read('src/ui/combat/strategic-combat-panel.ts');
 const duelLobby = read('src/ui/start/duel-lobby.ts');
-const fleetLobby = read('src/ui/start/fleet-test-lobby.ts');
+const exercise = read('src/app/fleet-field-session.ts');
 const fleetPanel = read('src/ui/combat/fleet-native-combat-panel.ts');
 const fleetRenderer = read('src/ui/combat/fleet-native-combat-renderer.ts');
 const originalRenderer = read('src/ui/combat/strategic-combat-renderer.ts');
@@ -44,8 +44,8 @@ assert(
   '1v1 and FleetCombat intentionally share the FleetNative renderer while native AI stays unchanged'
 );
 assert(
-  fleetLobby.includes("from '../combat/fleet-native-combat-panel'") &&
-    fleetLobby.includes('createFleetNativeCombatPanel(') &&
+  exercise.includes('createGameController(') &&
+    read('src/ui/local-space/local-space-renderer.ts').includes('new FleetNativeCombatRenderer(') &&
     fleetPanel.includes("from './fleet-native-combat-renderer'"),
   'FleetCombat and native 1v1 share the existing fleet renderer without an alternative AI'
 );

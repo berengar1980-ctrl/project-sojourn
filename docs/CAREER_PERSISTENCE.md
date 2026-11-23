@@ -1179,3 +1179,10 @@ Verkehrsschiffe kann zusätzlich reguläre Patrouillen enthalten. Die Rolle und
 das Piratenabzeichen stammen aus dem zugehörigen Sektor-NPC. Gespeicherte Miner
 prüfen ihren Abstand zum aktuellen Asteroiden, bevor Scan oder Abbau weiterlaufen.
 Die Testaufstellung verwendet die Kampagnen-Gefechtsverwaltung im isolierten Feld.
+
+Das FleetCombat-Testlabor startet eine isolierte Kampagnensitzung mit vorgegebener
+Feldkarte und NPC-Aufstellung. Nur der Zeitplan der Ankünfte und der ausgelöste
+Testangriff gehören zur Lobby. Das Testlabor bietet keinen Schreibzugriff auf
+den Karriere-Spielstand. Die Kampagnen-Feldverwaltung besitzt auch die lokalen
+Posen durchfliegender Frachter und zusätzlicher Begleitdrohnen. Beide werden
+wie Patrouillen im bestehenden Verkehrs-Checkpoint erfasst.

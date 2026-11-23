@@ -107,6 +107,13 @@ class LocalSalvageService implements NpcLocalSalvageService {
   private syncArrivals = (): void => {
     const active = new Set(this.ships.map((ship) => ship.npcId));
     for (const npc of this.options.salvagers) {
+      if (!this.byId.has(npc.id)) {
+        this.byId.set(npc.id, npc);
+        this.events.set(
+          npc.id,
+          createSalvageEventController(hashId(this.options.locationId + ':' + npc.id))
+        );
+      }
       if (active.has(npc.id) || !eligible(npc, this.options.locationId)) continue;
       const entry = seededLocalGate(
         this.options.field.width,

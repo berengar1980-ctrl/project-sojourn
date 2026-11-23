@@ -63,26 +63,13 @@ for (const source of [mining, salvage]) {
 
 // FleetCombat must not create a substitute battle before a hostile world contact.
 // The same physical canvas and camera carry neutral world and native combat.
-const fleetLobby = fs.readFileSync(path.join(root, 'src/ui/start/fleet-test-lobby.ts'), 'utf8');
-const fleetPanel = fs.readFileSync(
-  path.join(root, 'src/ui/combat/fleet-native-combat-panel.ts'),
-  'utf8'
-);
-const idleMap = fs.readFileSync(path.join(root, 'src/ui/start/fleet-idle-world-canvas.ts'), 'utf8');
-assert(fleetLobby.includes('createFleetIdleWorldCanvas('));
-assert(fleetLobby.includes('(point) => session.navigatePlayer(point)'));
-assert(fleetLobby.includes('const camera = new CombatCamera()'));
-assert(fleetPanel.includes('options.camera'));
+const exercise = fs.readFileSync(path.join(root, 'src/app/fleet-field-session.ts'), 'utf8');
+assert(exercise.includes('createGameController('));
+assert(!exercise.includes('new CombatCamera('));
+assert(!fs.existsSync(path.join(root, 'src/ui/start/fleet-idle-world-canvas.ts')));
 campaign.combat.pan(50, -30);
 assert.deepEqual(
   campaign.worldToScreen(point, 1600, 900),
   campaign.combat.project(point, 1600, 900, width, height)
 );
-assert.equal(fleetLobby.split('root.replaceChildren(waiting)').length - 1, 1);
-assert(fleetPanel.includes('if (existingCanvas) root.append(shell)'));
-assert(fleetPanel.includes('makeCombatShell(options.root, options.canvas)'));
-assert(idleMap.includes('drawCombatAsteroids('));
-assert(idleMap.includes('createFleetWorldContactOverlay('));
-assert(!idleMap.includes('createDynamicFleetCombat('));
-
 console.log('PASS PvP camera and the same FleetNative renderer used in mining/salvage career maps');

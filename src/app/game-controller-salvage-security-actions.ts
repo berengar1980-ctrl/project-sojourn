@@ -1,3 +1,4 @@
+import type { SectorNpcState } from '../core/npc-types';
 import { localFieldDuels } from '../systems/combat/dynamic-fleet-combat';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { careerSalvageDrone, careerSalvagePirates } from './game-controller-salvage-drone-world';
@@ -14,6 +15,10 @@ export function salvageSecurityActions(context: ControllerRuntimeContext) {
       careerSalvageDrone(context, field),
     resolvePirateTraffic: (field: Parameters<typeof careerSalvagePirates>[1]) =>
       careerSalvagePirates(context, field),
+    onFreighterExit: (npc: SectorNpcState) => {
+      if (npc.homePortId)
+        context.economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
+    },
     getFleet: () => context.engagements.activePlayerFleet()?.getSnapshot() ?? null,
     getNpcCombats: () => context.engagements.activeNpcCombatSnapshots?.() ?? [],
     getFieldDuels: () =>

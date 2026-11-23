@@ -1,3 +1,6 @@
+import type { SalvageField } from '../core/salvage-types';
+import type { LocalSpaceInstance } from '../core/local-space-types';
+import type { SectorNpcState } from '../core/npc-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { PlayerProfile } from '../core/player-profile';
 
@@ -7,6 +10,12 @@ import type { CareerSnapshot } from '../systems/persistence/career-save-contract
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 
 export interface GameControllerOptions {
+  readonly fieldExercise?: {
+    readonly npcs: SectorNpcState[];
+    readonly mining?: LocalSpaceInstance;
+    readonly salvage?: SalvageField;
+    prepare(context: ControllerRuntimeContext): void;
+  };
   readonly root: HTMLElement;
   readonly ship: ShipDefinition;
   readonly playerProfile: PlayerProfile;

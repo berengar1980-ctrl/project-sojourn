@@ -1,4 +1,6 @@
-import type { CombatCameraPose } from '../combat/combat-camera';
+import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
+import { drawFieldShipSprite } from '../ships/field-ship-sprite';
+import { drawFieldEscort } from './local-security-drone-visual';
 import type { PvPMapCamera } from '../combat/pvp-map-camera';
 import { drawNpcMinerScan } from '../local-operations/scan-effects';
 import { drawMiningChunkVisual, type MiningEffectsRenderer } from './mining-effects-renderer';
@@ -11,7 +13,7 @@ import type {
 import { type ScreenPoint } from '../map/map-camera';
 import { type ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { type ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
-import { spriteDrawOffset, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
+import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { type ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 export interface AsteroidHitArea {
   readonly id: string;
@@ -28,19 +30,6 @@ export abstract class LocalSpaceSceneLayers {
   protected abstract context: CanvasRenderingContext2D;
   protected abstract model: LocalSpaceViewModel;
   protected abstract camera: PvPMapCamera;
-  protected abstract drawField(width: number, height: number, time: number): void;
-  paintFieldLayer(
-    model: LocalSpaceViewModel,
-    pose: CombatCameraPose,
-    width: number,
-    height: number,
-    time: number
-  ): void {
-    this.model = model;
-    this.camera.setViewDimensions(width, height);
-    this.camera.restorePose(pose);
-    this.drawField(width, height, time);
-  }
   protected abstract ensureNpcImage(url: string): HTMLImageElement;
   protected abstract engineEffects: ShipEngineEffectsRenderer;
   protected abstract miningEffects: MiningEffectsRenderer;
@@ -84,6 +73,20 @@ export abstract class LocalSpaceSceneLayers {
     const hits: NpcHitArea[] = [];
     for (const npc of this.model.npcShips) {
       if (excludedIds.has(npc.id)) continue;
+      if (npc.id.startsWith('security-drone:')) {
+        hits.push(
+          drawFieldEscort(
+            this.context,
+            this.camera,
+            npc,
+            width,
+            height,
+            timeSeconds,
+            this.model.npcCombats
+          )
+        );
+        continue;
+      }
       const point = this.camera.worldToScreen(npc.position, width, height);
       const shipWidth = this.camera.scale(npc.nominalLengthMeters);
       const geometry: ShipScreenGeometry = {
@@ -110,26 +113,14 @@ export abstract class LocalSpaceSceneLayers {
         this.engineEffects,
         'mining'
       );
-      this.context.save();
-      this.context.translate(point.x, point.y);
-      this.context.rotate(npc.headingRadians);
-      if (image.complete && image.naturalWidth > 0) {
-        const offset = spriteDrawOffset(npc.hardpoints, geometry);
-        this.shipLighting.draw(this.context, {
-          image,
-          width: geometry.width,
-          height: geometry.height,
-          angle: npc.headingRadians,
-          light: { x: -0.72, y: -0.56 },
-          offsetX: offset.x,
-          offsetY: offset.y,
-          directionalStrength: 2.05,
-        });
-      } else {
-        this.context.fillStyle = '#8597a1';
-        this.context.fillRect(-shipWidth / 2, -geometry.height / 2, shipWidth, geometry.height);
-      }
-      this.context.restore();
+      drawFieldShipSprite(
+        this.context,
+        this.shipLighting,
+        image,
+        npc.hardpoints,
+        geometry,
+        '#8597a1'
+      );
 
       drawFieldNpcThrusters(
         this.context,
@@ -157,6 +148,7 @@ export abstract class LocalSpaceSceneLayers {
         point,
         radius: Math.max(18, Math.max(geometry.width, geometry.height) * 0.6),
       });
+      if (npc.pirateMark) drawPirateInsignia(this.context, npc.pirateMark, geometry);
       if (npc.isSelected) this.drawNpcSelection(point, geometry);
       if (npc.isPirate) this.drawPirateMarker(point, geometry);
 

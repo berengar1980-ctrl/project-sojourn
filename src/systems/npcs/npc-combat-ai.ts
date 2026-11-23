@@ -2,13 +2,19 @@ import type { SectorNpcState } from '../../core/npc-types';
 
 export type NpcDefenseReaction = 'fight' | 'flee';
 
+export function isStationedDrone(id?: string): boolean {
+  return Boolean(id?.startsWith('security-drone:') && !id.includes(':escort-'));
+}
+
 export function fieldInterceptRange(id: string, pirate: boolean): number {
   if (id.startsWith('security-drone:')) return 145;
   return pirate ? 210 : 180;
 }
 
 export function localArmedTraffic(npc: SectorNpcState): boolean {
-  return npc.pirate || (npc.job === 'patrol' && !npc.id.startsWith('security-drone:'));
+  return (
+    npc.pirate || npc.job === 'freighter' || (npc.job === 'patrol' && !isStationedDrone(npc.id))
+  );
 }
 
 export function npcDefenseReaction(npc: SectorNpcState): NpcDefenseReaction {

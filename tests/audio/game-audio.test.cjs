@@ -16,7 +16,9 @@ const salvage = read('src/app/game-controller-salvage.ts');
 const settings = read('src/ui/settings/settings-menu.ts');
 const duel = read('src/ui/start/duel-lobby.ts');
 const styles = read('src/ui/styles.css');
-const settingsCall = controller.match(/createSettingsMenu\([^;]+\);/s)?.[0] ?? '';
+const settingsCall =
+  read('src/app/game-controller-career-install.ts').match(/createSettingsMenu\([^;]+\);/s)?.[0] ??
+  '';
 
 const rcsPath = path.join(root, 'public/audio/spacecraft-rcs-thruster-burst.ogg');
 if (fs.existsSync(rcsPath)) {

@@ -4,11 +4,8 @@ import { seededLocalGate } from '../../core/local-space-exit';
 import { cloneCareerJson } from '../persistence/career-save-contract';
 import { stageLocalMinerCheckpoint } from './npc-local-mining-checkpoint';
 import type { LocalAsteroid } from '../../core/local-space-types';
-
 import type { SectorNpcState } from '../../core/npc-types';
-
 import type { WorldPoint } from '../../core/world-types';
-
 import { createMiningEventController } from '../local-space/mining-event-service';
 
 import {
@@ -39,14 +36,12 @@ import {
   hashId,
 } from './npc-mining-targets';
 
-export type { LocalNpcMiningPhase } from './npc-mining-targets';
-
-export type { LocalNpcMinerState } from './npc-mining-targets';
-
-export type { NpcLocalMiningService } from './npc-mining-targets';
-
-export type { NpcLocalMiningOptions } from './npc-mining-targets';
-
+export type {
+  LocalNpcMiningPhase,
+  LocalNpcMinerState,
+  NpcLocalMiningService,
+  NpcLocalMiningOptions,
+} from './npc-mining-targets';
 function localCruiseSpeed(npc: SectorNpcState): number {
   const ship = getShipDefinition(npc.shipId);
   return ship ? resolveShipLocalCruiseSpeed(ship, ensureNpcInstalledComponents(npc)) : FLIGHT_SPEED;
@@ -75,6 +70,13 @@ function beginExit(runtime: MinerRuntime, ship: LocalNpcMinerState): void {
 function syncArrivals(runtime: MinerRuntime): void {
   const active = new Set(runtime.ships.map((ship) => ship.npcId));
   for (const npc of runtime.options.miners) {
+    if (!runtime.byId.has(npc.id)) {
+      runtime.byId.set(npc.id, npc);
+      runtime.events.set(
+        npc.id,
+        createMiningEventController(hashId(runtime.options.locationId + ':' + npc.id))
+      );
+    }
     if (active.has(npc.id) || !eligibleMiner(npc, runtime.options.locationId)) continue;
     const entry = seededLocalGate(
       runtime.options.width,

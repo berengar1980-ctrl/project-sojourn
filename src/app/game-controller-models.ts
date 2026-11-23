@@ -216,6 +216,7 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
           {
             id: contact.npcId,
             name: contact.name,
+            ...(contact.pirateMark && { pirateMark: contact.pirateMark }),
             position: contact.position,
             headingRadians: contact.headingRadians,
             speed: contact.speed,

@@ -56,6 +56,7 @@ export interface LocalCargoResourceView {
 }
 
 export interface LocalNpcShipView {
+  readonly pirateMark?: 'broken-spear' | 'black-tide';
   readonly id: string;
   readonly name: string;
   readonly position: WorldPoint;

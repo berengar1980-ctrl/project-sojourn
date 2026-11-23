@@ -1,10 +1,8 @@
-import type { ParallelNativeDuelSnapshot } from '../systems/combat/parallel-native-duels';
 import { measurePerformance } from '../core/performance-diagnostics';
-import { attackSalvageNpc, type SalvageNpcAttackArena } from './game-controller-salvage-attack';
+import { attackSalvageNpc } from './game-controller-salvage-attack';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
 import { completeSalvageSectorEvent } from './game-controller-salvage-event-progress';
-import type { StrategicCombatBystander } from '../systems/combat/strategic-combat-bystander-types';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import {
   createSalvageSecurityDrone,
@@ -22,18 +20,8 @@ import {
   distressTowWithinRange,
   type DistressTowState,
 } from '../systems/salvage/distress-tow-physics';
-import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
-import type { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
-import type { PlayerEconomyState } from '../core/economy-types';
-import type { ShipDefinition } from '../core/ship-types';
-import type { SystemLogService } from '../core/system-log-types';
-import type { GameAudioService } from '../systems/audio/game-audio-service';
-import type { WorldLocation, WorldPoint } from '../core/world-types';
 import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-view-model';
-import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
-import type { NpcEconomyService } from '../systems/economy/npc-economy-service';
-import type { SectorNpcState } from '../core/npc-types';
 import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
 import { grantDistressSalvageRights } from '../systems/salvage/distress-salvage-rights';
@@ -41,8 +29,6 @@ import {
   resolveShipLocalCruiseSpeed,
   engineSpeedMultiplier,
   resolveShipRuntimeSetup,
-  type ShipComponentInventoryService,
-  type ShipRuntimeOptions,
 } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips, salvagePirateShips } from './game-controller-salvage-npc-view';
@@ -57,72 +43,8 @@ import {
   requestDistressDiagnosis,
   tickDistressDiagnosis,
 } from './game-controller-salvage-diagnosis';
-
-export interface SalvageSceneController {
-  getField(): SalvageField;
-  beginDistressTow(event: SectorSalvageEvent): void;
-  canAttachDistressTow(): boolean;
-  updateSectorEvent(event: SectorSalvageEvent | null): void;
-  beginDistressRepair(): void;
-  tick(deltaSeconds: number): void;
-  finishCombat(snapshot: StrategicCombatSnapshot): void;
-  destroy(): void;
-}
-
-export interface SalvageSceneOptions {
-  readonly root: HTMLElement;
-  readonly ship: ShipDefinition;
-  readonly seed: number;
-  readonly location: WorldLocation;
-  readonly economy: SalvageEconomyService;
-  readonly npcEconomy: NpcEconomyService;
-  readonly sectorNpcs: readonly SectorNpcState[];
-  readonly wreckClaims: WreckClaimRegistry;
-  readonly getCurrentDay: () => number;
-  readonly player: PlayerEconomyState;
-  readonly componentInventory: ShipComponentInventoryService;
-  readonly runtimeOptions?: ShipRuntimeOptions;
-  readonly log: SystemLogService;
-  readonly audio: GameAudioService;
-  readonly onReturnToStarMap: () => void;
-  readonly selectedNpcId?: string | null;
-  readonly onSelectNpc?: (id: string | null) => void;
-  readonly onAttackNpc?: (id: string, arena: SalvageNpcAttackArena) => void;
-  readonly getFieldDuels?: () => readonly StrategicCombatSnapshot[];
-  readonly getFleet?: () => ParallelNativeDuelSnapshot | null;
-  readonly getCombat?: () => StrategicCombatSnapshot | null;
-  readonly resolveDrone?: (field: SalvageField) => AsteroidSecurityDrone;
-  readonly onUnauthorizedSalvage?: (field: SalvageField, wreckId: string) => void;
-  readonly resolvePirateTraffic?: (field: SalvageField) => LocalPirateTraffic;
-  readonly getNpcCombats?: () => readonly StrategicCombatSnapshot[];
-  readonly onPirateAttack?: (
-    field: SalvageField,
-    pirateId: string,
-    targetId: string,
-    piratePosition: WorldPoint,
-    targetPosition: WorldPoint
-  ) => boolean;
-  readonly onDroneAttack?: (
-    field: SalvageField,
-    pirateId: string,
-    piratePosition: WorldPoint,
-    dronePosition: WorldPoint
-  ) => boolean;
-  readonly onCombatBystanders?: (bystanders: readonly StrategicCombatBystander[]) => void;
-  readonly field?: SalvageField;
-  readonly onLeaveField?: (field: SalvageField) => void;
-  readonly sectorEvent?: SectorSalvageEvent | null;
-  readonly onDiagnoseDistress?: (eventId: string) => void;
-  readonly onBoardWreck?: (wreckId: string) => void;
-  readonly onRepairDistress?: (eventId: string) => void;
-  readonly onTowDistress?: (eventId: string) => void;
-  readonly onEvacuateDistress?: (eventId: string) => void;
-  readonly onSectorEventResolved?: (eventId: string) => void;
-  readonly isCombatActive?: () => boolean;
-  readonly onCombatTactic?: (tactic: 'fight' | 'kite' | 'flee' | 'minefield') => void;
-  readonly onCombatGrapple?: () => void;
-}
-
+import type { SalvageSceneOptions, SalvageSceneController } from './game-controller-salvage-types';
+export type { SalvageSceneOptions, SalvageSceneController } from './game-controller-salvage-types';
 type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
 
 interface SalvageSceneState {
@@ -166,10 +88,12 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
     ...model,
     fleet: model.combat ? (options.getFleet?.() ?? null) : null,
     securityDrone: context.drone.snapshot(),
-    npcCombats: (options.getNpcCombats?.() ?? []).filter(
-      (duel) =>
-        duel.attacker.id === 'security-drone:' + context.field.sourceLocationId ||
-        duel.defender.id === 'security-drone:' + context.field.sourceLocationId
+    npcCombats: (options.getNpcCombats?.() ?? []).filter((duel) =>
+      [duel.attacker.id, duel.defender.id].every((id) =>
+        options.sectorNpcs.some(
+          (npc) => npc.id === id && npc.locationId === context.field.sourceLocationId
+        )
+      )
     ),
     wreckClaimOwners: wreckClaimOwners(context.field, options.wreckClaims, options.getCurrentDay()),
   };
@@ -303,6 +227,7 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     salvagers: npcSalvage.ships,
     playerPosition: combat?.attacker.position ?? service.getSnapshot().ship.position,
     playerRadius: Math.max(18, options.ship.nominalLengthMeters * 0.35),
+    ...(options.onFreighterExit && { onFreighterExit: options.onFreighterExit }),
     dt: deltaSeconds,
     playerCombat: combat,
     npcCombats: fieldDuels(options),
@@ -455,7 +380,27 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   context.state.panel = createSalvagePanel(context);
 
   announceSalvageScene(options, runtime);
+  return sceneController(context);
+}
+function sceneController(context: SalvageSceneRuntime): SalvageSceneController {
+  const { field, options, service } = context;
   return {
+    body(id) {
+      if (id === 'player') return service.getSnapshot().ship;
+      if (id === 'security-drone:' + field.sourceLocationId) return context.drone;
+      return context.pirates.body(id) ?? context.npcSalvage.ships.find((ship) => ship.npcId === id);
+    },
+    attackNpc(id, playerInitiated) {
+      attackSalvageNpc(
+        options,
+        field,
+        service,
+        context.npcSalvage,
+        context.pirates,
+        id,
+        playerInitiated
+      );
+    },
     getField() {
       return field;
     },

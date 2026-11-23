@@ -216,23 +216,11 @@ function initializeSalvageEvents(navigation: NavigationService): SectorSalvageEv
   return events;
 }
 
-export function createControllerEconomy(
-  navigation: NavigationService,
-  onSmugglingNotice: (message: string) => void = () => {},
-  restoredRegistries?: RestoredOperationalRegistries
-): ControllerEconomy {
-  const situations = createMarketSituationService(sectorPorts, economyResources, 73);
-  const markets = createEconomyMarketService(sectorPorts, economyResources, {
-    situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
-  });
-  situations.advanceDay(0);
-  const trade = createPlayerTradeService(markets);
-  const charters = createTradeCharterService(trade.player);
-  const marketIntel = createMarketIntelService(markets);
-  marketIntel.recordHistory(0);
-  const npcStates: SectorNpcState[] = createSectorNpcEconomyStates();
-  const smuggling = createSmugglingService(trade.player, npcStates);
-  const shipyardResearch = createShipyardResearchService();
+function createSectorPopulation(
+  markets: EconomyMarketService,
+  trade: PlayerTradeService,
+  npcStates: SectorNpcState[]
+) {
   const simulation = createEconomySimulationService(
     markets,
     trade.player,
@@ -244,6 +232,27 @@ export function createControllerEconomy(
     const pool = simulation.pools[id];
     if (pool) pool.recordedLosses += quantity;
   });
+  return { simulation, population };
+}
+export function createControllerEconomy(
+  navigation: NavigationService,
+  onSmugglingNotice: (message: string) => void = () => {},
+  restoredRegistries?: RestoredOperationalRegistries,
+  initialPopulation?: SectorNpcState[]
+): ControllerEconomy {
+  const situations = createMarketSituationService(sectorPorts, economyResources, 73);
+  const markets = createEconomyMarketService(sectorPorts, economyResources, {
+    situationModifier: (locationId, resourceId) => situations.modifier(locationId, resourceId),
+  });
+  situations.advanceDay(0);
+  const trade = createPlayerTradeService(markets);
+  const charters = createTradeCharterService(trade.player);
+  const marketIntel = createMarketIntelService(markets);
+  marketIntel.recordHistory(0);
+  const npcStates: SectorNpcState[] = initialPopulation ?? createSectorNpcEconomyStates();
+  const smuggling = createSmugglingService(trade.player, npcStates);
+  const shipyardResearch = createShipyardResearchService();
+  const { simulation, population } = createSectorPopulation(markets, trade, npcStates);
   const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
     markets,
@@ -279,9 +288,11 @@ export function createControllerEconomy(
           : sectorNpcs.quoteTravel(npc as SectorNpcState, destinationId, availableCredits),
     },
   });
-  npcEconomy.advanceDay(0);
-  initializeNpcOpeningScenario(npcStates, sectorNpcs, npcEconomy, markets);
-  registerSecurityDroneCombatants(npcStates);
+  if (!initialPopulation) {
+    npcEconomy.advanceDay(0);
+    initializeNpcOpeningScenario(npcStates, sectorNpcs, npcEconomy, markets);
+    registerSecurityDroneCombatants(npcStates);
+  }
   const salvageEvents = initializeSalvageEvents(navigation);
   const npcSalvageEvents = makeNpcSalvageEvents(sectorNpcs, salvageEvents, shipyardResearch);
 

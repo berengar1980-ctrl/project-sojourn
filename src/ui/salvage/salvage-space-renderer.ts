@@ -53,8 +53,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   private lastFrameAt = -Infinity;
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    model: SalvageSpaceViewModel,
-    fieldLayerOnly = false
+    model: SalvageSpaceViewModel
   ) {
     super();
     const context = canvas.getContext('2d');
@@ -63,7 +62,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.model = model;
     this.camera = new PvPMapCamera(model.width, model.height);
     this.background = new SpaceBackgroundRenderer(context, model.backgroundSeed);
-    if (!fieldLayerOnly) this.resize();
+    this.resize();
   }
   update(model: SalvageSpaceViewModel): void {
     this.model = model;
