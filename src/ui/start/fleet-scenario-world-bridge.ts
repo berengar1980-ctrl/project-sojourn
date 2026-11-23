@@ -354,7 +354,7 @@ export function createFleetScenarioWorldBridge(
       threats.set(id, { ...aggressor });
     },
     // Preserve the normal NPC roles: patrol, mining, flee or existing combat owner.
-    // eslint-disable-next-line complexity
+    // eslint-disable-next-line complexity, max-lines-per-function
     tick(dt: number, threat: WorldPoint | null) {
       // The campaign's existing mining and security services drive civilians
       // and drones until their native combat driver takes ownership.
