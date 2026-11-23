@@ -306,7 +306,7 @@ export function createFleetTestLobby(
       map: map.control.value as DuelMapKind,
       incident: incident.control.value as FleetScenarioIncident,
       groups: counts,
-      ships: createFleetScenarioRoster(counts),
+      ships: createFleetScenarioRoster(counts, map.control.value as DuelMapKind),
     };
     const startCount = config.ships.filter((ship) => ship.arrivalSeconds === 0).length;
     const laterCount = config.ships.length - startCount;
@@ -328,9 +328,7 @@ export function createFleetTestLobby(
     entry.seconds.addEventListener('change', draw);
   }
   incident.control.addEventListener('change', draw);
-  map.control.addEventListener('change', () => {
-    config = { ...config, map: map.control.value as DuelMapKind };
-  });
+  map.control.addEventListener('change', draw);
   draw();
   return {
     destroy() {
