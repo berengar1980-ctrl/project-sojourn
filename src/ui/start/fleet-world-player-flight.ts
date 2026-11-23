@@ -30,6 +30,9 @@ export function createFleetWorldPlayerFlight(
   };
   let destination: WorldPoint | null = null;
   return {
+    invalidateRoute() {
+      delete route.routeState;
+    },
     navigate(point: WorldPoint) {
       destination = {
         x: Math.max(90, Math.min(width - 90, point.x)),
