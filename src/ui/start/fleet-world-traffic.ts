@@ -7,7 +7,7 @@ export function createFleetWorldTraffic(
   states: ReadonlyMap<string, { readonly npc: SectorNpcState }>,
   position: (id: string) => WorldPoint | null,
   isActive: (id: string) => boolean,
-  player: { readonly shipId: string; readonly position: WorldPoint }
+  player: () => { readonly shipId: string; readonly position: WorldPoint }
 ) {
   return (id: string) => {
     const traffic = [...states].flatMap(([otherId, entry]) => {
@@ -18,11 +18,12 @@ export function createFleetWorldTraffic(
         ? [{ id: 'traffic:' + otherId, position: point, radius: ship.nominalLengthMeters * 0.5 }]
         : [];
     });
-    const playerShip = getShipDefinition(player.shipId);
+    const currentPlayer = player();
+    const playerShip = getShipDefinition(currentPlayer.shipId);
     if (playerShip && id !== 'player')
       traffic.push({
         id: 'traffic:player',
-        position: player.position,
+        position: currentPlayer.position,
         radius: playerShip.nominalLengthMeters * 0.5,
       });
     return traffic;
