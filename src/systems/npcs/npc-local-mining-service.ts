@@ -360,9 +360,9 @@ function advanceMiner(
       localCruiseSpeed(npc),
       dt,
       [
-          ...runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
-          ...(runtime.options.getTrafficObstacles?.(npc.id) ?? []),
-        ],
+        ...runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
+        ...(runtime.options.getTrafficObstacles?.(npc.id) ?? []),
+      ],
       65
     )
   ) {
