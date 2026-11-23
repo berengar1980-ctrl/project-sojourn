@@ -333,11 +333,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       const npc = this.byId.get(ship.npcId);
       // Keep the combatant under duel authority; do not remove or move it.
       if (ship.npcId === combatantId) continue;
-      if (
-        !npc ||
-        npc.hullHp <= 0 ||
-        npc.locationId !== this.options.locationId
-      ) {
+      if (!npc || npc.hullHp <= 0 || npc.locationId !== this.options.locationId) {
         this.ships.splice(index, 1);
         continue;
       }
