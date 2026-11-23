@@ -72,8 +72,7 @@ export function createFleetIdleWorldCanvas(
   };
   const pointerMove = (event: PointerEvent): void => {
     if (!lastDrag) return;
-    if (Math.hypot(event.clientX - lastDrag.x, event.clientY - lastDrag.y) > 3)
-      dragged = true;
+    if (Math.hypot(event.clientX - lastDrag.x, event.clientY - lastDrag.y) > 3) dragged = true;
     camera.pan(event.clientX - lastDrag.x, event.clientY - lastDrag.y);
     lastDrag = { x: event.clientX, y: event.clientY };
     draw();
