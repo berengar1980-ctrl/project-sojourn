@@ -10,6 +10,7 @@ import { drawCombatEscapeGate } from '../combat/combat-escape-gate-renderer';
 import { createFleetWorldContactOverlay } from '../combat/fleet-world-contact-overlay';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import type { FleetWorldContact } from './fleet-scenario-world-bridge';
+import type { WorldPoint } from '../../core/world-types';
 
 /**
  * Renders the same combat map and native ship painter while no encounter owns
@@ -19,7 +20,8 @@ import type { FleetWorldContact } from './fleet-scenario-world-bridge';
 export function createFleetIdleWorldCanvas(
   canvas: HTMLCanvasElement,
   arena: StrategicCombatArenaOptions,
-  contacts: () => readonly FleetWorldContact[]
+  contacts: () => readonly FleetWorldContact[],
+  navigatePlayer: (target: WorldPoint) => void
 ) {
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Fleet idle world canvas unavailable');
@@ -29,6 +31,7 @@ export function createFleetIdleWorldCanvas(
   const paintContacts = createFleetWorldContactOverlay(canvas, contacts, arena.width, arena.height);
   let active = false;
   let lastDrag: { x: number; y: number } | null = null;
+  let dragged = false;
   const draw = (): void => {
     if (!active) return;
     const rect = canvas.getBoundingClientRect();
@@ -64,15 +67,26 @@ export function createFleetIdleWorldCanvas(
   const pointerDown = (event: PointerEvent): void => {
     if (event.button !== 0) return;
     lastDrag = { x: event.clientX, y: event.clientY };
+    dragged = false;
     canvas.setPointerCapture(event.pointerId);
   };
   const pointerMove = (event: PointerEvent): void => {
     if (!lastDrag) return;
+    if (Math.hypot(event.clientX - lastDrag.x, event.clientY - lastDrag.y) > 3)
+      dragged = true;
     camera.pan(event.clientX - lastDrag.x, event.clientY - lastDrag.y);
     lastDrag = { x: event.clientX, y: event.clientY };
     draw();
   };
   const pointerUp = (event: PointerEvent): void => {
+    if (lastDrag && !dragged && event.type === 'pointerup') {
+      const rect = canvas.getBoundingClientRect();
+      const scale = camera.scale(rect.width, rect.height, arena.width, arena.height);
+      navigatePlayer({
+        x: arena.width / 2 + (event.clientX - rect.left - rect.width / 2 - camera.offsetX) / scale,
+        y: arena.height / 2 + (event.clientY - rect.top - rect.height / 2 - camera.offsetY) / scale,
+      });
+    }
     lastDrag = null;
     if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
   };
