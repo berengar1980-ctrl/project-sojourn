@@ -1199,3 +1199,22 @@ aus den vorhandenen Feldpositionen. Der Verkehrs-Checkpoint speichert weiterhin
 Ziel-ID, Position, Arbeitsphase und Scanfortschritt.
 
 Der Beitritt zu einem laufenden NPC-Gefecht überträgt dessen Laufzeitbesitz an den Spieler. Beteiligte NPCs und ihre Hull-Werte bleiben dieselben Karriereobjekte. Das Speicherformat bleibt unverändert.
+
+### NPC-Feldkollisionen und native Gefechtsdarstellung (PR #390)
+
+Kleine, nicht routenblockierende Trümmer werden von lokalen NPC-Minern
+über dieselbe kontaktbasierte Impulsregel wie bei den Sicherheitsdrohnen
+beiseitegeschoben. Ihre bereits vorhandenen Positionen und
+`physics.velocity` werden weiterhin vom `AsteroidFieldWorld`-Checkpoint
+gespeichert; die neue `field-debris-contact.ts` besitzt keinen eigenen
+Zustand. Große Asteroiden bleiben solide Routenhindernisse.
+
+Während nativer NPC-Gefechte besitzt ausschließlich der native
+Kampfakteur die Bewegung. Die lokalen Miner-Kollisionen lassen diesen
+Akteur aus; die Feldansicht kann vorhandene Kampfposen anhand derselben
+NPC-ID darstellen, selbst bei einer vorübergehenden Übergabe aus der
+Verkehrsliste. Diese Sichtdaten und die optionalen `?perf=1`-Messwerte
+werden nicht persistiert. Weder Schema noch Save-Version, NPC-Identität,
+Fracht- oder Wirtschaftszustand wurden verändert. Die bekannte
+Save/Load-Grenze für zusätzliche Teilnehmer laufender Fleet-Gefechte
+besteht weiterhin.

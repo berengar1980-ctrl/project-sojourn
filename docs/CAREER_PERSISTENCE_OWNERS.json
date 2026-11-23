@@ -234,6 +234,10 @@
     "src/systems/salvage/salvage-patrol-geometry.ts": {
       "mode": "derived",
       "reason": "Patrol markers and routing obstacles are computed from the current wreck field and own no independent saved state."
+    },
+    "src/systems/local-space/field-debris-contact.ts": {
+      "mode": "derived",
+      "reason": "Stateless shared contact physics for lightweight field debris; authoritative existing asteroid positions and velocities are checkpointed by the field world."
     }
   }
 }
