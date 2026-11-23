@@ -58,9 +58,20 @@ export function createFleetWorldContactOverlay(
         lighting
       );
       if (!drone && definition && (ship.shieldImpacts?.length ?? 0) > 0)
-        shieldImpacts.draw(context, ship.shieldImpacts ?? [], definition.sprite.hardpoints, geometry);
+        shieldImpacts.draw(
+          context,
+          ship.shieldImpacts ?? [],
+          definition.sprite.hardpoints,
+          geometry
+        );
       if (ship.miningBeamTarget) {
-        const target = camera.project(ship.miningBeamTarget, width, height, arenaWidth, arenaHeight);
+        const target = camera.project(
+          ship.miningBeamTarget,
+          width,
+          height,
+          arenaWidth,
+          arenaHeight
+        );
         drawMiningLaserBeam(context, geometry.center, target, Math.max(1, scale * 1.6), 1, 0.55);
       }
       drawCombatShipCaption(context, ship.name, 1, geometry);
