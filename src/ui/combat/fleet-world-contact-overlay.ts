@@ -3,6 +3,7 @@ import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
+import { drawMiningLaserBeam } from '../local-space/mining-beam-visuals';
 import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { DRONE_DIAMETER_PX } from '../local-space/local-security-drone-visual';
 import type { FleetWorldContact } from '../start/fleet-scenario-world-bridge';
@@ -58,6 +59,10 @@ export function createFleetWorldContactOverlay(
       );
       if (!drone && definition && (ship.shieldImpacts?.length ?? 0) > 0)
         shieldImpacts.draw(context, ship.shieldImpacts ?? [], definition.sprite.hardpoints, geometry);
+      if (ship.miningBeamTarget) {
+        const target = camera.project(ship.miningBeamTarget, width, height, arenaWidth, arenaHeight);
+        drawMiningLaserBeam(context, geometry.center, target, Math.max(1, scale * 1.6), 1, 0.55);
+      }
       drawCombatShipCaption(context, ship.name, 1, geometry);
     }
   };
