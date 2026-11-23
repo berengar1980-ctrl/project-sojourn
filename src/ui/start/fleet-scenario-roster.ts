@@ -65,8 +65,7 @@ function randomDraft(
   ].filter((ship): ship is NonNullable<typeof ship> => ship !== null);
   const civilianShips = ships.filter(
     (candidate) =>
-      !candidate.id.startsWith('pirate-') &&
-      !candidate.name.toLowerCase().includes('korsaren')
+      !candidate.id.startsWith('pirate-') && !candidate.name.toLowerCase().includes('korsaren')
   );
   const workShips = workRole ? civilianShips.filter((ship) => ship.role === workRole) : [];
   const matching =
@@ -120,7 +119,8 @@ function randomDraft(
 /** Generate all combatants, including future reinforcements, before battle start. */
 export function createFleetScenarioRoster(
   settings: readonly FleetScenarioCounts[],
-  mapKind: 'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field' = 'asteroid_field'
+  mapKind:
+    'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field' = 'asteroid_field'
 ): FleetScenarioShip[] {
   const result: FleetScenarioShip[] = [
     { id: 'player', group: 'player', arrivalSeconds: 0, ...randomDraft('player') },
