@@ -1,4 +1,4 @@
-import type { FieldRouteState } from '../navigation/field-ship-routing';
+import type { FieldRouteState, FieldRouteObstacle } from '../navigation/field-ship-routing';
 import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
 import type {
   LocalAsteroid,
@@ -66,6 +66,8 @@ export interface NpcLocalMiningOptions {
   readonly miners: readonly SectorNpcState[];
   /** Disable internal contact solving when a shared world handles all NPC collisions. */
   readonly resolveLocalCollisions?: boolean;
+  /** Optional live ships to include in the same route planner as asteroid obstacles. */
+  readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
   readonly getAsteroids: () => readonly LocalAsteroid[];
   readonly mine: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly onAsteroidScanned?: (npc: SectorNpcState, asteroid: LocalAsteroid) => void;
