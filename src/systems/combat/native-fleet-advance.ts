@@ -1,4 +1,5 @@
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
+import { getShipDefinition } from '../ships';
 import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import { materializeNativeFleetWrecks } from './native-fleet-wrecks';
 import type {
@@ -91,7 +92,9 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
         .map((ship) => ({
           id: 'ship:' + ship.id,
           position: ship.position,
-          radius: radiusById.get(ship.id) ?? 35,
+          radius:
+            radiusById.get(ship.id) ??
+            Math.max(20, (getShipDefinition(ship.shipId)?.nominalLengthMeters ?? 60) * 0.5),
         })),
       ...others.map((ship) => ({
         id: 'ship:' + ship.id,
