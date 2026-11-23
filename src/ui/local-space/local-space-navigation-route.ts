@@ -15,6 +15,18 @@ export function drawLocalNavigationRoute(
   const target = model.navigationTarget;
   if (!target || route.length === 0) return;
 
+  drawNavigationRoutePoints(context, route, target, (point) =>
+    camera.worldToScreen(point, width, height)
+  );
+}
+
+/** Paint the same local-space route for campaign and FleetCombat camera projections. */
+export function drawNavigationRoutePoints(
+  context: CanvasRenderingContext2D,
+  route: readonly { readonly x: number; readonly y: number }[],
+  target: { readonly x: number; readonly y: number },
+  project: (point: { readonly x: number; readonly y: number }) => { x: number; y: number }
+): void {
   context.save();
   context.strokeStyle = 'rgba(104, 213, 239, .7)';
   context.lineWidth = 1.25;
@@ -22,14 +34,14 @@ export function drawLocalNavigationRoute(
   context.beginPath();
 
   route.forEach((point, index) => {
-    const screen = camera.worldToScreen(point, width, height);
+    const screen = project(point);
     if (index === 0) context.moveTo(screen.x, screen.y);
     else context.lineTo(screen.x, screen.y);
   });
   context.stroke();
   context.setLineDash([]);
 
-  const point = camera.worldToScreen(target, width, height);
+  const point = project(target);
   const pulse = 1 + Math.sin(performance.now() * 0.008) * 0.12;
   const radius = 8 * pulse;
   context.strokeStyle = 'rgba(119, 226, 248, .9)';
