@@ -221,7 +221,10 @@ export function createFleetScenarioWorldBridge(
     states,
     (id) => pose(id)?.position ?? null,
     (id) => arrived.has(id) && !departed.has(id),
-    () => ({ shipId: roster.find((ship) => ship.id === 'player')!.draft.shipId, position: playerPose.position })
+    () => ({
+      shipId: roster.find((ship) => ship.id === 'player')!.draft.shipId,
+      position: playerPose.position,
+    })
   );
   const deploy = (id: string): void => {
     if (arrived.has(id)) return;
@@ -375,7 +378,10 @@ export function createFleetScenarioWorldBridge(
       }
       if (!engaged.has('player') && playerDestination) {
         const cruise = playerShip
-          ? resolveShipLocalCruiseSpeed(playerShip, duelInstalledComponents(roster.find((ship) => ship.id === 'player')!.draft))
+          ? resolveShipLocalCruiseSpeed(
+              playerShip,
+              duelInstalledComponents(roster.find((ship) => ship.id === 'player')!.draft)
+            )
           : 110;
         playerRoute.position = { ...playerPose.position };
         const reached = moveFieldShip(
