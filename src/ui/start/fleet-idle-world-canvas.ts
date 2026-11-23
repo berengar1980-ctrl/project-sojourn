@@ -7,6 +7,7 @@ import { CombatAsteroidBackdrop } from '../combat/combat-asteroid-backdrop';
 import { drawCombatAsteroids } from '../combat/combat-asteroid-renderer';
 import { drawCombatBackground } from '../combat/combat-background-renderer';
 import { drawCombatEscapeGate } from '../combat/combat-escape-gate-renderer';
+import { drawNavigationRoutePoints } from '../local-space/local-space-navigation-route';
 import { createFleetWorldContactOverlay } from '../combat/fleet-world-contact-overlay';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import type { FleetWorldContact } from './fleet-scenario-world-bridge';
@@ -22,7 +23,8 @@ export function createFleetIdleWorldCanvas(
   canvas: HTMLCanvasElement,
   arena: StrategicCombatArenaOptions,
   contacts: () => readonly FleetWorldContact[],
-  navigatePlayer: (target: WorldPoint) => void
+  navigatePlayer: (target: WorldPoint) => void,
+  navigation: () => { route: readonly WorldPoint[]; target: WorldPoint | null }
 ) {
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Fleet idle world canvas unavailable');
@@ -62,6 +64,11 @@ export function createFleetIdleWorldCanvas(
       drawCombatEscapeGate(
         context,
         camera.project(arena.exitPoint, width, height, arena.width, arena.height)
+      );
+    const flight = navigation();
+    if (flight.target && flight.route.length > 0)
+      drawNavigationRoutePoints(context, flight.route, flight.target, (point) =>
+        camera.project(point, width, height, arena.width, arena.height)
       );
     paintContacts(camera.pose(), width, height, performance.now() / 1000);
   };
