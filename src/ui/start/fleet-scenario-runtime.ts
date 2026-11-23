@@ -281,7 +281,7 @@ export function createFleetScenarioRuntime(
         .filter((id) => world.npc(id)?.pirate)
         .map((id) => fleet?.getActor(id)?.position)
         .find((position) => position !== undefined);
-      const threat = pirateThreat ?? fight?.attacker.position ?? null;
+      const threat = pirateThreat ?? null;
       world.tick(dt, threat);
       deploy();
       if (fleet && !fleet.getSnapshot().finished) {
