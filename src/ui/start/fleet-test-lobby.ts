@@ -14,6 +14,7 @@ import {
 } from './fleet-scenario-roster';
 import { createFleetScenarioRuntime } from './fleet-scenario-runtime';
 import { createFleetIdleWorldCanvas } from './fleet-idle-world-canvas';
+import { combatEscapeGate } from '../../systems/combat/strategic-combat-arena';
 
 interface FleetTestConfiguration {
   readonly map: DuelMapKind;
@@ -137,7 +138,8 @@ function createSimulatorLauncher(
       stop();
       const epoch = generation;
       const seed = Math.floor(Math.random() * 0x7fffffff);
-      const arena = createDuelArena(config.map, seed);
+      const fieldArena = createDuelArena(config.map, seed);
+      const arena = { ...fieldArena, exitPoint: combatEscapeGate(fieldArena, seed) };
       const session = createFleetScenarioRuntime(
         config.ships,
         arena,
