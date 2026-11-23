@@ -22,9 +22,7 @@ export function createFleetWorldWorkers(
     height,
     resolveLocalCollisions: false,
     getTrafficObstacles: (id) => trafficFor(id),
-    miners: states
-      .filter((entry) => entry.npc.job === 'miner')
-      .map((entry) => entry.npc),
+    miners: states.filter((entry) => entry.npc.job === 'miner').map((entry) => entry.npc),
     getAsteroids: () => rocks,
     mine: (npc, resourceId, requested) => {
       const capacity = Math.max(
@@ -46,9 +44,7 @@ export function createFleetWorldWorkers(
         field: salvageField,
         resolveLocalCollisions: false,
         getTrafficObstacles: (id) => trafficFor(id),
-        salvagers: states
-          .filter((entry) => entry.npc.job === 'salvager')
-          .map((entry) => entry.npc),
+        salvagers: states.filter((entry) => entry.npc.job === 'salvager').map((entry) => entry.npc),
         recover: (npc, resourceId, requested) => {
           const used = Object.values(npc.cargo).reduce((sum, amount) => sum + amount, 0);
           const accepted = Math.max(0, Math.min(requested, npc.cargoCapacity - used));
