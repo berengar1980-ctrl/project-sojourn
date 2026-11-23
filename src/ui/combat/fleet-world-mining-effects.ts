@@ -1,8 +1,10 @@
 import type { ShipDefinition } from '../../core/ship-types';
 import type { FleetWorldContact } from '../start/fleet-world-contact-types';
 import type { CombatCamera } from './combat-camera';
-import type { MiningEffectsRenderer } from '../local-space/mining-effects-renderer';
-import { drawMiningChunkVisual } from '../local-space/mining-effects-renderer';
+import {
+  drawMiningChunkVisual,
+  type MiningEffectsRenderer,
+} from '../local-space/mining-effects-renderer';
 import { drawMiningLaserBeam, drawMiningTractorBeam } from '../local-space/mining-beam-visuals';
 import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 
