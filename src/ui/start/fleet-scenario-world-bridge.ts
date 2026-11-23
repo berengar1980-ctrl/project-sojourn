@@ -10,6 +10,7 @@ import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc
 import { hashId } from '../../systems/npcs/npc-mining-targets';
 import { createFleetWorldWorkers } from './fleet-world-workers';
 import { createFleetWorldTraffic } from './fleet-world-traffic';
+import { createFleetWorldPlayerFlight } from './fleet-world-player-flight';
 import { fleetWorldContacts } from './fleet-world-contacts';
 import { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
 import { resolveFleetWorldNeutralCollisions } from './fleet-world-neutral-collisions';
@@ -86,18 +87,11 @@ export function createFleetScenarioWorldBridge(
   const drones = new Map<string, AsteroidSecurityDrone>();
   const neutralShields = createFleetWorldShieldContacts();
   const playerStart = arena.attackerPosition ?? { x: arena.width * 0.5, y: arena.height * 0.5 };
-  const playerShip = getShipDefinition(roster.find((ship) => ship.id === 'player')!.draft.shipId);
   const playerPose = {
     position: { ...playerStart },
     headingRadians: arena.attackerHeadingRadians ?? 0,
     velocity: arena.attackerVelocity ?? { x: 0, y: 0 },
   };
-  const playerRoute: FieldRouteShip = {
-    position: playerPose.position,
-    headingRadians: playerPose.headingRadians,
-    speed: 0,
-  };
-  let playerDestination: WorldPoint | null = null;
   const jobFor = (ship: FleetScenarioShip): NpcJob => {
     if (ship.group === 'pirates-yellow' || ship.group === 'pirates-red') return 'pirate';
     if (ship.group === 'drone') return 'patrol';
@@ -226,6 +220,13 @@ export function createFleetScenarioWorldBridge(
       position: playerPose.position,
     })
   );
+  const playerFlight = createFleetWorldPlayerFlight(
+    playerPose,
+    arena.width,
+    arena.height,
+    roster.find((ship) => ship.id === 'player')!.draft,
+    () => [...obstacles(), ...trafficFor('player')]
+  );
   const deploy = (id: string): void => {
     if (arrived.has(id)) return;
     arrived.add(id);
@@ -272,13 +273,7 @@ export function createFleetScenarioWorldBridge(
   return {
     deploy,
     pose,
-    navigatePlayer(target: WorldPoint) {
-      playerDestination = {
-        x: Math.max(90, Math.min(arena.width - 90, target.x)),
-        y: Math.max(90, Math.min(arena.height - 90, target.y)),
-      };
-      delete playerRoute.routeState;
-    },
+    navigatePlayer: (target: WorldPoint) => playerFlight.navigate(target),
     isArrived: (id: string) => arrived.has(id) && !departed.has(id),
     isActive: (id: string) => id === 'player' || (arrived.has(id) && !departed.has(id)),
     isEngaged: (id: string) => engaged.has(id),
@@ -376,30 +371,7 @@ export function createFleetScenarioWorldBridge(
         wreck.position = { ...body.position };
         wreck.rotation = body.rotation;
       }
-      if (!engaged.has('player') && playerDestination) {
-        const cruise = playerShip
-          ? resolveShipLocalCruiseSpeed(
-              playerShip,
-              duelInstalledComponents(roster.find((ship) => ship.id === 'player')!.draft)
-            )
-          : 110;
-        playerRoute.position = { ...playerPose.position };
-        const reached = moveFieldShip(
-          playerRoute,
-          playerDestination,
-          cruise,
-          dt,
-          [...obstacles(), ...trafficFor('player')],
-          65
-        );
-        playerPose.position = { ...playerRoute.position };
-        playerPose.headingRadians = playerRoute.headingRadians;
-        playerPose.velocity = {
-          x: Math.cos(playerRoute.headingRadians) * playerRoute.speed,
-          y: Math.sin(playerRoute.headingRadians) * playerRoute.speed,
-        };
-        if (reached) playerDestination = null;
-      }
+      if (!engaged.has('player')) playerFlight.tick(dt);
       miners.tick(dt);
       salvagers?.tick(dt, undefined, true);
       neutralShields.tick(dt);
