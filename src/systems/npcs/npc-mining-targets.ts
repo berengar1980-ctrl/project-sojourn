@@ -64,6 +64,8 @@ export interface NpcLocalMiningOptions {
   readonly width: number;
   readonly height: number;
   readonly miners: readonly SectorNpcState[];
+  /** Disable internal contact solving when a shared world handles all NPC collisions. */
+  readonly resolveLocalCollisions?: boolean;
   readonly getAsteroids: () => readonly LocalAsteroid[];
   readonly mine: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly onAsteroidScanned?: (npc: SectorNpcState, asteroid: LocalAsteroid) => void;
