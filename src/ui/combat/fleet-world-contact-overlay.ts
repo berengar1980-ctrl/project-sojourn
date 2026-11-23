@@ -2,6 +2,7 @@ import { getShipDefinition } from '../../systems/ships';
 import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-renderer';
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
+import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { DRONE_DIAMETER_PX } from '../local-space/local-security-drone-visual';
 import type { FleetWorldContact } from '../start/fleet-scenario-world-bridge';
@@ -17,6 +18,7 @@ export function createFleetWorldContactOverlay(
   if (!context) throw new Error('Fleet contact canvas context unavailable');
   const camera = new CombatCamera();
   const lighting = new ShipLightingRenderer();
+  const shieldImpacts = new ShieldImpactRenderer();
   const images = new Map<string, HTMLImageElement>();
   return (pose, width, height) => {
     camera.restorePose(pose);
@@ -54,6 +56,8 @@ export function createFleetWorldContactOverlay(
         drone ? undefined : definition?.sprite.hardpoints,
         lighting
       );
+      if (!drone && definition && (ship.shieldImpacts?.length ?? 0) > 0)
+        shieldImpacts.draw(context, ship.shieldImpacts ?? [], definition.sprite.hardpoints, geometry);
       drawCombatShipCaption(context, ship.name, 1, geometry);
     }
   };
