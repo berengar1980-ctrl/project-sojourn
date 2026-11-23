@@ -10,6 +10,7 @@ import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc
 import { hashId } from '../../systems/npcs/npc-mining-targets';
 import { createFleetWorldWorkers } from './fleet-world-workers';
 import { createFleetWorldTraffic } from './fleet-world-traffic';
+import { fleetNpcDestination } from './fleet-world-destination';
 import { createFleetWorldPlayerFlight } from './fleet-world-player-flight';
 import { fleetWorldContacts } from './fleet-world-contacts';
 import { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
@@ -388,20 +389,16 @@ export function createFleetScenarioWorldBridge(
           continue;
         }
         const danger = threats.get(id);
-        const destination =
-          danger && npcDefenseReaction(moving.npc) === 'flee'
-            ? {
-                x: Math.max(180, Math.min(arena.width - 180, moving.position.x * 2 - danger.x)),
-                y: Math.max(180, Math.min(arena.height - 180, moving.position.y * 2 - danger.y)),
-              }
-            : threat &&
-                (moving.npc.pirate ||
-                  (moving.npc.job === 'patrol' && npcDefenseReaction(moving.npc) === 'fight')) &&
-                npcMayInitiateAttack(moving.npc)
-              ? threat
-              : moving.npc.job === 'freighter'
-                ? freightExit
-                : moving.waypoint;
+        const destination = fleetNpcDestination(
+          moving.npc,
+          moving.position,
+          moving.waypoint,
+          freightExit,
+          danger,
+          threat,
+          arena.width,
+          arena.height
+        );
         const definition = getShipDefinition(moving.npc.shipId);
         const speed = definition
           ? resolveShipLocalCruiseSpeed(definition, ensureNpcInstalledComponents(moving.npc))
