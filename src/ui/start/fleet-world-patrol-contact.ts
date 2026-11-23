@@ -11,7 +11,7 @@ export function fleetPatrolContact(
 ): WorldPoint | null {
   if (patrol.job !== 'patrol') return null;
   for (const candidate of candidates) {
-    if (!npcMayTargetNpc(patrol, candidate)) continue;
+    if (!npcMayTargetNpc(patrol, candidate, true)) continue;
     const target = position(candidate.id);
     if (target && Math.hypot(target.x - origin.x, target.y - origin.y) < 650) return target;
   }
