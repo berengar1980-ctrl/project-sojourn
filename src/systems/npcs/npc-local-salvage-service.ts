@@ -1,4 +1,8 @@
-import { moveFieldShip, type FieldRouteState } from '../navigation/field-ship-routing';
+import {
+  moveFieldShip,
+  type FieldRouteState,
+  type FieldRouteObstacle,
+} from '../navigation/field-ship-routing';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
@@ -60,6 +64,7 @@ export interface NpcLocalSalvageOptions {
   readonly salvagers: readonly SectorNpcState[];
   /** Disable internal contacts when the shared world solves all physical ships once. */
   readonly resolveLocalCollisions?: boolean;
+  readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
   readonly recover: (npc: SectorNpcState, resourceId: string, requested: number) => number;
   readonly depart: (npc: SectorNpcState) => boolean;
   readonly canWorkWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
