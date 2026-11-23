@@ -386,7 +386,8 @@ class LocalSalvageService implements NpcLocalSalvageService {
       }
     }
 
-    this.resolveLocalCollisions(combatantId, skipPlayer);
+    if (this.options.resolveLocalCollisions !== false)
+      this.resolveLocalCollisions(combatantId, skipPlayer);
   };
   private resolveLocalCollisions = (combatantId?: string, skipPlayer = false): void => {
     const playerState = skipPlayer ? undefined : this.options.getPlayerShipState?.();
