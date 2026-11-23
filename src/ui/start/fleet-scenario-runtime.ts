@@ -1,4 +1,5 @@
 import { getShipDefinition } from '../../systems/ships';
+import type { WorldPoint } from '../../core/world-types';
 import { npcMayTargetNpc } from '../../systems/npcs/npc-combat-ai';
 import {
   createConflictManager,
@@ -139,6 +140,7 @@ export interface FleetScenarioRuntime {
   readonly fleet: ParallelNativeDuels | null;
   readonly completedEncounters: number;
   readonly worldContacts: ReturnType<ScenarioWorld['contacts']>;
+  navigatePlayer(point: WorldPoint): void;
   /** Advance elapsed simulation time and insert arrivals into the SAME battle. */
   tick(seconds: number): void;
   /** Has the battle ended with no future scheduled contact? */
@@ -266,6 +268,9 @@ export function createFleetScenarioRuntime(
     },
     get worldContacts() {
       return world.contacts();
+    },
+    navigatePlayer(point) {
+      if (!fleet) world.navigatePlayer(point);
     },
     tick(seconds) {
       if (!Number.isFinite(seconds) || seconds <= 0) return;
