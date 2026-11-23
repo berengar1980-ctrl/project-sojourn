@@ -19,6 +19,7 @@ export function salvageSecurityActions(context: ControllerRuntimeContext) {
       if (npc.homePortId)
         context.economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
     },
+    escapedFieldShipIds: () => context.engagements.escapedFieldShipIds(),
     getFleet: () => context.engagements.activePlayerFleet()?.getSnapshot() ?? null,
     getNpcCombats: () => context.engagements.activeNpcCombatSnapshots?.() ?? [],
     getFieldDuels: () =>

@@ -55,7 +55,7 @@ export function fieldWitnessFor(
     }
     return field?.drone.detect(target, field.instance.asteroids) ? field.drone : null;
   }
-  return context.economy.localPirates.get(locationId)?.snapshot([npc])[0] ?? null;
+  return context.economy.localPirates.get(locationId)?.body(npc.id) ?? null;
 }
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
@@ -144,7 +144,12 @@ function syncNpcDuelFieldPoses(
         combatant.headingRadians,
         combatant.speed
       );
-      field.pirates.syncCombatPose(combatant.id, combatant.position, combatant.headingRadians);
+      field.pirates.syncCombatPose(
+        combatant.id,
+        combatant.position,
+        combatant.headingRadians,
+        combatant.speed
+      );
       if (combatant.id === 'security-drone:' + field.locationId) {
         field.drone.restore(combatant.position, combatant.hullHp > 0);
         field.drone.headingRadians = combatant.headingRadians;
@@ -249,7 +254,8 @@ export function advanceControllerFieldWorld(
       field.pirates.syncCombatPose(
         activeCombat.defender.id,
         activeCombat.defender.position,
-        activeCombat.defender.headingRadians
+        activeCombat.defender.headingRadians,
+        activeCombat.defender.speed
       );
     }
     tickFieldPirates(context, seconds, field, activeCombat?.defender.id);

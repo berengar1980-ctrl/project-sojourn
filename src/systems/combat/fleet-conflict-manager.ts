@@ -34,6 +34,7 @@ export interface ConcessionViolation {
 }
 
 export interface ConflictManager {
+  include(participant: ConflictParticipant): void;
   isHostile(sourceId: string, targetId: string): boolean;
   recordAttack(event: ConflictAttack): void;
   recordConcessionViolation(event: ConcessionViolation): void;
@@ -47,13 +48,14 @@ export function createConflictManager(
   participants: readonly ConflictParticipant[]
 ): ConflictManager {
   const members = new Map<string, ConflictParticipant>();
-  for (const participant of participants) {
+  const register = (participant: ConflictParticipant) => {
     if (!participant.id || members.has(participant.id))
       throw new Error('Conflict participant ship IDs must be nonempty and unique');
     if (participant.role === 'pirate' && !participant.pirateGroup)
       throw new Error('Every pirate must have a pirateGroup');
     members.set(participant.id, participant);
-  }
+  };
+  participants.forEach(register);
 
   const directed = new Map<string, Set<string>>();
   const mark = (sourceId: string, targetId: string): void => {
@@ -85,6 +87,9 @@ export function createConflictManager(
   };
 
   return {
+    include(participant) {
+      if (!members.has(participant.id)) register(participant);
+    },
     isHostile,
     recordAttack({ attackerId, victimId, witnessedBy }: ConflictAttack): void {
       const attacker = member(attackerId);

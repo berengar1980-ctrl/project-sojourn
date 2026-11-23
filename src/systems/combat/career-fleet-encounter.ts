@@ -1,3 +1,4 @@
+import { seededLocalGate } from '../../core/local-space-exit';
 import { fieldInterceptRange, npcMayInitiateAttack } from '../npcs/npc-combat-ai';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
@@ -20,7 +21,7 @@ export type FieldWitness = (
   locationId: string,
   npc: SectorNpcState,
   target: WorldPoint
-) => { position: WorldPoint; headingRadians: number } | null;
+) => { position: WorldPoint; headingRadians: number; speed?: number } | null;
 
 export interface CareerFleetWorldPose {
   readonly fieldWitness?: FieldWitness;
@@ -60,7 +61,11 @@ function createSectorFleetEncounter(
   const enemySetup = npcCombatant(enemy);
   if (!enemySetup) throw new Error('Campaign enemy lacks a combat setup');
   const seed = hashSeed(firstSetup.id + ':' + enemy.id);
-  const sessionArena = buildCombatArena(firstSetup, enemySetup, seed, arena);
+  const fieldArena =
+    arena?.backdropSeed !== undefined && !arena.exitPoint
+      ? { ...arena, exitPoint: seededLocalGate(arena.width, arena.height, arena.backdropSeed) }
+      : arena;
+  const sessionArena = buildCombatArena(firstSetup, enemySetup, seed, fieldArena);
   const conflict = createConflictManager([
     ...(firstIsPlayer ? [{ id: firstSetup.id, role: 'player' as const }] : []),
     ...allNpcs
@@ -157,6 +162,26 @@ function createSectorFleetEncounter(
     ]),
     ...fleet.supporters.map((service) => service.getParallelActor!('attacker')),
   ];
+  function nearbyContact(
+    npc: SectorNpcState,
+    opponents: ReturnType<typeof activeActors>,
+    witness: FieldWitness
+  ) {
+    const range = fieldInterceptRange(npc.id, npc.pirate === true);
+    for (const actor of opponents) {
+      const id = actor.setup.id;
+      if (!conflict.isHostile(npc.id, id) && (npc.pirate || (id !== initiator && id !== victim)))
+        continue;
+      const contact = witness(enemy.locationId, npc, actor.position);
+      if (
+        contact &&
+        Math.hypot(contact.position.x - actor.position.x, contact.position.y - actor.position.y) <=
+          range
+      )
+        return contact;
+    }
+    return null;
+  }
   return {
     fleet,
     combat: firstIsPlayer
@@ -166,23 +191,17 @@ function createSectorFleetEncounter(
     // Reinforcements use the same campaign sensory, hostility and actor ownership rules.
     // eslint-disable-next-line complexity
     joinNearby(position, npcs, npcPosition, onJoin) {
-      if (fleet.getSnapshot().finished) return;
+      const snapshot = fleet.getSnapshot();
+      if (snapshot.finished) return;
+      const opponents = [...new Set(activeActors())].filter(
+        (actor) => actor.hullHp > 0 && !snapshot.escapedShipIds.includes(actor.setup.id)
+      );
       for (const npc of npcs) {
         if (
           members.has(npc.id) ||
           npc.hullHp <= 0 ||
           npc.combatMovement ||
           (npc.combatRecoverySeconds ?? 0) > 0
-        )
-          continue;
-        const localWitness = arena && worldPose?.fieldWitness;
-        const center = localWitness ? fleet.getActor(enemy.id)!.position : position;
-        const contact = localWitness?.(enemy.locationId, npc, center);
-        if (localWitness && !contact) continue;
-        const spot = contact?.position ?? npcPosition(npc);
-        if (
-          Math.hypot(spot.x - center.x, spot.y - center.y) >
-          (localWitness ? fieldInterceptRange(npc.id, npc.pirate === true) : CONTACT_RANGE)
         )
           continue;
         const kind = npcConflictParticipant(npc);
@@ -192,14 +211,28 @@ function createSectorFleetEncounter(
           !(kind.role === 'npc' && kind.civilianRole === 'patrol')
         )
           continue;
-        if (kind.role !== 'drone' && !npcMayInitiateAttack(npc)) continue;
+        const localWitness = arena && worldPose?.fieldWitness;
+        // Field pirates already pursue prey. The sector's aggression threshold
+        // governs starting a hunt, not joining a fight they physically reach.
+        if (
+          kind.role !== 'drone' &&
+          !(localWitness && kind.role === 'pirate') &&
+          !npcMayInitiateAttack(npc)
+        )
+          continue;
+        conflict.include(kind);
+        const contact = localWitness ? nearbyContact(npc, opponents, localWitness) : null;
+        if (localWitness && !contact) continue;
+        const spot = contact?.position ?? npcPosition(npc);
+        if (!localWitness && Math.hypot(spot.x - position.x, spot.y - position.y) > CONTACT_RANGE)
+          continue;
         // A nearby patrol or drone can now observe the already ongoing attack.
         conflict.recordAttack({
           attackerId: initiator,
           victimId: victim,
           witnessedBy: [npc.id],
         });
-        if (!activeActors().some((actor) => conflict.isHostile(npc.id, actor.setup.id))) continue;
+        if (!opponents.some((actor) => conflict.isHostile(npc.id, actor.setup.id))) continue;
         const setup = npcCombatant(npc);
         if (!setup) continue;
         const anchorActor = fleet.getActor(enemy.id);
@@ -219,6 +252,12 @@ function createSectorFleetEncounter(
               team: kind.role,
               setup,
               ...(arrival ? { position: arrival } : {}),
+              ...(contact && {
+                velocity: {
+                  x: Math.cos(contact.headingRadians) * (contact.speed ?? 0),
+                  y: Math.sin(contact.headingRadians) * (contact.speed ?? 0),
+                },
+              }),
               ...(worldPose
                 ? { headingRadians: contact?.headingRadians ?? worldPose.headingOf(npc) }
                 : {}),

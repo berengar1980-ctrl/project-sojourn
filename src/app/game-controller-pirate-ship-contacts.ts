@@ -47,7 +47,7 @@ export function resolvePirateFieldShipContacts(
     }
   }
 
-  const contacts = field.pirates.resolveShipContacts(npcs, bodies);
+  const contacts = field.pirates.resolveShipContacts(npcs, bodies, field.instance?.asteroids);
   if (contacts.length === 0) return;
   const hitIds = new Set(contacts.flatMap((impact) => [impact.firstId, impact.secondId]));
   for (const miner of field.miners.ships) {

@@ -449,6 +449,13 @@ export function createStarMapEngagementService(
     tick: (deltaSeconds) => tickEngagements(runtime, deltaSeconds),
     activePlayerCombat: () => runtime.playerCombat,
     activePlayerFleet: () => runtime.playerFleet?.fleet ?? null,
+    escapedFieldShipIds: () =>
+      new Set([
+        ...(runtime.playerFleet?.fleet.getSnapshot().escapedShipIds ?? []),
+        ...[...runtime.backgroundCombats.values()].flatMap(
+          (entry) => entry.fleet.fleet.getSnapshot().escapedShipIds
+        ),
+      ]),
     activeNpcCombatSnapshots: () =>
       [...runtime.backgroundCombats.values()].flatMap((entry) => [
         ...entry.fleet.fleet.getSnapshot().duels,

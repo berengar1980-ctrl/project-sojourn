@@ -8,7 +8,7 @@ import { getShipDefinition } from '../ships';
 import { npcOperationalSpeed } from './npc-upgrade-service';
 import { replanNpcTravel } from './npc-sector-live-replan';
 import { npcRecoveryLocation } from './npc-sector-recovery-location';
-import { advanceNpcCombatMovement } from './npc-sector-combat-movement';
+import { advanceNpcCombatMovement, resumeNpcFieldActivity } from './npc-sector-combat-movement';
 import {
   planRouteFromPoint,
   planRouteWithProfile,
@@ -16,6 +16,7 @@ import {
   type RoutePlan,
 } from '../navigation/route-planner';
 import {
+  FUEL_DISTANCE_SCALE,
   hashId,
   nearestLocation,
   patrolDestination,
@@ -26,7 +27,6 @@ import {
   routeProfile,
   npcRouteThreats,
 } from './npc-sector-routing';
-import { FUEL_DISTANCE_SCALE } from './npc-sector-routing';
 import {
   advanceNpcOrbit,
   npcOrbitDestination,
@@ -370,12 +370,13 @@ class SectorService implements NpcSectorService {
     npc.activityId = 'combat';
     npc.activity = reason;
   };
-  recoverFromCombat = (npc: SectorNpcState, reason: string | undefined = 'Rückzug'): boolean => {
+  recoverFromCombat = (npc: SectorNpcState, reason = 'Rückzug', remainInField = false): boolean => {
     const movement = npc.combatMovement;
     const position = movement ? { ...movement.position } : this.livePosition(npc);
     if (npc.hullHp <= 0) return this.beginCombatRecovery(npc, position, reason);
     if (!movement) return false;
     delete npc.combatMovement;
+    if (remainInField) return resumeNpcFieldActivity(npc, reason);
     const destinationId = nearestLocation(this.world, position);
     if (!destinationId) return false;
     return this.startDeepSpaceLeg(npc, position, destinationId, reason);

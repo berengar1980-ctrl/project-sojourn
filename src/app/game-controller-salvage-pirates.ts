@@ -46,7 +46,7 @@ function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> 
       const npc = sectorNpcs.find((entry) => entry.id === ship.id);
       if (npc?.locationId !== field.sourceLocationId) continue;
       combatants.add(npc.id);
-      pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians);
+      pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians, ship.speed);
       for (const salvager of salvagers) {
         if (salvager.npcId === npc.id) salvager.position = { ...ship.position };
       }
@@ -117,7 +117,7 @@ function advancePirateTraffic(
   pirates.tick(
     options.dt,
     livePirates,
-    options.playerCombat ? null : options.playerPosition,
+    options.playerPosition,
     salvagers.map((ship) => ({
       npcId: ship.npcId,
       position: ship.position,
@@ -125,6 +125,7 @@ function advancePirateTraffic(
     })),
     salvageDroneObstacleAsteroids(options.field),
     (pirateId, targetId, position) => {
+      if (combatants.has(targetId) || (targetId === 'player' && options.playerCombat)) return false;
       const targetPosition =
         targetId === 'player'
           ? options.playerPosition

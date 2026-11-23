@@ -53,6 +53,7 @@ export interface SalvageSceneOptions {
     playerInitiated?: boolean
   ) => void;
   readonly getFieldDuels?: () => readonly StrategicCombatSnapshot[];
+  readonly escapedFieldShipIds?: () => ReadonlySet<string>;
   readonly getFleet?: () => ParallelNativeDuelSnapshot | null;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
   readonly resolveDrone?: (field: SalvageField) => AsteroidSecurityDrone;

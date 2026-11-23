@@ -56,7 +56,7 @@ function synchronizeLocalDefender(
   ) {
     context.economy.localPirates
       .get(localId)
-      ?.syncCombatPose(defender.id, defender.position, defender.headingRadians);
+      ?.syncCombatPose(defender.id, defender.position, defender.headingRadians, defender.speed);
     return;
   }
   context.state.localNpcMining?.syncCombatPose(

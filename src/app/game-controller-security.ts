@@ -97,7 +97,7 @@ export function tickFieldPirates(
   traffic.tick(
     seconds,
     pirates,
-    canLocalPiratesTargetPlayer(context)
+    state.embeddedCombat === 'local-space' || canLocalPiratesTargetPlayer(context)
       ? (space?.getSnapshot().instance.ship.position ?? null)
       : null,
     pirateMiningContacts(context, field),
@@ -113,7 +113,7 @@ export function tickFieldPirates(
       if (traffic.body(targetId))
         return engagePatrolContact(context, field, pirateId, targetId, piratePosition, arena);
       if (targetId === 'player') {
-        if (!space) return false;
+        if (!space || !canLocalPiratesTargetPlayer(context)) return false;
         const engaged = context.engagements.engageNpcInArena(
           pirateId,
           {
@@ -134,7 +134,7 @@ export function tickFieldPirates(
       const miner = field.miners.ships.find((ship) => ship.npcId === targetId);
       if (!miner) return false;
       const minerNpc = economy.sectorNpcs.npcs.find((npc) => npc.id === targetId);
-      if (!minerNpc || minerNpc.hullHp <= 0) return false;
+      if (!minerNpc || minerNpc.combatMovement || minerNpc.hullHp <= 0) return false;
       const drone = field.drone;
       const protector = economy.sectorNpcs.npcs.find(
         (npc) => npc.id === 'security-drone:' + locationId

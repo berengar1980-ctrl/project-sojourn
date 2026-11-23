@@ -113,6 +113,13 @@ assert(pirate.pirateHuntZoneId, 'pirate hunt-zone choice must persist on the NPC
 
 delete freighter.travel;
 service.markEngaged(freighter, 'npc', pirate.id, 'Recovery-Test');
+assert.equal(service.recoverFromCombat(freighter, 'Nach Feldgefecht', true), true);
+assert.equal(
+  service.isTravelling(freighter),
+  false,
+  'a survivor still on the field resumes local traffic'
+);
+service.markEngaged(freighter, 'npc', pirate.id);
 freighter.hullHp = 0;
 assert.equal(
   service.recoverFromCombat(freighter, 'Kampfunfähig'),

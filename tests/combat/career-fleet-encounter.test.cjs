@@ -132,4 +132,41 @@ assert.equal(
   true
 );
 assert.equal(rivalPirateGroups(npc('a', 'pirate'), npc('b', 'pirate')), false);
+const newcomer = npc('late-pirate', 'pirate', 52);
+const arrival = { x: 220, y: 200 };
+const late = createCareerFleetEncounter(
+  player,
+  miner,
+  [miner],
+  true,
+  { ...area, attackerPosition: { x: 200, y: 200 }, defenderPosition: { x: 2500, y: 1600 } },
+  {
+    positionOf: worldPosition,
+    headingOf: () => 0,
+    fieldWitness: () => ({ position: arrival, headingRadians: 1, speed: 71 }),
+  }
+);
+late.joinNearby(worldPosition(), [newcomer], worldPosition);
+late.joinNearby(worldPosition(), [newcomer], worldPosition);
+assert.deepEqual(late.fleet.getActor(newcomer.id)?.position, arrival);
+assert.deepEqual(late.fleet.getActor(newcomer.id).velocity, {
+  x: Math.cos(1) * 71,
+  y: Math.sin(1) * 71,
+});
+assert.equal(
+  late.fleet.supporters.length,
+  1,
+  'a pirate arriving near the player joins once, far from the original defender'
+);
+
+const { seededLocalGate } = loadStandaloneTypeScriptModule(root, 'src/core/local-space-exit.ts');
+const fieldArena = { ...area, backdropSeed: 832 };
+for (const seedPirate of [pirate, newcomer]) {
+  const scenario = createNpcFleetEncounter(seedPirate, victim, [victim, seedPirate], fieldArena);
+  assert.deepEqual(
+    scenario.combat.getSnapshot().exitPoint,
+    seededLocalGate(area.width, area.height, 832),
+    'different encounters on one field must use the same marked exit'
+  );
+}
 console.log('PASS campaign shared fleet sessions: player, NPC, pirates, patrols, drones join live');

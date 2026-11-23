@@ -75,6 +75,25 @@ assert(
 );
 assert.notEqual(pirateTraffic.snapshot(multiple)[0].position.x, 600);
 
+const idlePirate = traffic(playerNpc, [['pirate-a', 310, 300]]);
+idlePirate.resolveShipContacts(
+  playerNpc,
+  [],
+  [
+    {
+      id: 'small-rock',
+      position: { x: 300, y: 300 },
+      radius: 45,
+      collisionRadius: 35,
+      routeBlocking: false,
+    },
+  ]
+);
+assert(
+  idlePirate.body('pirate-a').position.x >= 335,
+  'a free pirate collides even with a rock excluded from long-range routing'
+);
+
 const inactive = [npc('pirate-a', { combatMovement: { targetId: 'miner' } })];
 const inactiveTraffic = traffic([npc('pirate-a')], [['pirate-a', 300, 300]]);
 const stationary = { position: { x: 300, y: 300 }, headingRadians: 0 };

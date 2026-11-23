@@ -44,7 +44,7 @@ export interface NpcSectorService {
     targetId: string,
     reason?: string
   ): void;
-  recoverFromCombat(npc: SectorNpcState, reason?: string): boolean;
+  recoverFromCombat(npc: SectorNpcState, reason?: string, remainInField?: boolean): boolean;
   combatMode(npc: SectorNpcState): NpcCombatMovementMode | null;
   isTravelling(npc: SectorNpcState): boolean;
   livePosition(npc: SectorNpcState): WorldPoint;

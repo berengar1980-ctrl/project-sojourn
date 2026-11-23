@@ -42,3 +42,17 @@ export function advanceNpcCombatMovement(
   };
   npc.fuel = Math.max(0, npc.fuel - moved * npc.fuelUse * FUEL_DISTANCE_SCALE);
 }
+
+const fieldActivityByJob = {
+  miner: 'mining',
+  salvager: 'salvage',
+  patrol: 'patrol',
+  freighter: 'trade',
+  pirate: 'raiding',
+} as const;
+
+export function resumeNpcFieldActivity(npc: SectorNpcState, reason: string): boolean {
+  npc.activityId = npc.pirate ? 'raiding' : fieldActivityByJob[npc.job];
+  npc.activity = reason;
+  return true;
+}

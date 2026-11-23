@@ -5,6 +5,7 @@ import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../ships';
 import {
+  resolveShipShieldObstacleCollisions,
   resolveShipShieldCollisions,
   type LocalShieldShipBody,
   type ShipShieldCollision,
@@ -315,15 +316,17 @@ export class LocalPirateTraffic {
     player: WorldPoint | null
   ) {
     const rivals = this.snapshot(
-      npcs.filter((other) => !other.combatMovement && rivalPirateGroups(npc, other))
+      npcs.filter((other) => rivalPirateGroups(npc, other) && !other.combatRecoverySeconds)
     );
     const targets = [
       ...rivals.map((other) => ({ id: other.npcId, position: other.position })),
       ...this.snapshot(
-        npcs.filter((other) => other.job === 'freighter' && !other.combatMovement)
+        npcs.filter(
+          (other) => other.job === 'freighter' && !other.pirate && !other.combatRecoverySeconds
+        )
       ).map((other) => ({ id: other.npcId, position: other.position })),
       ...miners
-        .filter((miner) => miner.npcId !== pirate.npcId && !miner.inCombat)
+        .filter((miner) => miner.npcId !== pirate.npcId)
         .map((miner) => ({
           id: miner.npcId,
           position: miner.position,
@@ -401,7 +404,8 @@ export class LocalPirateTraffic {
    */
   resolveShipContacts(
     npcs: readonly SectorNpcState[],
-    otherShips: readonly LocalShieldShipBody[]
+    otherShips: readonly LocalShieldShipBody[],
+    rocks: readonly LocalAsteroid[] = []
   ): readonly ShipShieldCollision[] {
     const byId = new Map(npcs.map((npc) => [npc.id, npc]));
     const pirateIds = new Set<string>();
@@ -438,15 +442,23 @@ export class LocalPirateTraffic {
         };
       }
     }
+    resolveShipShieldObstacleCollisions(
+      pirates,
+      rocks.map((rock) => ({
+        id: rock.id,
+        position: rock.position,
+        radius: rock.collisionRadius ?? rock.radius,
+      }))
+    );
     return impacts;
   }
 
-  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number): void {
+  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed = 0): void {
     const ship = this.ships.get(npcId);
     if (!ship) return;
     ship.position = { ...position };
     ship.headingRadians = headingRadians;
-    ship.speed = 0;
+    ship.speed = speed;
     delete ship.routeState;
     // Keep the interception latch until the engagement has recovered.
   }

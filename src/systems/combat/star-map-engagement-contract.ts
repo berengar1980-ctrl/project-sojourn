@@ -30,6 +30,7 @@ export interface StarMapEngagementService {
   tick(deltaSeconds: number): void;
   activePlayerCombat(): StrategicCombatService | null;
   activePlayerFleet(): ParallelNativeDuels | null;
+  escapedFieldShipIds(): ReadonlySet<string>;
   activeNpcCombatSnapshots(): readonly StrategicCombatSnapshot[];
   activePlayerEnemy(): SectorNpcState | null;
   finishPlayerCombat(boardingOutcome?: BoardingOutcome): void;

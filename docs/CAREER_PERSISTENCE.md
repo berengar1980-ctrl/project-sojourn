@@ -1186,3 +1186,10 @@ Testangriff gehören zur Lobby. Das Testlabor bietet keinen Schreibzugriff auf
 den Karriere-Spielstand. Die Kampagnen-Feldverwaltung besitzt auch die lokalen
 Posen durchfliegender Frachter und zusätzlicher Begleitdrohnen. Beide werden
 wie Patrouillen im bestehenden Verkehrs-Checkpoint erfasst.
+
+Nach einem Feldgefecht behalten überlebende Schiffe im Feld ihre Position und
+Geschwindigkeit im vorhandenen Verkehrs-Checkpoint. Sektor-NPCs übernehmen
+wieder ihre lokale Tätigkeit. Entkommene Schiffe und kampfunfähige Besatzungen
+verwenden die bestehenden Reise- und Bergungsdaten. Der Feld-Seed bestimmt
+den Fluchtpunkt. Zeugen und die Liste der während eines laufenden Gefechts
+entkommenen Schiffe gehören zur flüchtigen Gefechtssitzung.

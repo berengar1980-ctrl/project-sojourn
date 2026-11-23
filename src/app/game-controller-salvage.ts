@@ -70,13 +70,17 @@ interface SalvageSceneRuntime {
 
 function salvageSceneModel(context: SalvageSceneRuntime) {
   const { options, service, npcSalvage, state } = context;
+  const escaped = options.escapedFieldShipIds?.();
   const model = createSalvageSpaceViewModel(
     service.getSnapshot(),
     options.ship,
     options.player,
     options.componentInventory.list(),
     options.location.name + ' // Bergung',
-    [...salvageNpcShips(npcSalvage), ...salvagePirateShips(context.pirates, options.sectorNpcs)],
+    [
+      ...salvageNpcShips(npcSalvage),
+      ...salvagePirateShips(context.pirates, options.sectorNpcs),
+    ].filter((ship) => !escaped?.has(ship.id)),
     state.selectedNpcId,
     options.getCombat?.() ?? null,
     state.activeSectorEvent,

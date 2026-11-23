@@ -2,7 +2,7 @@ import { advanceCombatPower } from './combat-power-service';
 import { applyCombatRamImpact } from './combat-ram-impact';
 import { advanceShieldImpacts } from '../shields/shield-service';
 import { resolveCombatBystanderContacts } from './combat-bystander-contacts';
-import { moveCombatant } from './strategic-combat-movement';
+import { moveCombatant, resolveArenaObstacles } from './strategic-combat-movement';
 import { reviewAndExecute } from './strategic-combat-telemetry';
 import { advanceRuntimeWeapons, advanceRuntimeProjectiles } from './strategic-combat-weapons';
 import { maybeDropRuntimeMine, advanceRuntimeMines } from './strategic-combat-mines';
@@ -47,6 +47,7 @@ export function tickNativeSupportingShip(
   applyCombatRamImpact(runtime);
   // Collisions may correct only the ship owned by this one-sided service.
   // The shared target's physics belongs to its original native duel.
+  const { x, y } = source.position;
   resolveCombatBystanderContacts(source, [
     ...bystanders,
     {
@@ -56,6 +57,8 @@ export function tickNativeSupportingShip(
       headingRadians: target.headingRadians,
     },
   ]);
+  if (source.position.x !== x || source.position.y !== y)
+    resolveArenaObstacles(source, runtime.arena);
   if (source.powerFault !== 'total') {
     maybeDropRuntimeMine(runtime, side, source, target, dt);
     maybeLaunchTractorAsteroid(runtime, side, source, target);
