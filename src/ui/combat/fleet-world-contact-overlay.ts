@@ -74,7 +74,7 @@ export function createFleetWorldContactOverlay(
       drawFleetWorldMiningEffects(
         context,
         ship,
-        definition,
+        definition ?? undefined,
         geometry,
         camera,
         miningEffects,
