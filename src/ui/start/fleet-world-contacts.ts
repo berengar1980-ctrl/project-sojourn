@@ -1,0 +1,36 @@
+import type { SectorNpcState } from '../../core/npc-types';
+import type { LocalAsteroid } from '../../core/local-space-types';
+import type { NpcLocalMiningService } from '../../systems/npcs/npc-mining-targets';
+import type { FleetWorldContact, FleetWorldPose } from './fleet-scenario-world-bridge';
+import type { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
+
+/** Project the real world jobs and native shield contacts for both world and combat canvas. */
+export function fleetWorldContacts(
+  states: ReadonlyMap<string, { readonly npc: SectorNpcState }>,
+  active: (id: string) => boolean,
+  pose: (id: string) => FleetWorldPose | null,
+  miners: NpcLocalMiningService,
+  rocks: readonly LocalAsteroid[],
+  shields: ReturnType<typeof createFleetWorldShieldContacts>,
+  player: FleetWorldContact | null
+): FleetWorldContact[] {
+  const contacts: FleetWorldContact[] = [];
+  for (const [id, entry] of states) {
+    if (!active(id) || entry.npc.hullHp <= 0) continue;
+    const position = pose(id);
+    if (!position) continue;
+    const miner = miners.ships.find((ship) => ship.npcId === id);
+    const target = miner?.laserActive
+      ? rocks.find((rock) => rock.id === miner.targetAsteroidId)?.position
+      : undefined;
+    contacts.push({
+      id,
+      name: entry.npc.name,
+      shipId: entry.npc.shipId,
+      ...position,
+      shieldImpacts: shields.get(id),
+      ...(target ? { miningBeamTarget: target } : {}),
+    });
+  }
+  return player ? [player, ...contacts] : contacts;
+}
