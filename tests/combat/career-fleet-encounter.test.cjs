@@ -61,6 +61,18 @@ session.tick(0.08);
 assert(session.combat.getSnapshot().elapsedSeconds > 0);
 assert.equal(session.members.has('miner'), true);
 
+// The primary duel may replace the player's attacker slot with a surviving NPC.
+session.fleet.getActor('player').hullHp = 0;
+session.tick(0.08);
+assert.notEqual(session.fleet.duels[0].getSnapshot().attacker.id, 'player');
+const lost = session.combat.getSnapshot();
+assert.equal(lost.attacker.id, 'player');
+assert.equal(lost.attacker.hullHp, 0);
+assert.equal(lost.winner, 'defender');
+assert.equal(lost.outcomeReason, 'destruction');
+session.tick(0.08);
+assert.deepEqual(session.combat.getSnapshot().attacker.position, lost.attacker.position);
+
 // Background NPC fights share the very same coordinator. Nearby security
 // and a capable patrol should oppose pirates without separate combat code.
 const victim = npc('victim', 'freighter', 10);

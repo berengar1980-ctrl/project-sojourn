@@ -1,3 +1,4 @@
+import { localFieldDuels } from '../systems/combat/dynamic-fleet-combat';
 import { syncMiningCombatField } from '../systems/combat/field-combat-arena';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
@@ -81,9 +82,10 @@ export function fieldWorldFor(context: ControllerRuntimeContext): AsteroidFieldW
  */
 function syncNpcDuelFieldPoses(
   context: ControllerRuntimeContext,
-  field: AsteroidFieldRuntime
+  field: AsteroidFieldRuntime,
+  duels: readonly StrategicCombatSnapshot[]
 ): void {
-  for (const duel of context.engagements.activeNpcCombatSnapshots?.() ?? []) {
+  for (const duel of duels) {
     for (const combatant of [duel.attacker, duel.defender]) {
       const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === combatant.id);
       if (npc?.locationId !== field.locationId) continue;
@@ -162,6 +164,9 @@ export function advanceControllerFieldWorld(
     context.state.embeddedCombat === 'local-space'
       ? (context.engagements.activePlayerCombat()?.getSnapshot() ?? null)
       : null;
+  const background = context.engagements.activeNpcCombatSnapshots?.() ?? [];
+  const fleet = combat ? context.engagements.activePlayerFleet?.()?.getSnapshot() : null;
+  const localDuels = localFieldDuels(background, fleet);
   const fieldWorld = fieldWorldFor(context);
   fieldWorld.tick(deltaSeconds, localId, (field, seconds) => {
     const activeCombat = field.locationId === localId ? combat : null;
@@ -181,7 +186,8 @@ export function advanceControllerFieldWorld(
         activeCombat.attacker.speed
       );
     }
-    syncNpcDuelFieldPoses(context, field);
+    const duels = activeCombat ? localDuels : background;
+    syncNpcDuelFieldPoses(context, field, duels);
     field.miners.tick(seconds, activeCombat?.defender.id);
     if (activeCombat?.defender.id.startsWith('security-drone:')) {
       field.drone.restore(activeCombat.defender.position, activeCombat.defender.hullHp > 0);
@@ -201,7 +207,7 @@ export function advanceControllerFieldWorld(
     // The combat engine owns drone motion while it is fighting.
     // A second patrol tick would jump its sprite away from the hitbox.
     const droneId = 'security-drone:' + field.locationId;
-    const droneFightingNpc = (context.engagements.activeNpcCombatSnapshots?.() ?? []).some(
+    const droneFightingNpc = duels.some(
       (duel) => duel.attacker.id === droneId || duel.defender.id === droneId
     );
     if (activeCombat?.defender.id !== droneId && !droneFightingNpc) {

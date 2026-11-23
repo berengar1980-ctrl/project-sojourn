@@ -1,3 +1,4 @@
+import { localFieldDuels } from '../systems/combat/dynamic-fleet-combat';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { careerSalvageDrone, careerSalvagePirates } from './game-controller-salvage-drone-world';
 import { reportUnauthorizedWreckSalvage } from './game-controller-salvage-legal-response';
@@ -15,6 +16,13 @@ export function salvageSecurityActions(context: ControllerRuntimeContext) {
       careerSalvagePirates(context, field),
     getFleet: () => context.engagements.activePlayerFleet()?.getSnapshot() ?? null,
     getNpcCombats: () => context.engagements.activeNpcCombatSnapshots?.() ?? [],
+    getFieldDuels: () =>
+      localFieldDuels(
+        context.engagements.activeNpcCombatSnapshots?.() ?? [],
+        context.state.embeddedCombat === 'salvage-space'
+          ? context.engagements.activePlayerFleet()?.getSnapshot()
+          : null
+      ),
     onUnauthorizedSalvage: (
       field: Parameters<typeof reportUnauthorizedWreckSalvage>[1],
       wreckId: string

@@ -1166,3 +1166,9 @@ Das Fleet-Labor hält das erzeugte Asteroiden- oder Wrackfeld für die gesamte S
 Arbeitsdienste buchen Fracht und Abflug über dieselben NPC-Wirtschaftstransaktionen wie
 in der Karriere. Feldbestände, Fracht und Kamera des Labors sind sitzungsgebunden.
 Die Karriere verwendet weiterhin ihre bestehenden Feld- und Wirtschaftseigentümer.
+
+Scheidet der Spieler aus einem laufenden Mehrparteiengefecht aus, behält die
+Kampagne sein letztes Kampfergebnis für Hüllenschaden, Position und Rückkehr.
+Das Ergebnis gilt bis zur Auflösung des Gefechts und wird bei einem Zielwechsel
+des überlebenden Gegners nicht überschrieben. Dieser Zwischenstand ist nur im
+laufenden Gefecht verfügbar.

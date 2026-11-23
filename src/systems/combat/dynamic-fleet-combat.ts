@@ -2,9 +2,13 @@ import {
   createParallelNativeDuels,
   type NativeDuelShip,
   type ParallelNativeDuels,
+  type ParallelNativeDuelSnapshot,
 } from './parallel-native-duels';
 import { defaultFleetHostility, type FleetHostility } from './native-fleet-hostility';
-import type { StrategicCombatArenaOptions } from './strategic-combat-types';
+import type {
+  StrategicCombatArenaOptions,
+  StrategicCombatSnapshot,
+} from './strategic-combat-types';
 
 /**
  * Unified combat entrance for campaign and manual PvP encounters.
@@ -77,4 +81,12 @@ export function createDynamicFleetCombat(
     }
   }
   return native;
+}
+
+/** Every native driver whose actors are mirrored into a local field. */
+export function localFieldDuels(
+  background: readonly StrategicCombatSnapshot[],
+  fleet: ParallelNativeDuelSnapshot | null | undefined
+): readonly StrategicCombatSnapshot[] {
+  return fleet ? [...background, ...fleet.duels, ...fleet.supporters] : background;
 }

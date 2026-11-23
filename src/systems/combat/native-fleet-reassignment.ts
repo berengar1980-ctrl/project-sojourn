@@ -12,6 +12,7 @@ import type {
 export type NativeFleetDriver = StrategicCombatSide | 'both';
 
 interface FleetAssignment {
+  readonly beforePrimaryAttackerReplacement?: () => void;
   readonly services: readonly StrategicCombatService[];
   readonly drivers: NativeFleetDriver[];
   readonly ships: readonly MutableCombatant[];
@@ -166,6 +167,7 @@ export function reassignNativeFleetTargets(context: FleetAssignment): void {
     if (!available) continue;
     const choice = chooseTarget(available.ship, context, activeEngagements(context));
     if (!choice) continue;
+    if (index === 0 && available.side === 'defender') context.beforePrimaryAttackerReplacement?.();
     const assigned =
       context.drivers[index] === 'both'
         ? service.retargetParallelSurvivor?.(

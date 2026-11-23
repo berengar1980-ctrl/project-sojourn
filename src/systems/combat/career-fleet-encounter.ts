@@ -11,6 +11,7 @@ import type {
   StrategicCombatantSetup,
   StrategicCombatArenaOptions,
   StrategicCombatService,
+  StrategicCombatSnapshot,
 } from './strategic-combat-types';
 
 const CONTACT_RANGE = 650;
@@ -129,6 +130,17 @@ function createSectorFleetEncounter(
     [enemy.id, enemy],
     ...(firstNpc ? [[firstNpc.id, firstNpc] as const] : []),
   ]);
+  const primary = fleet.duels[0]!;
+  let playerResult: StrategicCombatSnapshot | null = null;
+  const capturePlayerExit = () => {
+    const state = primary.getSnapshot();
+    if (state.attacker.id !== firstSetup.id) return;
+    if (state.attacker.hullHp <= 0) {
+      playerResult = { ...state, winner: 'defender', outcomeReason: 'destruction' };
+    } else if (state.winner === 'defender' && state.outcomeReason === 'escape') {
+      playerResult = state;
+    }
+  };
   const activeActors = () => [
     ...fleet.duels.flatMap((service) => [
       service.getParallelActor!('attacker'),
@@ -138,7 +150,9 @@ function createSectorFleetEncounter(
   ];
   return {
     fleet,
-    combat: fleet.duels[0]!,
+    combat: firstIsPlayer
+      ? { ...primary, getSnapshot: () => playerResult ?? primary.getSnapshot() }
+      : primary,
     members,
     // Reinforcements use the same campaign sensory, hostility and actor ownership rules.
     // eslint-disable-next-line complexity
@@ -204,10 +218,11 @@ function createSectorFleetEncounter(
       }
     },
     tick(deltaSeconds) {
-      fleet.tick(deltaSeconds);
-      for (const actor of activeActors()) {
-        const npc = members.get(actor.setup.id);
-        if (!npc) continue;
+      const trackExit = firstIsPlayer && !playerResult && fleet.supporters.length > 0;
+      fleet.tick(deltaSeconds, trackExit ? capturePlayerExit : undefined);
+      for (const npc of members.values()) {
+        const actor = fleet.getActor(npc.id);
+        if (!actor) continue;
         npc.hullHp = Math.max(0, Math.min(npc.hullMaxHp, Math.round(actor.hullHp)));
         // The native 1v1 AI owns position/heading/velocity for engaged ships.
         // Sector navigation observes that same pose instead of integrating a

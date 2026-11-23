@@ -52,7 +52,7 @@ export interface ParallelNativeDuels {
   setBystanders(ships: readonly StrategicCombatBystander[]): void;
   /** Bring an existing campaign or test ship into the live battle exactly once. */
   addShip(ship: NativeDuelShip, conflictKey?: string): boolean;
-  tick(dt: number): ParallelNativeDuelSnapshot;
+  tick(dt: number, beforePrimaryAttackerReplacement?: () => void): ParallelNativeDuelSnapshot;
   getSnapshot(): ParallelNativeDuelSnapshot;
 }
 
@@ -380,7 +380,7 @@ export function createParallelNativeDuels(
       bystanders = contacts.filter((ship) => !actors.some((actor) => actor.setup.id === ship.id));
     },
     getSnapshot,
-    tick(seconds) {
+    tick(seconds, beforePrimaryAttackerReplacement) {
       if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
       const dt = Math.min(seconds, 0.08);
       cachedSnapshot = null;
@@ -401,6 +401,7 @@ export function createParallelNativeDuels(
         bystanders,
       });
       reassignNativeFleetTargets({
+        ...(beforePrimaryAttackerReplacement ? { beforePrimaryAttackerReplacement } : {}),
         services,
         drivers,
         ships: actors,

@@ -88,6 +88,7 @@ export interface SalvageSceneOptions {
   readonly selectedNpcId?: string | null;
   readonly onSelectNpc?: (id: string | null) => void;
   readonly onAttackNpc?: (id: string, arena: SalvageNpcAttackArena) => void;
+  readonly getFieldDuels?: () => readonly StrategicCombatSnapshot[];
   readonly getFleet?: () => ParallelNativeDuelSnapshot | null;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
   readonly resolveDrone?: (field: SalvageField) => AsteroidSecurityDrone;
@@ -279,6 +280,10 @@ function createSalvagePanel(context: SalvageSceneRuntime): SalvageSpacePanel {
   });
 }
 
+function fieldDuels(options: SalvageSceneOptions) {
+  return options.getFieldDuels?.() ?? options.getNpcCombats?.() ?? [];
+}
+
 const lastSalvagePresentation = new WeakMap<SalvageSceneRuntime, number>();
 const SALVAGE_PRESENTATION_INTERVAL_MS = 1000 / 24;
 
@@ -300,7 +305,7 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     playerRadius: Math.max(18, options.ship.nominalLengthMeters * 0.35),
     dt: deltaSeconds,
     playerCombat: combat,
-    npcCombats: options.getNpcCombats?.() ?? [],
+    npcCombats: fieldDuels(options),
     onPirateAttack: (pirateId, targetId, piratePosition, targetPosition) =>
       options.onPirateAttack?.(context.field, pirateId, targetId, piratePosition, targetPosition) ??
       false,
