@@ -3,16 +3,10 @@ import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
-import { drawMiningLaserBeam, drawMiningTractorBeam } from '../local-space/mining-beam-visuals';
-import {
-  drawMiningChunkVisual,
-  MiningEffectsRenderer,
-} from '../local-space/mining-effects-renderer';
+import { MiningEffectsRenderer } from '../local-space/mining-effects-renderer';
 import { PvPMapCamera } from './pvp-map-camera';
-import {
-  projectHardpoint,
-  type ShipScreenGeometry,
-} from '../ships/ship-hardpoint-projector';
+import { drawFleetWorldMiningEffects } from './fleet-world-mining-effects';
+import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { DRONE_DIAMETER_PX } from '../local-space/local-security-drone-visual';
 import type { FleetWorldContact } from '../start/fleet-scenario-world-bridge';
 
@@ -77,35 +71,18 @@ export function createFleetWorldContactOverlay(
           definition.sprite.hardpoints,
           geometry
         );
-      if (ship.miningBeamTarget && ship.miningTargetRadius) {
-        const dx = ship.position.x - ship.miningBeamTarget.x;
-        const dy = ship.position.y - ship.miningBeamTarget.y;
-        const distance = Math.max(1, Math.hypot(dx, dy));
-        const normal = { x: dx / distance, y: dy / distance };
-        const impactWorld = {
-          x: ship.miningBeamTarget.x + normal.x * ship.miningTargetRadius * 0.86,
-          y: ship.miningBeamTarget.y + normal.y * ship.miningTargetRadius * 0.86,
-        };
-        const target = camera.project(impactWorld, width, height, arenaWidth, arenaHeight);
-        const port = definition?.sprite.hardpoints.miningLasers[0];
-        const start =
-          port && definition
-            ? projectHardpoint(port, definition.sprite.hardpoints, geometry)
-            : geometry.center;
-        drawMiningLaserBeam(context, start, target, Math.max(1, scale * 1.6), 1, 0.55);
-        miningEffects.drawImpactEffects(target, normal, performance.now() / 1000);
-        const extraction = ship.miningOreCollection;
-        if (extraction) {
-          const progress = 1 - extraction.remainingSeconds / extraction.durationSeconds;
-          const travel = Math.max(0, Math.min(1, progress));
-          const chunk = {
-            x: target.x + (geometry.center.x - target.x) * travel,
-            y: target.y + (geometry.center.y - target.y) * travel,
-          };
-          drawMiningTractorBeam(context, chunk, geometry.center, 0.7);
-          drawMiningChunkVisual(context, chunk, ship.id + ':' + extraction.resourceId);
-        }
-      }
+      drawFleetWorldMiningEffects(
+        context,
+        ship,
+        definition,
+        geometry,
+        camera,
+        miningEffects,
+        width,
+        height,
+        arenaWidth,
+        arenaHeight
+      );
       drawCombatShipCaption(context, ship.name, 1, geometry);
     }
   };
