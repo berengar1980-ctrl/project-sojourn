@@ -253,12 +253,7 @@ export function createFleetScenarioWorldBridge(
   // Engaged actors are obstacles here, but the PvP engine remains their sole mover.
   const trafficFor = (id: string) => {
     const traffic = [...states].flatMap(([otherId, other]) => {
-      if (
-        otherId === id ||
-        !arrived.has(otherId) ||
-        departed.has(otherId) ||
-        other.npc.hullHp <= 0
-      )
+      if (otherId === id || !arrived.has(otherId) || departed.has(otherId) || other.npc.hullHp <= 0)
         return [];
       const position = pose(otherId)?.position;
       const otherShip = getShipDefinition(other.npc.shipId);
