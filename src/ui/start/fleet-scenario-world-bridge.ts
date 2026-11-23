@@ -68,7 +68,12 @@ export function createFleetScenarioWorldBridge(
   const rocks: LocalAsteroid[] = field?.asteroids ?? [];
   const salvageField =
     mapKind === 'scrap_scattered' || mapKind === 'scrap_field'
-      ? generateSalvageField(WORLD_LOCATION, seed, 2, mapKind === 'scrap_scattered' ? 'moderate' : 'standard')
+      ? generateSalvageField(
+          WORLD_LOCATION,
+          seed,
+          2,
+          mapKind === 'scrap_scattered' ? 'moderate' : 'standard'
+        )
       : null;
   // Both services inspect the SAME campaign field geometry. Combat owns rock
   // motion; miners and the drone observe that pose, never move it twice.
