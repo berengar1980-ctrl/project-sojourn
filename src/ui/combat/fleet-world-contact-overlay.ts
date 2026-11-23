@@ -21,6 +21,7 @@ export function createFleetWorldContactOverlay(
   const lighting = new ShipLightingRenderer();
   const shieldImpacts = new ShieldImpactRenderer();
   const images = new Map<string, HTMLImageElement>();
+  // eslint-disable-next-line complexity
   return (pose, width, height) => {
     camera.restorePose(pose);
     const scale = camera.scale(width, height, arenaWidth, arenaHeight);
