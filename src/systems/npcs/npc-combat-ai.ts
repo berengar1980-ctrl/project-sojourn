@@ -3,6 +3,8 @@ import type { SectorNpcState } from '../../core/npc-types';
 export type NpcDefenseReaction = 'fight' | 'flee';
 
 export function npcDefenseReaction(npc: SectorNpcState): NpcDefenseReaction {
+  // Freight operators protect their cargo by escaping, never by accepting a duel.
+  if (npc.job === 'freighter') return 'flee';
   const hullRatio = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;
   const roleBonus = npc.job === 'patrol' || npc.pirate ? 28 : npc.job === 'freighter' ? -8 : 0;
   const score = npc.aggression + roleBonus + hullRatio * 18;
