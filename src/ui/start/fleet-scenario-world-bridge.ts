@@ -455,6 +455,10 @@ export function createFleetScenarioWorldBridge(
               shipId: roster.find((ship) => ship.id === 'player')!.draft.shipId,
               position: playerPose.position,
               headingRadians: playerPose.headingRadians,
+              onDisplaced: (position: WorldPoint) => {
+                playerPose.position = { ...position };
+                playerFlight.invalidateRoute();
+              },
             }
           : undefined
       );
