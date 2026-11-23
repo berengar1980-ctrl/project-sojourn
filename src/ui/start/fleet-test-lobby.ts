@@ -164,7 +164,8 @@ function createSimulatorLauncher(
         canvas,
         arena,
         () => session.worldContacts,
-        (point) => session.navigatePlayer(point)
+        (point) => session.navigatePlayer(point),
+        () => session.playerNavigation
       );
       const cancel = document.createElement('button');
       cancel.type = 'button';
