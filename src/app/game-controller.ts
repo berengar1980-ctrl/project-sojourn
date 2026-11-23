@@ -330,7 +330,9 @@ function mountControllerSalvage(
         : null,
     isCombatActive: () => state.embeddedCombat === 'salvage-space',
     onCombatBystanders: (bystanders) =>
-      context.engagements.activePlayerCombat()?.setBystanders(bystanders),
+      (
+        context.engagements.activePlayerFleet() ?? context.engagements.activePlayerCombat()
+      )?.setBystanders(bystanders),
     onCombatGrapple: () => context.engagements.activePlayerCombat()?.fireGrapple('attacker'),
     onCombatTactic: (tactic) =>
       context.engagements.activePlayerCombat()?.setTactic('attacker', tactic),

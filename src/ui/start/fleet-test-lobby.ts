@@ -1,6 +1,7 @@
+import { CombatCamera } from '../combat/combat-camera';
 import {
   DUEL_MAPS,
-  createDuelArena,
+  createDuelField,
   type DuelMapKind,
 } from '../../systems/combat/duel-arena-presets';
 import { createFleetNativeCombatPanel } from '../combat/fleet-native-combat-panel';
@@ -138,14 +139,13 @@ function createSimulatorLauncher(
       stop();
       const epoch = generation;
       const seed = Math.floor(Math.random() * 0x7fffffff);
-      const fieldArena = createDuelArena(config.map, seed);
-      const arena = { ...fieldArena, exitPoint: combatEscapeGate(fieldArena, seed) };
+      const field = createDuelField(config.map, seed);
+      const arena = { ...field.arena, exitPoint: combatEscapeGate(field.arena, seed) };
       const session = createFleetScenarioRuntime(
         config.ships,
-        arena,
+        { ...field, arena },
         seed,
-        config.incident,
-        config.map
+        config.incident
       );
       const waiting = document.createElement('section');
       waiting.className = 'strategic-combat-shell';
@@ -160,12 +160,15 @@ function createSimulatorLauncher(
       const canvas = document.createElement('canvas');
       canvas.className = 'strategic-combat-map';
       canvas.setAttribute('aria-label', 'FleetCombat Einsatzgebiet');
+      const camera = new CombatCamera();
       idleWorld = createFleetIdleWorldCanvas(
         canvas,
         arena,
+        camera,
         () => session.worldContacts,
         (point) => session.navigatePlayer(point),
-        () => session.playerNavigation
+        () => session.playerNavigation,
+        () => panel !== null
       );
       const cancel = document.createElement('button');
       cancel.type = 'button';
@@ -186,12 +189,10 @@ function createSimulatorLauncher(
         const fleet = session.fleet;
         if (!fleet || panel) return;
         displayedFleet = fleet;
-        const initialCameraPose = idleWorld?.pose();
-        idleWorld?.deactivate();
         panel = createFleetNativeCombatPanel({
           root,
           canvas,
-          ...(initialCameraPose ? { initialCameraPose } : {}),
+          camera,
           combat: fleet.duels[0]!,
           spectator: true,
           parallelDuels: () => [
@@ -203,7 +204,7 @@ function createSimulatorLauncher(
           fleetEngagements: () => fleet.getSnapshot().engagements,
           isComplete: () => session.finished(),
           encounterName: 'KAMPAGNEN-SIMULATION',
-          worldContacts: () => session.worldContacts,
+          drawWorldActors: idleWorld!.drawActors,
           onReturn: returnToLobby,
         });
       };
@@ -215,13 +216,11 @@ function createSimulatorLauncher(
         previous = now;
         session.tick(dt);
         if (panel && displayedFleet !== session.fleet) {
-          const cameraPose = panel.cameraPose();
           panel.destroy();
           panel = null;
           displayedFleet = null;
           waiting.prepend(canvas);
           root.replaceChildren(waiting);
-          idleWorld?.restorePose(cameraPose);
           idleWorld?.activate();
         }
         mountCombat();

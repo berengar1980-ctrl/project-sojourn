@@ -60,7 +60,7 @@ export interface SalvageLocalSpaceService {
     headingRadians: number,
     speed: number
   ): SalvageLocalSpaceSnapshot;
-  tick(deltaSeconds: number): SalvageLocalSpaceSnapshot;
+  tick(deltaSeconds: number, combatOwnsBodies?: boolean): SalvageLocalSpaceSnapshot;
 }
 
 interface SalvageRuntimeOptions {
@@ -288,7 +288,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     return this.getSnapshot();
   }
 
-  tick(deltaSeconds: number): SalvageLocalSpaceSnapshot {
+  tick(deltaSeconds: number, combatOwnsBodies?: boolean): SalvageLocalSpaceSnapshot {
     // Preserve real elapsed gameplay time on frames slower than 20 fps.
     // Previously frames above 50 ms were discarded and everything ran in slow motion.
     let remaining = Math.max(0, Math.min(0.15, deltaSeconds));
@@ -306,7 +306,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
         this.options.sensorModifier ?? 1,
         this.options.sensorCrewSkill ?? this.options.crewSkill
       );
-      advanceSalvageContainerDrift(this.options.field, delta);
+      if (!combatOwnsBodies) advanceSalvageContainerDrift(this.options.field, delta);
       if (this.phase === 'navigating' || this.phase === 'approaching') {
         this.updateRoute(delta);
       } else if (this.phase === 'inspecting') {

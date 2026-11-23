@@ -1,3 +1,4 @@
+import type { ParallelNativeDuelSnapshot } from '../systems/combat/parallel-native-duels';
 import { measurePerformance } from '../core/performance-diagnostics';
 import { attackSalvageNpc, type SalvageNpcAttackArena } from './game-controller-salvage-attack';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
@@ -87,6 +88,7 @@ export interface SalvageSceneOptions {
   readonly selectedNpcId?: string | null;
   readonly onSelectNpc?: (id: string | null) => void;
   readonly onAttackNpc?: (id: string, arena: SalvageNpcAttackArena) => void;
+  readonly getFleet?: () => ParallelNativeDuelSnapshot | null;
   readonly getCombat?: () => StrategicCombatSnapshot | null;
   readonly resolveDrone?: (field: SalvageField) => AsteroidSecurityDrone;
   readonly onUnauthorizedSalvage?: (field: SalvageField, wreckId: string) => void;
@@ -161,6 +163,7 @@ function salvageSceneModel(context: SalvageSceneRuntime) {
   );
   return {
     ...model,
+    fleet: model.combat ? (options.getFleet?.() ?? null) : null,
     securityDrone: context.drone.snapshot(),
     npcCombats: (options.getNpcCombats?.() ?? []).filter(
       (duel) =>

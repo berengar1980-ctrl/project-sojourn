@@ -274,12 +274,19 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-  tick(deltaSeconds: number): LocalSpaceSnapshot {
+  tick(deltaSeconds: number, combatOwnsBodies?: boolean): LocalSpaceSnapshot {
     const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
     this.shipSystems.advance(clamped);
     this.scanClock.advanceLong(clamped);
-    integrateAsteroids(this.instance.asteroids, clamped, this.instance.width, this.instance.height);
-    resolveAsteroidCollisions(this.instance.asteroids);
+    if (!combatOwnsBodies) {
+      integrateAsteroids(
+        this.instance.asteroids,
+        clamped,
+        this.instance.width,
+        this.instance.height
+      );
+      resolveAsteroidCollisions(this.instance.asteroids);
+    }
 
     const asteroid = this.findAsteroid(this.activeTargetId());
     if (!asteroid && this.miningPhase !== 'idle') {

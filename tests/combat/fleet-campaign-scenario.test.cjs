@@ -104,7 +104,11 @@ const entry = (id, group, arrivalSeconds) => ({
   draft: commonDraft,
   arrivalSeconds,
 });
-const arena = { width: 4200, height: 2600, obstacles: [], asteroids: [] };
+const field = {
+  mining: null,
+  salvage: null,
+  arena: { width: 4200, height: 2600, obstacles: [], asteroids: [] },
+};
 
 // All three modes now use the existing campaign services for neutral world
 // behavior; a scheduled reinforcement no longer materializes as an immediate
@@ -120,7 +124,7 @@ const roster = [
   aggressivePirate('pirates-red-1', 'pirates-red', 0),
   entry('security-drone:test-1', 'drone', 0.16),
 ];
-const scenario = createFleetScenarioRuntime(roster, arena, 1234, 'none', 'empty');
+const scenario = createFleetScenarioRuntime(roster, field, 1234, 'none');
 const firstFleet = scenario.fleet;
 assert(firstFleet, 'a live pirate contact starts the common native fleet engine');
 assert.equal(scenario.arrivedCount, 4);
@@ -157,10 +161,9 @@ assert(minerShip, 'the campaign has a physical miner for this test');
 const miner = { ...entry('npc-1', 'npc', 0), draft: { ...commonDraft, shipId: minerShip.id } };
 const minerScenario = createFleetScenarioRuntime(
   [entry('player', 'player', 0), miner],
-  arena,
+  field,
   5678,
-  'none',
-  'empty'
+  'none'
 );
 assert.equal(minerScenario.fleet, null);
 assert.equal(minerScenario.worldContacts.length, 2);
@@ -176,10 +179,9 @@ const defenderScenario = createFleetScenarioRuntime(
     entry('npc-1', 'npc', 0),
     entry('security-drone:test-1', 'drone', 0),
   ],
-  arena,
+  field,
   9012,
-  'player-attacks-npc',
-  'empty'
+  'player-attacks-npc'
 );
 assert(defenderScenario.fleet, 'explicit player attack starts native combat');
 assert(
@@ -191,10 +193,9 @@ assert(
 // The scripted incident must not immediately restart an identical duel.
 const recovery = createFleetScenarioRuntime(
   [entry('player', 'player', 0), entry('npc-1', 'npc', 0)],
-  arena,
+  field,
   2345,
-  'player-attacks-npc',
-  'empty'
+  'player-attacks-npc'
 );
 assert(recovery.fleet, 'the incident enters the shared native duel');
 recovery.fleet.duels[0].surrender('attacker');
@@ -209,6 +210,55 @@ recovery.tick(0.08);
 assert.equal(recovery.fleet, null, 'resolved scripted contact cannot endlessly restart');
 assert.equal(recovery.completedEncounters, 1);
 
+// Exercise the actual generated field, cargo allocator, worker and exit in one session.
+const { createDuelField } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/duel-arena-presets.ts'
+);
+const { createFleetScenarioWorldBridge } = loadStandaloneTypeScriptModule(
+  root,
+  'src/ui/start/fleet-scenario-world-bridge.ts'
+);
+for (const kind of ['asteroid_field', 'scrap_field']) {
+  const seed = 1234;
+  const site = createDuelField(kind, seed);
+  const role = kind === 'asteroid_field' ? 'mining' : 'salvage';
+  const hull = ships.getAllShipDefinitions().find((ship) => ship.role === role);
+  const worker = { ...entry('npc-1', 'npc', 0), draft: { ...commonDraft, shipId: hull.id } };
+  const world = createFleetScenarioWorldBridge(
+    [entry('player', 'player', 0), worker],
+    site.arena,
+    seed,
+    site
+  );
+  const npc = world.npc(worker.id);
+  npc.cargo = {};
+  npc.cargoCapacity = 6;
+  const stock = () =>
+    site.mining
+      ? site.mining.asteroids
+          .flatMap((rock) => rock.deposits)
+          .reduce((sum, deposit) => sum + deposit.oreRemaining, 0)
+      : site.salvage.wrecks
+          .flatMap((wreck) => wreck.resources)
+          .reduce((sum, resource) => sum + resource.remainingAmount, 0);
+  const before = stock();
+  world.deploy('player');
+  world.deploy(worker.id);
+  let working = false;
+  for (let frame = 0; frame < 5000 && world.isActive(worker.id); frame++) {
+    world.tick(0.08, null);
+    const contact = world.contacts().find((ship) => ship.id === worker.id);
+    working ||= Boolean(contact?.miningTarget || contact?.salvageTarget?.scanProgress === null);
+  }
+  assert(working, kind + ' exposes the active work effect');
+  assert.equal(before - stock(), 6, kind + ' loses the actual recovered quantity');
+  assert.equal(
+    Object.values(npc.cargo).reduce((sum, amount) => sum + amount, 0),
+    6
+  );
+  assert.equal(world.isActive(worker.id), false, kind + ' worker leaves the field');
+}
 console.log(
   'PASS FleetCombat lab: fixed player, persistent native actors, true NPC world behavior and observed drone entry'
 );

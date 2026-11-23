@@ -1,3 +1,9 @@
+import { economyResources } from '../../data/economy/economy-resources';
+import { sectorPorts } from '../../data/ports/sector-ports';
+import { createEconomyMarketService } from '../../systems/economy/market-service';
+import { createPlayerTradeService } from '../../systems/economy/player-trade-service';
+import { createEconomySimulationService } from '../../systems/economy/economy-simulation-service';
+import { createNpcEconomyService } from '../../systems/economy/npc-economy-service';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { SalvageField } from '../../core/salvage-types';
@@ -13,8 +19,25 @@ export function createFleetWorldWorkers(
   seed: number,
   width: number,
   height: number,
-  trafficFor: (id: string) => readonly FieldRouteObstacle[]
+  trafficFor: (id: string) => readonly FieldRouteObstacle[],
+  onDeparture: (id: string) => void
 ) {
+  const npcs = states.map((entry) => entry.npc);
+  const markets = createEconomyMarketService(sectorPorts, economyResources);
+  const trade = createPlayerTradeService(markets);
+  const simulation = createEconomySimulationService(
+    markets,
+    trade.player,
+    economyResources,
+    seed,
+    npcs
+  );
+  const economy = createNpcEconomyService(markets, simulation, economyResources, npcs);
+  const depart = (npc: SectorNpcState) => {
+    const dispatched = economy.dispatchLoadedWorker(npc);
+    if (dispatched) onDeparture(npc.id);
+    return dispatched;
+  };
   const miners = createNpcLocalMiningService({
     locationId: 'duel',
     seed,
@@ -24,19 +47,8 @@ export function createFleetWorldWorkers(
     getTrafficObstacles: (id) => trafficFor(id),
     miners: states.filter((entry) => entry.npc.job === 'miner').map((entry) => entry.npc),
     getAsteroids: () => rocks,
-    mine: (npc, resourceId, requested) => {
-      const capacity = Math.max(
-        0,
-        npc.cargoCapacity - Object.values(npc.cargo).reduce((a, b) => a + b, 0)
-      );
-      const accepted = Math.min(requested, capacity);
-      if (accepted > 0) npc.cargo[resourceId] = (npc.cargo[resourceId] ?? 0) + accepted;
-      return accepted;
-    },
-    depart: (npc) => {
-      if (npc.autonomy) npc.autonomy.phase = 'ready';
-      return true;
-    },
+    mine: economy.mineLocal,
+    depart,
   });
   const salvagers = salvageField
     ? createNpcLocalSalvageService({
@@ -45,16 +57,8 @@ export function createFleetWorldWorkers(
         resolveLocalCollisions: false,
         getTrafficObstacles: (id) => trafficFor(id),
         salvagers: states.filter((entry) => entry.npc.job === 'salvager').map((entry) => entry.npc),
-        recover: (npc, resourceId, requested) => {
-          const used = Object.values(npc.cargo).reduce((sum, amount) => sum + amount, 0);
-          const accepted = Math.max(0, Math.min(requested, npc.cargoCapacity - used));
-          if (accepted > 0) npc.cargo[resourceId] = (npc.cargo[resourceId] ?? 0) + accepted;
-          return accepted;
-        },
-        depart: (npc) => {
-          if (npc.autonomy) npc.autonomy.phase = 'ready';
-          return true;
-        },
+        recover: economy.salvageLocal,
+        depart,
       })
     : null;
   return { miners, salvagers };

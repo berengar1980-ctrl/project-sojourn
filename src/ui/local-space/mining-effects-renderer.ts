@@ -10,6 +10,15 @@ import type { MapCamera, ScreenPoint } from '../map/map-camera';
 import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { hashId } from './local-space-visual-hash';
 
+type MiningTarget = Pick<LocalAsteroidView, 'position' | 'radius'>;
+type MiningEffectModel = Pick<
+  LocalSpaceViewModel,
+  'combat' | 'laserActive' | 'miningImpact' | 'chunks'
+> & {
+  ship: Pick<LocalNpcShipView, 'hardpoints'>;
+  miningTarget: MiningTarget | null;
+};
+
 function fractional(value: number): number {
   return value - Math.floor(value);
 }
@@ -42,9 +51,11 @@ export class MiningEffectsRenderer {
    * drawing routines. Only the input ship/target/ore state differs.
    */
   drawNpcMining(
-    model: LocalSpaceViewModel,
-    npc: LocalNpcShipView,
-    asteroid: LocalAsteroidView,
+    npc: Pick<
+      LocalNpcShipView,
+      'id' | 'position' | 'headingRadians' | 'hardpoints' | 'nominalLengthMeters' | 'oreCollection'
+    >,
+    asteroid: MiningTarget,
     geometry: ShipScreenGeometry,
     width: number,
     height: number,
@@ -92,20 +103,12 @@ export class MiningEffectsRenderer {
         tractorActive: true,
       });
     }
-    const workModel: LocalSpaceViewModel = {
-      ...model,
+    const workModel: MiningEffectModel = {
+      miningTarget: asteroid,
       combat: null,
       laserActive: true,
       miningImpact: impact,
-      ship: {
-        ...model.ship,
-        position: npc.position,
-        headingRadians: npc.headingRadians,
-        nominalLengthMeters: npc.nominalLengthMeters,
-        spriteUrl: npc.spriteUrl,
-        spriteAspectRatio: npc.spriteAspectRatio,
-        hardpoints: npc.hardpoints,
-      },
+      ship: npc,
       chunks,
     };
     this.drawTractorFields(workModel, geometry, width, height, timeSeconds, 'below');
@@ -119,7 +122,7 @@ export class MiningEffectsRenderer {
   }
 
   drawMining(
-    model: LocalSpaceViewModel,
+    model: MiningEffectModel,
     geometry: ShipScreenGeometry,
     viewportWidth: number,
     viewportHeight: number,
@@ -182,7 +185,7 @@ export class MiningEffectsRenderer {
   }
 
   drawTractorFields(
-    model: LocalSpaceViewModel,
+    model: MiningEffectModel,
     geometry: ShipScreenGeometry,
     viewportWidth: number,
     viewportHeight: number,

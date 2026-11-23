@@ -1,16 +1,16 @@
+import type { DuelField } from '../../systems/combat/duel-arena-presets';
 import { getShipDefinition } from '../../systems/ships';
 import type { WorldPoint } from '../../core/world-types';
 import { npcMayTargetNpc } from '../../systems/npcs/npc-combat-ai';
 import {
   createConflictManager,
-  type ConflictParticipant,
+  npcConflictParticipant,
 } from '../../systems/combat/fleet-conflict-manager';
 import { createDynamicFleetCombat } from '../../systems/combat/dynamic-fleet-combat';
 import type {
   NativeDuelShip,
   ParallelNativeDuels,
 } from '../../systems/combat/parallel-native-duels';
-import type { StrategicCombatArenaOptions } from '../../systems/combat/strategic-combat-types';
 import { duelCombatant } from './duel-combatant-setup';
 import { createFleetScenarioWorldBridge } from './fleet-scenario-world-bridge';
 import type { FleetScenarioIncident, FleetScenarioShip } from './fleet-scenario-roster';
@@ -81,28 +81,6 @@ function firstHostilePair(
   return null;
 }
 
-function participant(ship: FleetScenarioShip): ConflictParticipant {
-  if (ship.group === 'player') return { id: ship.id, role: 'player' };
-  if (ship.group === 'drone') return { id: ship.id, role: 'drone', armed: true };
-  if (ship.group === 'pirates-yellow' || ship.group === 'pirates-red') {
-    return { id: ship.id, role: 'pirate', pirateGroup: ship.group };
-  }
-  const definition = getShipDefinition(ship.draft.shipId);
-  return {
-    id: ship.id,
-    role: 'npc',
-    civilianRole:
-      definition?.role === 'patrol'
-        ? 'patrol'
-        : definition?.role === 'freighter'
-          ? 'freighter'
-          : definition?.role === 'mining'
-            ? 'miner'
-            : 'scavenger',
-    armed: ship.draft.weapons.some(Boolean),
-  };
-}
-
 function nativeShip(ship: FleetScenarioShip, index: number): NativeDuelShip {
   const definition = getShipDefinition(ship.draft.shipId);
   if (!definition) throw new Error('Unbekanntes FleetCombat-Schiff: ' + ship.draft.shipId);
@@ -159,12 +137,11 @@ export interface FleetScenarioRuntime {
 // eslint-disable-next-line max-lines-per-function
 export function createFleetScenarioRuntime(
   roster: readonly FleetScenarioShip[],
-  arena: StrategicCombatArenaOptions,
+  field: DuelField,
   seed: number,
-  incident: FleetScenarioIncident,
-  mapKind:
-    'empty' | 'scattered' | 'asteroid_field' | 'scrap_scattered' | 'scrap_field' = 'asteroid_field'
+  incident: FleetScenarioIncident
 ): FleetScenarioRuntime {
+  const { arena } = field;
   if (roster.filter((ship) => ship.group === 'player').length !== 1)
     throw new Error('FleetCombat simulation requires exactly one player ship');
   const all = new Map(roster.map((ship, index) => [ship.id, nativeShip(ship, index)]));
@@ -173,10 +150,16 @@ export function createFleetScenarioRuntime(
     roster,
     arena,
     seed,
-    mapKind,
+    field,
     new Map([...all].map(([id, ship]) => [id, ship.setup.hullHp]))
   );
-  const conflict = createConflictManager(roster.map(participant));
+  const conflict = createConflictManager(
+    roster.map((ship) =>
+      ship.group === 'player'
+        ? { id: ship.id, role: 'player' }
+        : npcConflictParticipant(world.npc(ship.id)!)
+    )
+  );
   const identities = new Map(roster.map((ship) => [ship.id, ship.id]));
   const arrived = new Map<string, NativeDuelShip>();
   const joined = new Set<string>();
@@ -271,7 +254,7 @@ export function createFleetScenarioRuntime(
       return world.contacts();
     },
     navigatePlayer(point) {
-      if (!fleet) world.navigatePlayer(point);
+      world.navigatePlayer(point);
     },
     get playerNavigation() {
       return world.playerNavigation();
@@ -280,16 +263,17 @@ export function createFleetScenarioRuntime(
       if (!Number.isFinite(seconds) || seconds <= 0) return;
       const dt = Math.min(seconds, 0.08);
       elapsedSeconds += dt;
+      deploy();
       const pirateThreat = [...joined]
         .filter((id) => world.npc(id)?.pirate)
         .map((id) => fleet?.getActor(id)?.position)
         .find((position) => position !== undefined);
       const threat = pirateThreat ?? null;
       world.tick(dt, threat);
-      deploy();
       if (fleet && !fleet.getSnapshot().finished) {
         fleet.setBystanders(world.contacts().filter((contact) => !joined.has(contact.id)));
-        fleet.tick(dt);
+        const frame = fleet.tick(dt);
+        world.syncCombatField(frame.duels[0]!);
         for (const id of joined) {
           const actor = fleet.getActor(id);
           if (actor) world.syncFromCombat(actor);
@@ -317,7 +301,9 @@ export function createFleetScenarioRuntime(
             completedPairs.add([participants[i], participants[j]].join('|'));
           }
         }
-        for (const id of joined) world.releaseCombat(id);
+        const escaped = new Set(fleet.getSnapshot().escapedShipIds);
+        for (const id of joined)
+          world.releaseCombat(id, escaped.has(id) || (all.get(id)?.setup.hullHp ?? 0) <= 0);
         joined.clear();
         fleet = null;
         completedEncounters++;

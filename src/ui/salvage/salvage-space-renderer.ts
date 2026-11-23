@@ -18,7 +18,7 @@ import { drawDistressTow } from './distress-tow-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
-import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type ScreenPoint } from '../map/map-camera';
 import { PvPMapCamera } from '../combat/pvp-map-camera';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { ShipEngineEffectsRenderer } from '../ships/ship-engine-effects-renderer';
@@ -31,7 +31,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
   private sharedCombatRenderer: FleetNativeCombatRenderer | null = null;
   private sharedCombatActive = false;
-  protected readonly camera: MapCamera;
+  protected readonly camera: PvPMapCamera;
   protected readonly background: SpaceBackgroundRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
   protected readonly maneuverEffects = new ShipManeuverEffectsRenderer();
@@ -74,26 +74,26 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
         this.sharedCombatRenderer = new FleetNativeCombatRenderer(
           this.canvas,
           model.combat,
-          (pose, width, height, timeSeconds) => {
-            (this.camera as PvPMapCamera).restorePose(pose);
+          (_pose, width, height, timeSeconds) => {
             const battle = this.model.combat;
             if (!battle) return;
             const active = new Set([battle.attacker.id, battle.defender.id]);
+            for (const duel of this.model.fleet?.duels ?? []) {
+              active.add(duel.attacker.id);
+              active.add(duel.defender.id);
+            }
+            for (const duel of this.model.fleet?.supporters ?? []) active.add(duel.attacker.id);
             this.drawNpcShips(width, height, timeSeconds, active);
-          }
+          },
+          this.camera.combat
         );
-        this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
-      } else {
-        if (resumedCombat) {
-          this.sharedCombatRenderer.beginEncounter(model.combat);
-          this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
-        }
-        this.sharedCombatRenderer.update(model.combat);
+      } else if (resumedCombat) {
+        this.sharedCombatRenderer.beginEncounter(model.combat);
       }
+      this.sharedCombatRenderer.updateEncounter(model.combat, model.fleet);
       return;
     }
     if (this.sharedCombatRenderer && this.sharedCombatActive) {
-      (this.camera as PvPMapCamera).restorePose(this.sharedCombatRenderer.cameraPose());
       this.sharedCombatRenderer.suspend();
     }
     this.sharedCombatActive = false;
@@ -113,7 +113,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.canvas.width = Math.round(rect.width * ratio);
     this.canvas.height = Math.round(rect.height * ratio);
     this.context.setTransform(ratio, 0, 0, ratio, 0, 0);
-    (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
+    this.camera.setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
       centerSalvageCamera(this.camera, this.model.ship.position, rect.width, rect.height);
       this.hasFitted = true;

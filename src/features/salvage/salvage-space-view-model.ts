@@ -1,3 +1,4 @@
+import type { ParallelNativeDuelSnapshot } from '../../systems/combat/parallel-native-duels';
 import type { SecurityDroneSnapshot } from '../../systems/operations/asteroid-security-drone';
 import type { DistressRammingState } from '../../systems/salvage/distress-ramming-physics';
 import type { DistressTowState } from '../../systems/salvage/distress-tow-physics';
@@ -119,6 +120,7 @@ export interface SalvageSpaceViewModel {
   readonly ship: SalvageShipView;
   readonly shieldImpacts: readonly ShieldImpactEffect[];
   readonly npcShips: readonly SalvageNpcShipView[];
+  readonly fleet?: ParallelNativeDuelSnapshot | null;
   readonly npcCombats?: readonly StrategicCombatSnapshot[];
   readonly securityDrone?: SecurityDroneSnapshot;
   readonly wrecks: readonly SalvageWreckView[];

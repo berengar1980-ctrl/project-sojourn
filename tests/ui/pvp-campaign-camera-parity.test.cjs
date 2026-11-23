@@ -71,7 +71,13 @@ const fleetPanel = fs.readFileSync(
 const idleMap = fs.readFileSync(path.join(root, 'src/ui/start/fleet-idle-world-canvas.ts'), 'utf8');
 assert(fleetLobby.includes('createFleetIdleWorldCanvas('));
 assert(fleetLobby.includes('(point) => session.navigatePlayer(point)'));
-assert(fleetLobby.includes('...(initialCameraPose ? { initialCameraPose } : {})'));
+assert(fleetLobby.includes('const camera = new CombatCamera()'));
+assert(fleetPanel.includes('options.camera'));
+campaign.combat.pan(50, -30);
+assert.deepEqual(
+  campaign.worldToScreen(point, 1600, 900),
+  campaign.combat.project(point, 1600, 900, width, height)
+);
 assert(fleetLobby.includes('waiting.prepend(canvas)'));
 assert(fleetPanel.includes('makeCombatShell(options.root, options.canvas)'));
 assert(idleMap.includes('drawCombatAsteroids('));

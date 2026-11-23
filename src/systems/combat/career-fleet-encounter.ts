@@ -1,6 +1,7 @@
+import { npcMayInitiateAttack } from '../npcs/npc-combat-ai';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
-import { createConflictManager, type ConflictParticipant } from './fleet-conflict-manager';
+import { createConflictManager, npcConflictParticipant } from './fleet-conflict-manager';
 import { createDynamicFleetCombat } from './dynamic-fleet-combat';
 import { buildCombatArena } from './strategic-combat-arena';
 import { hashSeed } from './strategic-combat-geometry';
@@ -19,23 +20,6 @@ export interface CareerFleetWorldPose {
   readonly positionOf: (npc: SectorNpcState) => WorldPoint;
   readonly headingOf: (npc: SectorNpcState) => number;
   readonly playerPosition?: WorldPoint;
-}
-
-function participant(npc: SectorNpcState): ConflictParticipant {
-  if (npc.id.startsWith('security-drone:')) return { id: npc.id, role: 'drone', armed: true };
-  if (npc.pirate || npc.job === 'pirate') {
-    return {
-      id: npc.id,
-      role: 'pirate',
-      pirateGroup: npc.factionId ?? npc.pirateMark ?? 'pirates',
-    };
-  }
-  return {
-    id: npc.id,
-    role: 'npc',
-    civilianRole: npc.job === 'salvager' ? 'scavenger' : npc.job,
-    armed: npc.job === 'patrol' || (npc.installedComponents?.weapon?.length ?? 0) > 0,
-  };
 }
 
 export interface CareerFleetEncounter {
@@ -71,7 +55,9 @@ function createSectorFleetEncounter(
   const sessionArena = buildCombatArena(firstSetup, enemySetup, seed, arena);
   const conflict = createConflictManager([
     ...(firstIsPlayer ? [{ id: firstSetup.id, role: 'player' as const }] : []),
-    ...allNpcs.filter((npc) => npc.id !== firstSetup.id || !firstIsPlayer).map(participant),
+    ...allNpcs
+      .filter((npc) => npc.id !== firstSetup.id || !firstIsPlayer)
+      .map(npcConflictParticipant),
   ]);
   conflict.recordAttack({ attackerId: initiator, victimId: victim, witnessedBy: [] });
   // Native combat uses the existing field coordinates when supplied. In the
@@ -118,6 +104,9 @@ function createSectorFleetEncounter(
         setup: enemySetup,
         ...(enemyPosition ? { position: enemyPosition } : {}),
         ...(worldPose ? { headingRadians: worldPose.headingOf(enemy) } : {}),
+        ...(arena?.defenderHeadingRadians === undefined
+          ? {}
+          : { headingRadians: arena.defenderHeadingRadians }),
       },
     ],
     sessionArena,
@@ -165,14 +154,14 @@ function createSectorFleetEncounter(
           continue;
         const spot = npcPosition(npc);
         if (Math.hypot(spot.x - position.x, spot.y - position.y) > CONTACT_RANGE) continue;
-        const kind = participant(npc);
+        const kind = npcConflictParticipant(npc);
         if (
           kind.role !== 'pirate' &&
           kind.role !== 'drone' &&
           !(kind.role === 'npc' && kind.civilianRole === 'patrol')
         )
           continue;
-        if (kind.role === 'pirate' && npc.aggression < 60) continue;
+        if (kind.role !== 'drone' && !npcMayInitiateAttack(npc)) continue;
         // A nearby patrol or drone can now observe the already ongoing attack.
         conflict.recordAttack({
           attackerId: initiator,

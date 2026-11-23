@@ -13,6 +13,7 @@ export function fleetNpcDestination(
   width: number,
   height: number
 ): WorldPoint {
+  if (npc.job === 'freighter') return freightExit;
   const retreatFrom =
     danger ?? (npc.job === 'patrol' && npcDefenseReaction(npc) === 'flee' ? threat : null);
   if (retreatFrom && npcDefenseReaction(npc) === 'flee') {
@@ -23,5 +24,5 @@ export function fleetNpcDestination(
   }
   const patrolReady = npc.job === 'patrol' && npcDefenseReaction(npc) === 'fight';
   if (threat && (npc.pirate || patrolReady) && npcMayInitiateAttack(npc)) return threat;
-  return npc.job === 'freighter' ? freightExit : waypoint;
+  return waypoint;
 }

@@ -1,3 +1,4 @@
+import { syncMiningCombatField } from '../systems/combat/field-combat-arena';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { createNpcLocalMiningService } from '../systems/npcs/npc-local-mining-service';
 import {
@@ -10,7 +11,10 @@ import {
   recordNpcAsteroidTheft,
 } from './game-controller-field-miner-events';
 import { tickFieldPirates, tickFieldSecurity } from './game-controller-security';
-import type { CombatVisualAsteroid } from '../systems/combat/strategic-combat-types';
+import type {
+  CombatVisualAsteroid,
+  StrategicCombatSnapshot,
+} from '../systems/combat/strategic-combat-types';
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
 
@@ -112,6 +116,40 @@ function syncCombatWreckPoses(
   }
 }
 
+function setFieldBystanders(
+  context: ControllerRuntimeContext,
+  field: AsteroidFieldRuntime,
+  activeCombat: StrategicCombatSnapshot
+): void {
+  const fighters = new Set([activeCombat.attacker.id, activeCombat.defender.id]);
+  const bystanders = [
+    ...field.miners.ships.map((ship) => ({
+      id: ship.npcId,
+      shipId: ship.shipId,
+      position: { ...ship.position },
+      headingRadians: ship.headingRadians,
+    })),
+    ...field.pirates.snapshot(context.economy.sectorNpcs.npcs).map((ship) => ({
+      id: ship.npcId,
+      shipId: ship.shipId,
+      position: ship.position,
+      headingRadians: ship.headingRadians,
+    })),
+    ...context.economy.sectorNpcs.npcs
+      .filter((npc) => npc.id === 'security-drone:' + field.locationId)
+      .filter((npc) => npc.hullHp > 0 && field.drone.snapshot().operational)
+      .map((npc) => ({
+        id: npc.id,
+        shipId: npc.shipId,
+        position: field.drone.snapshot().position,
+        headingRadians: field.drone.headingRadians,
+      })),
+  ].filter((ship) => !fighters.has(ship.id));
+  const fleet = context.engagements.activePlayerFleet?.();
+  if (fleet) fleet.setBystanders(bystanders);
+  else context.engagements.activePlayerCombat()?.setBystanders(bystanders);
+}
+
 /** All field operations advance on the campaign clock, not only during local rendering. */
 export function advanceControllerFieldWorld(
   context: ControllerRuntimeContext,
@@ -130,48 +168,12 @@ export function advanceControllerFieldWorld(
     if (activeCombat) {
       // NPC miners and passing pirates are solid ship bodies inside embedded
       // combat, but they are not combat targets or alternate PvP combatants.
-      const fighters = new Set([activeCombat.attacker.id, activeCombat.defender.id]);
-      const bystanders = [
-        ...field.miners.ships.map((ship) => ({
-          id: ship.npcId,
-          shipId: ship.shipId,
-          position: { ...ship.position },
-          headingRadians: ship.headingRadians,
-        })),
-        ...field.pirates.snapshot(context.economy.sectorNpcs.npcs).map((ship) => ({
-          id: ship.npcId,
-          shipId: ship.shipId,
-          position: ship.position,
-          headingRadians: ship.headingRadians,
-        })),
-        ...context.economy.sectorNpcs.npcs
-          .filter((npc) => npc.id === 'security-drone:' + field.locationId)
-          .filter((npc) => npc.hullHp > 0 && field.drone.snapshot().operational)
-          .map((npc) => ({
-            id: npc.id,
-            shipId: npc.shipId,
-            position: field.drone.snapshot().position,
-            headingRadians: field.drone.headingRadians,
-          })),
-      ].filter((ship) => !fighters.has(ship.id));
-      context.engagements.activePlayerCombat()?.setBystanders(bystanders);
+      setFieldBystanders(context, field, activeCombat);
       // The duel advances physical asteroids; copy their authoritative poses
       // instead of integrating the same bodies a second time.
       const combatAsteroids = activeCombat.arena.asteroids ?? [];
       const bodies = new Map(combatAsteroids.map((body) => [body.id, body]));
-      for (let index = field.instance.asteroids.length - 1; index >= 0; index -= 1) {
-        const asteroid = field.instance.asteroids[index]!;
-        const body = bodies.get(asteroid.id);
-        if (!body) {
-          // Thrown or destroyed bodies must not remain as ghost obstacles.
-          field.instance.asteroids.splice(index, 1);
-          continue;
-        }
-        asteroid.position = { ...body.position };
-        asteroid.rotation = body.rotation;
-        asteroid.physics.velocity = { ...body.velocity };
-        asteroid.physics.angularVelocity = body.angularVelocity;
-      }
+      syncMiningCombatField(field.instance.asteroids, bodies);
       syncCombatWreckPoses(field, bodies);
       context.state.localSpace?.syncCombatPose(
         activeCombat.attacker.position,

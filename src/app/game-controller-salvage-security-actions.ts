@@ -13,6 +13,7 @@ export function salvageSecurityActions(context: ControllerRuntimeContext) {
       careerSalvageDrone(context, field),
     resolvePirateTraffic: (field: Parameters<typeof careerSalvagePirates>[1]) =>
       careerSalvagePirates(context, field),
+    getFleet: () => context.engagements.activePlayerFleet()?.getSnapshot() ?? null,
     getNpcCombats: () => context.engagements.activeNpcCombatSnapshots?.() ?? [],
     onUnauthorizedSalvage: (
       field: Parameters<typeof reportUnauthorizedWreckSalvage>[1],

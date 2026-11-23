@@ -12,9 +12,13 @@ export interface FleetWorldContact extends FleetWorldPose {
   readonly shipId: string;
   readonly name: string;
   readonly shieldImpacts?: readonly ShieldImpactEffect[];
-  readonly miningBeamTarget?: WorldPoint;
-  readonly miningTargetRadius?: number;
-  readonly miningOreCollection?: {
+  readonly miningTarget?: { readonly position: WorldPoint; readonly radius: number };
+  readonly salvageTarget?: {
+    readonly position: WorldPoint;
+    readonly radius: number;
+    readonly scanProgress: number | null;
+  };
+  readonly oreCollection?: {
     readonly resourceId: string;
     readonly remainingSeconds: number;
     readonly durationSeconds: number;

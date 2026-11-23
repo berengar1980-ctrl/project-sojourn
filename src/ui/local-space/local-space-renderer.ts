@@ -12,7 +12,7 @@ import type {
 } from '../../features/local-space/local-space-view-model';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
-import { type MapCamera, type ScreenPoint } from '../map/map-camera';
+import { type ScreenPoint } from '../map/map-camera';
 import { PvPMapCamera } from '../combat/pvp-map-camera';
 import { drawLocalSpaceExitGate } from '../map/local-space-exit-gate';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
@@ -35,7 +35,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected readonly context: CanvasRenderingContext2D;
   private sharedCombatRenderer: FleetNativeCombatRenderer | null = null;
   private sharedCombatActive = false;
-  protected readonly camera: MapCamera;
+  protected readonly camera: PvPMapCamera;
   protected readonly miningEffects: MiningEffectsRenderer;
   protected readonly engineEffects = new ShipEngineEffectsRenderer();
   protected readonly hardpointDebug = new ShipHardpointDebugRenderer();
@@ -88,11 +88,15 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
         this.sharedCombatRenderer = new FleetNativeCombatRenderer(
           this.canvas,
           model.combat,
-          (pose, width, height, timeSeconds) => {
-            (this.camera as PvPMapCamera).restorePose(pose);
+          (_pose, width, height, timeSeconds) => {
             const battle = this.model.combat;
             if (!battle) return;
             const active = new Set([battle.attacker.id, battle.defender.id]);
+            for (const duel of this.model.fleet?.duels ?? []) {
+              active.add(duel.attacker.id);
+              active.add(duel.defender.id);
+            }
+            for (const duel of this.model.fleet?.supporters ?? []) active.add(duel.attacker.id);
             this.drawNpcShips(width, height, timeSeconds, active);
             // Native combat renders the drone at its authoritative hitbox.
             // Never paint a second, potentially stale drone over that fighter.
@@ -114,21 +118,17 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
               width,
               height
             );
-          }
+          },
+          this.camera.combat
         );
-        this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
-      } else {
-        if (resumedCombat) {
-          this.sharedCombatRenderer.beginEncounter(model.combat);
-          this.sharedCombatRenderer.restoreCameraPose((this.camera as PvPMapCamera).pose());
-        }
-        this.sharedCombatRenderer.update(model.combat);
+      } else if (resumedCombat) {
+        this.sharedCombatRenderer.beginEncounter(model.combat);
       }
+      this.sharedCombatRenderer.updateEncounter(model.combat, model.fleet);
       // The native PvP renderer owns combat; career bystanders remain in its scene overlay.
       return;
     }
     if (this.sharedCombatRenderer && this.sharedCombatActive) {
-      (this.camera as PvPMapCamera).restorePose(this.sharedCombatRenderer.cameraPose());
       this.sharedCombatRenderer.suspend();
     }
     this.sharedCombatActive = false;
@@ -143,7 +143,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     const ratio = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     resizeMapCanvasBackingStore(this.canvas, this.context, rect.width, rect.height, ratio);
 
-    (this.camera as PvPMapCamera).setViewDimensions(rect.width, rect.height);
+    this.camera.setViewDimensions(rect.width, rect.height);
     if (!this.hasFitted) {
       this.camera.fit(rect.width, rect.height);
       this.hasFitted = true;

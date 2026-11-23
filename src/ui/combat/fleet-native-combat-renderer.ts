@@ -24,7 +24,10 @@ import type {
 } from './strategic-combat-renderer-types';
 import type { FleetDisplayPreferences } from './fleet-display-menu';
 import { FleetEngagementMarkerPainter } from './fleet-engagement-markers';
-import type { NativeFleetEngagement } from '../../systems/combat/parallel-native-duels';
+import type {
+  ParallelNativeDuelSnapshot,
+  NativeFleetEngagement,
+} from '../../systems/combat/parallel-native-duels';
 import { ramCameraImpulse } from './combat-ram-effect-renderer';
 import { CombatEffectClock } from './combat-effect-clock';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
@@ -59,7 +62,6 @@ export class FleetNativeCombatRenderer {
   private readonly context: CanvasRenderingContext2D;
   private readonly spaceBodies: ProceduralSpaceBodyRenderer;
   private readonly asteroidBackdrop: CombatAsteroidBackdrop;
-  private readonly camera = new CombatCamera();
   private readonly sprites = new FleetNativeShipSprites(() => this.draw());
   private readonly damageParticles = new Map<string, DistressDamageParticles>();
   private readonly paintedShips = new Set<string>();
@@ -91,7 +93,8 @@ export class FleetNativeCombatRenderer {
       width: number,
       height: number,
       timeSeconds: number
-    ) => void
+    ) => void,
+    private readonly camera = new CombatCamera()
   ) {
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Strategic combat canvas context unavailable.');
@@ -121,6 +124,15 @@ export class FleetNativeCombatRenderer {
   /** Pause native drawing while the normal mining/salvage scene owns the canvas. */
   suspend(): void {
     this.active = false;
+  }
+  updateEncounter(model: StrategicCombatSnapshot, fleet?: ParallelNativeDuelSnapshot | null): void {
+    this.update(
+      model,
+      fleet ? [...fleet.duels.slice(1), ...fleet.supporters] : [],
+      fleet ? fleet.duels.length - 1 : undefined,
+      fleet?.escapedShipIds,
+      fleet?.engagements
+    );
   }
   update(
     model: StrategicCombatSnapshot,

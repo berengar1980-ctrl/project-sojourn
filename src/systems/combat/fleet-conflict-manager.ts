@@ -1,3 +1,4 @@
+import type { SectorNpcState } from '../../core/npc-types';
 /**
  * Situational combat hostility independent of ship movement and the native 1v1 AI.
  * All combatants are addressed by unique ship IDs (not a generic "npc" faction).
@@ -136,5 +137,22 @@ export function createConflictManager(
       directed.clear();
     },
     hostility: () => isHostile,
+  };
+}
+
+export function npcConflictParticipant(npc: SectorNpcState): ConflictParticipant {
+  if (npc.id.startsWith('security-drone:')) return { id: npc.id, role: 'drone', armed: true };
+  if (npc.pirate || npc.job === 'pirate') {
+    return {
+      id: npc.id,
+      role: 'pirate',
+      pirateGroup: npc.factionId ?? npc.pirateMark ?? 'pirates',
+    };
+  }
+  return {
+    id: npc.id,
+    role: 'npc',
+    civilianRole: npc.job === 'salvager' ? 'scavenger' : npc.job,
+    armed: npc.job === 'patrol' || (npc.installedComponents?.weapon?.length ?? 0) > 0,
   };
 }

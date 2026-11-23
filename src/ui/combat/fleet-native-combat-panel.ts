@@ -1,6 +1,4 @@
-import type { FleetWorldContact } from '../start/fleet-scenario-world-bridge';
-import type { CombatCameraPose } from './combat-camera';
-import { createFleetWorldContactOverlay } from './fleet-world-contact-overlay';
+import type { CombatCamera, CombatCameraPose } from './combat-camera';
 import type {
   StrategicCombatService,
   StrategicCombatSnapshot,
@@ -14,7 +12,6 @@ import { describeCombatStatus } from '../../systems/combat/combat-intent-labels'
 
 export interface FleetNativeCombatPanel {
   update(): void;
-  cameraPose(): CombatCameraPose;
   destroy(): void;
 }
 
@@ -22,7 +19,7 @@ interface FleetNativeCombatPanelOptions {
   readonly root: HTMLElement;
   /** Reuse the same physical canvas when an idle world becomes a battle. */
   readonly canvas?: HTMLCanvasElement;
-  readonly initialCameraPose?: CombatCameraPose;
+  readonly camera?: CombatCamera;
   readonly combat: StrategicCombatService;
   readonly onReturn: () => void;
   readonly encounterName?: string;
@@ -34,7 +31,12 @@ interface FleetNativeCombatPanelOptions {
   readonly spectator?: boolean;
   readonly isComplete?: () => boolean;
   /** Noncombat campaign NPCs are rendered by the native fleet canvas, not another scene. */
-  readonly worldContacts?: () => readonly FleetWorldContact[];
+  readonly drawWorldActors?: (
+    pose: CombatCameraPose,
+    width: number,
+    height: number,
+    timeSeconds: number
+  ) => void;
 }
 
 function percent(current: number, maximum: number): number {
@@ -314,7 +316,6 @@ function updateCombatActionButtons(
   if (surrenderButton) surrenderButton.disabled = model.winner !== null;
 }
 
-// eslint-disable-next-line max-lines-per-function
 export function createFleetNativeCombatPanel(
   options: FleetNativeCombatPanelOptions
 ): FleetNativeCombatPanel {
@@ -340,17 +341,10 @@ export function createFleetNativeCombatPanel(
   const renderer = new FleetNativeCombatRenderer(
     canvas,
     firstSnapshot,
-    options.worldContacts
-      ? createFleetWorldContactOverlay(
-          canvas,
-          options.worldContacts,
-          firstSnapshot.arena.width,
-          firstSnapshot.arena.height
-        )
-      : undefined
+    options.drawWorldActors,
+    options.camera
   );
-  if (options.initialCameraPose) renderer.restoreCameraPose(options.initialCameraPose);
-  const unbindCamera = bindCombatCamera(canvas, renderer);
+  const unbindCamera = options.camera ? undefined : bindCombatCamera(canvas, renderer);
   const resizeObserver = new ResizeObserver(() => renderer.resize());
   resizeObserver.observe(canvas);
 
@@ -415,12 +409,11 @@ export function createFleetNativeCombatPanel(
 
   return {
     update: render,
-    cameraPose: () => renderer.cameraPose(),
     destroy() {
       renderer.suspend();
       if (defeatReturnTimer !== null) clearTimeout(defeatReturnTimer);
       resizeObserver.disconnect();
-      unbindCamera();
+      unbindCamera?.();
       shell.remove();
     },
   };

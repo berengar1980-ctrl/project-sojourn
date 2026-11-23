@@ -181,15 +181,7 @@ export abstract class LocalSpaceSceneLayers {
         timeSeconds
       );
     } else if (npc.laserActive) {
-      this.miningEffects.drawNpcMining(
-        this.model,
-        npc,
-        target,
-        geometry,
-        width,
-        height,
-        timeSeconds
-      );
+      this.miningEffects.drawNpcMining(npc, target, geometry, width, height, timeSeconds);
     }
   }
   protected drawNpcMinerScan(

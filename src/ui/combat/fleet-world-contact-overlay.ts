@@ -1,3 +1,5 @@
+import { drawSalvageWorkEffect } from '../salvage/salvage-work-effect-renderer';
+import { drawTargetDetailScan } from '../local-operations/scan-effects';
 import { getShipDefinition } from '../../systems/ships';
 import { drawCombatShipBody, drawCombatShipCaption } from './combat-ship-detail-renderer';
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
@@ -5,10 +7,18 @@ import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { MiningEffectsRenderer } from '../local-space/mining-effects-renderer';
 import { PvPMapCamera } from './pvp-map-camera';
-import { drawFleetWorldMiningEffects } from './fleet-world-mining-effects';
 import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import { DRONE_DIAMETER_PX } from '../local-space/local-security-drone-visual';
 import type { FleetWorldContact } from '../start/fleet-scenario-world-bridge';
+
+function imageFor(url: string, images: Map<string, HTMLImageElement>): HTMLImageElement {
+  const existing = images.get(url);
+  if (existing) return existing;
+  const sprite = new Image();
+  sprite.src = url;
+  images.set(url, sprite);
+  return sprite;
+}
 
 /** Reuses exactly the combat sprite/lighting painter for moving noncombat NPCs. */
 export function createFleetWorldContactOverlay(
@@ -26,7 +36,7 @@ export function createFleetWorldContactOverlay(
   const miningEffects = new MiningEffectsRenderer(context, miningCamera);
   const images = new Map<string, HTMLImageElement>();
   // eslint-disable-next-line complexity
-  return (pose, width, height) => {
+  return (pose, width, height, timeSeconds) => {
     camera.restorePose(pose);
     miningCamera.setViewDimensions(width, height);
     miningCamera.restorePose(pose);
@@ -35,13 +45,10 @@ export function createFleetWorldContactOverlay(
       const definition = getShipDefinition(ship.shipId);
       const drone = ship.id.startsWith('security-drone:');
       if (!definition && !drone) continue;
-      const url = drone ? '/drones/security-drone-gc87r8.webp' : definition!.sprite.assetUrl;
-      let sprite = images.get(url);
-      if (!sprite) {
-        sprite = new Image();
-        sprite.src = url;
-        images.set(url, sprite);
-      }
+      const sprite = imageFor(
+        drone ? '/drones/security-drone-gc87r8.webp' : definition!.sprite.assetUrl,
+        images
+      );
       const length = drone
         ? DRONE_DIAMETER_PX * pose.zoom
         : (definition?.nominalLengthMeters ?? 60) * scale;
@@ -71,18 +78,44 @@ export function createFleetWorldContactOverlay(
           definition.sprite.hardpoints,
           geometry
         );
-      drawFleetWorldMiningEffects(
-        context,
-        ship,
-        definition ?? undefined,
-        geometry,
-        camera,
-        miningEffects,
-        width,
-        height,
-        arenaWidth,
-        arenaHeight
-      );
+      if (definition && ship.miningTarget) {
+        miningEffects.drawNpcMining(
+          {
+            ...ship,
+            nominalLengthMeters: definition.nominalLengthMeters,
+            hardpoints: definition.sprite.hardpoints,
+          },
+          ship.miningTarget,
+          geometry,
+          width,
+          height,
+          timeSeconds
+        );
+      }
+      const wreck = ship.salvageTarget;
+      if (definition && wreck) {
+        if (wreck.scanProgress !== null)
+          drawTargetDetailScan(
+            context,
+            miningCamera.worldToScreen(wreck.position, width, height),
+            Math.max(14, miningCamera.scale(wreck.radius) + 9),
+            wreck.scanProgress,
+            timeSeconds
+          );
+        else
+          drawSalvageWorkEffect(
+            context,
+            miningCamera,
+            geometry,
+            definition.sprite.hardpoints,
+            wreck.position,
+            false,
+            0,
+            width,
+            height,
+            timeSeconds
+          );
+      }
       drawCombatShipCaption(context, ship.name, 1, geometry);
     }
   };

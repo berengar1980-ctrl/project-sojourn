@@ -1,3 +1,5 @@
+import type { SalvageField } from '../../core/salvage-types';
+import type { NpcLocalSalvageService } from '../../systems/npcs/npc-local-salvage-service';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { NpcLocalMiningService } from '../../systems/npcs/npc-mining-targets';
@@ -11,6 +13,8 @@ export function fleetWorldContacts(
   pose: (id: string) => FleetWorldPose | null,
   miners: NpcLocalMiningService,
   rocks: readonly LocalAsteroid[],
+  salvagers: NpcLocalSalvageService | null,
+  field: SalvageField | null,
   shields: ReturnType<typeof createFleetWorldShieldContacts>,
   player: FleetWorldContact | null
 ): FleetWorldContact[] {
@@ -23,7 +27,21 @@ export function fleetWorldContacts(
     const target = miner?.laserActive
       ? rocks.find((rock) => rock.id === miner.targetAsteroidId)
       : undefined;
+    const salvager = salvagers?.ships.find((ship) => ship.npcId === id);
+    const wreck =
+      salvager && (salvager.salvageActive || salvager.phase === 'scanning')
+        ? field?.wrecks.find((part) => part.id === salvager.targetWreckId)
+        : undefined;
     contacts.push({
+      ...(wreck && salvager
+        ? {
+            salvageTarget: {
+              position: wreck.position,
+              radius: wreck.radius,
+              scanProgress: salvager.phase === 'scanning' ? salvager.scanProgress : null,
+            },
+          }
+        : {}),
       id,
       name: entry.npc.name,
       shipId: entry.npc.shipId,
@@ -31,9 +49,8 @@ export function fleetWorldContacts(
       shieldImpacts: shields.get(id),
       ...(target
         ? {
-            miningBeamTarget: target.position,
-            miningTargetRadius: target.radius,
-            ...(miner?.oreCollection ? { miningOreCollection: miner.oreCollection } : {}),
+            miningTarget: { position: target.position, radius: target.radius },
+            ...(miner?.oreCollection ? { oreCollection: miner.oreCollection } : {}),
           }
         : {}),
     });

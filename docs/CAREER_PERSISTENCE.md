@@ -1161,3 +1161,8 @@ Zusätzliche Mehrparteien-Flottenakteure, kurzfristige Feindschaften
 und ihre Zuordnungen sind noch nicht vollständig durch das
 Karriere-Kampfcheckpoint erfasst. Die Änderungen in diesem Branch
 beheben **nicht** diese separate Persistenzlücke.
+
+Das Fleet-Labor hält das erzeugte Asteroiden- oder Wrackfeld für die gesamte Sitzung.
+Arbeitsdienste buchen Fracht und Abflug über dieselben NPC-Wirtschaftstransaktionen wie
+in der Karriere. Feldbestände, Fracht und Kamera des Labors sind sitzungsgebunden.
+Die Karriere verwendet weiterhin ihre bestehenden Feld- und Wirtschaftseigentümer.

@@ -2,7 +2,7 @@ import type {
   StrategicCombatArenaOptions,
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-types';
-import { CombatCamera, type CombatCameraPose } from '../combat/combat-camera';
+import type { CombatCamera, CombatCameraPose } from '../combat/combat-camera';
 import { CombatAsteroidBackdrop } from '../combat/combat-asteroid-backdrop';
 import { drawCombatAsteroids } from '../combat/combat-asteroid-renderer';
 import { drawCombatBackground } from '../combat/combat-background-renderer';
@@ -22,21 +22,35 @@ import type { WorldPoint } from '../../core/world-types';
 export function createFleetIdleWorldCanvas(
   canvas: HTMLCanvasElement,
   arena: StrategicCombatArenaOptions,
+  camera: CombatCamera,
   contacts: () => readonly FleetWorldContact[],
   navigatePlayer: (target: WorldPoint) => void,
-  navigation: () => { route: readonly WorldPoint[]; target: WorldPoint | null }
+  navigation: () => { route: readonly WorldPoint[]; target: WorldPoint | null },
+  combatVisible: () => boolean
 ) {
   const context = canvas.getContext('2d');
   if (!context) throw new Error('Fleet idle world canvas unavailable');
-  const camera = new CombatCamera();
   const backdrop = new CombatAsteroidBackdrop(context, arena as StrategicCombatSnapshot['arena']);
   const bodies = new ProceduralSpaceBodyRenderer(context);
   const paintContacts = createFleetWorldContactOverlay(canvas, contacts, arena.width, arena.height);
+  const drawActors = (
+    pose: CombatCameraPose,
+    width: number,
+    height: number,
+    timeSeconds: number
+  ) => {
+    const flight = navigation();
+    if (flight.target && flight.route.length > 0)
+      drawNavigationRoutePoints(context, flight.route, flight.target, (point) =>
+        camera.project(point, width, height, arena.width, arena.height)
+      );
+    paintContacts(pose, width, height, timeSeconds);
+  };
   let active = false;
   let lastDrag: { x: number; y: number } | null = null;
   let dragged = false;
   const draw = (): void => {
-    if (!active) return;
+    if (!active || combatVisible()) return;
     const rect = canvas.getBoundingClientRect();
     const width = rect.width;
     const height = rect.height;
@@ -65,12 +79,7 @@ export function createFleetIdleWorldCanvas(
         context,
         camera.project(arena.exitPoint, width, height, arena.width, arena.height)
       );
-    const flight = navigation();
-    if (flight.target && flight.route.length > 0)
-      drawNavigationRoutePoints(context, flight.route, flight.target, (point) =>
-        camera.project(point, width, height, arena.width, arena.height)
-      );
-    paintContacts(camera.pose(), width, height, performance.now() / 1000);
+    drawActors(camera.pose(), width, height, performance.now() / 1000);
   };
   const pointerDown = (event: PointerEvent): void => {
     if (event.button !== 0) return;
@@ -111,11 +120,7 @@ export function createFleetIdleWorldCanvas(
   };
   return {
     draw,
-    pose: (): CombatCameraPose => camera.pose(),
-    restorePose(pose: CombatCameraPose): void {
-      camera.restorePose(pose);
-      draw();
-    },
+    drawActors,
     activate(): void {
       if (active) return;
       active = true;
