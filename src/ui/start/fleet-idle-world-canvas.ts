@@ -6,6 +6,7 @@ import { CombatCamera, type CombatCameraPose } from '../combat/combat-camera';
 import { CombatAsteroidBackdrop } from '../combat/combat-asteroid-backdrop';
 import { drawCombatAsteroids } from '../combat/combat-asteroid-renderer';
 import { drawCombatBackground } from '../combat/combat-background-renderer';
+import { drawCombatEscapeGate } from '../combat/combat-escape-gate-renderer';
 import { createFleetWorldContactOverlay } from '../combat/fleet-world-contact-overlay';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import type { FleetWorldContact } from './fleet-scenario-world-bridge';
@@ -53,6 +54,11 @@ export function createFleetIdleWorldCanvas(
       context,
       performance.now() / 1000
     );
+    if (arena.exitPoint)
+      drawCombatEscapeGate(
+        context,
+        camera.project(arena.exitPoint, width, height, arena.width, arena.height)
+      );
     paintContacts(camera.pose(), width, height, performance.now() / 1000);
   };
   const pointerDown = (event: PointerEvent): void => {
