@@ -30,6 +30,12 @@ export function createFleetWorldPlayerFlight(
   };
   let destination: WorldPoint | null = null;
   return {
+    route() {
+      return destination
+        ? [pose.position, ...(route.routeState?.points.slice(route.routeState.index) ?? [destination])]
+        : [];
+    },
+    destination: () => destination,
     invalidateRoute() {
       delete route.routeState;
     },
