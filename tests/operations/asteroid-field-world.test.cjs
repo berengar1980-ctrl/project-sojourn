@@ -69,6 +69,7 @@ for (let frame = 0; frame < 720; frame++) {
   });
 }
 assert.equal(backgroundSteps, 720 * 4, 'Distant fields use four bounded steps per quarter second');
+console.log('DEBUG MINER', JSON.stringify(field.miners.ships[0]), 'extracted', extracted);
 assert(extracted > 0, 'Miner must mine ore even when no player scene is mounted');
 const afterOre = field.instance.asteroids
   .flatMap((a) => a.deposits)
