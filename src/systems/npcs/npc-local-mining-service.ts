@@ -428,7 +428,8 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     }
     if (advanceMiner(runtime, ship, npc, dt)) runtime.ships.splice(index, 1);
   }
-  resolveMinerCollisions(runtime, combatantId);
+  if (runtime.options.resolveLocalCollisions !== false)
+    resolveMinerCollisions(runtime, combatantId);
 }
 
 export function createNpcLocalMiningService(
