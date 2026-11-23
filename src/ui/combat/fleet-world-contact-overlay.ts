@@ -4,10 +4,15 @@ import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ShipLightingRenderer } from '../ships/ship-lighting-renderer';
 import { ShieldImpactRenderer } from '../ships/shield-impact-renderer';
 import { drawMiningLaserBeam, drawMiningTractorBeam } from '../local-space/mining-beam-visuals';
-import { drawMiningChunkVisual, MiningEffectsRenderer } from '../local-space/mining-effects-renderer';
+import {
+  drawMiningChunkVisual,
+  MiningEffectsRenderer,
+} from '../local-space/mining-effects-renderer';
 import { PvPMapCamera } from './pvp-map-camera';
-import { projectHardpoint } from '../ships/ship-hardpoint-projector';
-import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
+import {
+  projectHardpoint,
+  type ShipScreenGeometry,
+} from '../ships/ship-hardpoint-projector';
 import { DRONE_DIAMETER_PX } from '../local-space/local-security-drone-visual';
 import type { FleetWorldContact } from '../start/fleet-scenario-world-bridge';
 
@@ -91,10 +96,8 @@ export function createFleetWorldContactOverlay(
         miningEffects.drawImpactEffects(target, normal, performance.now() / 1000);
         const extraction = ship.miningOreCollection;
         if (extraction) {
-          const travel = Math.max(
-            0,
-            Math.min(1, 1 - extraction.remainingSeconds / extraction.durationSeconds)
-          );
+          const progress = 1 - extraction.remainingSeconds / extraction.durationSeconds;
+          const travel = Math.max(0, Math.min(1, progress));
           const chunk = {
             x: target.x + (geometry.center.x - target.x) * travel,
             y: target.y + (geometry.center.y - target.y) * travel,
