@@ -6,10 +6,9 @@ import { getShipDefinition, resolveShipLocalCruiseSpeed } from '../../systems/sh
 import { ensureNpcInstalledComponents } from '../../systems/npcs/npc-upgrade-service';
 import { generateMiningSpace } from '../../systems/local-space/local-space-generator';
 import { generateSalvageField } from '../../systems/salvage/salvage-field-generator';
-import { createNpcLocalSalvageService } from '../../systems/npcs/npc-local-salvage-service';
-import { createNpcLocalMiningService } from '../../systems/npcs/npc-local-mining-service';
 import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc-combat-ai';
 import { hashId } from '../../systems/npcs/npc-mining-targets';
+import { createFleetWorldWorkers } from './fleet-world-workers';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { AsteroidSecurityDrone } from '../../systems/operations/asteroid-security-drone';
 import { moveFieldShip, type FieldRouteShip } from '../../systems/navigation/field-ship-routing';
@@ -162,52 +161,15 @@ export function createFleetScenarioWorldBridge(
       waypoint: { x: arena.width * 0.5, y: arena.height * 0.5 },
     });
   }
-  const miners = createNpcLocalMiningService({
-    locationId: WORLD_LOCATION,
+  const { miners, salvagers } = createFleetWorldWorkers(
+    [...states.values()],
+    rocks,
+    salvageField,
     seed,
-    width: arena.width,
-    height: arena.height,
-    resolveLocalCollisions: false,
-    getTrafficObstacles: (id) => trafficFor(id),
-    miners: [...states.values()]
-      .filter((entry) => entry.npc.job === 'miner')
-      .map((entry) => entry.npc),
-    getAsteroids: () => rocks,
-    mine: (npc, resourceId, requested) => {
-      const capacity = Math.max(
-        0,
-        npc.cargoCapacity - Object.values(npc.cargo).reduce((a, b) => a + b, 0)
-      );
-      const accepted = Math.min(requested, capacity);
-      if (accepted > 0) npc.cargo[resourceId] = (npc.cargo[resourceId] ?? 0) + accepted;
-      return accepted;
-    },
-    depart: (npc) => {
-      if (npc.autonomy) npc.autonomy.phase = 'ready';
-      return true;
-    },
-  });
-  const salvagers = salvageField
-    ? createNpcLocalSalvageService({
-        locationId: WORLD_LOCATION,
-        field: salvageField,
-        resolveLocalCollisions: false,
-        getTrafficObstacles: (id) => trafficFor(id),
-        salvagers: [...states.values()]
-          .filter((entry) => entry.npc.job === 'salvager')
-          .map((entry) => entry.npc),
-        recover: (npc, resourceId, requested) => {
-          const used = Object.values(npc.cargo).reduce((sum, amount) => sum + amount, 0);
-          const accepted = Math.max(0, Math.min(requested, npc.cargoCapacity - used));
-          if (accepted > 0) npc.cargo[resourceId] = (npc.cargo[resourceId] ?? 0) + accepted;
-          return accepted;
-        },
-        depart: (npc) => {
-          if (npc.autonomy) npc.autonomy.phase = 'ready';
-          return true;
-        },
-      })
-    : null;
+    arena.width,
+    arena.height,
+    trafficFor
+  );
   const pose = (id: string): FleetWorldPose | null => {
     if (id === 'player') return playerPose;
     const moving = states.get(id);
