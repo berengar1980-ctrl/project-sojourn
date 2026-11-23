@@ -115,6 +115,22 @@ export class AsteroidSecurityDrone {
     this.position = { ...position };
     delete this.routeState;
     this.operational = operational;
+    // Resuming a physical drone must not send every unit to the same first
+    // patrol corner regardless of the sector position where it materialized.
+    let nearest = 0;
+    for (let index = 1; index < this.patrol.length; index++) {
+      const distance = Math.hypot(
+        this.patrol[index]!.x - position.x,
+        this.patrol[index]!.y - position.y
+      );
+      const best = Math.hypot(
+        this.patrol[nearest]!.x - position.x,
+        this.patrol[nearest]!.y - position.y
+      );
+      if (distance < best) nearest = index;
+    }
+    this.nextWaypoint = nearest;
+    this.retryAfterSeconds = 0;
   }
 
   tick(
