@@ -43,7 +43,7 @@ function canJoinWorldCombat(
     return !!victim && npcMayTargetNpc(aggressor, victim);
   }
   if (aggressor?.job === 'patrol')
-    return world.canAttack(ship.id) && !!victim && npcMayTargetNpc(aggressor, victim);
+    return world.canAttack(ship.id) && !!victim && npcMayTargetNpc(aggressor, victim, true);
   if (
     world.npc(ship.id)?.job === 'miner' ||
     world.npc(ship.id)?.job === 'freighter' ||
