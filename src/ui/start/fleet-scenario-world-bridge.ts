@@ -162,6 +162,7 @@ export function createFleetScenarioWorldBridge(
     width: arena.width,
     height: arena.height,
     resolveLocalCollisions: false,
+    getTrafficObstacles: (id) => trafficFor(id),
     miners: [...states.values()]
       .filter((entry) => entry.npc.job === 'miner')
       .map((entry) => entry.npc),
@@ -185,6 +186,7 @@ export function createFleetScenarioWorldBridge(
         locationId: WORLD_LOCATION,
         field: salvageField,
         resolveLocalCollisions: false,
+        getTrafficObstacles: (id) => trafficFor(id),
         salvagers: [...states.values()]
           .filter((entry) => entry.npc.job === 'salvager')
           .map((entry) => entry.npc),
@@ -246,6 +248,32 @@ export function createFleetScenarioWorldBridge(
         y: Math.sin(moving.headingRadians) * moving.speed,
       },
     };
+  };
+  // The same traffic list is consumed by miners, salvagers and ordinary NPCs.
+  // Engaged actors are obstacles here, but the PvP engine remains their sole mover.
+  const trafficFor = (id: string) => {
+    const traffic = [...states].flatMap(([otherId, other]) => {
+      if (
+        otherId === id ||
+        !arrived.has(otherId) ||
+        departed.has(otherId) ||
+        other.npc.hullHp <= 0
+      )
+        return [];
+      const position = pose(otherId)?.position;
+      const otherShip = getShipDefinition(other.npc.shipId);
+      return position && otherShip
+        ? [{ id: 'traffic:' + otherId, position, radius: otherShip.nominalLengthMeters * 0.5 }]
+        : [];
+    });
+    if (playerShip && id !== 'player') {
+      traffic.push({
+        id: 'traffic:player',
+        position: playerPose.position,
+        radius: playerShip.nominalLengthMeters * 0.5,
+      });
+    }
+    return traffic;
   };
   const deploy = (id: string): void => {
     if (arrived.has(id)) return;
@@ -420,27 +448,7 @@ export function createFleetScenarioWorldBridge(
         const speed = definition
           ? resolveShipLocalCruiseSpeed(definition, ensureNpcInstalledComponents(moving.npc))
           : 110;
-        const traffic = [...states].flatMap(([otherId, other]) => {
-          if (
-            otherId === id ||
-            !arrived.has(otherId) ||
-            departed.has(otherId) ||
-            other.npc.hullHp <= 0
-          )
-            return [];
-          const position = pose(otherId)?.position;
-          const otherShip = getShipDefinition(other.npc.shipId);
-          return position && otherShip
-            ? [{ id: 'traffic:' + otherId, position, radius: otherShip.nominalLengthMeters * 0.5 }]
-            : [];
-        });
-        if (playerShip) {
-          traffic.push({
-            id: 'traffic:player',
-            position: playerPose.position,
-            radius: playerShip.nominalLengthMeters * 0.5,
-          });
-        }
+        const traffic = trafficFor(id);
         const arrivedAt = moveFieldShip(
           moving,
           destination,
