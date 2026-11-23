@@ -1893,3 +1893,11 @@ vollständig gespeichert und wiederhergestellt werden. Außerdem
 kann die PvP-Warteansicht ohne feindlichen Erstkontakt noch nicht
 denselben aktiven Kampf-Canvas wie eine laufende Begegnung anzeigen.
 Diese Grenzen bleiben offene Paritätspunkte, keine implizit erledigten Features.
+
+## Review-Log (2026-11-23) – Feldgefechte und Nahscan (PR #388)
+
+Keine Statusänderung. Kampagne und FleetCombat nutzen dieselbe Abstandskorrektur
+für NPC-Miner während des Nahscans und Abbaus. Beendete Teilgefechte geben ihre
+Geschosse und Strahlen für die Darstellung frei. Das Testfeld übernimmt die
+verfügbare Höhe der Kampagnenkarte und kehrt nach dem Gefecht ins FleetCombat-Menü
+zurück. Der Chromium-Test prüft die Größe und Lage des Testfelds unter der Systemleiste.
