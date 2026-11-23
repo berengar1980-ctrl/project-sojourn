@@ -1,7 +1,10 @@
 import type { ShipDefinition } from '../../core/ship-types';
 import type { FleetWorldContact } from '../start/fleet-world-contact-types';
 import { CombatCamera } from './combat-camera';
-import { MiningEffectsRenderer, drawMiningChunkVisual } from '../local-space/mining-effects-renderer';
+import {
+  MiningEffectsRenderer,
+  drawMiningChunkVisual,
+} from '../local-space/mining-effects-renderer';
 import { drawMiningLaserBeam, drawMiningTractorBeam } from '../local-space/mining-beam-visuals';
 import { projectHardpoint, type ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 
@@ -29,10 +32,9 @@ export function drawFleetWorldMiningEffects(
   };
   const target = camera.project(impactWorld, width, height, arenaWidth, arenaHeight);
   const port = definition?.sprite.hardpoints.miningLasers[0];
-  const start =
-    port && definition
-      ? projectHardpoint(port, definition.sprite.hardpoints, geometry)
-      : geometry.center;
+  const start = port && definition
+    ? projectHardpoint(port, definition.sprite.hardpoints, geometry)
+    : geometry.center;
   drawMiningLaserBeam(context, start, target, Math.max(1, geometry.width / 100), 1, 0.55);
   miningEffects.drawImpactEffects(target, normal, performance.now() / 1000);
   const extraction = ship.miningOreCollection;
