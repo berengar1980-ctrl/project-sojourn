@@ -16,6 +16,7 @@ import { runSceneZoomTransition } from '../ui/scene-transition';
 
 import { createControllerStarModel } from './game-controller-star-map';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
+import { fieldNpcCombatViews } from './local-npc-combat-contacts';
 import { forecastPlayerFuelRoute, fuelPerTravelUnit } from './game-controller-fuel-forecast';
 import { assessRouteRisk } from '../systems/navigation/route-safety';
 import { pirateThreatStrength } from '../systems/npcs/npc-pirate-classes';
@@ -242,6 +243,7 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
       })
     : [];
   const escaped = fieldDepartures(context);
+  const npcCombats = localNpcCombatSnapshots(context, locationId);
   const drone = locationId ? context.economy.securityDrones.get(locationId) : null;
   const asteroids = model.asteroids.map((asteroid) => ({
     ...asteroid,
@@ -260,9 +262,15 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
   return {
     ...model,
     selectedAsteroidClaimOwner: owner,
-    npcShips: [...model.npcShips, ...pirateShips].filter((ship) => !escaped.has(ship.id)),
+    npcShips: fieldNpcCombatViews(
+      [...model.npcShips, ...pirateShips],
+      npcCombats,
+      context.economy.sectorNpcs.npcs,
+      escaped,
+      context.state.selectedNpcId
+    ),
     fleet: currentPlayerFleet(context),
-    npcCombats: localNpcCombatSnapshots(context, locationId),
+    npcCombats,
     combatWrecks: locationId ? fieldWorldFor(context).combatWrecks(locationId) : [],
     asteroids,
     selectedAsteroid: asteroids.find((asteroid) => asteroid.isSelected) ?? null,
