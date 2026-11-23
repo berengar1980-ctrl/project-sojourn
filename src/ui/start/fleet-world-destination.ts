@@ -13,10 +13,12 @@ export function fleetNpcDestination(
   width: number,
   height: number
 ): WorldPoint {
-  if (danger && npcDefenseReaction(npc) === 'flee') {
+  const retreatFrom =
+    danger ?? (npc.job === 'patrol' && npcDefenseReaction(npc) === 'flee' ? threat : null);
+  if (retreatFrom && npcDefenseReaction(npc) === 'flee') {
     return {
-      x: Math.max(180, Math.min(width - 180, position.x * 2 - danger.x)),
-      y: Math.max(180, Math.min(height - 180, position.y * 2 - danger.y)),
+      x: Math.max(180, Math.min(width - 180, position.x * 2 - retreatFrom.x)),
+      y: Math.max(180, Math.min(height - 180, position.y * 2 - retreatFrom.y)),
     };
   }
   const patrolReady = npc.job === 'patrol' && npcDefenseReaction(npc) === 'fight';
