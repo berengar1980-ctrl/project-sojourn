@@ -97,13 +97,18 @@ export function fieldRouteTarget(
   const saved = ship.routeState;
   // A ship or drifting obstacle may have entered an already planned route.
   // Invalidate the checkpointed path before attempting to move through it.
-  if (
-    saved &&
-    obstacles.some((obstacle) =>
-      blocked(ship.position, saved.points[saved.index] ?? target, obstacle, clearance)
+  if (saved) {
+    const nextWaypoint = saved.points[saved.index] ?? target;
+    // A close route corner must be completed before recomputing it. Otherwise
+    // drifting asteroid clearance halos force a new 5-10 m detour each tick
+    // and a miner can circle forever without reaching its work target.
+    const establishedCorner = distance(ship.position, nextWaypoint) <= 24;
+    if (
+      !establishedCorner &&
+      obstacles.some((obstacle) => blocked(ship.position, nextWaypoint, obstacle, clearance))
     )
-  )
-    delete ship.routeState;
+      delete ship.routeState;
+  }
   const current = ship.routeState;
   if (!current || distance(current.target, target) > 1 || current.index >= current.points.length) {
     const points = makeRoute(ship.position, target, obstacles, clearance, mode);
