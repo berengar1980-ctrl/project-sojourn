@@ -14,7 +14,13 @@ export function resolveFleetWorldNeutralCollisions(
   active: (id: string) => boolean,
   stateFor: (id: string) => { position: WorldPoint; headingRadians: number } | null,
   shieldEffects: ReturnType<typeof createFleetWorldShieldContacts>,
-  player?: { id: string; shipId: string; position: WorldPoint; headingRadians: number }
+  player?: {
+    id: string;
+    shipId: string;
+    position: WorldPoint;
+    headingRadians: number;
+    onDisplaced: (position: WorldPoint) => void;
+  }
 ): void {
   const bodies = [...ships].flatMap(([id, moving]) => {
     if (!active(id) || moving.npc.hullHp <= 0) return [];
@@ -27,5 +33,9 @@ export function resolveFleetWorldNeutralCollisions(
     if (ship) bodies.push({ id: player.id, ship, state: player, pushWeight: 3 });
   }
   const headings = new Map(bodies.map((body) => [body.id, body.state.headingRadians] as const));
-  shieldEffects.register(resolveShipShieldCollisions(bodies), (id) => headings.get(id) ?? 0);
+  const collisions = resolveShipShieldCollisions(bodies);
+  const playerBody = bodies.find((body) => body.id === player?.id);
+  if (player && playerBody && collisions.some((hit) => hit.firstId === player.id || hit.secondId === player.id))
+    player.onDisplaced(playerBody.state.position);
+  shieldEffects.register(collisions, (id) => headings.get(id) ?? 0);
 }
