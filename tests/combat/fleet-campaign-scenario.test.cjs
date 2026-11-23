@@ -19,6 +19,35 @@ const groups = [
   { group: 'drone', initial: 0, joining: 1, afterSeconds: 15 },
 ];
 const generated = createFleetScenarioRoster(groups);
+const { npcDefenseReaction } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/npcs/npc-combat-ai.ts'
+);
+const { getShipDefinition } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/ships/ship-registry.ts'
+);
+// This same NPC policy runs in the campaign and in the PvP/FleetCombat world.
+assert.equal(
+  npcDefenseReaction({ job: 'freighter', aggression: 100, hullHp: 100, hullMaxHp: 100 }),
+  'flee',
+  'even the most aggressive freight captain must prefer escape'
+);
+for (const [mapKind, role] of [
+  ['asteroid_field', 'mining'],
+  ['scrap_field', 'salvage'],
+  ['empty', 'freighter'],
+]) {
+  const workers = createFleetScenarioRoster(
+    [{ group: 'npc', initial: 2, joining: 0, afterSeconds: 0 }],
+    mapKind
+  ).filter((ship) => ship.group === 'npc');
+  assert.equal(
+    getShipDefinition(workers[0].draft.shipId).role,
+    role,
+    'first civilian worker must have a real campaign job for ' + mapKind
+  );
+}
 for (let pass = 0; pass < 50; pass += 1) {
   const civilians = createFleetScenarioRoster([
     { group: 'npc', initial: 10, joining: 10, afterSeconds: 5 },
