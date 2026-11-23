@@ -1,0 +1,30 @@
+name: PR387 temporary code formatting
+on:
+  push:
+    branches:
+      - refactor/unify-all-combat-and-npc-runtime
+permissions:
+  contents: write
+jobs:
+  format:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx prettier --write src/systems/npcs/npc-local-mining-service.ts src/ui/start/fleet-scenario-world-bridge.ts
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/systems/npcs/npc-local-mining-service.ts src/ui/start/fleet-scenario-world-bridge.ts
+          if ! git diff --cached --quiet; then
+            git commit -m "Format shared NPC mining and world adapter with project Prettier"
+            git push
+          fi
