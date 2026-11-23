@@ -16,7 +16,8 @@ import { createFleetWorldPlayerFlight } from './fleet-world-player-flight';
 import { fleetWorldContacts } from './fleet-world-contacts';
 import { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
 import { resolveFleetWorldNeutralCollisions } from './fleet-world-neutral-collisions';
-import type { ShieldImpactEffect } from '../../core/shield-types';
+import type { FleetWorldContact, FleetWorldPose } from './fleet-world-contact-types';
+export type { FleetWorldContact, FleetWorldPose } from './fleet-world-contact-types';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { AsteroidSecurityDrone } from '../../systems/operations/asteroid-security-drone';
 import { moveFieldShip, type FieldRouteShip } from '../../systems/navigation/field-ship-routing';
@@ -26,18 +27,6 @@ import type {
 } from '../../systems/combat/strategic-combat-types';
 import { duelInstalledComponents } from './duel-combatant-setup';
 import type { FleetScenarioShip } from './fleet-scenario-roster';
-export interface FleetWorldPose {
-  readonly position: WorldPoint;
-  readonly headingRadians: number;
-  readonly velocity: WorldPoint;
-}
-export interface FleetWorldContact extends FleetWorldPose {
-  readonly id: string;
-  readonly shipId: string;
-  readonly name: string;
-  readonly shieldImpacts?: readonly ShieldImpactEffect[];
-  readonly miningBeamTarget?: WorldPoint;
-}
 interface MovingNpc extends FieldRouteShip {
   readonly npc: SectorNpcState;
   waypoint: WorldPoint;
