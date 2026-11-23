@@ -22,27 +22,22 @@ import type {
 } from '../../systems/combat/strategic-combat-types';
 import { duelInstalledComponents } from './duel-combatant-setup';
 import type { FleetScenarioShip } from './fleet-scenario-roster';
-
 export interface FleetWorldPose {
   readonly position: WorldPoint;
   readonly headingRadians: number;
   readonly velocity: WorldPoint;
 }
-
 export interface FleetWorldContact extends FleetWorldPose {
   readonly id: string;
   readonly shipId: string;
   readonly name: string;
   readonly shieldImpacts?: readonly ShieldImpactEffect[];
 }
-
 interface MovingNpc extends FieldRouteShip {
   readonly npc: SectorNpcState;
   waypoint: WorldPoint;
 }
-
 const WORLD_LOCATION = 'duel';
-
 /**
  * Test-labor adapter to the existing campaign services. The miner's mining
  * AI, the security drone's actual patrol/sensors, the faction defence
