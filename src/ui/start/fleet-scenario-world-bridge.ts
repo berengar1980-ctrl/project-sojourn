@@ -93,6 +93,12 @@ export function createFleetScenarioWorldBridge(
     headingRadians: arena.attackerHeadingRadians ?? 0,
     velocity: arena.attackerVelocity ?? { x: 0, y: 0 },
   };
+  const playerRoute: FieldRouteShip = {
+    position: playerPose.position,
+    headingRadians: playerPose.headingRadians,
+    speed: 0,
+  };
+  let playerDestination: WorldPoint | null = null;
   const jobFor = (ship: FleetScenarioShip): NpcJob => {
     if (ship.group === 'pirates-yellow' || ship.group === 'pirates-red') return 'pirate';
     if (ship.group === 'drone') return 'patrol';
@@ -316,6 +322,13 @@ export function createFleetScenarioWorldBridge(
   return {
     deploy,
     pose,
+    navigatePlayer(target: WorldPoint) {
+      playerDestination = {
+        x: Math.max(90, Math.min(arena.width - 90, target.x)),
+        y: Math.max(90, Math.min(arena.height - 90, target.y)),
+      };
+      delete playerRoute.routeState;
+    },
     isArrived: (id: string) => arrived.has(id) && !departed.has(id),
     isActive: (id: string) => id === 'player' || (arrived.has(id) && !departed.has(id)),
     isEngaged: (id: string) => engaged.has(id),
@@ -412,6 +425,27 @@ export function createFleetScenarioWorldBridge(
         if (!body) continue;
         wreck.position = { ...body.position };
         wreck.rotation = body.rotation;
+      }
+      if (!engaged.has('player') && playerDestination) {
+        const cruise = playerShip
+          ? resolveShipLocalCruiseSpeed(playerShip, duelInstalledComponents(roster.find((ship) => ship.id === 'player')!.draft))
+          : 110;
+        playerRoute.position = { ...playerPose.position };
+        const reached = moveFieldShip(
+          playerRoute,
+          playerDestination,
+          cruise,
+          dt,
+          [...obstacles(), ...trafficFor('player')],
+          65
+        );
+        playerPose.position = { ...playerRoute.position };
+        playerPose.headingRadians = playerRoute.headingRadians;
+        playerPose.velocity = {
+          x: Math.cos(playerRoute.headingRadians) * playerRoute.speed,
+          y: Math.sin(playerRoute.headingRadians) * playerRoute.speed,
+        };
+        if (reached) playerDestination = null;
       }
       miners.tick(dt);
       salvagers?.tick(dt, undefined, true);
