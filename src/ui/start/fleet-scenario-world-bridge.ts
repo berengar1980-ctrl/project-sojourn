@@ -447,7 +447,15 @@ export function createFleetScenarioWorldBridge(
             moving
           );
         },
-        neutralShields
+        neutralShields,
+        !engaged.has('player')
+          ? {
+              id: 'player',
+              shipId: roster.find((ship) => ship.id === 'player')!.draft.shipId,
+              position: playerPose.position,
+              headingRadians: playerPose.headingRadians,
+            }
+          : undefined
       );
     },
     contacts(): FleetWorldContact[] {
