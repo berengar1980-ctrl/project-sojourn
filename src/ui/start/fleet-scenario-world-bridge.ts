@@ -32,6 +32,7 @@ export interface FleetWorldContact extends FleetWorldPose {
   readonly shipId: string;
   readonly name: string;
   readonly shieldImpacts?: readonly ShieldImpactEffect[];
+  readonly miningBeamTarget?: WorldPoint;
 }
 interface MovingNpc extends FieldRouteShip {
   readonly npc: SectorNpcState;
@@ -478,8 +479,16 @@ export function createFleetScenarioWorldBridge(
         if (!arrived.has(id) || departed.has(id) || engaged.has(id) || value.npc.hullHp <= 0)
           return [];
         const movement = pose(id);
+        const miner = miners.ships.find((entry) => entry.npcId === id);
+        const target = miner?.laserActive
+          ? rocks.find((rock) => rock.id === miner.targetAsteroidId)?.position
+          : undefined;
         return movement
-          ? [{ id, name: value.npc.name, shipId: value.npc.shipId, ...movement, shieldImpacts: neutralShields.get(id) }]
+          ? [{
+              id, name: value.npc.name, shipId: value.npc.shipId, ...movement,
+              shieldImpacts: neutralShields.get(id),
+              ...(target ? { miningBeamTarget: target } : {}),
+            }]
           : [];
       });
       return engaged.has('player')
