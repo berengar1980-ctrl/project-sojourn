@@ -10,6 +10,7 @@ import { createNpcLocalSalvageService } from '../../systems/npcs/npc-local-salva
 import { createNpcLocalMiningService } from '../../systems/npcs/npc-local-mining-service';
 import { npcDefenseReaction, npcMayInitiateAttack } from '../../systems/npcs/npc-combat-ai';
 import { hashId } from '../../systems/npcs/npc-mining-targets';
+import { seededLocalGate } from '../../core/local-space-exit';
 import { AsteroidSecurityDrone } from '../../systems/operations/asteroid-security-drone';
 import { moveFieldShip, type FieldRouteShip } from '../../systems/navigation/field-ship-routing';
 import { resolveShipShieldCollisions } from '../../systems/local-space/ship-shield-collision';
@@ -74,6 +75,8 @@ export function createFleetScenarioWorldBridge(
   const combatRocks = new Map((arena.asteroids ?? []).map((body) => [body.id, body]));
   const templates = createSectorNpcEconomyStates();
   const arrived = new Set<string>();
+  const departed = new Set<string>();
+  const freightExit = seededLocalGate(arena.width, arena.height, seed);
   const engaged = new Set<string>();
   const threats = new Map<string, WorldPoint>();
   const states = new Map<string, MovingNpc>();
@@ -192,7 +195,7 @@ export function createFleetScenarioWorldBridge(
   const pose = (id: string): FleetWorldPose | null => {
     if (id === 'player') return playerPose;
     const moving = states.get(id);
-    if (!moving || !arrived.has(id)) return null;
+    if (!moving || !arrived.has(id) || departed.has(id)) return null;
     if (moving.npc.job === 'miner' && !engaged.has(id) && !moving.npc.combatMovement) {
       const miner = miners.ships.find((entry) => entry.npcId === id);
       if (miner)
@@ -282,7 +285,8 @@ export function createFleetScenarioWorldBridge(
   return {
     deploy,
     pose,
-    isArrived: (id: string) => arrived.has(id),
+    isArrived: (id: string) => arrived.has(id) && !departed.has(id),
+    isActive: (id: string) => id === 'player' || (arrived.has(id) && !departed.has(id)),
     isEngaged: (id: string) => engaged.has(id),
     npc: (id: string) => states.get(id)?.npc ?? null,
     defence: (id: string) => {
@@ -373,7 +377,8 @@ export function createFleetScenarioWorldBridge(
       miners.tick(dt);
       salvagers?.tick(dt, undefined, true);
       for (const [id, moving] of states) {
-        if (!arrived.has(id) || engaged.has(id) || moving.npc.hullHp <= 0) continue;
+        if (!arrived.has(id) || departed.has(id) || engaged.has(id) || moving.npc.hullHp <= 0)
+          continue;
         if (
           (moving.npc.job === 'miner' || (salvagers && moving.npc.job === 'salvager')) &&
           moving.npc.combatMovement?.mode !== 'flee'
@@ -392,13 +397,21 @@ export function createFleetScenarioWorldBridge(
               }
             : threat && moving.npc.pirate && npcMayInitiateAttack(moving.npc)
               ? threat
-              : moving.waypoint;
+              : moving.npc.job === 'freighter'
+                ? freightExit
+                : moving.waypoint;
         const definition = getShipDefinition(moving.npc.shipId);
         const speed = definition
           ? resolveShipLocalCruiseSpeed(definition, ensureNpcInstalledComponents(moving.npc))
           : 110;
         const traffic = [...states].flatMap(([otherId, other]) => {
-          if (otherId === id || !arrived.has(otherId) || engaged.has(otherId) || other.npc.hullHp <= 0)
+          if (
+            otherId === id ||
+            !arrived.has(otherId) ||
+            departed.has(otherId) ||
+            engaged.has(otherId) ||
+            other.npc.hullHp <= 0
+          )
             return [];
           const position = pose(otherId)?.position;
           const definition = getShipDefinition(other.npc.shipId);
@@ -406,7 +419,19 @@ export function createFleetScenarioWorldBridge(
             ? [{ id: 'traffic:' + otherId, position, radius: definition.nominalLengthMeters * 0.5 }]
             : [];
         });
-        const arrivedAt = moveFieldShip(moving, destination, speed, dt, [...obstacles(), ...traffic], 65, 'patrol');
+        const arrivedAt = moveFieldShip(
+          moving,
+          destination,
+          speed,
+          dt,
+          [...obstacles(), ...traffic],
+          65,
+          'patrol'
+        );
+        if (arrivedAt && moving.npc.job === 'freighter') {
+          departed.add(id);
+          continue;
+        }
         if (arrivedAt && moving.npc.combatMovement?.mode === 'flee') {
           delete moving.npc.combatMovement;
           threats.delete(id);
@@ -426,7 +451,8 @@ export function createFleetScenarioWorldBridge(
       // Campaign local-ship collisions remain authoritative for noncombatants.
       // Operate on their live states, not copies, and do not integrate motion twice.
       const neutralBodies = [...states].flatMap(([id, moving]) => {
-        if (!arrived.has(id) || engaged.has(id) || moving.npc.hullHp <= 0) return [];
+        if (!arrived.has(id) || departed.has(id) || engaged.has(id) || moving.npc.hullHp <= 0)
+          return [];
         const ship = getShipDefinition(moving.npc.shipId);
         if (!ship) return [];
         const state =
@@ -444,7 +470,8 @@ export function createFleetScenarioWorldBridge(
     },
     contacts(): FleetWorldContact[] {
       const bystanders = [...states].flatMap(([id, value]) => {
-        if (!arrived.has(id) || engaged.has(id) || value.npc.hullHp <= 0) return [];
+        if (!arrived.has(id) || departed.has(id) || engaged.has(id) || value.npc.hullHp <= 0)
+          return [];
         const movement = pose(id);
         return movement
           ? [{ id, name: value.npc.name, shipId: value.npc.shipId, ...movement }]
