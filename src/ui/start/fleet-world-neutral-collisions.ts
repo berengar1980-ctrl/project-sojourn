@@ -1,7 +1,10 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../../systems/ships';
-import { resolveShipShieldCollisions } from '../../systems/local-space/ship-shield-collision';
+import {
+  resolveShipShieldCollisions,
+  type LocalShieldShipBody,
+} from '../../systems/local-space/ship-shield-collision';
 import type { createFleetWorldShieldContacts } from './fleet-world-shield-contacts';
 
 interface WorldShipState {
@@ -22,7 +25,7 @@ export function resolveFleetWorldNeutralCollisions(
     onDisplaced: (position: WorldPoint) => void;
   }
 ): void {
-  const bodies = [...ships].flatMap(([id, moving]) => {
+  const bodies: LocalShieldShipBody[] = [...ships].flatMap(([id, moving]) => {
     if (!active(id) || moving.npc.hullHp <= 0) return [];
     const ship = getShipDefinition(moving.npc.shipId);
     const state = stateFor(id);
@@ -35,7 +38,9 @@ export function resolveFleetWorldNeutralCollisions(
   const headings = new Map(bodies.map((body) => [body.id, body.state.headingRadians] as const));
   const collisions = resolveShipShieldCollisions(bodies);
   const playerBody = bodies.find((body) => body.id === player?.id);
-  if (player && playerBody && collisions.some((hit) => hit.firstId === player.id || hit.secondId === player.id))
-    player.onDisplaced(playerBody.state.position);
+  if (player && playerBody) {
+    const moved = collisions.some((hit) => hit.firstId === player.id || hit.secondId === player.id);
+    if (moved) player.onDisplaced(playerBody.state.position);
+  }
   shieldEffects.register(collisions, (id) => headings.get(id) ?? 0);
 }
