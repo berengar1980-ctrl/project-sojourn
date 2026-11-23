@@ -243,19 +243,15 @@ function advanceApproaching(
       return;
     }
     const point = ship.routeState?.target ?? approachPoint(npc.id, asteroid);
-    const rockBlockers = runtime.options
-      .getAsteroids()
-      .filter((rock) => rock.routeBlocking && rock.id !== asteroid.id);
+    const validBlocker = (rock: LocalAsteroid) => rock.routeBlocking && rock.id !== asteroid.id;
+    const rockBlockers = runtime.options.getAsteroids().filter(validBlocker);
     if (
       moveFieldShip(
         ship,
         point,
         localCruiseSpeed(npc),
         dt,
-        [
-          ...rockBlockers,
-          ...(runtime.options.getTrafficObstacles?.(npc.id) ?? []),
-        ],
+        [...rockBlockers, ...(runtime.options.getTrafficObstacles?.(npc.id) ?? [])],
         65
       )
     ) {
