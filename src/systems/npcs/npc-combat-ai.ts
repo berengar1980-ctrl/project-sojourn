@@ -52,12 +52,11 @@ export function npcMayTargetNpc(
   joiningExistingCombat = false
 ): boolean {
   if (attacker.id === target.id) return false;
-  if (!attacker.pirate)
-    return joiningExistingCombat
-      ? target.pirate === true &&
-          target.hullHp > 0 &&
-          (target.combatRecoverySeconds ?? 0) <= 0
-      : npcLooksHostileToPatrol(target);
+  if (!attacker.pirate) {
+    if (joiningExistingCombat)
+      return target.pirate === true && target.hullHp > 0 && (target.combatRecoverySeconds ?? 0) <= 0;
+    return npcLooksHostileToPatrol(target);
+  }
   if (rivalPirateGroups(attacker, target))
     return target.hullHp > 0 && !target.combatMovement && (target.combatRecoverySeconds ?? 0) <= 0;
   return npcIsPiratePrey(target);
