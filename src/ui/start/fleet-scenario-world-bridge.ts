@@ -371,7 +371,7 @@ export function createFleetScenarioWorldBridge(
       threats.set(id, { ...aggressor });
     },
     // Preserve the normal NPC roles: patrol, mining, flee or existing combat owner.
-    // eslint-disable-next-line complexity
+    // eslint-disable-next-line complexity, max-lines-per-function
     tick(dt: number, threat: WorldPoint | null) {
       // The campaign's existing mining and security services drive civilians
       // and drones until their native combat driver takes ownership.
@@ -429,9 +429,9 @@ export function createFleetScenarioWorldBridge(
           )
             return [];
           const position = pose(otherId)?.position;
-          const definition = getShipDefinition(other.npc.shipId);
-          return position && definition
-            ? [{ id: 'traffic:' + otherId, position, radius: definition.nominalLengthMeters * 0.5 }]
+          const otherShip = getShipDefinition(other.npc.shipId);
+          return position && otherShip
+            ? [{ id: 'traffic:' + otherId, position, radius: otherShip.nominalLengthMeters * 0.5 }]
             : [];
         });
         if (playerShip) {
