@@ -14,7 +14,8 @@ export function npcDefenseReaction(npc: SectorNpcState): NpcDefenseReaction {
 export function npcMayInitiateAttack(npc: SectorNpcState): boolean {
   if (npc.hullHp <= 0 || npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) return false;
   if (npc.pirate) return npc.aggression >= 60;
-  return npc.job === 'patrol' && npc.aggression >= 60;
+  // An operational patrol either intercepts known pirates or withdraws when unfit to fight.
+  return npc.job === 'patrol' && npcDefenseReaction(npc) === 'fight';
 }
 
 export function npcLooksHostileToPatrol(npc: SectorNpcState): boolean {
