@@ -2002,3 +2002,15 @@ Die fünf Kampfwrackgeometrien und ihre unabhängig taumelnden Fragmente
 erscheinen in Kampagne, 1vs1 und FleetCombat nur noch mit zwei Dritteln
 der bisherigen sichtbaren Abmessungen. Kampfphysik, Kollision,
 Bergung, Save-Struktur und ursprüngliche 1vs1-Logik bleiben unverändert.
+
+## Review-Log (2026-11-24) – Feste Kampfwracks und Bergungsfähigkeit (PR #397)
+
+**Keine Statusänderung** der historischen Feature-IDs. Zerstörte Schiffe
+hinterlassen in FleetCombat solide, routenblockierende Körper, statt
+bewegliche Wracks aus der Hindernisnavigation auszuschließen. Die
+Bergbaukarte führt die gespeicherten Kampfwracks in ihrer Navigation,
+Gefahrenvermeidung und Schildkollision wie die vorhandenen Wracks der
+Bergungskarte. Bergungsschiffe können die bestehenden Rohstoffvorräte
+nach Inspektion über den normalen Bergungsdienst abbauen. Die
+1vs1-Kampf-KI, Asteroidenticks, physische Körperanzahl, Beute und
+Save-Struktur bleiben unverändert.
