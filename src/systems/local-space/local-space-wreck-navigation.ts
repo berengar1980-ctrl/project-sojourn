@@ -3,6 +3,7 @@ import type { WorldPoint } from '../../core/world-types';
 import type { ShieldWorldGeometry } from './local-space-collision';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import { selectedRouteOptions } from './local-space-scanning';
+import type { LocalSpaceServiceOptions } from './local-space-options';
 
 /** Merge moving, recoverable wrecks into the normal asteroid route graph. */
 function navigationBodies(
@@ -13,21 +14,23 @@ function navigationBodies(
 }
 
 export function selectedWreckAwareRouteOptions(
-  instance: LocalSpaceInstance,
+  options: Pick<LocalSpaceServiceOptions, 'instance' | 'additionalObstacles'>,
   selectedId: string | null,
-  shield: ShieldWorldGeometry,
-  additional: readonly LocalAsteroid[]
+  shield: ShieldWorldGeometry
 ): RoutePlanningOptions | null {
+  const instance = options.instance;
+  const additional = options.additionalObstacles?.() ?? [];
   const route = selectedRouteOptions(instance, selectedId, shield);
   return route ? { ...route, asteroids: navigationBodies(instance, additional) } : null;
 }
 
 export function pointWreckAwareRouteOptions(
-  instance: LocalSpaceInstance,
+  options: Pick<LocalSpaceServiceOptions, 'instance' | 'additionalObstacles'>,
   target: WorldPoint,
-  shield: ShieldWorldGeometry,
-  additional: readonly LocalAsteroid[]
+  shield: ShieldWorldGeometry
 ): PointRoutePlanningOptions {
+  const instance = options.instance;
+  const additional = options.additionalObstacles?.() ?? [];
   return {
     start: instance.ship.position,
     target,
