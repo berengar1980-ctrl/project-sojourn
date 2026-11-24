@@ -1952,3 +1952,13 @@ entlang derselben Strecke. Kampfwracks verwenden ihre eigene
 Kontaktgröße. Gleichzeitige Gefechte eines Felds teilen die Driftkörper,
 auch wenn der Spieler nicht kämpft. Verstärkungen behalten reale
 Anflugposen und wählen im Feld ein tatsächlich erreichtes Ziel.
+
+## Review-Log (2026-11-24) – Fünf Kampfwrackmodelle (PR #393)
+
+**Keine Statusänderung** der bestehenden Feature-IDs. Die Darstellung von
+Schiffen nach ihrer Zerstörung verwendet fünf dunkelgraue, stark beschädigte
+Wrackgeometrien. Kampagne, 1vs1 und FleetCombat verwenden denselben
+Kampfwrack-Renderer. Unbeschädigte Schiffe, normale Bergungsobjekte,
+Kampfphysik, Beute und die Explosionseffekte bleiben unverändert.
+Ältere Kampfwrack-Varianten bleiben beim Laden gültig und erhalten
+passende neue Silhouetten; es entstehen keine neuen Save-Felder.
