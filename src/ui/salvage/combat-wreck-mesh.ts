@@ -1,10 +1,6 @@
 import type { CombatWreckVariant } from '../../core/salvage-types';
 import { drawCachedSalvageMesh } from './salvage-mesh-lod-cache';
-import {
-  ContainerMesh,
-  drawProjectedSalvageMesh,
-  type Face,
-} from './salvage-container-mesh';
+import { ContainerMesh, drawProjectedSalvageMesh, type Face } from './salvage-container-mesh';
 import { C, fragment, ribs, scatter, shell, soot, strut } from './combat-wreck-geometry';
 
 function freighter(m: ContainerMesh): void {

@@ -66,7 +66,13 @@ export function strut(
   );
 }
 
-export function ribs(m: ContainerMesh, from: number, to: number, width: number, count: number): void {
+export function ribs(
+  m: ContainerMesh,
+  from: number,
+  to: number,
+  width: number,
+  count: number
+): void {
   for (let i = 0; i < count; i += 1) {
     const x = from + ((to - from) * i) / Math.max(1, count - 1);
     strut(m, x, -width / 2, x + (i % 3) * 0.08, width / 2, 0.36, 0.065, i % 3 ? C.iron : C.steel);
@@ -133,4 +139,3 @@ export function scatter(m: ContainerMesh, count: number, spread: number, seed: n
     );
   }
 }
-
