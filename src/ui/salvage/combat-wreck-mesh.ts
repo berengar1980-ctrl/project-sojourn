@@ -359,9 +359,7 @@ export function drawCombatWreck3d(
   // project the full-resolution geometry each frame: no angle quantization.
   if (
     radius >= 24 ||
-    !drawCachedSalvageMesh(
-      context, 'combat-wreck-v3:' + current, geometry, radius, animated, 256
-    )
+    !drawCachedSalvageMesh(context, 'combat-wreck-v3:' + current, geometry, radius, animated, 256)
   ) {
     drawProjectedSalvageMesh(context, geometry, radius, animated);
   }
