@@ -1,3 +1,4 @@
+import { isCombatWreckVariant } from '../../core/combat-wreck-variant';
 import type { LocalSpaceInstance } from '../../core/local-space-types';
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
 import {
@@ -68,7 +69,7 @@ function restoredCombatWrecks(
         (wreck) =>
           !wreck.id.startsWith('combat-wreck-') ||
           !wreck.combatWreckVariant ||
-          !['miner', 'freighter', 'patrol'].includes(wreck.combatWreckVariant) ||
+          !isCombatWreckVariant(wreck.combatWreckVariant) ||
           !Number.isFinite(wreck.position.x) ||
           !Number.isFinite(wreck.position.y) ||
           !Array.isArray(wreck.resources) ||
