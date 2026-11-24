@@ -94,7 +94,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.approachSpeed,
       options.hazardCrew ?? { piloting: 0, sensors: 0 },
       options.avoidanceRandom ?? Math.random,
-      options.onNavigationNotice ?? (() => {})
+      options.onNavigationNotice ?? (() => {}),
+      options.additionalObstacles
     );
     this.stationKeepingPosition = { ...options.instance.ship.position };
     this.idleStationKeeping = createIdleStationKeepingState(
@@ -153,19 +154,26 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
+  private navigationObstacles(): readonly LocalAsteroid[] {
+    const additional = this.options.additionalObstacles?.() ?? [];
+    return additional.length ? [...this.instance.asteroids, ...additional] : this.instance.asteroids;
+  }
+
   getMiningRouteOptions(): RoutePlanningOptions | null {
-    return selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
+    const options = selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
+    return options ? { ...options, asteroids: this.navigationObstacles() } : null;
   }
 
   getShortRangeScanRouteOptions(): RoutePlanningOptions | null {
-    return selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
+    const options = selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
+    return options ? { ...options, asteroids: this.navigationObstacles() } : null;
   }
 
   getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions {
     return {
       start: this.instance.ship.position,
       target,
-      asteroids: this.instance.asteroids,
+      asteroids: this.navigationObstacles(),
       clearance: Math.max(this.shield.radiusX, this.shield.radiusY) + 24,
       width: this.instance.width,
       height: this.instance.height,
@@ -299,6 +307,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.updateMining(clamped, asteroid);
     }
 
+    const additional = this.options.additionalObstacles?.() ?? [];
     const collisions = resolveShieldCollisions(
       this.instance.ship,
       localShipVelocity(this.instance.ship, {
@@ -307,10 +316,13 @@ class LocalSpaceRuntime implements LocalSpaceService {
         shipLateralVelocity: this.shipLateralVelocity,
         idleLateralVelocity: this.idleStationKeeping.lateralVelocity,
       }),
-      this.instance.asteroids,
+      additional.length ? [...this.instance.asteroids, ...additional] : this.instance.asteroids,
       this.shield
     );
     for (const collision of collisions) this.shipSystems.applyCollision(collision);
+    if (additional.length && collisions.some((hit) => additional.some((body) => body.id === hit.asteroidId))) {
+      this.options.onAdditionalObstacleContact?.();
+    }
 
     this.miningResources.advanceChunks(this.instance.ship, clamped);
     return this.getSnapshot();
