@@ -7,7 +7,16 @@ import type { WorldPoint } from './world-types';
 
 export type SalvageWreckKind = 'freighter' | 'miner' | 'salvager' | 'patrol';
 export type SalvageWreckQuality = 1 | 2 | 3;
-export type CombatWreckVariant = 'miner' | 'freighter' | 'patrol';
+/** Five destroyed-ship hulls; old IDs stay readable for existing saves. */
+export type CombatWreckVariant =
+  | 'fractured-freighter'
+  | 'shattered-patrol'
+  | 'ore-carrier'
+  | 'split-hull'
+  | 'salvage-barge'
+  | 'miner'
+  | 'freighter'
+  | 'patrol';
 export type SalvageContainerVariant = 'standard' | 'damaged' | 'tank';
 export type SalvageSectionVariant =
   | 'corridor-complex'
