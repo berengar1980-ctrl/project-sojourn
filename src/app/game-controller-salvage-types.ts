@@ -74,7 +74,10 @@ export interface SalvageSceneOptions {
     piratePosition: WorldPoint,
     dronePosition: WorldPoint
   ) => boolean;
-  readonly onCombatBystanders?: (bystanders: readonly StrategicCombatBystander[]) => void;
+  readonly onCombatBystanders?: (
+    field: SalvageField,
+    bystanders: readonly StrategicCombatBystander[]
+  ) => void;
   readonly field?: SalvageField;
   readonly onLeaveField?: (field: SalvageField) => void;
   readonly sectorEvent?: SectorSalvageEvent | null;

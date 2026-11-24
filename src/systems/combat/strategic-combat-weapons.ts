@@ -9,6 +9,7 @@ import type {
   CombatBeamKind,
   CombatProjectileKind,
   MutableProjectile,
+  CombatPoint,
   ShieldSegmentHit,
 } from './strategic-combat-types';
 
@@ -317,43 +318,62 @@ function expireProjectile(
   runtime.projectiles.splice(index, 1);
 }
 
-function hitProjectileHull(
+function projectileHullEntry(
+  from: CombatPoint,
+  next: CombatPoint,
+  target: MutableCombatant
+): number | null {
+  const hitRadius = Math.max(28, Math.min(45, combatShieldGeometry(target).radiusY));
+  const dx = next.x - from.x;
+  const dy = next.y - from.y;
+  const x = from.x - target.position.x;
+  const y = from.y - target.position.y;
+  const c = x * x + y * y - hitRadius * hitRadius;
+  if (c <= 0) return 0;
+  const a = dx * dx + dy * dy;
+  const halfB = x * dx + y * dy;
+  const discriminant = halfB * halfB - a * c;
+  if (a <= 0 || discriminant < 0) return null;
+  const entry = (-halfB - Math.sqrt(discriminant)) / a;
+  return entry >= 0 && entry <= 1 ? entry : null;
+}
+
+function projectileTargetHit(
+  projectile: MutableProjectile,
+  next: CombatPoint,
+  target: MutableCombatant
+): { shieldHit: ShieldSegmentHit | null; entry: number | null } {
+  if (projectile.shieldDamage <= 0 && projectile.hullDamage <= 0)
+    return { shieldHit: null, entry: null };
+  const shieldHit = segmentShieldHit(projectile.position, next, target);
+  return {
+    shieldHit,
+    entry: shieldHit?.t ?? projectileHullEntry(projectile.position, next, target),
+  };
+}
+
+function completeProjectileHit(
   runtime: StrategicCombatRuntime,
   projectile: MutableProjectile,
   source: MutableCombatant,
   target: MutableCombatant,
-  next: { x: number; y: number },
+  shieldHit: ShieldSegmentHit | null,
   index: number
-): boolean {
-  const segmentX = next.x - projectile.position.x;
-  const segmentY = next.y - projectile.position.y;
-  const lengthSquared = segmentX * segmentX + segmentY * segmentY;
-  const fraction = clamp(
-    ((target.position.x - projectile.position.x) * segmentX +
-      (target.position.y - projectile.position.y) * segmentY) /
-      Math.max(0.001, lengthSquared),
-    0,
-    1
+): void {
+  const result = recordProjectileDamage(
+    runtime,
+    projectile,
+    source,
+    target,
+    shieldHit ?? undefined
   );
-  const closest = {
-    x: projectile.position.x + fraction * segmentX,
-    y: projectile.position.y + fraction * segmentY,
-  };
-  const hitRadius = Math.max(28, Math.min(45, combatShieldGeometry(target).radiusY));
-  if (distance(closest, target.position) <= hitRadius) {
-    const result = recordProjectileDamage(runtime, projectile, source, target);
-    runtime.lastEvent =
-      source.setup.name +
-      ': ' +
-      projectile.family.replaceAll('_', ' ') +
-      ' trifft ' +
-      (result.layer === 'shield' ? 'Schild' : 'Hülle') +
-      ' -' +
-      Math.round(result.damage);
-    runtime.projectiles.splice(index, 1);
-    return true;
-  }
-  return false;
+  runtime.lastEvent =
+    source.setup.name +
+    ': ' +
+    projectile.family.replaceAll('_', ' ') +
+    (result.layer === 'shield' ? ' trifft Schild -' : ' trifft Hülle -') +
+    Math.round(result.damage);
+  runtime.projectiles.splice(index, 1);
 }
 
 function advanceRuntimeProjectile(
@@ -385,10 +405,7 @@ function advanceRuntimeProjectile(
     x: projectile.position.x + projectile.direction.x * step,
     y: projectile.position.y + projectile.direction.y * step,
   };
-  const shieldHit =
-    projectile.shieldDamage > 0 || projectile.hullDamage > 0
-      ? segmentShieldHit(projectile.position, next, target)
-      : null;
+  const { shieldHit, entry: targetEntry } = projectileTargetHit(projectile, next, target);
   const obstacle = firstObstacleHit(
     projectile.position,
     next,
@@ -396,7 +413,7 @@ function advanceRuntimeProjectile(
     runtime.arena.asteroids
   );
 
-  if (obstacle && (!shieldHit || obstacle.t < shieldHit.t)) {
+  if (obstacle && (targetEntry === null || obstacle.t < targetEntry)) {
     noteRuntimeImpact(
       runtime,
       projectile.owner === 'attacker' ? 'defender' : 'attacker',
@@ -416,18 +433,10 @@ function advanceRuntimeProjectile(
     if (projectile.ttlSeconds <= 0) expireProjectile(runtime, projectile, index);
     return;
   }
-  if (shieldHit) {
-    const result = recordProjectileDamage(runtime, projectile, source, target, shieldHit);
-    runtime.lastEvent =
-      source.setup.name +
-      ': ' +
-      projectile.family.replaceAll('_', ' ') +
-      ' trifft Schild -' +
-      Math.round(result.damage);
-    runtime.projectiles.splice(index, 1);
+  if (targetEntry !== null) {
+    completeProjectileHit(runtime, projectile, source, target, shieldHit, index);
     return;
   }
-  if (hitProjectileHull(runtime, projectile, source, target, next, index)) return;
   projectile.position = next;
   if (
     projectile.kind === 'missile' &&

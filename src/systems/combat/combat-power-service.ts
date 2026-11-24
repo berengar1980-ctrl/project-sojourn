@@ -35,14 +35,7 @@ export function advancePowerlessDrift(
   arena: StrategicCombatArenaOptions,
   dt: number
 ): void {
-  ship.position.x = clamp(
-    ship.position.x + ship.velocity.x * dt,
-    EDGE_PADDING,
-    arena.width - EDGE_PADDING
-  );
-  ship.position.y = clamp(
-    ship.position.y + ship.velocity.y * dt,
-    EDGE_PADDING,
-    arena.height - EDGE_PADDING
-  );
+  const padding = arena.useFieldBounds ? 0 : EDGE_PADDING;
+  ship.position.x = clamp(ship.position.x + ship.velocity.x * dt, padding, arena.width - padding);
+  ship.position.y = clamp(ship.position.y + ship.velocity.y * dt, padding, arena.height - padding);
 }

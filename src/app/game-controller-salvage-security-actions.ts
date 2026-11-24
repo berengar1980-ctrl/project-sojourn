@@ -32,7 +32,7 @@ export function salvageSecurityActions(context: ControllerRuntimeContext) {
     getNpcCombats,
     getFieldDuels: () =>
       localFieldDuels(
-        getNpcCombats(),
+        [...(context.engagements.finishedFieldCombatSnapshots?.() ?? []), ...getNpcCombats()],
         context.state.embeddedCombat === 'salvage-space'
           ? context.engagements.activePlayerFleet()?.getSnapshot()
           : null

@@ -37,7 +37,12 @@ function isDynamicWreck(wreck: SalvageWreck): boolean {
 function ownersForField(field: SalvageField): SalvageBody[] {
   // Both selectable wrecks AND purely visual fragments are physical.
   // Click/scan eligibility and navigation planning are separate properties.
-  return [...field.wrecks.filter(isDynamicWreck), ...(field.debris ?? [])];
+  const wreckIds = new Set(field.wrecks.map((wreck) => wreck.id));
+  return [
+    ...field.wrecks.filter(isDynamicWreck),
+    ...(field.debris ?? []).filter((part) => !wreckIds.has(part.id)),
+    ...(field.sections ?? []).filter((part) => !wreckIds.has(part.id)),
+  ];
 }
 
 function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
@@ -142,6 +147,11 @@ export function resolveSalvageShieldContacts(
 /** Route planner and tactical combat use live positions from the same cached bodies. */
 export function salvageFieldPhysicsBodies(field: SalvageField): readonly LocalAsteroid[] {
   return getPhysics(field).bodies;
+}
+
+/** Publish contacts resolved by the patrol/traffic controllers on the cached bodies. */
+export function syncSalvagePhysicsContacts(field: SalvageField): void {
+  syncBodyPositions(getPhysics(field), 0);
 }
 
 /** Called after combat consumed a throwable fragment to avoid resurrecting it. */

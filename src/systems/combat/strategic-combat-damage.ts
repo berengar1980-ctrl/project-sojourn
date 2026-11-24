@@ -1,3 +1,4 @@
+import { usesNaturalCombatContour } from './combat-visible-collider';
 import type { ShieldDamageSource } from '../../core/shield-types';
 import { segmentRockHit } from '../../core/compound-raycast';
 
@@ -204,21 +205,14 @@ export function firstObstacleHit(
   obstacles: readonly StrategicCombatObstacle[],
   asteroids: readonly CombatVisualAsteroid[] = []
 ): { obstacle: StrategicCombatObstacle; point: CombatPoint; t: number } | null {
-  const naturalRocks = new Map(
-    asteroids
-      .filter(
-        (rock) =>
-          rock.collisionRadius !== undefined &&
-          !rock.debrisVariant &&
-          !rock.sectionVariant &&
-          !rock.containerVariant
-      )
-      .map((rock) => [rock.id, rock])
-  );
+  const bodies = new Map(asteroids.map((rock) => [rock.id, rock]));
   let nearest: { obstacle: StrategicCombatObstacle; point: CombatPoint; t: number } | null = null;
   for (const obstacle of obstacles) {
-    const rock = naturalRocks.get(obstacle.id);
-    const hit = rock ? segmentRockHit(from, to, rock) : segmentCircleHit(from, to, obstacle);
+    const rock = bodies.get(obstacle.id);
+    const natural = rock && usesNaturalCombatContour(rock);
+    const hit = natural
+      ? segmentRockHit(from, to, rock)
+      : segmentCircleHit(from, to, rock ? { ...obstacle, position: rock.position } : obstacle);
     if (hit && (!nearest || hit.t < nearest.t)) nearest = { obstacle, ...hit };
   }
   return nearest;

@@ -1,5 +1,5 @@
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
-import { combatantHud } from './strategic-combat-panel';
+import { combatantHud } from './fleet-native-combat-panel';
 
 /**
  * Embedded local fights use the same authoritative duel snapshot and the

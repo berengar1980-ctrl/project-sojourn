@@ -63,12 +63,14 @@ function validRuntime(value: Record<string, unknown>): boolean {
 export function captureCareerStrategicCombat(
   runtime: StrategicCombatRuntime
 ): CareerStrategicCombatCheckpoint {
-  const { random: _random, attacker, defender, ...rest } = runtime;
+  const { random: _random, attacker, defender, arena, ...rest } = runtime;
+  const { fieldWorld: _transientFieldWorld, ...savedArena } = arena;
   const { setup: _attackerSetup, ...attackerState } = attacker;
   const { setup: _defenderSetup, ...defenderState } = defender;
   const serialized = JSON.parse(
     JSON.stringify({
       ...rest,
+      arena: savedArena,
       attacker: attackerState,
       defender: defenderState,
     })

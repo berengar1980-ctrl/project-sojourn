@@ -170,3 +170,41 @@ assert.equal(joined.getSnapshot().outcomeReason, 'destruction');
 field.finishPlayerCombat();
 assert.equal(field.activePlayerCombat(), null);
 assert.notEqual(fieldSector.combatMode(civilian), 'engaged');
+
+// Two battles on the same local map must share one moving asteroid array.
+const fieldLocation = mapModule.narrowsSector.locations[0].id;
+const sharedNpcs = data
+  .createSectorNpcEconomyStates()
+  .filter((npc) => !npc.travel)
+  .slice(0, 4);
+for (const npc of sharedNpcs) npc.locationId = fieldLocation;
+const sharedSector = sectorModule.createNpcSectorService(mapModule.narrowsSector, sharedNpcs, {
+  getPlayerPosition: () => navigation.getSnapshot().currentPosition,
+});
+const sharedEngagements = engagementsModule.createStarMapEngagementService({
+  navigation,
+  sectorNpcs: sharedSector,
+  fieldWitness: () => null,
+  log: () => {},
+});
+const movingRock = {
+  id: 'shared-motion-rock',
+  kind: 'debris',
+  position: { x: 3000, y: 1900 },
+  velocity: { x: 100, y: 0 },
+  radius: 12,
+};
+const sameField = () => ({ ...arena, asteroids: [structuredClone(movingRock)] });
+assert(sharedEngagements.engageNpcsInArena(sharedNpcs[0].id, sharedNpcs[1].id, sameField()));
+assert(sharedEngagements.engageNpcsInArena(sharedNpcs[2].id, sharedNpcs[3].id, sameField()));
+sharedEngagements.tick(0.08);
+const [one, two] = sharedEngagements.activeNpcCombatSnapshots();
+assert.strictEqual(one.arena.asteroids, two.arena.asteroids);
+assert(
+  one.arena.asteroids[0].position.x > 3006 && one.arena.asteroids[0].position.x < 3009,
+  'both engagements together integrate the asteroid exactly once'
+);
+assert.strictEqual(
+  sharedEngagements.fieldCombat(fieldLocation, arena.backdropSeed).arena.asteroids,
+  one.arena.asteroids
+);

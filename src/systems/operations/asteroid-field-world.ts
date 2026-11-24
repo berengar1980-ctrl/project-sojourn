@@ -222,7 +222,11 @@ export class AsteroidFieldWorld {
 
   /** The same 3D spin, impulse and drift physics used in salvage maps.
    * Active salvage and embedded combat own their wreck poses themselves. */
-  advanceCombatWreckMotion(deltaSeconds: number, skipLocationId?: string | null): void {
+  advanceCombatWreckMotion(
+    deltaSeconds: number,
+    skipLocationId?: string | null,
+    combatLocations: ReadonlySet<string> = new Set()
+  ): void {
     const dt = Math.min(0.05, Math.max(0, deltaSeconds));
     if (dt <= 0) return;
     if (skipLocationId) {
@@ -230,6 +234,11 @@ export class AsteroidFieldWorld {
       if (suspended) invalidateSalvagePhysics(suspended);
     }
     for (const [locationId, wrecks] of this.combatWrecksByLocation) {
+      if (combatLocations.has(locationId)) {
+        const suspended = this.wreckMotionFields.get(locationId);
+        if (suspended) invalidateSalvagePhysics(suspended);
+        continue;
+      }
       if (locationId === skipLocationId || wrecks.length === 0) continue;
       let field = this.wreckMotionFields.get(locationId);
       if (!field || field.wrecks !== wrecks) {

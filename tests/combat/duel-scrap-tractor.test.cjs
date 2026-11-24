@@ -118,7 +118,7 @@ for (let frame = 0; frame < 11; frame++) advanceThrownAsteroids(runtime, 0.08);
 assert.equal(runtime.thrownAsteroids[0].phase, 'flight');
 
 const visuals = readModuleSource(root, 'src/ui/combat/combat-scrap-renderer.ts');
-const battlefield = readModuleSource(root, 'src/ui/combat/strategic-combat-renderer.ts');
+const battlefield = readModuleSource(root, 'src/ui/combat/combat-native-weapon-painters.ts');
 const lobby = readModuleSource(root, 'src/ui/start/duel-lobby.ts');
 assert(
   !lobby.includes('Traktor-Test: Startschilde deaktivieren') &&
@@ -137,7 +137,7 @@ assert(
   'PvP must reuse all existing salvage geometry, not draw generic rocks'
 );
 assert(
-  /drawCombatScrap\s*\(\s*(?:this\.)?context\s*,/.test(battlefield),
+  /drawCombatScrap\s*\(\s*ctx\s*,/.test(battlefield),
   'tractor projectiles must render the captured 3D mesh during throw'
 );
 console.log(

@@ -7,10 +7,11 @@ import type { StrategicCombatBystander } from './strategic-combat-bystander-type
  */
 export function resolveCombatBystanderContacts(
   combatant: MutableCombatant,
-  bystanders: readonly StrategicCombatBystander[]
+  bystanders: readonly StrategicCombatBystander[],
+  resolveFleetBystander?: (ship: MutableCombatant, bystanderId: string) => boolean
 ): void {
   for (const npc of bystanders) {
-    if (npc.id === combatant.setup.id) continue;
+    if (npc.id === combatant.setup.id || resolveFleetBystander?.(combatant, npc.id)) continue;
     const contact = shipContact(combatant, {
       position: npc.position,
       headingRadians: npc.headingRadians,

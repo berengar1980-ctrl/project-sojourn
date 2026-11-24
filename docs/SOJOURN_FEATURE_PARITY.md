@@ -1917,3 +1917,38 @@ Optionale Performance-Proben erfassen Phasen der laufenden Simulation,
 ohne Spiel- oder Save-Semantik zu verändern. Keine neue Kampf-Engine,
 keine Änderung der vorhandenen 1vs1-Mechanik. Die unregelmäßige
 Drohnen-Schussdarstellung und Langzeitruckler sind separat zu verifizieren.
+
+## Review-Log (2026-11-24) – Gemeinsamer Kampftick
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+PvP-1vs1, FleetCombat und Kampagne führen dieselben Kampfschritte aus.
+Die Flottenkoordination bestimmt pro Schiff, wer KI, Bewegung und
+Cooldowns integriert. Geteilte Ziele können eigene Treffer erhalten.
+Derselbe Rumpfkontakt wird innerhalb seines Cooldowns nur einmal gebucht.
+Nach dem Enterrückzug übernimmt wieder die jeweilige Feldansicht oder der
+gemeinsame Kampf-Renderer. Ein aus Karriere-Checkpoint geladener Zweikampf
+nutzt den Flottenkoordinator. Die Mehrparteien-Persistenz bleibt offen.
+Neun unveränderte 1vs1-Replays prüfen die vollständigen Kampfsnapshots
+gegen den Referenzstand von `main`.
+
+## Review-Log (2026-11-24) – Flottenkontakte und Effekte
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Der native Rumpflöser und die Greifhakenphysik wirken auch für
+Verstärkungen beidseitig. Der Flottenkoordinator verbucht jeden
+Kontakt pro Paar und Phase einmal. Traktorobjekte verlassen alle
+Hindernislisten gleichzeitig. Treffer und Autokanonen-Salven später
+beigetretener Schiffe verwenden die gemeinsame Effektzeit. Tritt der
+Spieler einem laufenden NPC-Gefecht bei, bleibt sein Kampf die
+Hauptansicht und der NPC-Zweikampf wird als Teilgefecht gezeichnet.
+
+## Review-Log (2026-11-24) – Feldkontakt, Deckung und Beitritt
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Leichte Trümmer erhalten beim Anflug einen Impuls. Piraten- und
+NPC-Verkehr verwenden in Asteroiden- und Wrackfeldern denselben
+Schiffskontakt. Projektile vergleichen Deckung, Schild und Hülle
+entlang derselben Strecke. Kampfwracks verwenden ihre eigene
+Kontaktgröße. Gleichzeitige Gefechte eines Felds teilen die Driftkörper,
+auch wenn der Spieler nicht kämpft. Verstärkungen behalten reale
+Anflugposen und wählen im Feld ein tatsächlich erreichtes Ziel.

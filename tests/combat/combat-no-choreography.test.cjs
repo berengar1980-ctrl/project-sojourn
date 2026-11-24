@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const service = fs.readFileSync(
-  path.join(root, 'src/systems/combat/strategic-combat-service.ts'),
+  path.join(root, 'src/systems/combat/strategic-combat-step.ts'),
   'utf8'
 );
 assert(!service.includes('createActionExchange('), 'no seed-specific exchange planner is allowed');

@@ -1,3 +1,6 @@
+import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
+import { syncFieldTrafficImpulses } from '../systems/combat/field-combat-arena';
+import { salvageFieldPhysicsBodies } from '../systems/salvage/salvage-container-motion';
 import { measurePerformance } from '../core/performance-diagnostics';
 import { attackSalvageNpc } from './game-controller-salvage-attack';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
@@ -212,16 +215,22 @@ function fieldDuels(options: SalvageSceneOptions) {
   return options.getFieldDuels?.() ?? options.getNpcCombats?.() ?? [];
 }
 
-const lastSalvagePresentation = new WeakMap<SalvageSceneRuntime, number>();
-const SALVAGE_PRESENTATION_INTERVAL_MS = 1000 / 24;
-
-function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
+function tickSalvageTraffic(
+  context: SalvageSceneRuntime,
+  deltaSeconds: number,
+  combat: StrategicCombatSnapshot | null,
+  duels: readonly StrategicCombatSnapshot[]
+): void {
   const { options, service, npcSalvage } = context;
-  const combat = options.isCombatActive?.() ? (options.getCombat?.() ?? null) : null;
+  const playerBody = service.getSnapshot().ship;
   // During player combat the PvP solver is the only source of the drone pose.
   if (combat?.defender.id === 'security-drone:' + context.field.sourceLocationId) {
-    context.drone.restore(combat.defender.position, combat.defender.hullHp > 0);
-    context.drone.headingRadians = combat.defender.headingRadians;
+    context.drone.syncCombatPose(
+      combat.defender.position,
+      combat.defender.headingRadians,
+      combat.defender.speed,
+      combat.defender.hullHp > 0
+    );
   }
   advanceSalvagePirateResponse({
     field: context.field,
@@ -231,10 +240,13 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     salvagers: npcSalvage.ships,
     playerPosition: combat?.attacker.position ?? service.getSnapshot().ship.position,
     playerRadius: Math.max(18, options.ship.nominalLengthMeters * 0.35),
+    ...(!combat && {
+      playerBody: { id: 'player', ship: options.ship, state: playerBody, pushWeight: 2.4 },
+    }),
     ...(options.onFreighterExit && { onFreighterExit: options.onFreighterExit }),
     dt: deltaSeconds,
     playerCombat: combat,
-    npcCombats: fieldDuels(options),
+    npcCombats: duels,
     onPirateAttack: (pirateId, targetId, piratePosition, targetPosition) =>
       options.onPirateAttack?.(context.field, pirateId, targetId, piratePosition, targetPosition) ??
       false,
@@ -242,17 +254,22 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
       options.onDroneAttack?.(context.field, pirateId, piratePosition, context.drone.position) ??
       false,
   });
+}
+
+const lastSalvagePresentation = new WeakMap<SalvageSceneRuntime, number>();
+const SALVAGE_PRESENTATION_INTERVAL_MS = 1000 / 24;
+
+function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): void {
+  const { options, service, npcSalvage } = context;
+  const combat = options.isCombatActive?.() ? (options.getCombat?.() ?? null) : null;
+  const duels = fieldDuels(options).filter(
+    (duel) => duel.arena.backdropSeed === context.field.seed
+  );
+  const fieldCombat = combat ?? duels[0];
+  const playerBody = service.getSnapshot().ship;
+  if (fieldCombat) syncSalvageCombatField(context.field, fieldCombat);
+  tickSalvageTraffic(context, deltaSeconds, combat, duels);
   if (combat) {
-    options.onCombatBystanders?.(
-      salvageDroneBystanders(
-        combat,
-        npcSalvage.ships,
-        context.drone,
-        context.field.sourceLocationId,
-        context.pirates.snapshot(options.sectorNpcs)
-      )
-    );
-    syncSalvageCombatField(context.field, combat);
     service.syncCombatPose(
       combat.attacker.position,
       combat.attacker.headingRadians,
@@ -260,7 +277,7 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     );
     npcSalvage.tick(deltaSeconds, combat.defender.id, true);
   } else {
-    tickDistressDiagnosis(context, deltaSeconds);
+    tickDistressDiagnosis(context, deltaSeconds, Boolean(fieldCombat));
     if (context.state.distressRamming && !context.state.distressTow) {
       const snapshot = service.getSnapshot();
       const wreck = context.field.wrecks[0];
@@ -306,6 +323,30 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
       service.getSnapshot(),
       options.onSectorEventResolved
     );
+  }
+  if (fieldCombat) {
+    const contacts = salvageDroneBystanders(
+      null,
+      npcSalvage.ships,
+      context.drone,
+      context.field.sourceLocationId,
+      context.pirates.snapshot(options.sectorNpcs)
+    );
+    options.onCombatBystanders?.(
+      context.field,
+      combat
+        ? contacts
+        : [
+            ...contacts,
+            {
+              id: 'player',
+              shipId: options.ship.id,
+              position: playerBody.position,
+              headingRadians: playerBody.headingRadians,
+            },
+          ]
+    );
+    syncFieldTrafficImpulses(salvageFieldPhysicsBodies(context.field), fieldCombat.arena);
   }
   const now = performance.now();
   if (

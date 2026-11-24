@@ -109,7 +109,7 @@ const combatService = fs.readFileSync(
   'utf8'
 );
 const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
+  path.join(root, 'src/ui/combat/fleet-native-combat-renderer.ts'),
   'utf8'
 );
 const nativeWeaponPainters = fs.readFileSync(
@@ -136,8 +136,7 @@ assert(
   'game renderer dispatches railgun lance'
 );
 assert(
-  renderer.includes('drawVisionAutocannon(') &&
-    fleetRenderer.includes('paintNativeAutocannonBursts(') &&
+  fleetRenderer.includes('paintNativeAutocannonBursts(') &&
     nativeWeaponPainters.includes('drawVisionAutocannon('),
   'game renderer dispatches upgraded seven-round autocannon salvo'
 );

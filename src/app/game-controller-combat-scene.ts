@@ -22,7 +22,8 @@ export function mountCombatScene(context: ControllerRuntimeContext, returnToMap:
   state.mode = 'combat';
   context.audio.clearPlayerRcs();
   const fleet = context.engagements.activePlayerFleet();
-  const onReturn = () => returnFromCombat(context, combat, returnToMap);
+  const onReturn = () =>
+    returnFromCombat(context, combat, returnToMap, () => mountCombatScene(context, returnToMap));
   const returnOptions = context.finishFieldExercise ? { returnLabel: 'ZUM FLEETCOMBAT-MENÜ' } : {};
   state.combatPanel = fleet
     ? createFleetNativeCombatPanel({
@@ -30,14 +31,8 @@ export function mountCombatScene(context: ControllerRuntimeContext, returnToMap:
         combat,
         onReturn,
         ...returnOptions,
-        parallelDuels: () => [
-          ...fleet.getSnapshot().duels.slice(1),
-          ...fleet.getSnapshot().supporters,
-        ],
-        parallelSupportStartIndex: fleet.duels.length - 1,
-        parallelEscapedShipIds: () => fleet.getSnapshot().escapedShipIds,
-        fleetEngagements: () => fleet.getSnapshot().engagements,
-        isComplete: () => fleet.getSnapshot().finished,
+        fleet: () => fleet.getSnapshot(),
+        isComplete: () => Boolean(fleet.boardingService('player')) || fleet.isFinished(),
       })
     : createFleetNativeCombatPanel({ root: context.root, combat, onReturn, ...returnOptions });
   state.shipSwitcher?.destroy();

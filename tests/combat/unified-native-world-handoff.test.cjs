@@ -67,6 +67,63 @@ assert.deepEqual(fleet.getActor('c').velocity, extraVelocity);
 assert.equal(fleet.getActor('c').headingRadians, 2.15);
 assert.equal(new Set(['a', 'b', 'c'].map((id) => fleet.getActor(id))).size, 3);
 
+const joining = createParallelNativeDuels([a, b], arena, 2152);
+joining.getActor('a').position = { x: 2100, y: 780 };
+joining.setBystanders([
+  { id: 'nearby', shipId: a.setup.shipId, position: { x: 2070, y: 755 }, headingRadians: 0 },
+]);
+assert(joining.addShip({ id: 'arrival', team: 'b', setup: setup('arrival') }));
+const arrival = joining.getActor('arrival');
+assert(
+  Math.hypot(arrival.position.x - 2100, arrival.position.y - 780) >= 95,
+  'generated arrivals cannot spawn inside a live fighter'
+);
+assert(
+  Math.hypot(arrival.position.x - 2070, arrival.position.y - 755) >= 95,
+  'generated arrivals cannot spawn inside free traffic'
+);
+assert.equal(
+  joining.addShip({
+    id: 'outside',
+    team: 'b',
+    setup: setup('outside'),
+    position: { x: -5, y: 20 },
+  }),
+  false
+);
+
+// Both a ship already on the field and a later arrival retain their perimeter pose.
+const perimeter = createParallelNativeDuels(
+  [{ ...a, position: { x: 18, y: 800 }, headingRadians: 0, velocity: { x: 80, y: 0 } }, b],
+  { ...arena, backdropSeed: 42 },
+  2151
+);
+perimeter.tick(0.08);
+const presentBeforeJoin = { ...perimeter.getActor('a').position };
+assert(presentBeforeJoin.x > 18 && presentBeforeJoin.x < 30, 'combat starts at the live pose');
+const late = { x: 18, y: 1300 };
+const entrant = {
+  id: 'drone',
+  team: 'a',
+  setup: setup('drone'),
+  position: late,
+  headingRadians: 0,
+  velocity: { x: 80, y: 0 },
+};
+perimeter.setBystanders([
+  { id: entrant.id, shipId: entrant.setup.shipId, position: late, headingRadians: 0 },
+]);
+assert(perimeter.addShip(entrant));
+perimeter.tick(0.08);
+const presentAfterJoin = perimeter.getActor('a').position;
+assert(
+  Math.hypot(presentAfterJoin.x - presentBeforeJoin.x, presentAfterJoin.y - presentBeforeJoin.y) <
+    12,
+  'a fighter already on the map must move normally when another ship joins'
+);
+const droneAfterJoin = perimeter.getActor('drone').position;
+assert(droneAfterJoin.x > 18 && droneAfterJoin.x < 30, 'the joining drone starts at its live pose');
+
 // One native AI/physics owner per ship, even after introducing a new target.
 for (const id of ['a', 'b', 'c']) fleet.getActor(id).tractorThrowCooldown = 2;
 fleet.tick(0.08);
@@ -142,6 +199,79 @@ assert.equal(
   800 - arena.defenderPosition.x,
   'the campaign holds the original world-space coordinate mapping without jumping'
 );
+const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/strategic-combat-service.ts'
+);
+const { createStarMapEngagementService } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/star-map-engagement-service.ts'
+);
+const checkpoint = career.combat.exportCareerState();
+const reconstruct = () =>
+  createStrategicCombatService(
+    setup('player'),
+    realNpcActor.setup,
+    checkpoint.seed,
+    arena,
+    checkpoint
+  );
+const reference = reconstruct();
+const restored = reconstruct();
+const engagement = createStarMapEngagementService({
+  navigation: { getSnapshot: () => ({ currentPosition: worldPose.playerPosition }) },
+  sectorNpcs: {
+    npcs: [enemy],
+    livePosition: worldPose.positionOf,
+    liveHeading: worldPose.headingOf,
+  },
+});
+engagement.restorePlayerCareerCombat(restored, enemy.id);
+const restoredFleet = engagement.activePlayerFleet();
+assert(restoredFleet, 'loading a live duel must restore the fleet coordinator');
+assert.strictEqual(restoredFleet.getActor(enemy.id), restored.getParallelActor('defender'));
+assert.deepEqual(engagement.activePlayerCombat().getSnapshot(), reference.getSnapshot());
+for (let step = 0; step < 10; step++) {
+  engagement.tick(0.08);
+  assert.deepEqual(engagement.activePlayerCombat().getSnapshot(), reference.tick(0.08));
+}
+// Normal campaign entry, the two-ship FleetCombat coordinator and
+// the direct PvP service must agree with identical prepared inputs.
+const freshEnemy = { ...enemy, combatMovement: undefined };
+const fieldEngagements = createStarMapEngagementService({
+  navigation: {
+    getSnapshot: () => ({ currentPosition: worldPose.playerPosition }),
+    stopPursuit() {},
+  },
+  sectorNpcs: {
+    npcs: [freshEnemy],
+    livePosition: () => arena.defenderPosition,
+    liveHeading: () => arena.defenderHeadingRadians,
+    markEngaged() {},
+  },
+  getPlayerCombatant: () => setup('player'),
+  log() {},
+});
+assert(fieldEngagements.engageNpcInArena(freshEnemy.id, arena));
+const fieldCombat = fieldEngagements.activePlayerCombat();
+const [playerSetup, enemySetup] = ['attacker', 'defender'].map(
+  (side) => fieldCombat.getParallelActor(side).setup
+);
+const seed = fieldCombat.exportCareerState().seed;
+const direct = createStrategicCombatService(playerSetup, enemySetup, seed, arena);
+const fleetReplay = createParallelNativeDuels(
+  [
+    { id: playerSetup.id, team: 'a', setup: playerSetup },
+    { id: enemySetup.id, team: 'b', setup: enemySetup },
+  ],
+  arena,
+  seed
+);
+for (let step = 0; step < 10; step++) {
+  fieldEngagements.tick(0.08);
+  assert.deepEqual(fleetReplay.tick(0.08).duels[0], direct.tick(0.08));
+  assert.deepEqual(fieldCombat.getSnapshot(), direct.getSnapshot());
+}
 console.log(
   'PASS shared native 1v1/fleet/career positions, velocity, heading and single motion owner'
 );

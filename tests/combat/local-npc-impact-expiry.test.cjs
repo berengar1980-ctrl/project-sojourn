@@ -58,4 +58,52 @@ assert.equal(
 );
 timeline.retain([]);
 assert.equal(timeline.visible({ ...first, elapsedSeconds: 0 }).length, 1);
+const { fleetRenderSources, updateParallelNativeImpacts, updateParallelAutocannonBursts } =
+  loadStandaloneTypeScriptModule(root, 'src/ui/combat/parallel-native-duel-overlay.ts');
+const { combatEffectSource } = loadStandaloneTypeScriptModule(
+  root,
+  'src/ui/combat/combat-effect-clock.ts'
+);
+const impact = first.recentImpacts[0];
+const late = {
+  ...first,
+  elapsedSeconds: 0.08,
+  lastImpact: impact,
+  projectiles: [
+    {
+      id: 1,
+      kind: 'autocannon',
+      origin: { x: 0, y: 0 },
+      target: { x: 90, y: 0 },
+    },
+  ],
+};
+const lead = {
+  ...late,
+  attacker: { id: 'primary' },
+  recentImpacts: [],
+  lastImpact: null,
+  projectiles: [],
+};
+assert.deepEqual(
+  fleetRenderSources(late, [lead], [late]),
+  {
+    additional: [lead],
+    supportingFromIndex: 1,
+  },
+  'a player who joins as support stays the primary view without duplicating a duel'
+);
+const seen = new Map();
+const visible = new Map();
+const bursts = new Map();
+const key = combatEffectSource(late);
+updateParallelNativeImpacts([lead, late], 120, 120, seen, visible);
+updateParallelAutocannonBursts([lead, late], bursts, 120);
+assert.equal(visible.get(key).length, 1, 'lastImpact and recentImpacts report the same hit once');
+assert.equal(visible.get(key)[0].startedAt, 120, 'a reinforcement uses the fleet effect clock');
+assert.equal([...bursts.values()][0].spawnedAt, 120, 'its first salvo does not expire immediately');
+updateParallelNativeImpacts([late], 120.1, 120.1, seen, visible);
+updateParallelAutocannonBursts([late], bursts, 120.1);
+assert.equal(visible.get(key).length, 1, 'removing an earlier duel does not restart another hit');
+assert.equal(bursts.size, 1, 'moving a duel in the snapshot does not duplicate a burst');
 console.log('PASS local NPC impact VFX expire and do not linger as world markers');

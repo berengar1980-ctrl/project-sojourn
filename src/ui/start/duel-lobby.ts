@@ -1,3 +1,4 @@
+import { recordPerformance } from '../../core/performance-diagnostics';
 import { duelCombatant, duelInstalledComponents, type DuelDraft } from './duel-combatant-setup';
 import { calculateShipModeEnergy } from '../../systems/ships/ship-component-service';
 import type { ShipComponentType } from '../../core/ship-types';
@@ -315,9 +316,11 @@ export function createDuelLobby(
       const dt = Math.min((now - previous) / 1000, 0.08);
       previous = now;
       const simulationStart = performance.now();
-      combat.tick(dt);
+      combat.advance(dt);
       const renderStart = performance.now();
       activePanel.update();
+      recordPerformance('pvp.duel.simulation', renderStart - simulationStart);
+      recordPerformance('pvp.duel.render', performance.now() - renderStart);
       logSlowDuelFrame(simulationStart, renderStart, 'custom', combat.getSnapshot().elapsedSeconds);
       frame = requestAnimationFrame(tick);
     };

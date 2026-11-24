@@ -6,12 +6,15 @@ interface RamContactVisual {
 }
 
 /** Capture the initiator before the physics module clears ramApproach. */
-export function captureRamVisuals(runtime: StrategicCombatRuntime): RamContactVisual {
+export function captureRamVisuals(
+  runtime: StrategicCombatRuntime,
+  visualElapsed: number
+): RamContactVisual {
   const { attacker, defender } = runtime;
   const attackerRams = attacker.ramApproach?.phase === 'impact';
   const defenderRams = defender.ramApproach?.phase === 'impact';
-  if (attackerRams) attacker.ramImpactAt = runtime.elapsedSeconds;
-  if (defenderRams) defender.ramImpactAt = runtime.elapsedSeconds;
+  if (attackerRams) attacker.ramImpactAt = visualElapsed;
+  if (defenderRams) defender.ramImpactAt = visualElapsed;
   const struckSide = defenderRams && !attackerRams ? 'attacker' : 'defender';
   const struck = struckSide === 'attacker' ? attacker : defender;
   return { struckSide, struckShielded: struck.shieldHp > 0 };

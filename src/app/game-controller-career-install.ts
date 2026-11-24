@@ -39,11 +39,18 @@ export function installControllerCareer(
   }
 }
 
+function assertCareerOutsideCombat(context: ControllerRuntimeContext): void {
+  const mode = context.state.mode;
+  if (mode === 'combat' || mode === 'boarding' || context.engagements.activePlayerCombat()) {
+    throw new Error('Speichern und Laden sind während eines Gefechts nicht möglich.');
+  }
+}
+
 export function saveControllerCareer(context: ControllerRuntimeContext): void {
-  const { state, navigation, engagements, fuelJourney, systemLog } = context;
+  assertCareerOutsideCombat(context);
+  const { state, navigation, fuelJourney, systemLog } = context;
   if (
     !['star-map', 'port'].includes(state.mode) ||
-    engagements.activePlayerCombat() ||
     navigation.getSnapshot().isTravelling ||
     fuelJourney.plan()
   ) {
@@ -70,6 +77,10 @@ export function controllerSettings(
     options.onReturnToMainMenu,
     context.state.playerProfile,
     options.fieldExercise ? undefined : () => saveControllerCareer(context),
-    options.onLoadCareer
+    options.onLoadCareer &&
+      (() => {
+        assertCareerOutsideCombat(context);
+        options.onLoadCareer?.();
+      })
   );
 }

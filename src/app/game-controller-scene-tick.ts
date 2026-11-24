@@ -1,3 +1,4 @@
+import { syncFieldTrafficImpulses } from '../systems/combat/field-combat-arena';
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerLocalModel, controllerStarModel } from './game-controller-models';
@@ -49,7 +50,10 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
     // Keep non-navigation local systems alive; the duel owns ship and asteroid motion.
     state.localSpace.tickCombatEnvironment(deltaSeconds);
   } else {
-    state.localSpace.tick(deltaSeconds);
+    const field = state.localSpace.getSnapshot().instance;
+    const engagement = context.engagements.fieldCombat?.(field.sourceLocationId, field.seed);
+    state.localSpace.tick(deltaSeconds, Boolean(engagement));
+    if (engagement) syncFieldTrafficImpulses(field.asteroids, engagement.arena);
     const localSnapshot = state.localSpace.getSnapshot();
     context.shipOperations.recordHull(
       state.activeShip,

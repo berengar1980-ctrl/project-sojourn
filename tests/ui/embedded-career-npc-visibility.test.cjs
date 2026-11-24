@@ -6,7 +6,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
-const renderer = read('src/ui/combat/strategic-combat-renderer.ts');
+const renderer = read('src/ui/combat/fleet-native-combat-renderer.ts');
 const mining = read('src/ui/local-space/local-space-renderer.ts');
 const salvage = read('src/ui/salvage/salvage-space-renderer.ts');
 const miningLayers = read('src/ui/local-space/local-space-scene-layers.ts');

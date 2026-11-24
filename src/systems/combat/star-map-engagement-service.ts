@@ -28,8 +28,13 @@ import type { StrategicCombatArenaOptions } from './strategic-combat-service';
 import { npcCombatant } from './npc-combatant-setup';
 import {
   finishPlayerCombat,
+  fieldCombat,
+  prepareFieldCombatArena,
+  resetFieldCombatSteps,
+  registerFieldCombatWreck,
   joinBackgroundCombat,
   resolveBackgroundCombats,
+  restorePlayerFleet,
 } from './star-map-engagement-fleet-resolution';
 import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
 
@@ -193,7 +198,7 @@ function beginPlayerCombat(
     target,
     runtime.options.sectorNpcs.npcs,
     playerInitiated,
-    arena,
+    prepareFieldCombatArena(runtime, target.locationId, arena),
     {
       ...(runtime.options.fieldOwnsContact && {
         fieldOwnsContact: runtime.options.fieldOwnsContact,
@@ -284,7 +289,7 @@ function beginBackgroundCombat(
     attacker,
     defender,
     runtime.options.sectorNpcs.npcs,
-    arena,
+    prepareFieldCombatArena(runtime, attacker.locationId, arena),
     {
       ...(runtime.options.fieldOwnsContact && {
         fieldOwnsContact: runtime.options.fieldOwnsContact,
@@ -382,6 +387,8 @@ function syncPlayerPursuitTarget(runtime: EngagementRuntime): void {
 }
 
 function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void {
+  runtime.finishedFieldDuels.length = 0;
+  resetFieldCombatSteps(runtime);
   if (runtime.options.isPlayerInCampaignSystem?.()) {
     resolveBackgroundCombats(runtime, deltaSeconds);
     return;
@@ -396,19 +403,14 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
   updatePlayerChase(runtime);
   updateNpcChases(runtime);
   resolveBackgroundCombats(runtime, deltaSeconds);
-  if (runtime.playerCombat) {
-    if (runtime.playerFleet) {
-      runtime.playerFleet.joinNearby(
-        runtime.options.navigation.getSnapshot().currentPosition,
-        runtime.options.sectorNpcs.npcs,
-        (npc) => runtime.options.sectorNpcs.livePosition(npc),
-        (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
-      );
-      runtime.playerFleet.tick(deltaSeconds);
-    } else {
-      const model = runtime.playerCombat.tick(deltaSeconds);
-      if (runtime.playerEnemy) runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
-    }
+  if (runtime.playerFleet) {
+    runtime.playerFleet.joinNearby(
+      runtime.options.navigation.getSnapshot().currentPosition,
+      runtime.options.sectorNpcs.npcs,
+      (npc) => runtime.options.sectorNpcs.livePosition(npc),
+      (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
+    );
+    runtime.playerFleet.tick(deltaSeconds);
   }
 }
 
@@ -424,6 +426,7 @@ export function createStarMapEngagementService(
     piratePlayerChase: null,
     npcChases: new Map(),
     backgroundCombats: new Map(),
+    finishedFieldDuels: [],
     attackScanAccumulator: 0,
   };
 
@@ -464,6 +467,11 @@ export function createStarMapEngagementService(
           (entry) => entry.fleet.fleet.getSnapshot().escapedShipIds
         ),
       ]),
+    fieldCombat: (locationId, seed, bystanders) =>
+      fieldCombat(runtime, locationId, seed, bystanders),
+    registerFieldCombatWreck: (locationId, seed, destroyedId, body) =>
+      registerFieldCombatWreck(runtime, locationId, seed, destroyedId, body),
+    finishedFieldCombatSnapshots: () => runtime.finishedFieldDuels,
     activeNpcCombatSnapshots: () =>
       [...runtime.backgroundCombats.values()].flatMap((entry) => [
         ...entry.fleet.fleet.getSnapshot().duels,
@@ -476,10 +484,7 @@ export function createStarMapEngagementService(
       }
       const enemy = engagementNpc(runtime, enemyId);
       if (!enemy || enemy.hullHp <= 0) throw new Error('Saved combat enemy unavailable');
-      const checkpoint = combat.exportCareerState();
-      if (checkpoint.defenderId !== enemyId) throw new Error('Career combat enemy mismatch');
-      runtime.playerCombat = combat;
-      runtime.playerEnemy = enemy;
+      restorePlayerFleet(runtime, combat, enemy);
     },
     finishPlayerCombat: (boardingOutcome) => finishPlayerCombat(runtime, boardingOutcome),
   };

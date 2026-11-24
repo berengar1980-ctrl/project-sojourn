@@ -17,7 +17,7 @@ import type { ShipLoadoutService, ShipOwnershipService } from '../systems/ships'
 import type { ShipOperatingService } from '../systems/ships/ship-operating-costs';
 import type { FuelJourneyService } from './game-controller-fuel-journey';
 import type { BoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
-import type { StrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
+import type { FleetNativeCombatPanel } from '../ui/combat/fleet-native-combat-panel';
 import type { LocalSpacePanel } from '../ui/local-space/local-space-panel';
 import type { StarMapPanel } from '../ui/map/star-map-panel';
 import type { PortPanel } from '../ui/port/port-panel';
@@ -46,7 +46,7 @@ export interface ControllerRuntimeState {
   localSpace: LocalSpaceService | null;
   localNpcMining: NpcLocalMiningService | null;
   salvageScene: SalvageSceneController | null;
-  combatPanel: StrategicCombatPanel | null;
+  combatPanel: FleetNativeCombatPanel | null;
   boardingPanel: BoardingTacticalPanel | null;
   embeddedCombat: 'local-space' | 'salvage-space' | null;
   combatResultPending: boolean;

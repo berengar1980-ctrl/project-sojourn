@@ -1,4 +1,3 @@
-import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import type { ShipArmorProtection, ShipWeaponFamily } from '../../core/ship-types';
 import type { AsteroidPhysics } from '../../core/local-space-types';
 import type {
@@ -12,10 +11,7 @@ import type { ShieldImpactEffect } from '../../core/shield-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import type { CombatPowerBudget } from './combat-power-types';
 import type { RamApproachState } from './combat-ram-approach-types';
-import type {
-  CareerStrategicCombatCheckpoint,
-  CombatSubsystemHealth,
-} from './strategic-combat-checkpoint-types';
+import type { CombatSubsystemHealth } from './strategic-combat-checkpoint-types';
 export type {
   CareerStrategicCombatCheckpoint,
   CombatSubsystemHealth,
@@ -272,6 +268,7 @@ export interface StrategicCombatSnapshot {
 }
 
 export interface CombatVisualAsteroid {
+  readonly contactGeometry?: 'circle';
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
   readonly combatWreckVariant?: CombatWreckVariant;
@@ -297,7 +294,15 @@ export interface StrategicCombatObstacle {
   readonly radius: number;
 }
 
+export interface SharedFieldCombatWorld {
+  readonly asteroids: CombatVisualAsteroid[];
+  readonly removedIds: Set<string>;
+  advanced: boolean;
+}
+
 export interface StrategicCombatArenaOptions {
+  readonly fieldWorld?: SharedFieldCombatWorld;
+  readonly useFieldBounds?: boolean;
   readonly width: number;
   readonly height: number;
   readonly attackerPosition?: CombatPoint;
@@ -310,25 +315,6 @@ export interface StrategicCombatArenaOptions {
   readonly asteroids?: readonly CombatVisualAsteroid[];
   readonly exitPoint?: CombatPoint;
   readonly backdropSeed?: number;
-}
-
-export interface StrategicCombatService {
-  exportCareerState(): CareerStrategicCombatCheckpoint;
-  getSnapshot(): StrategicCombatSnapshot;
-  getCombatLog(): readonly CombatLogEntry[];
-  tick(deltaSeconds: number): StrategicCombatSnapshot;
-  setBystanders(ships: readonly StrategicCombatBystander[]): void;
-  setTactic(side: StrategicCombatSide, tactic: CombatTactic): void;
-  surrender(side: StrategicCombatSide): void;
-  fireGrapple(side: StrategicCombatSide): boolean;
-  resumeAfterBoarding(): boolean;
-  getParallelActor?(side: StrategicCombatSide): MutableCombatant;
-  retargetParallelSurvivor?(
-    side: StrategicCombatSide,
-    opponent: MutableCombatant,
-    orphaned?: boolean
-  ): boolean;
-  redirectParallelSupport?(opponent: MutableCombatant): boolean;
 }
 
 export interface MutableCombatant {

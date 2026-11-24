@@ -3,11 +3,8 @@ import {
   isFleetHostile,
   type FleetHostility,
 } from './native-fleet-hostility';
-import type {
-  MutableCombatant,
-  StrategicCombatService,
-  StrategicCombatSide,
-} from './strategic-combat-types';
+import type { MutableCombatant, StrategicCombatSide } from './strategic-combat-types';
+import type { StrategicCombatService } from './strategic-combat-service-types';
 
 export type NativeFleetDriver = StrategicCombatSide | 'both';
 
@@ -46,7 +43,7 @@ function enemy(a: MutableCombatant, b: MutableCombatant, context: FleetAssignmen
 function activeEngagements(context: FleetAssignment): Engagement[] {
   const engagements: Engagement[] = [];
   for (const [index, service] of context.services.entries()) {
-    if (service.getSnapshot().winner !== null) continue;
+    if (service.getStatus().winner !== null) continue;
     const sides: readonly StrategicCombatSide[] =
       context.drivers[index] === 'both'
         ? ['attacker', 'defender']
@@ -66,7 +63,7 @@ function freeCombatant(
   driven: NativeFleetDriver,
   context: FleetAssignment
 ): { ship: MutableCombatant; side: StrategicCombatSide } | null {
-  const state = service.getSnapshot();
+  const state = service.getStatus();
   if (driven === 'both') {
     if (state.winner !== null) {
       if (state.outcomeReason !== 'destruction' && state.outcomeReason !== 'escape') return null;
@@ -173,7 +170,7 @@ export function reassignNativeFleetTargets(context: FleetAssignment): void {
         ? service.retargetParallelSurvivor?.(
             available.side,
             choice.opponent,
-            service.getSnapshot().winner === null
+            service.getStatus().winner === null
           )
         : service.redirectParallelSupport?.(choice.opponent);
     if (!assigned) continue;

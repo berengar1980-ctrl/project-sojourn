@@ -247,6 +247,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     };
     this.instance.ship.headingRadians = headingRadians;
     this.instance.ship.speed = Math.max(0, speed);
+    this.stationKeepingPosition = { ...this.instance.ship.position };
     this.navigationTarget = null;
     this.navigationRoute = [];
     this.navigationIndex = 0;

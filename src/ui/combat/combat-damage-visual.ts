@@ -34,26 +34,3 @@ export function drawCombatDamageParticles(
     fraction
   );
 }
-
-/** Paint damage for both sides without growing the primary combat renderer. */
-export function drawCombatDamagePair(
-  context: CanvasRenderingContext2D,
-  combatants: readonly [StrategicCombatSnapshot['attacker'], StrategicCombatSnapshot['defender']],
-  geometryFor: (combatant: StrategicCombatSnapshot['attacker']) => ShipScreenGeometry,
-  particlesById: Map<string, DistressDamageParticles>,
-  now: number,
-  width: number,
-  height: number
-): void {
-  for (const combatant of combatants) {
-    drawCombatDamageParticles(
-      context,
-      combatant,
-      geometryFor(combatant),
-      particlesById,
-      now,
-      width,
-      height
-    );
-  }
-}

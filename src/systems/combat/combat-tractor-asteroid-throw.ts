@@ -57,7 +57,8 @@ function removeCapturedThrowable(
   if (rock) {
     const asteroids = runtime.arena.asteroids as CombatVisualAsteroid[] | undefined;
     const obstacles = runtime.arena.obstacles as StrategicCombatObstacle[] | undefined;
-    asteroids?.splice(asteroids.indexOf(rock), 1);
+    const rockIndex = asteroids?.indexOf(rock) ?? -1;
+    if (rockIndex >= 0) asteroids?.splice(rockIndex, 1);
     const obstacleIndex = obstacles?.findIndex((candidate) => candidate.id === rock.id) ?? -1;
     if (obstacleIndex >= 0) obstacles?.splice(obstacleIndex, 1);
   } else if (mine) {

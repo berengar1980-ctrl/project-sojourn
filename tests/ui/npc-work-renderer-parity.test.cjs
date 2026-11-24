@@ -11,7 +11,7 @@ const mining = source('src/ui/local-space/mining-effects-renderer.ts');
 const salvage = source('src/ui/salvage/salvage-scene-layers.ts');
 const salvageEffect = source('src/ui/salvage/salvage-work-effect-renderer.ts');
 const bridge = source('src/app/game-controller-field-world-bridge.ts');
-const combat = source('src/systems/combat/strategic-combat-service.ts');
+const combat = source('src/systems/combat/strategic-combat-step.ts');
 const pirate = source('src/data/ships/pirate-class-ships.ts');
 
 assert(miner.includes('this.miningEffects.drawNpcMining('));
@@ -26,7 +26,7 @@ assert(salvage.includes('drawTargetDetailScan('));
 assert(!salvage.includes('drawNpcSalvageTether('));
 assert(salvageEffect.includes('drawSalvageWorkEffect('));
 assert(bridge.includes('activeNpcCombatSnapshots?.()'));
-assert(bridge.includes('setBystanders(bystanders)'));
+assert(bridge.includes('fieldCombat?.(field.locationId, field.instance.seed, bystanders)'));
 assert(combat.includes('resolveCombatBystanderContacts('));
 assert(!pirate.includes('nominalLengthMeters: 120'));
 assert(!pirate.includes('nominalLengthMeters: 80'));
