@@ -1,0 +1,31 @@
+name: Temporary wreck collision formatter and focused tests
+on:
+  push:
+    branches:
+      - fix/fleet-wreck-visibility-scale-two-thirds-20261124
+jobs:
+  validate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npx prettier --write src/app/game-controller-mining.ts src/app/game-controller-mining-runtime.ts src/systems/local-space/local-space-options.ts src/systems/local-space/local-space-autopilot-hazards.ts src/systems/local-space/local-space-service.ts src/systems/local-space/local-space-wreck-navigation.ts src/systems/local-space/local-space-wreck-contacts.ts src/systems/operations/asteroid-field-world.ts src/systems/combat/native-fleet-wrecks.ts tests/combat/parallel-native-wreck-escape.test.cjs tests/salvage/combat-wreck-solid-routing.test.cjs docs/CAREER_PERSISTENCE.md docs/SOJOURN_FEATURE_PARITY.md
+      - name: Commit formatted files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/game-controller-mining.ts src/app/game-controller-mining-runtime.ts src/systems/local-space/local-space-options.ts src/systems/local-space/local-space-autopilot-hazards.ts src/systems/local-space/local-space-service.ts src/systems/local-space/local-space-wreck-navigation.ts src/systems/local-space/local-space-wreck-contacts.ts src/systems/operations/asteroid-field-world.ts src/systems/combat/native-fleet-wrecks.ts tests/combat/parallel-native-wreck-escape.test.cjs tests/salvage/combat-wreck-solid-routing.test.cjs docs/CAREER_PERSISTENCE.md docs/SOJOURN_FEATURE_PARITY.md
+          git diff --cached --quiet || git commit -m "Format salvage-aware wreck collision and routes"
+          git push
+      - name: Focused wreck and fleet regression tests
+        run: |
+          node tests/salvage/combat-wreck-solid-routing.test.cjs
+          node tests/salvage/combat-destruction-wreck.test.cjs
+          node tests/combat/parallel-native-wreck-escape.test.cjs
