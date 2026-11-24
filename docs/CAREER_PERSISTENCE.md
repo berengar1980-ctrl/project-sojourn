@@ -1288,3 +1288,12 @@ Eskortdrohnen können sichtbare Piraten auch während eines laufenden
 Feldgefechts anfliegen. Der vorhandene Flottenkoordinator übernimmt den
 Beitritt. Der Abfangkurs nutzt den bestehenden Routen- und Verkehrszustand.
 Das Save-Format erhält keine neuen Felder.
+
+### FleetCombat-Wrackanzeige und visuelle Skalierung (2026-11-24)
+
+**Keine Speicheränderung.** Native Flottenwracks aus dem gemeinsamen
+Asteroiden-/Kampffeld werden auch bei benutzerdefiniertem Feldhintergrund
+gezeichnet. Alle Kampfwracks werden rein visuell auf zwei Drittel ihrer
+bisherigen Größe skaliert. Autoritative Position, Kollisionsradius,
+Bergungsreichweite, gespeicherte Varianten, Schadenszustand und Drift
+bleiben unverändert; die Darstellung erzeugt keine zusätzlichen Körper.
