@@ -156,8 +156,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   getMiningRouteOptions(): RoutePlanningOptions | null {
-    return selectedWreckAwareRouteOptions(this.instance, this.selectedAsteroidId, this.shield,
-      this.options.additionalObstacles?.() ?? []);
+    return selectedWreckAwareRouteOptions(this.options, this.selectedAsteroidId, this.shield);
   }
 
   getShortRangeScanRouteOptions(): RoutePlanningOptions | null {
@@ -165,8 +164,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions {
-    return pointWreckAwareRouteOptions(this.instance, target, this.shield,
-      this.options.additionalObstacles?.() ?? []);
+    return pointWreckAwareRouteOptions(this.options, target, this.shield);
   }
   startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot {
     if (this.miningEvents.pending || route.length < 2) return this.getSnapshot();
