@@ -23,10 +23,11 @@ function arenaBoundaryAvoidance(
     120,
     Math.min(EDGE_WARNING_DISTANCE, arena.width * 0.22, arena.height * 0.22)
   );
-  const left = combatant.position.x - EDGE_PADDING;
-  const right = arena.width - EDGE_PADDING - combatant.position.x;
-  const top = combatant.position.y - EDGE_PADDING;
-  const bottom = arena.height - EDGE_PADDING - combatant.position.y;
+  const padding = arena.useFieldBounds ? 0 : EDGE_PADDING;
+  const left = combatant.position.x - padding;
+  const right = arena.width - padding - combatant.position.x;
+  const top = combatant.position.y - padding;
+  const bottom = arena.height - padding - combatant.position.y;
   let x = 0;
   let y = 0;
   let strongest = 0;

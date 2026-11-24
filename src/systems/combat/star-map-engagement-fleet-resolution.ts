@@ -124,6 +124,10 @@ export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSecond
       runtime.options.onNpcCombatEnded?.(model, entry.first, entry.second);
       if (model.winner) settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
     }
+    if (model.arena.backdropSeed !== undefined) {
+      const { duels, supporters } = entry.fleet.fleet.getSnapshot();
+      runtime.finishedFieldDuels.push(...duels, ...supporters);
+    }
     for (const npc of entry.fleet.members.values()) {
       releaseNpc(runtime, entry.fleet, npc, 'Nach Gefecht');
     }

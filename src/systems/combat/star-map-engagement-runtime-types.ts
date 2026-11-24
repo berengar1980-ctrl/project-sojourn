@@ -1,3 +1,4 @@
+import type { StrategicCombatSnapshot } from './strategic-combat-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { StrategicCombatService } from './strategic-combat-service';
 import type { StarMapEngagementOptions } from './star-map-engagement-contract';
@@ -25,5 +26,6 @@ export interface EngagementRuntime {
   piratePlayerChase: ChaseRecord | null;
   readonly npcChases: Map<string, ChaseRecord>;
   readonly backgroundCombats: Map<string, BackgroundCombat>;
+  readonly finishedFieldDuels: StrategicCombatSnapshot[];
   attackScanAccumulator: number;
 }

@@ -92,6 +92,38 @@ assert.equal(
   false
 );
 
+// Both a ship already on the field and a later arrival retain their perimeter pose.
+const perimeter = createParallelNativeDuels(
+  [{ ...a, position: { x: 18, y: 800 }, headingRadians: 0, velocity: { x: 80, y: 0 } }, b],
+  { ...arena, backdropSeed: 42 },
+  2151
+);
+perimeter.tick(0.08);
+const presentBeforeJoin = { ...perimeter.getActor('a').position };
+assert(presentBeforeJoin.x > 18 && presentBeforeJoin.x < 30, 'combat starts at the live pose');
+const late = { x: 18, y: 1300 };
+const entrant = {
+  id: 'drone',
+  team: 'a',
+  setup: setup('drone'),
+  position: late,
+  headingRadians: 0,
+  velocity: { x: 80, y: 0 },
+};
+perimeter.setBystanders([
+  { id: entrant.id, shipId: entrant.setup.shipId, position: late, headingRadians: 0 },
+]);
+assert(perimeter.addShip(entrant));
+perimeter.tick(0.08);
+const presentAfterJoin = perimeter.getActor('a').position;
+assert(
+  Math.hypot(presentAfterJoin.x - presentBeforeJoin.x, presentAfterJoin.y - presentBeforeJoin.y) <
+    12,
+  'a fighter already on the map must move normally when another ship joins'
+);
+const droneAfterJoin = perimeter.getActor('drone').position;
+assert(droneAfterJoin.x > 18 && droneAfterJoin.x < 30, 'the joining drone starts at its live pose');
+
 // One native AI/physics owner per ship, even after introducing a new target.
 for (const id of ['a', 'b', 'c']) fleet.getActor(id).tractorThrowCooldown = 2;
 fleet.tick(0.08);

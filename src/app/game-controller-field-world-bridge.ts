@@ -155,8 +155,12 @@ function syncNpcDuelFieldPoses(
         combatant.speed
       );
       if (combatant.id === 'security-drone:' + field.locationId) {
-        field.drone.restore(combatant.position, combatant.hullHp > 0);
-        field.drone.headingRadians = combatant.headingRadians;
+        field.drone.syncCombatPose(
+          combatant.position,
+          combatant.headingRadians,
+          combatant.speed,
+          combatant.hullHp > 0
+        );
       }
     }
   }
@@ -217,6 +221,18 @@ function setFieldBystanders(
   context.engagements.fieldCombat?.(field.locationId, field.instance.seed, bystanders);
 }
 
+function syncFinishedFieldPoses(
+  context: ControllerRuntimeContext,
+  fieldWorld: AsteroidFieldWorld,
+  finished: readonly StrategicCombatSnapshot[]
+): void {
+  if (finished.length === 0) return;
+  fieldWorld.forEachField((field) => {
+    const duels = finished.filter((duel) => duel.arena.backdropSeed === field.instance.seed);
+    syncNpcDuelFieldPoses(context, field, duels);
+  });
+}
+
 /** All field operations advance on the campaign clock, not only during local rendering. */
 export function advanceControllerFieldWorld(
   context: ControllerRuntimeContext,
@@ -231,8 +247,10 @@ export function advanceControllerFieldWorld(
       : null;
   const background = context.engagements.activeNpcCombatSnapshots?.() ?? [];
   const fleet = combat ? context.engagements.activePlayerFleet?.()?.getSnapshot() : null;
+  const finished = context.engagements.finishedFieldCombatSnapshots();
   const localDuels = localFieldDuels(background, fleet);
   const fieldWorld = fieldWorldFor(context);
+  syncFinishedFieldPoses(context, fieldWorld, finished);
   const combatLocations = new Set<string>();
   for (const duel of background) {
     if (duel.arena.backdropSeed === undefined) continue;
@@ -260,6 +278,8 @@ export function advanceControllerFieldWorld(
       (duel) => duel.arena.backdropSeed === field.instance.seed
     );
     if (activeCombat && !fleet) duels.push(activeCombat);
+    const finishedHere = finished.filter((duel) => duel.arena.backdropSeed === field.instance.seed);
+    const poseDuels = [...finishedHere, ...duels];
     syncNpcDuelFieldPoses(context, field, duels);
     const defenderId = activeCombat?.defender.id;
     field.miners.tick(seconds, defenderId);
@@ -267,7 +287,7 @@ export function advanceControllerFieldWorld(
     // The combat engine owns drone motion while it is fighting.
     // A second patrol tick would jump its sprite away from the hitbox.
     const droneId = 'security-drone:' + field.locationId;
-    const droneFightingNpc = duels.some(
+    const droneFightingNpc = poseDuels.some(
       (duel) => duel.attacker.id === droneId || duel.defender.id === droneId
     );
     if (activeCombat?.defender.id !== droneId && !droneFightingNpc) {

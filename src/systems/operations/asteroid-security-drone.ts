@@ -133,6 +133,17 @@ export class AsteroidSecurityDrone {
     this.retryAfterSeconds = 0;
   }
 
+  syncCombatPose(
+    position: WorldPoint,
+    headingRadians: number,
+    speed: number,
+    operational: boolean
+  ): void {
+    this.restore(position, operational);
+    this.headingRadians = headingRadians;
+    this.speed = Math.max(0, speed);
+  }
+
   tick(
     dt: number,
     asteroids: readonly LocalAsteroid[],

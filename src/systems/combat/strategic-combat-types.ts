@@ -302,6 +302,7 @@ export interface SharedFieldCombatWorld {
 
 export interface StrategicCombatArenaOptions {
   readonly fieldWorld?: SharedFieldCombatWorld;
+  readonly useFieldBounds?: boolean;
   readonly width: number;
   readonly height: number;
   readonly attackerPosition?: CombatPoint;

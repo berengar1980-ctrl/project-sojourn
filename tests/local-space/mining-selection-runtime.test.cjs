@@ -143,3 +143,15 @@ assert.equal(
 assert.equal(unknown.deposits[0].identified, true);
 
 console.log('PASS per-asteroid mining selection persistence and cargo-time resource reveal');
+
+// Releasing a ship back to idle must hold the last combat position.
+instance.asteroids.length = 0;
+const combatEnd = { x: 1200, y: 600 };
+service.syncCombatPose(combatEnd, 0, 0);
+for (let frame = 0; frame < 20; frame++) service.tick(0.05);
+const shipAfterCombat = service.getSnapshot().instance.ship;
+assert(
+  Math.hypot(shipAfterCombat.position.x - combatEnd.x, shipAfterCombat.position.y - combatEnd.y) <
+    0.15
+);
+assert.equal(shipAfterCombat.lateralThrust, 0);

@@ -44,6 +44,7 @@ export interface StarMapEngagementService {
     destroyedId: string,
     body: CombatVisualAsteroid
   ): void;
+  finishedFieldCombatSnapshots(): readonly StrategicCombatSnapshot[];
   activeNpcCombatSnapshots(): readonly StrategicCombatSnapshot[];
   activePlayerEnemy(): SectorNpcState | null;
   finishPlayerCombat(boardingOutcome?: BoardingOutcome): void;

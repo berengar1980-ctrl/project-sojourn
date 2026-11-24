@@ -237,6 +237,10 @@ function moveSecurityDroneAndIntercept(
   contacts: readonly DroneContact[],
   nearbyShips: readonly FieldRouteObstacle[]
 ): void {
+  // Pirate traffic may have started a fight since the field took its snapshot.
+  const droneId = 'security-drone:' + runtime.locationId;
+  const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === droneId);
+  if (npc?.combatMovement?.mode === 'engaged') return;
   const pirate = detectedSecurityPirate(context, runtime);
   const drone = runtime.drone;
   drone.tick(

@@ -55,8 +55,7 @@ function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> 
         if (salvager.npcId === npc.id) salvager.position = { ...ship.position };
       }
       if (npc.id === 'security-drone:' + field.sourceLocationId) {
-        drone.restore(ship.position, ship.hullHp > 0);
-        drone.headingRadians = ship.headingRadians;
+        drone.syncCombatPose(ship.position, ship.headingRadians, ship.speed, ship.hullHp > 0);
       }
     }
   }

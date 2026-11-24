@@ -387,6 +387,7 @@ function syncPlayerPursuitTarget(runtime: EngagementRuntime): void {
 }
 
 function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void {
+  runtime.finishedFieldDuels.length = 0;
   resetFieldCombatSteps(runtime);
   if (runtime.options.isPlayerInCampaignSystem?.()) {
     resolveBackgroundCombats(runtime, deltaSeconds);
@@ -425,6 +426,7 @@ export function createStarMapEngagementService(
     piratePlayerChase: null,
     npcChases: new Map(),
     backgroundCombats: new Map(),
+    finishedFieldDuels: [],
     attackScanAccumulator: 0,
   };
 
@@ -469,6 +471,7 @@ export function createStarMapEngagementService(
       fieldCombat(runtime, locationId, seed, bystanders),
     registerFieldCombatWreck: (locationId, seed, destroyedId, body) =>
       registerFieldCombatWreck(runtime, locationId, seed, destroyedId, body),
+    finishedFieldCombatSnapshots: () => runtime.finishedFieldDuels,
     activeNpcCombatSnapshots: () =>
       [...runtime.backgroundCombats.values()].flatMap((entry) => [
         ...entry.fleet.fleet.getSnapshot().duels,

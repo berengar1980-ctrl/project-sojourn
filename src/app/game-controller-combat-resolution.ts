@@ -30,7 +30,12 @@ function synchronizeLocalDefender(
     const locationId = defender.id.slice('security-drone:'.length);
     const drone = context.economy.securityDrones.get(locationId);
     if (drone) {
-      drone.restore(defender.position, defender.hullHp > 0);
+      drone.syncCombatPose(
+        defender.position,
+        defender.headingRadians,
+        defender.speed,
+        defender.hullHp > 0
+      );
       if (defender.hullHp <= 0) {
         context.economy.legal.reportOffense(
           context.state.activeShip.id,

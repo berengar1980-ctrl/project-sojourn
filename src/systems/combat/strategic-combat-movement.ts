@@ -131,16 +131,17 @@ function performCombatThrust(
     combatant.setup.accelerationMetersPerSecond2 ?? DEFAULT_ACCELERATION
   );
   if (combatant.subsystems.engine <= 0) {
+    const padding = arena.useFieldBounds ? 0 : EDGE_PADDING;
     // With no main engine the ship keeps drifting; only RCS can turn its bow.
     combatant.position.x = clamp(
       combatant.position.x + combatant.velocity.x * deltaSeconds,
-      EDGE_PADDING,
-      arena.width - EDGE_PADDING
+      padding,
+      arena.width - padding
     );
     combatant.position.y = clamp(
       combatant.position.y + combatant.velocity.y * deltaSeconds,
-      EDGE_PADDING,
-      arena.height - EDGE_PADDING
+      padding,
+      arena.height - padding
     );
     resolveArenaObstacles(combatant, arena);
     return;

@@ -79,10 +79,11 @@ export function applyInertialThrust(
     combatant.velocity.y *= limit / speed;
   }
 
+  const padding = arena.useFieldBounds ? 0 : EDGE_PADDING;
   const nextX = combatant.position.x + combatant.velocity.x * dt;
   const nextY = combatant.position.y + combatant.velocity.y * dt;
-  combatant.position.x = clamp(nextX, EDGE_PADDING, arena.width - EDGE_PADDING);
-  combatant.position.y = clamp(nextY, EDGE_PADDING, arena.height - EDGE_PADDING);
+  combatant.position.x = clamp(nextX, padding, arena.width - padding);
+  combatant.position.y = clamp(nextY, padding, arena.height - padding);
   if (nextX !== combatant.position.x) combatant.velocity.x = 0;
   if (nextY !== combatant.position.y) combatant.velocity.y = 0;
   combatant.speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);

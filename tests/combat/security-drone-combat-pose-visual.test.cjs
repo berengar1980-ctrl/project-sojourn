@@ -15,7 +15,7 @@ const pvp = read('src/ui/combat/fleet-native-combat-renderer.ts');
 
 assert(
   bridge.includes("combatant.id === 'security-drone:' + field.locationId") &&
-    bridge.includes('field.drone.restore(combatant.position, combatant.hullHp > 0)'),
+    bridge.includes('field.drone.syncCombatPose('),
   'mining NPC duels mirror the real combatant pose into the drone sprite'
 );
 assert(
@@ -30,7 +30,7 @@ assert(
   'player combat uses the native drone sprite only once, without overlapping stale overlays'
 );
 assert(
-  salvageScene.includes('context.drone.restore(combat.defender.position') &&
+  salvageScene.includes('context.drone.syncCombatPose(') &&
     salvageCollider.includes("excluded.has('security-drone:' + locationId)"),
   'salvage player combat updates the drone pose without a duplicate bystander collider'
 );

@@ -225,8 +225,12 @@ function tickSalvageTraffic(
   const playerBody = service.getSnapshot().ship;
   // During player combat the PvP solver is the only source of the drone pose.
   if (combat?.defender.id === 'security-drone:' + context.field.sourceLocationId) {
-    context.drone.restore(combat.defender.position, combat.defender.hullHp > 0);
-    context.drone.headingRadians = combat.defender.headingRadians;
+    context.drone.syncCombatPose(
+      combat.defender.position,
+      combat.defender.headingRadians,
+      combat.defender.speed,
+      combat.defender.hullHp > 0
+    );
   }
   advanceSalvagePirateResponse({
     field: context.field,

@@ -1248,3 +1248,8 @@ zweiten Drift-Tick und spiegelt Treffer, Traktorentnahmen und Verkehrsimpulse
 zurück ins Feld. Der Koordinator, die Liste entfernter Körper und seine
 Tick-Markierung sind flüchtig und bleiben außerhalb des Save-Formats.
 Außerhalb von Gefechten gelten die bestehenden Asteroiden- und Wrackdaten.
+
+Die finalen Positionen beendeter NPC-Feldgefechte werden im selben
+Simulationsschritt an den Feldverkehr übergeben. Die Übergabeliste ist
+flüchtig und wird beim nächsten Kampfschritt geleert. Das Save-Format
+und die gespeicherten Felddaten ändern sich dadurch nicht.

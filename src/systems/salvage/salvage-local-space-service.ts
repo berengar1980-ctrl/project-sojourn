@@ -280,11 +280,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   ): SalvageLocalSpaceSnapshot {
     this.ship.position = clampPoint(position, this.options.field.width, this.options.field.height);
     this.ship.headingRadians = headingRadians;
-    this.ship.speed = Math.max(0, speed);
-    this.navigationTarget = null;
-    this.navigationRoute = [];
-    this.routeIndex = 0;
     this.finishIdle();
+    this.ship.speed = Math.max(0, speed);
     return this.getSnapshot();
   }
 

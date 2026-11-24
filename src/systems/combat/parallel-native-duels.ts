@@ -312,6 +312,7 @@ export function createParallelNativeDuels(
   const baseObstacles = [...(arena.obstacles ?? [])];
   const fleetArena: StrategicCombatArenaOptions = {
     ...arena,
+    ...(arena.backdropSeed !== undefined ? { useFieldBounds: true } : {}),
     obstacles: baseObstacles,
     asteroids: arena.fieldWorld?.asteroids ?? [...(arena.asteroids ?? [])],
     exitPoint:

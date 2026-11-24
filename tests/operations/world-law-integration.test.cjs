@@ -57,6 +57,7 @@ function createScenario() {
     systemLog: { write: (message) => logs.push(message) },
     engagements: {
       activePlayerCombat: () => false,
+      finishedFieldCombatSnapshots: () => [],
       engageNpcsInArena: () => false,
     },
   };
@@ -209,4 +210,38 @@ remoteTheftAndPursuitTest();
   duel.arena.backdropSeed = field.instance.seed;
   advanceControllerFieldWorld(context, 0.08);
   assert.deepEqual(field.drone.position, far);
+}
+
+// Pirate traffic may claim the drone after the active combat snapshots were read.
+{
+  const { context, field, location } = createScenario();
+  const droneNpc = context.economy.sectorNpcs.npcs.find(
+    (npc) => npc.id === 'security-drone:' + location.id
+  );
+  const overlap = field.instance.asteroids.find((body) => body.routeBlocking).position;
+  field.drone.restore(overlap, true);
+  droneNpc.combatMovement = { mode: 'engaged', position: { ...overlap } };
+  context.state.mode = 'local-space';
+  context.state.localSpace = { getSnapshot: () => ({ instance: field.instance }) };
+  advanceControllerFieldWorld(context, 0.08);
+  assert.deepEqual(field.drone.position, overlap, 'patrol may not move a newly engaged drone');
+}
+
+// The last native pose must survive the tick that removes the engagement.
+{
+  const { context, field, location, miner } = createScenario();
+  const droneId = 'security-drone:' + location.id;
+  const position = { x: 50, y: 50 };
+  const drone = { id: droneId, position, hullHp: 100, headingRadians: 1.25, speed: 37 };
+  context.engagements.finishedFieldCombatSnapshots = () => [
+    {
+      arena: { backdropSeed: field.instance.seed },
+      attacker: drone,
+      defender: { ...drone, id: miner.id },
+    },
+  ];
+  advanceControllerFieldWorld(context, 0.08);
+  assert.deepEqual(field.drone.position, position);
+  assert.equal(field.drone.headingRadians, 1.25);
+  assert.equal(field.drone.speed, 37);
 }
