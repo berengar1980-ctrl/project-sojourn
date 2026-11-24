@@ -97,20 +97,29 @@ function key(column: number, row: number): string {
   return column + ':' + row;
 }
 
-function pointToSegmentDistance(point: WorldPoint, start: WorldPoint, end: WorldPoint): number {
+function squaredDistance(a: WorldPoint, b: WorldPoint): number {
+  const x = a.x - b.x;
+  const y = a.y - b.y;
+  return x * x + y * y;
+}
+
+function pointToSegmentDistanceSquared(
+  point: WorldPoint,
+  start: WorldPoint,
+  end: WorldPoint
+): number {
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const lengthSquared = dx * dx + dy * dy;
-  if (lengthSquared === 0) return distance(point, start);
+  if (lengthSquared === 0) return squaredDistance(point, start);
 
   const projection = Math.max(
     0,
     Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)
   );
-  return distance(point, {
-    x: start.x + dx * projection,
-    y: start.y + dy * projection,
-  });
+  const offsetX = point.x - (start.x + dx * projection);
+  const offsetY = point.y - (start.y + dy * projection);
+  return offsetX * offsetX + offsetY * offsetY;
 }
 
 function obstacleList(
@@ -125,10 +134,10 @@ function pointClear(
   obstacles: readonly LocalAsteroid[],
   clearance: number
 ): boolean {
-  return obstacles.every(
-    (asteroid) =>
-      distance(point, asteroid.position) >= localAsteroidContactRadius(asteroid) + clearance
-  );
+  return obstacles.every((asteroid) => {
+    const radius = localAsteroidContactRadius(asteroid) + clearance;
+    return squaredDistance(point, asteroid.position) >= radius * radius;
+  });
 }
 
 function segmentClear(
@@ -137,11 +146,10 @@ function segmentClear(
   obstacles: readonly LocalAsteroid[],
   clearance: number
 ): boolean {
-  return obstacles.every(
-    (asteroid) =>
-      pointToSegmentDistance(asteroid.position, start, end) >=
-      localAsteroidContactRadius(asteroid) + clearance
-  );
+  return obstacles.every((asteroid) => {
+    const radius = localAsteroidContactRadius(asteroid) + clearance;
+    return pointToSegmentDistanceSquared(asteroid.position, start, end) >= radius * radius;
+  });
 }
 
 function gridNode(column: number, row: number): GridNode {
@@ -236,13 +244,12 @@ function findGridRoute(
 
     closed.add(entry.key);
     for (const neighbor of neighbors(current, columns, rows)) {
-      if (!pointClear(neighbor, obstacles, clearance)) continue;
-      if (!segmentClear(current, neighbor, obstacles, clearance * 0.92)) continue;
-
       const neighborKey = key(neighbor.column, neighbor.row);
       if (closed.has(neighborKey)) continue;
       const tentative = (cost.get(entry.key) ?? Infinity) + distance(current, neighbor);
       if (tentative >= (cost.get(neighborKey) ?? Infinity)) continue;
+      if (!pointClear(neighbor, obstacles, clearance)) continue;
+      if (!segmentClear(current, neighbor, obstacles, clearance * 0.92)) continue;
 
       const priority = tentative + distance(neighbor, endNode);
       cameFrom.set(neighborKey, entry.key);

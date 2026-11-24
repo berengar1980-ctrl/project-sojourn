@@ -16,7 +16,7 @@ const { registerSectorShips, advanceNpcPenalCustody } = load(
   'src/app/game-controller-law-enforcement.ts'
 );
 
-function createScenario() {
+function createScenario(exercise = false) {
   const economy = createControllerEconomy({
     getSnapshot: () => ({ currentPosition: narrowsSector.star.position }),
   });
@@ -62,7 +62,7 @@ function createScenario() {
     },
   };
   registerSectorShips(context);
-  const world = fieldWorldFor(context);
+  const world = fieldWorldFor(context, undefined, exercise ? location.id : undefined);
   const field = world.field(location.id);
   assert(field);
   const localMiner = field.miners.ships.find((ship) => ship.npcId === miner.id);
@@ -244,4 +244,11 @@ remoteTheftAndPursuitTest();
   assert.deepEqual(field.drone.position, position);
   assert.equal(field.drone.headingRadians, 1.25);
   assert.equal(field.drone.speed, 37);
+}
+
+{
+  const { context, location } = createScenario(true);
+  const simulatedFields = [];
+  fieldWorldFor(context).forEachField((field) => simulatedFields.push(field.locationId));
+  assert.deepEqual(simulatedFields, [location.id], 'FleetCombat only runs its scenario field');
 }

@@ -1,3 +1,4 @@
+import { measurePerformance } from '../core/performance-diagnostics';
 import type { LocalSpaceInstance } from '../core/local-space-types';
 import type { SectorNpcState } from '../core/npc-types';
 import { localFieldDuels } from '../systems/combat/dynamic-fleet-combat';
@@ -82,13 +83,16 @@ export function bindCareerFieldWorld(
 /** Create once per campaign; world state lives independently of mounted scenes. */
 export function fieldWorldFor(
   context: ControllerRuntimeContext,
-  initial?: AsteroidFieldRuntime['instance']
+  initial?: AsteroidFieldRuntime['instance'],
+  exerciseLocationId?: string
 ): AsteroidFieldWorld {
   const previous = fieldWorlds.get(context);
   if (previous) return previous;
   const { economy, state } = context;
   const fields = new AsteroidFieldWorld(
-    narrowsSector.locations,
+    exerciseLocationId
+      ? narrowsSector.locations.filter((location) => location.id === exerciseLocationId)
+      : narrowsSector.locations,
     economy.asteroidClaims,
     (location, instance) =>
       createNpcLocalMiningService({
@@ -282,8 +286,10 @@ export function advanceControllerFieldWorld(
     const poseDuels = [...finishedHere, ...duels];
     syncNpcDuelFieldPoses(context, field, duels);
     const defenderId = activeCombat?.defender.id;
-    field.miners.tick(seconds, defenderId);
-    tickFieldPirates(context, seconds, field, defenderId);
+    measurePerformance('sim.field.miners', () => field.miners.tick(seconds, defenderId));
+    measurePerformance('sim.field.pirates', () =>
+      tickFieldPirates(context, seconds, field, defenderId)
+    );
     // The combat engine owns drone motion while it is fighting.
     // A second patrol tick would jump its sprite away from the hitbox.
     const droneId = 'security-drone:' + field.locationId;
@@ -291,7 +297,7 @@ export function advanceControllerFieldWorld(
       (duel) => duel.attacker.id === droneId || duel.defender.id === droneId
     );
     if (activeCombat?.defender.id !== droneId && !droneFightingNpc) {
-      tickFieldSecurity(context, seconds, field);
+      measurePerformance('sim.field.security', () => tickFieldSecurity(context, seconds, field));
     }
     if (fieldCombat) {
       syncFieldTrafficImpulses(field.instance.asteroids, fieldCombat.arena);

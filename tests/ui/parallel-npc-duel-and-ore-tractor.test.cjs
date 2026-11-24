@@ -20,7 +20,7 @@ assert(view.includes('readonly npcCombats?'));
 assert(scene.includes('drawLocalNpcCombatEffects('));
 assert(combatFx.includes('drawCombatBeamVisual('));
 assert(combatFx.includes('drawCombatImpactBatch('));
-assert(combatFx.includes('drawVisionProjectile('));
+assert(combatFx.includes('paintNativeProjectile('));
 assert(npcScene.includes('this.model.npcCombats'));
 assert(npcScene.includes('combatDefender.shieldImpacts'));
 assert(npcScene.includes('fighting) return'));
