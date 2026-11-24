@@ -696,7 +696,7 @@ Teil ihrer existierenden Checkpoints und werden beim Laden nicht stillschweigend
 bisherigen Maße 4400 × 2570 behalten, bis eine neue Feldinstanz erzeugt wird.
 
 Bei aktiven 1vs1-Kämpfen verwenden beide Karriere-Lokalansichten nun denselben
-`StrategicCombatRenderer` wie der eigenständige PvP-Modus, mit demselben
+`FleetNativeCombatRenderer` wie der eigenständige PvP-Modus, mit demselben
 Combat-Snapshot und ohne zusätzliche Nicht-Kampf-NPC-Zeichenebenen. Außerhalb
 des Duells bleiben Mining-/Bergungsoperationen, NPC-Simulation und die
 bestehende Karriere-Persistenz unverändert. Eine PvP-kompatible Kamera
@@ -1218,3 +1218,15 @@ werden nicht persistiert. Weder Schema noch Save-Version, NPC-Identität,
 Fracht- oder Wirtschaftszustand wurden verändert. Die bekannte
 Save/Load-Grenze für zusätzliche Teilnehmer laufender Fleet-Gefechte
 besteht weiterhin.
+
+### Wiederherstellung eines Zweikampfs im gemeinsamen Flottenkoordinator
+
+Ein bestehender Karriere-Kampfcheckpoint (Version 1) stellt weiterhin
+beide Akteure, Arena, Kampfzustand und Zufallsfolge wieder her. Der
+Kampagneneinstieg übernimmt den wiederhergestellten Dienst mitsamt diesem
+Zustand als erstes Paar in den Flottenkoordinator. Dieser besitzt fortan
+den Asteroidentick und ordnet den Positionsabgleich sowie spätere Beitritte
+wie bei einem neu begonnenen Gefecht zu. Der ursprüngliche Auslöser und
+zusätzliche Flottenteilnehmer fehlen im bestehenden Checkpoint-Format.
+Für alte Speicherstände gilt daher der Spieler als Auslöser für die
+Verstärkungslogik. Das Speicherformat bleibt bei Version 1.

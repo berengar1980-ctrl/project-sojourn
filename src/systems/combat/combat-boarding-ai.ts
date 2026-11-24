@@ -4,10 +4,11 @@ import { runtimeEnemy, runtimeCombatant } from './strategic-combat-runtime';
 
 export function maybeAttemptBoarding(
   runtime: StrategicCombatRuntime,
-  attempt: (side: StrategicCombatSide) => boolean
+  attempt: (side: StrategicCombatSide) => boolean,
+  sides: readonly StrategicCombatSide[] = ['attacker', 'defender']
 ): void {
   if (runtime.grapple) return;
-  for (const side of ['attacker', 'defender'] as const) {
+  for (const side of sides) {
     const ship = runtimeCombatant(runtime, side);
     const enemy = runtimeEnemy(runtime, side);
     if (!ship.setup.aiControlled || runtime.grappleUsed[side]) continue;

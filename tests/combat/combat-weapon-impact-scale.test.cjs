@@ -32,7 +32,7 @@ for (const family of weapons) {
   assert(hull.radius > close.radius, family + ' hull hit may be larger than shield contact');
 }
 const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
+  path.join(root, 'src/ui/combat/fleet-native-combat-renderer.ts'),
   'utf8'
 );
 const impactBatch = fs.readFileSync(

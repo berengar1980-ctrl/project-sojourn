@@ -17,7 +17,7 @@ const engagement = read('src/systems/combat/star-map-engagement-service.ts');
 const miningPanel = read('src/ui/local-space/local-space-panel.ts');
 const salvagePanel = read('src/ui/salvage/salvage-space-panel.ts');
 const sharedHud = read('src/ui/combat/embedded-combat-hud.ts');
-const duelHud = read('src/ui/combat/strategic-combat-panel.ts');
+const duelHud = read('src/ui/combat/fleet-native-combat-panel.ts');
 const styles = read('src/ui/styles.css');
 
 assert(state.includes('combatResultPending: false'));

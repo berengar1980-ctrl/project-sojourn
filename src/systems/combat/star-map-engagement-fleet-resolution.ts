@@ -1,3 +1,6 @@
+import { createCareerFleetEncounter } from './career-fleet-encounter';
+import type { StrategicCombatService } from './strategic-combat-service-types';
+import { measurePerformance } from '../../core/performance-diagnostics';
 import type { StrategicCombatArenaOptions } from './strategic-combat-types';
 import type { CareerFleetEncounter } from './career-fleet-encounter';
 import type { SectorNpcState } from '../../core/npc-types';
@@ -20,15 +23,19 @@ function releaseNpc(
 export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: number): void {
   for (const [key, entry] of [...runtime.backgroundCombats]) {
     const center = runtime.options.sectorNpcs.livePosition(entry.first);
-    entry.fleet.joinNearby(
-      center,
-      runtime.options.sectorNpcs.npcs,
-      (npc) => runtime.options.sectorNpcs.livePosition(npc),
-      (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'npc', entry.first.id, 'Flottengefecht')
+    measurePerformance('sim.combat.reinforcements', () =>
+      entry.fleet.joinNearby(
+        center,
+        runtime.options.sectorNpcs.npcs,
+        (npc) => runtime.options.sectorNpcs.livePosition(npc),
+        (npc) =>
+          runtime.options.sectorNpcs.markEngaged(npc, 'npc', entry.first.id, 'Flottengefecht')
+      )
     );
-    entry.fleet.tick(deltaSeconds);
-    const model = entry.combat.getSnapshot();
-    if (!entry.fleet.fleet.getSnapshot().finished && !model.boardingInitiator) continue;
+    measurePerformance('sim.combat.advance', () => entry.fleet.tick(deltaSeconds));
+    const boarding = entry.fleet.fleet.boardingService();
+    if (!entry.fleet.fleet.isFinished() && !boarding) continue;
+    const model = (boarding ?? entry.combat).getSnapshot();
     // The fleet may have retargeted its original service; actor identity is
     // authoritative, never the mutable attacker/defender slot after promotion.
     const initialPairIntact =
@@ -45,6 +52,21 @@ export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSecond
   }
 }
 
+function releaseFleetMembers(
+  runtime: EngagementRuntime,
+  fleet: CareerFleetEncounter | null,
+  primaryEnemy: SectorNpcState,
+  boardingOpponent: SectorNpcState | null
+): void {
+  if (!fleet) return;
+  for (const member of fleet.members.values()) {
+    if (member === primaryEnemy) continue;
+    const reason =
+      member === boardingOpponent ? 'Besatzung nach Enterkampf besiegt' : 'Nach Flottengefecht';
+    releaseNpc(runtime, fleet, member, reason);
+  }
+}
+
 export function finishPlayerCombat(
   runtime: EngagementRuntime,
   boardingOutcome?: BoardingOutcome
@@ -57,11 +79,12 @@ export function finishPlayerCombat(
   const playerAlive = runtime.playerFleet
     ? (runtime.playerFleet.fleet.getActor('player')?.hullHp ?? 0) > 0
     : model.attacker.hullHp > 0;
-  if (
-    (runtime.playerEnemy.hullHp <= 0 && playerAlive) ||
-    (model.boardingInitiator !== null && boardingOutcome === 'player_win')
-  ) {
-    runtime.options.onPlayerVictory?.(runtime.playerEnemy.id);
+  const boardingOpponent =
+    model.boardingInitiator && boardingOutcome === 'player_win'
+      ? (runtime.playerFleet?.members.get(model.defender.id) ?? runtime.playerEnemy)
+      : null;
+  if (boardingOpponent || (runtime.playerEnemy.hullHp <= 0 && playerAlive)) {
+    runtime.options.onPlayerVictory?.((boardingOpponent ?? runtime.playerEnemy).id);
   }
   if (runtime.playerEnemy.hullHp <= 0) {
     runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Kampfunfähig');
@@ -72,7 +95,9 @@ export function finishPlayerCombat(
     );
   } else {
     const reason =
-      boardingOutcome === 'player_win' ? 'Besatzung nach Enterkampf besiegt' : 'Nach Gefecht';
+      boardingOpponent === runtime.playerEnemy
+        ? 'Besatzung nach Enterkampf besiegt'
+        : 'Nach Gefecht';
     releaseNpc(runtime, runtime.playerFleet, runtime.playerEnemy, reason);
   }
   if (!playerAlive) {
@@ -82,12 +107,7 @@ export function finishPlayerCombat(
       'COMBAT > EIGENES SCHIFF KAMPFUNFÄHIG · BERGUNG NACH ' + destination.toUpperCase()
     );
   }
-  if (runtime.playerFleet) {
-    for (const member of runtime.playerFleet.members.values()) {
-      if (member !== runtime.playerEnemy)
-        releaseNpc(runtime, runtime.playerFleet, member, 'Nach Flottengefecht');
-    }
-  }
+  releaseFleetMembers(runtime, runtime.playerFleet, runtime.playerEnemy, boardingOpponent);
   runtime.playerFleet = null;
   runtime.playerCombat = null;
   runtime.playerEnemy = null;
@@ -113,4 +133,37 @@ export function joinBackgroundCombat(
     return true;
   }
   return false;
+}
+
+export function restorePlayerFleet(
+  runtime: EngagementRuntime,
+  combat: StrategicCombatService,
+  enemy: SectorNpcState
+): void {
+  const checkpoint = combat.exportCareerState();
+  if (checkpoint.defenderId !== enemy.id) throw new Error('Career combat enemy mismatch');
+  const player = combat.getParallelActor?.('attacker');
+  if (!player) throw new Error('Saved combat player unavailable');
+  const { sectorNpcs, fieldOwnsContact, fieldWitness, navigation } = runtime.options;
+  const arena = combat.getArena();
+  runtime.playerFleet = createCareerFleetEncounter(
+    player.setup,
+    enemy,
+    sectorNpcs.npcs,
+    true,
+    arena.backdropSeed === undefined ? undefined : arena,
+    {
+      ...(fieldOwnsContact && { fieldOwnsContact }),
+      ...(fieldWitness && { fieldWitness }),
+      positionOf: (npc) => sectorNpcs.livePosition(npc),
+      headingOf: (npc) => sectorNpcs.liveHeading(npc),
+      playerPosition: navigation.getSnapshot().currentPosition,
+    },
+    combat
+  );
+  if (enemy.combatMovement?.mode !== 'engaged') {
+    sectorNpcs.markEngaged(enemy, 'player', player.setup.id, 'Gefecht mit Spieler');
+  }
+  runtime.playerCombat = runtime.playerFleet.combat;
+  runtime.playerEnemy = enemy;
 }

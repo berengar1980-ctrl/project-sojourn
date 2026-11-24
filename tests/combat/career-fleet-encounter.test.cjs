@@ -104,6 +104,71 @@ for (let i = 0; i < 300; i++) {
   local.tick(0.08);
   assert.notEqual(actor.tactic, 'flee');
 }
+// An incoming grapple from a single-driver reinforcement is still a
+// campaign boarding encounter and freezes the shared field until resolved.
+const { shipContact } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-ship-contact-geometry.ts'
+);
+const playerSpot = { x: 1000, y: 1300 };
+let incomingBoarding = null;
+for (let attempt = 0; attempt < 20; attempt++) {
+  const firstTarget = npc('board-decoy-' + attempt, 'pirate');
+  const boarder = npc('boarder', 'pirate');
+  const roster = [firstTarget, boarder];
+  const encounter = createCareerFleetEncounter(
+    player,
+    firstTarget,
+    roster,
+    true,
+    {
+      ...area,
+      attackerPosition: playerSpot,
+      defenderPosition: { x: 3100, y: 1300 },
+    },
+    {
+      positionOf: worldPosition,
+      headingOf: () => 0,
+      fieldWitness: () => ({ position: { x: 1100, y: 1300 }, headingRadians: 0 }),
+    }
+  );
+  encounter.joinNearby(worldPosition(), roster, worldPosition);
+  const support = encounter.fleet.supporters[0];
+  const target = encounter.fleet.getActor('player');
+  const attacker = encounter.fleet.getActor(boarder.id);
+  assert.strictEqual(support.getParallelActor('defender'), target);
+  target.shieldHp = 0;
+  target.hullHp = 100;
+  assert(support.fireGrapple('attacker'));
+  if (!support.getSnapshot().grapple.success) continue;
+  for (let step = 0; step < 12 && !encounter.combat.getSnapshot().boardingInitiator; step++) {
+    for (const participant of [target, attacker]) {
+      participant.headingRadians = 0;
+      participant.velocity = { x: 0, y: 0 };
+      participant.speed = 0;
+    }
+    target.position = { ...playerSpot };
+    attacker.position = { x: 1100, y: 1300 };
+    attacker.position.x = playerSpot.x + shipContact(target, attacker).required + 1;
+    encounter.tick(0.08);
+  }
+  incomingBoarding = { encounter, support, boarder };
+  break;
+}
+assert(incomingBoarding, 'deterministic fixture must include a successful reinforcement grapple');
+const { encounter: boarded, support: boardingService, boarder } = incomingBoarding;
+const boardingView = boarded.combat.getSnapshot();
+assert.equal(boardingView.attacker.id, 'player');
+assert.equal(boardingView.defender.id, boarder.id);
+assert.equal(boardingView.boardingInitiator, 'defender');
+const beforeBoardingTick = boarded.fleet.duels[0].getSnapshot().elapsedSeconds;
+boarded.tick(0.08);
+assert.equal(boarded.fleet.duels[0].getSnapshot().elapsedSeconds, beforeBoardingTick);
+assert(boarded.combat.resumeAfterBoarding());
+assert.equal(boardingService.getSnapshot().boardingInitiator, null);
+boarded.tick(0.08);
+assert(boarded.fleet.duels[0].getSnapshot().elapsedSeconds > beforeBoardingTick);
+
 // Background NPC fights share the very same coordinator. Nearby security
 // and a capable patrol should oppose pirates without separate combat code.
 const victim = npc('victim', 'freighter', 10);

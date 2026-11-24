@@ -27,7 +27,8 @@ export function collisionThreat(first: MutableCombatant, second: MutableCombatan
 
 export function reviewShipContact(
   runtime: StrategicCombatRuntime,
-  review: (ship: MutableCombatant, enemy: MutableCombatant, side: StrategicCombatSide) => void
+  review: (ship: MutableCombatant, enemy: MutableCombatant, side: StrategicCombatSide) => void,
+  drivenSide?: StrategicCombatSide
 ): void {
   // Only real hull contact interrupts the fixed eight-second strategy cadence.
   const contact = shipContact(runtime.attacker, runtime.defender);
@@ -36,6 +37,7 @@ export function reviewShipContact(
     ['attacker', runtime.attacker, runtime.defender],
     ['defender', runtime.defender, runtime.attacker],
   ] as const) {
+    if (drivenSide && side !== drivenSide) continue;
     // Contact may not bypass the first staggered four-second analysis window.
     if (
       ship.setup?.aiControlled &&

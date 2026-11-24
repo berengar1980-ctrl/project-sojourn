@@ -1,3 +1,4 @@
+import { createParallelNativeDuels, type NativeDuelShip } from './parallel-native-duels';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { fieldInterceptRange, npcMayInitiateAttack } from '../npcs/npc-combat-ai';
 import type { SectorNpcState } from '../../core/npc-types';
@@ -11,9 +12,9 @@ import type { ParallelNativeDuels } from './parallel-native-duels';
 import type {
   StrategicCombatantSetup,
   StrategicCombatArenaOptions,
-  StrategicCombatService,
   StrategicCombatSnapshot,
 } from './strategic-combat-types';
+import type { StrategicCombatService } from './strategic-combat-service-types';
 
 const CONTACT_RANGE = 650;
 
@@ -51,6 +52,49 @@ export interface CareerFleetEncounter {
   tick(deltaSeconds: number): void;
 }
 
+function playerBoardingSnapshot(
+  model: StrategicCombatSnapshot,
+  playerId: string
+): StrategicCombatSnapshot {
+  if (model.attacker.id === playerId) return model;
+  return {
+    ...model,
+    attacker: model.defender,
+    defender: model.attacker,
+    winner: model.winner === 'attacker' ? 'defender' : 'attacker',
+    boardingInitiator: model.boardingInitiator === 'attacker' ? 'defender' : 'attacker',
+    grapple: model.grapple && {
+      ...model.grapple,
+      owner: model.grapple.owner === 'attacker' ? 'defender' : 'attacker',
+    },
+    grappleUsed: { attacker: model.grappleUsed.defender, defender: model.grappleUsed.attacker },
+    projectiles: [],
+    beams: [],
+    mines: [],
+    thrownAsteroids: [],
+  };
+}
+
+function playerCombatView(
+  service: StrategicCombatService,
+  fleet: ParallelNativeDuels,
+  playerId: string,
+  fallback: () => StrategicCombatSnapshot
+): StrategicCombatService {
+  return {
+    ...service,
+    getSnapshot() {
+      const boarding = fleet.boardingService(playerId);
+      return boarding ? playerBoardingSnapshot(boarding.getSnapshot(), playerId) : fallback();
+    },
+    resumeAfterBoarding() {
+      return (
+        fleet.boardingService(playerId)?.resumeAfterBoarding() ?? service.resumeAfterBoarding()
+      );
+    },
+  };
+}
+
 /** Player/NPC campaign encounter backed by exactly the same native PvP fleet core. */
 // The campaign adapter owns the original combat services and real NPC references.
 // eslint-disable-next-line max-lines-per-function, complexity
@@ -62,16 +106,18 @@ function createSectorFleetEncounter(
   victim: string,
   firstIsPlayer: boolean,
   arena?: StrategicCombatArenaOptions,
-  worldPose?: CareerFleetWorldPose
+  worldPose?: CareerFleetWorldPose,
+  restoredDuel?: StrategicCombatService
 ): CareerFleetEncounter {
   const enemySetup = npcCombatant(enemy);
   if (!enemySetup) throw new Error('Campaign enemy lacks a combat setup');
-  const seed = hashSeed(firstSetup.id + ':' + enemy.id);
+  const seed = restoredDuel?.exportCareerState().seed ?? hashSeed(firstSetup.id + ':' + enemy.id);
   const fieldArena =
     arena?.backdropSeed !== undefined && !arena.exitPoint
       ? { ...arena, exitPoint: seededLocalGate(arena.width, arena.height, arena.backdropSeed) }
       : arena;
-  const sessionArena = buildCombatArena(firstSetup, enemySetup, seed, fieldArena);
+  const sessionArena =
+    restoredDuel?.getArena() ?? buildCombatArena(firstSetup, enemySetup, seed, fieldArena);
   const conflict = createConflictManager([
     ...(firstIsPlayer ? [{ id: firstSetup.id, role: 'player' as const }] : []),
     ...allNpcs
@@ -108,33 +154,31 @@ function createSectorFleetEncounter(
     [firstSetup.id, firstSetup.id],
     [enemy.id, enemy.id],
   ]);
-  const fleet = createDynamicFleetCombat(
-    [
-      {
-        id: firstSetup.id,
-        team: 'a',
-        setup: firstSetup,
-        ...(firstPosition ? { position: firstPosition } : {}),
-        ...(firstNpc && worldPose
-          ? { headingRadians: arena?.attackerHeadingRadians ?? worldPose.headingOf(firstNpc) }
-          : {}),
-      },
-      {
-        id: enemy.id,
-        team: 'b',
-        setup: enemySetup,
-        ...(enemyPosition ? { position: enemyPosition } : {}),
-        ...(worldPose ? { headingRadians: worldPose.headingOf(enemy) } : {}),
-        ...(arena?.defenderHeadingRadians === undefined
-          ? {}
-          : { headingRadians: arena.defenderHeadingRadians }),
-      },
-    ],
-    sessionArena,
-    seed,
-    conflict.hostility(),
-    keys
-  );
+  const ships: readonly NativeDuelShip[] = [
+    {
+      id: firstSetup.id,
+      team: 'a',
+      setup: firstSetup,
+      ...(firstPosition ? { position: firstPosition } : {}),
+      ...(firstNpc && worldPose
+        ? { headingRadians: arena?.attackerHeadingRadians ?? worldPose.headingOf(firstNpc) }
+        : {}),
+    },
+    {
+      id: enemy.id,
+      team: 'b',
+      setup: enemySetup,
+      ...(enemyPosition ? { position: enemyPosition } : {}),
+      ...(worldPose ? { headingRadians: worldPose.headingOf(enemy) } : {}),
+      ...(arena?.defenderHeadingRadians === undefined
+        ? {}
+        : { headingRadians: arena.defenderHeadingRadians }),
+    },
+  ];
+  const hostility = conflict.hostility();
+  const fleet = restoredDuel
+    ? createParallelNativeDuels(ships, sessionArena, seed, hostility, keys, restoredDuel)
+    : createDynamicFleetCombat(ships, sessionArena, seed, hostility, keys);
   const worldOffsets = new Map<string, WorldPoint>();
   for (const npc of [firstNpc, enemy]) {
     if (!npc || !worldPose) continue;
@@ -152,6 +196,7 @@ function createSectorFleetEncounter(
   ]);
   const primary = fleet.duels[0]!;
   let playerResult: StrategicCombatSnapshot | null = null;
+  let playerId = firstIsPlayer ? firstSetup.id : undefined;
   const capturePlayerExit = () => {
     const state = primary.getSnapshot();
     if (state.attacker.id !== firstSetup.id) return;
@@ -191,7 +236,7 @@ function createSectorFleetEncounter(
   return {
     fleet,
     combat: firstIsPlayer
-      ? { ...primary, getSnapshot: () => playerResult ?? primary.getSnapshot() }
+      ? playerCombatView(primary, fleet, firstSetup.id, () => playerResult ?? primary.getSnapshot())
       : primary,
     members,
     joinPlayer(player, targetId, field) {
@@ -226,29 +271,26 @@ function createSectorFleetEncounter(
       );
       if (!joined) return null;
       const service = fleet.supporters[fleet.supporters.length - 1]!;
-      return {
-        ...service,
-        getSnapshot() {
-          const duel = service.getSnapshot();
-          if (duel.winner !== null) return duel;
-          const result = fleet.getSnapshot();
-          if (!result.finished) return duel;
-          // The shared opponent can depart through the original NPC duel.
-          if (result.escapedShipIds.includes(duel.defender.id))
-            return { ...duel, winner: 'attacker', outcomeReason: 'escape' };
-          if (duel.defender.hullHp <= 0)
-            return { ...duel, winner: 'attacker', outcomeReason: 'destruction' };
-          return duel;
-        },
-      };
+      playerId = player.id;
+      return playerCombatView(service, fleet, player.id, () => {
+        const duel = service.getSnapshot();
+        if (duel.winner !== null) return duel;
+        const result = fleet.getSnapshot();
+        if (!result.finished) return duel;
+        // The shared opponent can depart through the original NPC duel.
+        if (result.escapedShipIds.includes(duel.defender.id))
+          return { ...duel, winner: 'attacker', outcomeReason: 'escape' };
+        if (duel.defender.hullHp <= 0)
+          return { ...duel, winner: 'attacker', outcomeReason: 'destruction' };
+        return duel;
+      });
     },
     // Reinforcements use the same campaign sensory, hostility and actor ownership rules.
     // eslint-disable-next-line complexity
     joinNearby(position, npcs, npcPosition, onJoin) {
-      const snapshot = fleet.getSnapshot();
-      if (snapshot.finished) return;
+      if (fleet.isFinished()) return;
       const opponents = [...new Set(activeActors())].filter(
-        (actor) => actor.hullHp > 0 && !snapshot.escapedShipIds.includes(actor.setup.id)
+        (actor) => actor.hullHp > 0 && !fleet.hasEscaped(actor.setup.id)
       );
       for (const npc of npcs) {
         if (
@@ -332,8 +374,9 @@ function createSectorFleetEncounter(
       }
     },
     tick(deltaSeconds) {
+      if (playerId && fleet.boardingService(playerId)) return;
       const trackExit = firstIsPlayer && !playerResult && fleet.supporters.length > 0;
-      fleet.tick(deltaSeconds, trackExit ? capturePlayerExit : undefined);
+      fleet.advance(deltaSeconds, trackExit ? capturePlayerExit : undefined);
       for (const npc of members.values()) {
         const actor = fleet.getActor(npc.id);
         if (!actor) continue;
@@ -362,7 +405,8 @@ export function createCareerFleetEncounter(
   allNpcs: readonly SectorNpcState[],
   playerInitiated: boolean,
   arena?: StrategicCombatArenaOptions,
-  worldPose?: CareerFleetWorldPose
+  worldPose?: CareerFleetWorldPose,
+  restoredDuel?: StrategicCombatService
 ): CareerFleetEncounter {
   return createSectorFleetEncounter(
     player,
@@ -372,7 +416,8 @@ export function createCareerFleetEncounter(
     playerInitiated ? enemy.id : player.id,
     true,
     arena,
-    worldPose
+    worldPose,
+    restoredDuel
   );
 }
 

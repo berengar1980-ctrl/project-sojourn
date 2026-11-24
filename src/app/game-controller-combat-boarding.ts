@@ -12,7 +12,6 @@ import {
 import { boardingRangedWeapons, boardingMeleeWeapons } from '../data/boarding/boarding-weapons';
 import { boardingAfterAction } from '../systems/boarding/boarding-afteraction';
 import { createBoardingTacticalPanel } from '../ui/boarding/boarding-tactical-panel';
-import { createStrategicCombatPanel } from '../ui/combat/strategic-combat-panel';
 import { runSceneZoomTransition } from '../ui/scene-transition';
 import { recordCareerCombatWrecks } from './game-controller-combat-wrecks';
 
@@ -59,7 +58,8 @@ function createShipBoarders(snapshot: StrategicCombatSnapshot) {
 export function startCombatBoarding(
   context: ControllerRuntimeContext,
   snapshot: StrategicCombatSnapshot,
-  returnToMap: (boardingOutcome?: string) => void
+  returnToMap: (boardingOutcome?: string) => void,
+  resumeCombatScene: () => void
 ): void {
   if (!snapshot.boardingInitiator) return;
   context.systemLog.write(combatResultMessage(snapshot));
@@ -99,14 +99,7 @@ export function startCombatBoarding(
         if (combat?.resumeAfterBoarding()) {
           context.systemLog.write('BOARDING > RUECKZUG · RAUMKAMPF WIRD FORTGESETZT');
           context.campaignEvents.emit(aftermath.event);
-          state.boardingPanel?.destroy();
-          state.boardingPanel = null;
-          state.mode = 'combat';
-          state.combatPanel = createStrategicCombatPanel({
-            root: context.root,
-            combat,
-            onReturn: () => returnFromCombat(context, combat, () => returnToMap()),
-          });
+          resumeCombatScene();
           return;
         }
       }
@@ -146,7 +139,8 @@ export function startCombatBoarding(
 export function returnFromCombat(
   context: ControllerRuntimeContext,
   combat: StrategicCombatService,
-  returnToMap: () => void
+  returnToMap: () => void,
+  resumeCombatScene: () => void
 ): void {
   const snapshot = combat.getSnapshot();
   const playerActor = context.engagements.activePlayerFleet()?.getActor('player');
@@ -158,7 +152,7 @@ export function returnFromCombat(
   );
   if (!snapshot.boardingInitiator) context.systemLog.write(combatResultMessage(snapshot));
   if (snapshot.boardingInitiator) {
-    startCombatBoarding(context, snapshot, returnToMap);
+    startCombatBoarding(context, snapshot, returnToMap, resumeCombatScene);
     return;
   }
   recordCareerCombatWrecks(

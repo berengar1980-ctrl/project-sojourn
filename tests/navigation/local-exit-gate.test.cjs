@@ -43,7 +43,7 @@ assert(
 );
 assert(read('src/systems/combat/combat-flight-intent.ts').includes('gate.x - ship.position.x'));
 assert(read('src/ui/combat/combat-escape-gate-renderer.ts').includes('FLUCHTPUNKT'));
-assert(read('src/ui/combat/strategic-combat-renderer.ts').includes('drawCombatEscapeGate('));
+assert(read('src/ui/combat/fleet-native-combat-renderer.ts').includes('drawCombatEscapeGate('));
 assert(read('src/core/ship-types.ts').includes('grapplingHooks?'));
 assert(read('src/systems/ships/ship-registry.ts').includes('ensureUtilityHardpoints'));
 assert(read('src/ui/salvage/salvage-space-panel.ts').includes('TECHNISCHE DIAGNOSE · '));

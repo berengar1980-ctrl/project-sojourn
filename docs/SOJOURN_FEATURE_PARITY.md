@@ -1917,3 +1917,16 @@ Optionale Performance-Proben erfassen Phasen der laufenden Simulation,
 ohne Spiel- oder Save-Semantik zu verändern. Keine neue Kampf-Engine,
 keine Änderung der vorhandenen 1vs1-Mechanik. Die unregelmäßige
 Drohnen-Schussdarstellung und Langzeitruckler sind separat zu verifizieren.
+
+## Review-Log (2026-11-24) – Gemeinsamer Kampftick
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+PvP-1vs1, FleetCombat und Kampagne führen dieselben Kampfschritte aus.
+Die Flottenkoordination bestimmt pro Schiff, wer KI, Bewegung und
+Cooldowns integriert. Geteilte Ziele können eigene Treffer erhalten.
+Derselbe Rumpfkontakt wird innerhalb seines Cooldowns nur einmal gebucht.
+Nach dem Enterrückzug übernimmt wieder die jeweilige Feldansicht oder der
+gemeinsame Kampf-Renderer. Ein aus Karriere-Checkpoint geladener Zweikampf
+nutzt den Flottenkoordinator. Die Mehrparteien-Persistenz bleibt offen.
+Neun unveränderte 1vs1-Replays prüfen die vollständigen Kampfsnapshots
+gegen den Referenzstand von `main`.

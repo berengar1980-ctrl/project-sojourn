@@ -15,7 +15,10 @@ function ramExposure(
 }
 
 /** Apply one impact impulse, not continuous damage while hulls remain entangled. */
-export function applyCombatRamImpact(runtime: StrategicCombatRuntime): number {
+export function applyCombatRamImpact(
+  runtime: StrategicCombatRuntime,
+  claimImpact?: (firstId: string, secondId: string) => boolean
+): number {
   const { attacker, defender } = runtime;
   const { distance, required, normal } = shipContact(attacker, defender);
   if (distance > required || runtime.elapsedSeconds - (runtime.lastRamImpactAt ?? -100) < 0.9)
@@ -25,7 +28,7 @@ export function applyCombatRamImpact(runtime: StrategicCombatRuntime): number {
   const closing =
     (attacker.velocity.x - defender.velocity.x) * nx +
     (attacker.velocity.y - defender.velocity.y) * ny;
-  if (closing <= 0) return 0;
+  if (closing <= 0 || claimImpact?.(attacker.setup.id, defender.setup.id) === false) return 0;
   runtime.lastRamImpactAt = runtime.elapsedSeconds;
   const visual = captureRamVisuals(runtime);
   // A physical hit completes the approach. The AI must choose a fresh pass

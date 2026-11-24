@@ -11,7 +11,7 @@ const weapons = fs.readFileSync(
   'utf8'
 );
 const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
+  path.join(root, 'src/ui/combat/fleet-native-combat-renderer.ts'),
   'utf8'
 );
 const impactRenderer = fs.readFileSync(
@@ -81,8 +81,7 @@ const torpedoRenderer = fs.readFileSync(
   'utf8'
 );
 assert(
-  renderer.includes('drawCombatTorpedo(this.context)') &&
-    fleetRenderer.includes('paintNativeProjectile(') &&
+  fleetRenderer.includes('paintNativeProjectile(') &&
     nativeWeaponPainters.includes('drawCombatTorpedo(context)'),
   'combat renderer uses torpedo silhouette'
 );

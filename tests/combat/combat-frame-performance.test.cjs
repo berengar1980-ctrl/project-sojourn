@@ -4,15 +4,14 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const read = (pathName) => fs.readFileSync(path.join(root, pathName), 'utf8');
-const panel = read('src/ui/combat/strategic-combat-panel.ts');
+const panel = read('src/ui/combat/fleet-native-combat-panel.ts');
 const lobby = read('src/ui/start/duel-lobby.ts');
 assert(
   panel.includes('if (model.elapsedSeconds - lastHudTime < 0.1 && model.winner === null) return;'),
   'HTML HUD updates are throttled while the canvas renders at frame rate'
 );
 assert(
-  panel.indexOf('renderer.update(model);') <
-    panel.indexOf('if (model.elapsedSeconds - lastHudTime'),
+  panel.indexOf('renderer.update(') < panel.indexOf('if (model.elapsedSeconds - lastHudTime'),
   'canvas must render even when HUD is throttled'
 );
 assert(

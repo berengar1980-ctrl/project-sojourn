@@ -8,7 +8,7 @@ const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const tow = read('src/ui/salvage/distress-tow-renderer.ts');
 const salvage = read('src/ui/salvage/salvage-space-renderer.ts');
-const combat = read('src/ui/combat/strategic-combat-renderer.ts');
+const combat = read('src/ui/combat/fleet-native-combat-renderer.ts');
 const combatHook = read('src/ui/combat/combat-grapple-renderer.ts');
 const registry = read('src/systems/ships/ship-registry.ts');
 

@@ -5,11 +5,11 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const renderer = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
+  path.join(root, 'src/ui/combat/fleet-native-ship-annotations.ts'),
   'utf8'
 );
 assert(
-  renderer.includes('drawCombatShipStatus(this.context, combatant, geometry);'),
+  renderer.includes('drawCombatShipStatus(context, combatant, geometry);'),
   'combat HUD derives strategy and maneuver labels independently'
 );
 const statusRenderer = fs.readFileSync(
@@ -18,7 +18,7 @@ const statusRenderer = fs.readFileSync(
 );
 assert(statusRenderer.includes("'MANÖVER: ' + status.maneuver"));
 assert(
-  renderer.includes('drawCombatRamEffect(this.context, combatant, geometry, visualElapsed)'),
+  renderer.includes('drawCombatRamEffect(context, combatant, geometry, visualElapsed)'),
   'ram effects fade using visual time even after the winner freezes combat'
 );
 assert(!renderer.includes('combatant.combatIntent + (combatant.boostActive'));

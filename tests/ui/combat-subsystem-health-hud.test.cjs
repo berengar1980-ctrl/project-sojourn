@@ -3,7 +3,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
-const panel = fs.readFileSync(path.join(root, 'src/ui/combat/strategic-combat-panel.ts'), 'utf8');
+const panel = fs.readFileSync(
+  path.join(root, 'src/ui/combat/fleet-native-combat-panel.ts'),
+  'utf8'
+);
 const css = fs.readFileSync(path.join(root, 'src/ui/styles.css'), 'utf8');
 assert(panel.includes('data-layer="engine"'), 'engine integrity bar is rendered');
 assert(panel.includes('data-layer="tractor"'), 'tractor integrity bar is rendered');

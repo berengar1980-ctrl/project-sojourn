@@ -10,7 +10,8 @@ const local = read('src/ui/local-space/local-space-renderer.ts');
 const salvageLayers = read('src/ui/salvage/salvage-scene-layers.ts');
 const salvageScene = read('src/app/game-controller-salvage.ts');
 const salvageCollider = read('src/app/game-controller-salvage-drone.ts');
-const pvp = read('src/ui/combat/strategic-combat-renderer.ts');
+const sprites = read('src/ui/combat/fleet-native-ship-sprites.ts');
+const pvp = read('src/ui/combat/fleet-native-combat-renderer.ts');
 
 assert(
   bridge.includes("combatant.id === 'security-drone:' + field.locationId") &&
@@ -34,9 +35,9 @@ assert(
   'salvage player combat updates the drone pose without a duplicate bystander collider'
 );
 assert(
-  pvp.includes("combatant.id.startsWith('security-drone:')") &&
-    pvp.includes("'/drones/security-drone-gc87r8.webp'") &&
-    pvp.includes('DRONE_DIAMETER_PX * this.camera.zoom') &&
+  sprites.includes("combatant.id.startsWith('security-drone:')") &&
+    sprites.includes("'/drones/security-drone-gc87r8.webp'") &&
+    sprites.includes('DRONE_DIAMETER_PX * camera.zoom') &&
     pvp.includes('DRONE_ROTATION_PERIOD_SECONDS'),
   'native combat renders GC-87 at the hitbox, scales it with zoom and keeps its spin'
 );

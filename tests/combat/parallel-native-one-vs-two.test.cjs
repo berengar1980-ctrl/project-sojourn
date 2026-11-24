@@ -91,6 +91,31 @@ assert.equal(
   'both defeated attackers each leave one physical wreck'
 );
 
+// After promotion, two drivers can face the same physical contact in
+// opposite directions. Repeated contact within the ram cooldown counts once.
+const ramFleet = createParallelNativeDuels(
+  [ship('ram-first', 'a'), ship('ram-defeated', 'b'), ship('ram-second', 'b')],
+  arena(),
+  993
+);
+ramFleet.getActor('ram-defeated').hullHp = 0;
+ramFleet.tick(0.08);
+for (let frame = 0; frame < 2; frame++) {
+  const firstRam = ramFleet.getActor('ram-first');
+  const secondRam = ramFleet.getActor('ram-second');
+  firstRam.position = { x: 2100, y: 1300 };
+  secondRam.position = { x: 2120, y: 1300 };
+  firstRam.headingRadians = 0;
+  secondRam.headingRadians = Math.PI;
+  firstRam.velocity = { x: 100, y: 0 };
+  secondRam.velocity = { x: -100, y: 0 };
+  ramFleet.tick(0.01);
+}
+const ramImpacts = [...ramFleet.duels, ...ramFleet.supporters].flatMap((service) =>
+  service.getCombatLog().filter((entry) => entry.detail.startsWith('Rumpfkontakt'))
+);
+assert.equal(ramImpacts.length, 1, 'both services share one ram impact per physical contact');
+
 // The additional ship must really fire on the shared hull using the EXISTING
 // native weapon engine, not merely appear as a second ship on the screen.
 const pulse = {

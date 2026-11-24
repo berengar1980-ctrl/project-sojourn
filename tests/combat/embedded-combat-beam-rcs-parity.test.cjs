@@ -15,7 +15,7 @@ const salvage = read('src/ui/salvage/salvage-scene-layers.ts');
 const miningPlayer = read('src/ui/local-space/local-space-renderer.ts');
 const miningEffects = read('src/ui/local-space/mining-effects-renderer.ts');
 const salvagePlayer = read('src/ui/salvage/salvage-space-renderer.ts');
-const service = read('src/systems/combat/strategic-combat-service.ts');
+const service = read('src/systems/combat/strategic-combat-step.ts');
 const bridge = read('src/app/game-controller-field-world-bridge.ts');
 
 assert(

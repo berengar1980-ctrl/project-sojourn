@@ -142,6 +142,42 @@ assert.equal(
   800 - arena.defenderPosition.x,
   'the campaign holds the original world-space coordinate mapping without jumping'
 );
+const { createStrategicCombatService } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/strategic-combat-service.ts'
+);
+const { createStarMapEngagementService } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/star-map-engagement-service.ts'
+);
+const checkpoint = career.combat.exportCareerState();
+const reconstruct = () =>
+  createStrategicCombatService(
+    setup('player'),
+    realNpcActor.setup,
+    checkpoint.seed,
+    arena,
+    checkpoint
+  );
+const reference = reconstruct();
+const restored = reconstruct();
+const engagement = createStarMapEngagementService({
+  navigation: { getSnapshot: () => ({ currentPosition: worldPose.playerPosition }) },
+  sectorNpcs: {
+    npcs: [enemy],
+    livePosition: worldPose.positionOf,
+    liveHeading: worldPose.headingOf,
+  },
+});
+engagement.restorePlayerCareerCombat(restored, enemy.id);
+const restoredFleet = engagement.activePlayerFleet();
+assert(restoredFleet, 'loading a live duel must restore the fleet coordinator');
+assert.strictEqual(restoredFleet.getActor(enemy.id), restored.getParallelActor('defender'));
+assert.deepEqual(engagement.activePlayerCombat().getSnapshot(), reference.getSnapshot());
+for (let step = 0; step < 10; step++) {
+  engagement.tick(0.08);
+  assert.deepEqual(engagement.activePlayerCombat().getSnapshot(), reference.tick(0.08));
+}
 console.log(
   'PASS shared native 1v1/fleet/career positions, velocity, heading and single motion owner'
 );

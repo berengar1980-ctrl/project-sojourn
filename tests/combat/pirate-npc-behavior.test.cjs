@@ -15,7 +15,7 @@ const engagement = read('src/systems/combat/star-map-engagement-service.ts');
 const combatSetup = read('src/systems/combat/npc-combatant-setup.ts');
 const starModel = read('src/app/game-controller-star-map.ts');
 const mapRenderer = read('src/ui/map/npc-ship-map-renderer.ts');
-const combatRenderer = read('src/ui/combat/strategic-combat-renderer.ts');
+const combatRenderer = read('src/ui/combat/fleet-native-combat-renderer.ts');
 const insignia = read('src/ui/ships/pirate-insignia-renderer.ts');
 const combatAi = loadStandaloneTypeScriptModule(root, 'src/systems/npcs/npc-combat-ai.ts');
 

@@ -102,13 +102,23 @@ function startEmbeddedBoarding(
     );
     synchronizeLocalDefender(context, snapshot.defender);
   }
-  startCombatBoarding(context, snapshot, (boardingOutcome) => {
-    if (context.finishFieldExercise) return context.finishFieldExercise();
-    if (boardingOutcome === 'enemy_win') return scenes.starMap();
-    if (origin === 'local-space') scenes.mining(true, true);
-    else if (origin === 'salvage-space') scenes.salvage(true, preservedSalvageField, snapshot);
-    else scenes.starMap();
-  });
+  startCombatBoarding(
+    context,
+    snapshot,
+    (boardingOutcome) => {
+      if (context.finishFieldExercise) return context.finishFieldExercise();
+      if (boardingOutcome === 'enemy_win') return scenes.starMap();
+      if (origin === 'local-space') scenes.mining(true, true);
+      else if (origin === 'salvage-space') scenes.salvage(true, preservedSalvageField, snapshot);
+      else scenes.starMap();
+    },
+    () => {
+      if (origin === 'local-space') scenes.mining(true, true);
+      else if (origin === 'salvage-space') scenes.salvage(true, preservedSalvageField, snapshot);
+      else return mountCombatScene(context, context.finishFieldExercise ?? scenes.starMap);
+      if (state.mode === origin) state.embeddedCombat = origin;
+    }
+  );
 }
 
 function awaitEmbeddedCombatResult(

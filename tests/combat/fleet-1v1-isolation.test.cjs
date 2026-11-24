@@ -21,26 +21,21 @@ function fnv1a(text) {
 // rendering was moved out. A deliberate original 1v1 change must explicitly
 // review and update its baseline, rather than silently ride with FleetCombat.
 const untouched = {
-  'src/ui/combat/strategic-combat-renderer.ts': '616d2621',
-  'src/ui/combat/strategic-combat-panel.ts': '21c14744',
-  'src/ui/combat/combat-damage-visual.ts': 'a4630ccd',
   'src/ui/combat/combat-wreck-destruction-renderer.ts': 'c813581e',
 };
 for (const [file, baseline] of Object.entries(untouched)) {
   assert.equal(fnv1a(read(file)), baseline, 'original 1v1 file changed: ' + file);
 }
 
-const originalPanel = read('src/ui/combat/strategic-combat-panel.ts');
 const duelLobby = read('src/ui/start/duel-lobby.ts');
 const exercise = read('src/app/fleet-field-session.ts');
 const fleetPanel = read('src/ui/combat/fleet-native-combat-panel.ts');
 const fleetRenderer = read('src/ui/combat/fleet-native-combat-renderer.ts');
-const originalRenderer = read('src/ui/combat/strategic-combat-renderer.ts');
 
 assert(
-  originalPanel.includes("from './strategic-combat-renderer'") &&
-    duelLobby.includes('createFleetNativeCombatPanel(') &&
-    fleetPanel.includes("from './fleet-native-combat-renderer'"),
+  duelLobby.includes('createFleetNativeCombatPanel(') &&
+    fleetPanel.includes("from './fleet-native-combat-renderer'") &&
+    read('src/app/game-controller-combat-scene.ts').includes('createFleetNativeCombatPanel('),
   '1v1 and FleetCombat intentionally share the FleetNative renderer while native AI stays unchanged'
 );
 assert(
@@ -51,9 +46,7 @@ assert(
 );
 assert(
   fleetRenderer.includes('paintParallelNativeDuels(') &&
-    fleetRenderer.includes('fleetWreckEffects.draw(') &&
-    !originalRenderer.includes('paintParallelNativeDuels(') &&
-    !originalRenderer.includes('fleetWreckEffects.draw('),
+    fleetRenderer.includes('fleetWreckEffects.draw('),
   '1v1 uses native shared renderer but extra ships and wrecks stay isolated by the runtime snapshot'
 );
 
@@ -95,6 +88,4 @@ for (let i = 0; i < 30; i += 1) {
     'ordinary 1v1 physics diverged from its default simulation path at tick ' + i
   );
 }
-console.log(
-  'PASS original 1v1 AI/physics byte-identical; UI deliberately shares FleetNative renderer and native duel parity'
-);
+console.log('PASS common FleetNative renderer and isolated 1v1 simulation');

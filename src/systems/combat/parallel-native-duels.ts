@@ -19,11 +19,11 @@ import type {
   MutableCombatant,
   StrategicCombatArenaOptions,
   StrategicCombatantSetup,
-  StrategicCombatService,
   StrategicCombatSnapshot,
   StrategicCombatObstacle,
   CombatVisualAsteroid,
 } from './strategic-combat-types';
+import type { StrategicCombatService } from './strategic-combat-service-types';
 
 export interface NativeDuelShip {
   readonly id: string;
@@ -53,6 +53,10 @@ export interface ParallelNativeDuels {
   /** Bring an existing campaign or test ship into the live battle exactly once. */
   addShip(ship: NativeDuelShip, conflictKey?: string, targetId?: string): boolean;
   tick(dt: number, beforePrimaryAttackerReplacement?: () => void): ParallelNativeDuelSnapshot;
+  advance(dt: number, beforePrimaryAttackerReplacement?: () => void): void;
+  isFinished(): boolean;
+  boardingService(shipId?: string): StrategicCombatService | undefined;
+  hasEscaped(shipId: string): boolean;
   getSnapshot(): ParallelNativeDuelSnapshot;
 }
 
@@ -208,7 +212,7 @@ function nativeFleetFinished(
 ): boolean {
   // A surrendered duel is over even if both hulls remain intact and hostile.
   // Never resurrect an already resolved battle merely because the participants survived.
-  if (services.every((service) => service.getSnapshot().winner !== null)) return true;
+  if (services.every((service) => service.getStatus().winner !== null)) return true;
   return !hasActiveFleetHostilities(actors, escaped, factions, hostility);
 }
 
@@ -285,7 +289,8 @@ export function createParallelNativeDuels(
   arena: StrategicCombatArenaOptions,
   seed = 1,
   hostility: FleetHostility = defaultFleetHostility,
-  conflictKeys?: ReadonlyMap<string, string>
+  conflictKeys?: ReadonlyMap<string, string>,
+  restoredDuel?: StrategicCombatService
 ): ParallelNativeDuels {
   const first = ships.filter((ship) => ship.team === 'a');
   const second = ships.filter((ship) => ship.team === 'b');
@@ -301,7 +306,9 @@ export function createParallelNativeDuels(
   const fleetArena: StrategicCombatArenaOptions = {
     ...arena,
     asteroids: [...(arena.asteroids ?? [])],
-    exitPoint: buildCombatArena(first[0]!.setup, second[0]!.setup, seed, arena).exitPoint!,
+    exitPoint:
+      arena.exitPoint ??
+      buildCombatArena(first[0]!.setup, second[0]!.setup, seed, arena).exitPoint!,
   };
   const asteroidWorld = fleetArena.asteroids as CombatVisualAsteroid[];
   const baseObstacles = fleetArena.obstacles ?? [];
@@ -311,17 +318,20 @@ export function createParallelNativeDuels(
     allObstacles.push(blockers);
     return blockers;
   };
-  const { pairs, supporters } = createNativeDuelServices(
-    first,
-    second,
-    fleetArena,
-    seed,
-    obstacleSet
-  );
+  if (restoredDuel) restoredDuel.attachToFleet(obstacleSet(), asteroidWorld);
+  const { pairs, supporters } = restoredDuel
+    ? { pairs: [restoredDuel], supporters: [] as StrategicCombatService[] }
+    : createNativeDuelServices(first, second, fleetArena, seed, obstacleSet);
   const services = [...pairs, ...supporters];
   const actors = nativeTeamActors(pairs, supporters);
-  const recordedWrecks = new Set<string>();
+  const recordedWrecks = new Set(
+    asteroidWorld
+      .filter((rock) => rock.id.startsWith('fleet-wreck:'))
+      .map((rock) => rock.id.slice('fleet-wreck:'.length))
+  );
   const escapedRecords = new Set<string>();
+  const ramContacts = new Map<string, number>();
+  const actorById = new Map(actors.map((actor) => [actor.setup.id, actor]));
   // An encounter-aware policy may use individual ship IDs rather than broad
   // A/B test teams, allowing distinct player/NPC/drone/pirate relations.
   const teams = new Map<string, string>(
@@ -331,10 +341,19 @@ export function createParallelNativeDuels(
     ...pairs.map(() => 'both' as const),
     ...supporters.map(() => 'attacker' as const),
   ];
-  let elapsed = 0;
+  let elapsed = restoredDuel?.getSnapshot().elapsedSeconds ?? 0;
   let bystanders: readonly StrategicCombatBystander[] = [];
   let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
   const radiusById = nativeFleetRadii(actors);
+  const isFinished = () => nativeFleetFinished(actors, escapedRecords, teams, hostility, services);
+  const boardingService = (shipId?: string) =>
+    services.find((service) => {
+      const state = service.getStatus();
+      return (
+        state.boardingInitiator !== null &&
+        (shipId === undefined || state.attackerId === shipId || state.defenderId === shipId)
+      );
+    });
   const getSnapshot = (): ParallelNativeDuelSnapshot => {
     if (cachedSnapshot) return cachedSnapshot;
     const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
@@ -363,6 +382,38 @@ export function createParallelNativeDuels(
     return cachedSnapshot;
   };
 
+  const advance = (seconds: number, beforePrimaryAttackerReplacement?: () => void): void => {
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+    const dt = Math.min(seconds, 0.08);
+    cachedSnapshot = null;
+    elapsed += dt;
+    advanceNativeFleetFrame({
+      services,
+      actors,
+      baseObstacles,
+      allObstacles,
+      asteroidWorld,
+      arena: fleetArena,
+      recordedWrecks,
+      escapedRecords,
+      radiusById,
+      seed,
+      elapsed,
+      dt,
+      bystanders,
+      ramContacts,
+    });
+    reassignNativeFleetTargets({
+      ...(beforePrimaryAttackerReplacement ? { beforePrimaryAttackerReplacement } : {}),
+      services,
+      drivers,
+      ships: actors,
+      teams,
+      hostility,
+      escaped: escapedRecords,
+    });
+  };
+
   return {
     duels: pairs,
     supporters,
@@ -385,43 +436,23 @@ export function createParallelNativeDuels(
         conflictKey,
         targetId
       );
-      if (joined) cachedSnapshot = null;
+      if (joined) {
+        actorById.set(ship.id, actors.at(-1)!);
+        cachedSnapshot = null;
+      }
       return joined;
     },
-    getActor: (id) => actors.find((actor) => actor.setup.id === id) ?? null,
+    getActor: (id) => actorById.get(id) ?? null,
     setBystanders(contacts) {
-      bystanders = contacts.filter((ship) => !actors.some((actor) => actor.setup.id === ship.id));
+      bystanders = contacts.filter((ship) => !actorById.has(ship.id));
     },
     getSnapshot,
+    advance,
+    isFinished,
+    boardingService,
+    hasEscaped: (id) => escapedRecords.has(id),
     tick(seconds, beforePrimaryAttackerReplacement) {
-      if (!Number.isFinite(seconds) || seconds <= 0) return getSnapshot();
-      const dt = Math.min(seconds, 0.08);
-      cachedSnapshot = null;
-      elapsed += dt;
-      advanceNativeFleetFrame({
-        services,
-        actors,
-        baseObstacles,
-        allObstacles,
-        asteroidWorld,
-        arena: fleetArena,
-        recordedWrecks,
-        escapedRecords,
-        radiusById,
-        seed,
-        elapsed,
-        dt,
-        bystanders,
-      });
-      reassignNativeFleetTargets({
-        ...(beforePrimaryAttackerReplacement ? { beforePrimaryAttackerReplacement } : {}),
-        services,
-        drivers,
-        ships: actors,
-        teams,
-        hostility,
-        escaped: escapedRecords,
-      });
+      advance(seconds, beforePrimaryAttackerReplacement);
       return getSnapshot();
     },
   };

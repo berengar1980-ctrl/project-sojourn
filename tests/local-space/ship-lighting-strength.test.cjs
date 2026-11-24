@@ -11,7 +11,7 @@ const lighting = fs.readFileSync(path.join(root, 'src/ui/ships/ship-lighting-ren
 const local = readModuleSource(root, 'src/ui/local-space/local-space-renderer.ts');
 const salvage = readModuleSource(root, 'src/ui/salvage/salvage-space-renderer.ts');
 const combat = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
+  path.join(root, 'src/ui/combat/fleet-native-combat-renderer.ts'),
   'utf8'
 );
 const combatDetails = fs.readFileSync(

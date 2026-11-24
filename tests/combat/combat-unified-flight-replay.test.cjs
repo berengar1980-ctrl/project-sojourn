@@ -1,5 +1,6 @@
 'use strict';
 const assert = require('node:assert/strict');
+const { createHash } = require('node:crypto');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const { createMotionMetrics } = require('../../scripts/combat-motion-metrics.cjs');
@@ -57,6 +58,25 @@ const scenarios = [
     second: setup('beta', front),
   },
 ];
+// Complete per-tick snapshots captured on main at 9ba7f68 before sharing the tick.
+const referenceTraces = {
+  'front vs broadside': '1b44a6e65a54a478fff6b6edddb6efa69ca789ac949fbaf873f3c46bbfef6265',
+  'fast vs slow': 'a23ed5a14cb0c967772abe0ec0b97662286e71c4da20eb5fdbc0428a23f2525a',
+  'both front': 'e9ce59e002b452c36c387b805ac0113279dc6f7eba5f7f4ea9ec067cb6a3f9a5',
+};
+for (const { label, first, second } of scenarios) {
+  const hash = createHash('sha256');
+  for (const seed of [1001, 100, 101]) {
+    const battle = createStrategicCombatService(first, second, seed);
+    for (let tick = 0; tick < 1000; tick++) {
+      const state = battle.tick(0.08);
+      hash.update(JSON.stringify(state));
+      if (state.winner) break;
+    }
+  }
+  assert.equal(hash.digest('hex'), referenceTraces[label], '1vs1 replay changed: ' + label);
+}
+
 for (const scenario of scenarios) {
   for (const seed of [1001, 100, 101, 102]) {
     const battle = createStrategicCombatService(scenario.first, scenario.second, seed);

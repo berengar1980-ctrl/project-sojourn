@@ -39,7 +39,7 @@ const salvage = read('src/ui/salvage/salvage-space-renderer.ts');
 const localNpc = read('src/ui/local-space/local-space-scene-layers.ts');
 const salvageNpc = read('src/ui/salvage/salvage-scene-layers.ts');
 const shared = read('src/ui/combat/embedded-combat-ship-telemetry.ts');
-const combat = read('src/ui/combat/strategic-combat-renderer.ts');
+const combat = read('src/ui/combat/fleet-native-ship-annotations.ts');
 for (const source of [mine, salvage, localNpc, salvageNpc]) {
   assert(
     source.includes('drawEmbeddedCombatShipTelemetry'),

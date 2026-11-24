@@ -47,7 +47,7 @@ assert(burning.fire > 0, 'the large source burns from 45% hull');
 assert(critical.smoke > burning.smoke, 'third small smoke source starts at 25%');
 
 const render = fs.readFileSync(
-  path.join(root, 'src/ui/combat/strategic-combat-renderer.ts'),
+  path.join(root, 'src/ui/combat/fleet-native-combat-renderer.ts'),
   'utf8'
 );
 assert(
@@ -58,7 +58,10 @@ assert(
   render.includes('[this.model.attacker, this.model.defender]'),
   'player and NPC combatants must both receive hull damage effects'
 );
-const helper = fs.readFileSync(path.join(root, 'src/ui/combat/combat-damage-visual.ts'), 'utf8');
-assert(helper.includes('for (const combatant of combatants)'), 'both sides must render damage');
-assert(helper.includes('particles.update('), 'damage helper must advance real particles');
+const helper = fs.readFileSync(
+  path.join(root, 'src/ui/combat/fleet-native-damage-visual.ts'),
+  'utf8'
+);
+assert(helper.includes('for (const fighter of combatants)'), 'both sides must render damage');
+assert(helper.includes('drawCombatDamageParticles('), 'damage helper must advance real particles');
 console.log('PASS staged hull damage smoke at 85/65/25%, flames at 45%, player and NPC rendering');

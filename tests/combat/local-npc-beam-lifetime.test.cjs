@@ -45,7 +45,7 @@ drawLocalNpcCombatEffects(
   600
 );
 assert.equal(calls.length, 0, 'Expired laser/tractor beams must not display at all');
-const native = source('src/ui/combat/strategic-combat-renderer.ts');
+const native = source('src/ui/combat/fleet-native-combat-renderer.ts');
 const grapple = source('src/ui/combat/combat-grapple-renderer.ts');
 assert(
   native.includes('if (this.model.winner !== null) return;') &&

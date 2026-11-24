@@ -30,6 +30,7 @@ import {
   finishPlayerCombat,
   joinBackgroundCombat,
   resolveBackgroundCombats,
+  restorePlayerFleet,
 } from './star-map-engagement-fleet-resolution';
 import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
 
@@ -396,19 +397,14 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
   updatePlayerChase(runtime);
   updateNpcChases(runtime);
   resolveBackgroundCombats(runtime, deltaSeconds);
-  if (runtime.playerCombat) {
-    if (runtime.playerFleet) {
-      runtime.playerFleet.joinNearby(
-        runtime.options.navigation.getSnapshot().currentPosition,
-        runtime.options.sectorNpcs.npcs,
-        (npc) => runtime.options.sectorNpcs.livePosition(npc),
-        (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
-      );
-      runtime.playerFleet.tick(deltaSeconds);
-    } else {
-      const model = runtime.playerCombat.tick(deltaSeconds);
-      if (runtime.playerEnemy) runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
-    }
+  if (runtime.playerFleet) {
+    runtime.playerFleet.joinNearby(
+      runtime.options.navigation.getSnapshot().currentPosition,
+      runtime.options.sectorNpcs.npcs,
+      (npc) => runtime.options.sectorNpcs.livePosition(npc),
+      (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
+    );
+    runtime.playerFleet.tick(deltaSeconds);
   }
 }
 
@@ -476,10 +472,7 @@ export function createStarMapEngagementService(
       }
       const enemy = engagementNpc(runtime, enemyId);
       if (!enemy || enemy.hullHp <= 0) throw new Error('Saved combat enemy unavailable');
-      const checkpoint = combat.exportCareerState();
-      if (checkpoint.defenderId !== enemyId) throw new Error('Career combat enemy mismatch');
-      runtime.playerCombat = combat;
-      runtime.playerEnemy = enemy;
+      restorePlayerFleet(runtime, combat, enemy);
     },
     finishPlayerCombat: (boardingOutcome) => finishPlayerCombat(runtime, boardingOutcome),
   };

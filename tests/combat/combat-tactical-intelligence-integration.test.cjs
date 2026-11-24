@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
-const service = read('src/systems/combat/strategic-combat-service.ts');
+const service = read('src/systems/combat/strategic-combat-step.ts');
 const combatTelemetry = read('src/systems/combat/strategic-combat-telemetry.ts');
 const planner = read('src/systems/combat/combat-strategy-planner.ts');
 const routing = read('src/systems/combat/combat-asteroid-routing.ts');

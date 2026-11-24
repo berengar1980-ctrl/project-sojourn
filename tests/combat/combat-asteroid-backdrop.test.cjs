@@ -108,7 +108,7 @@ try {
   global.document = previousDocument;
 }
 
-const combat = read('src/ui/combat/strategic-combat-renderer.ts');
+const combat = read('src/ui/combat/fleet-native-combat-renderer.ts');
 const background = read('src/ui/combat/combat-asteroid-backdrop.ts');
 const controller = read('src/app/game-controller-combat.ts');
 const fieldAdapter = read('src/systems/combat/field-combat-arena.ts');
