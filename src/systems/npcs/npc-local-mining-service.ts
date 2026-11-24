@@ -8,14 +8,9 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createMiningEventController } from '../local-space/mining-event-service';
 
-import {
-  resolveShipShieldCollisions,
-  resolveShipShieldObstacleCollisions,
-  type LocalShieldShipBody,
-} from '../local-space/ship-shield-collision';
-
 import { getShipDefinition, resolveShipLocalCruiseSpeed } from '../ships';
 import { ensureNpcInstalledComponents } from './npc-upgrade-service';
+import { resolveMinerCollisions } from './npc-local-mining-contacts';
 
 import {
   type NpcLocalMiningOptions,
@@ -384,36 +379,6 @@ function advanceMiner(
   return false;
 }
 
-function resolveMinerCollisions(runtime: MinerRuntime, combatantId?: string): void {
-  const playerState = runtime.options.getPlayerShipState?.();
-  const bodies: LocalShieldShipBody[] = runtime.ships.flatMap((local) => {
-    const npc = runtime.byId.get(local.npcId);
-    // Duel motion is owned by the PvP engine, but the ship still has a solid
-    // shield body in the mining field. Include it for player contact response.
-    if (local.npcId === combatantId || (npc?.hullHp ?? 0) <= 0) return [];
-    const definition = getShipDefinition(local.shipId);
-    return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
-  });
-  const playerShip = runtime.options.getPlayerShip?.() ?? runtime.options.playerShip;
-  if (playerState && playerShip) {
-    bodies.unshift({
-      id: 'player',
-      ship: playerShip,
-      state: playerState,
-      pushWeight: 2.4,
-    });
-  }
-  resolveShipShieldCollisions(bodies);
-  resolveShipShieldObstacleCollisions(
-    bodies.filter((body) => body.id !== 'player'),
-    runtime.options.getAsteroids().map((asteroid) => ({
-      id: asteroid.id,
-      position: asteroid.position,
-      radius: asteroid.radius,
-    }))
-  );
-}
-
 function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatantId?: string): void {
   const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
   if (dt <= 0) return;
@@ -435,7 +400,9 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     // NPC-versus-NPC battles and their recovery never despawn a miner from
     // its local field. Suspend work until the same physical ship may resume.
     if (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
-      ship.speed = 0;
+      // Preserve the native duel velocity for exhaust/telemetry while the
+      // combat engine alone owns an engaged ship's physical movement.
+      if (!npc.combatMovement) ship.speed = 0;
       ship.laserActive = false;
       delete ship.oreCollection;
       ship.scanProgress = 0;
@@ -447,7 +414,7 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     if (advanceMiner(runtime, ship, npc, dt)) runtime.ships.splice(index, 1);
   }
   if (runtime.options.resolveLocalCollisions !== false)
-    resolveMinerCollisions(runtime, combatantId);
+    resolveMinerCollisions(runtime.ships, runtime.byId, runtime.options, combatantId);
 }
 
 export function createNpcLocalMiningService(

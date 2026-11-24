@@ -1,4 +1,5 @@
 import { validateControllerRestore } from './game-controller-types';
+import { measurePerformance } from '../core/performance-diagnostics';
 import { tickControllerNpcOperations } from './game-controller-npc-tick';
 import {
   advanceControllerFieldWorld,
@@ -91,7 +92,6 @@ function mountControllerSwitcher(context: ControllerRuntimeContext): void {
     else mountControllerStarMap(context);
   });
 }
-
 function mountControllerStarMap(context: ControllerRuntimeContext): void {
   const { state } = context;
   rememberMiningField(context);
@@ -353,8 +353,8 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
   if (skipControllerTickForCombatResult(context, deltaSeconds)) return;
   const { state, economy } = context;
   economy.salvageEvents.setPlayerSalvageEligible(state.activeShip.role === 'salvage');
-  tickControllerNpcOperations(economy, deltaSeconds);
-  updateSectorNavigationThreats(context);
+  measurePerformance('sim.npcs', () => tickControllerNpcOperations(economy, deltaSeconds));
+  measurePerformance('sim.navigation-threats', () => updateSectorNavigationThreats(context));
   context.engagements.syncPlayerPursuitTarget();
   const navigationBefore = context.navigation.getSnapshot();
   const navigationSnapshot = context.navigation.tick(deltaSeconds);
@@ -364,8 +364,8 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
     reportLegalDeparture(context, navigationBefore.currentLocationId, afterFuel.destinationId);
   context.campaignNavigation.observe(navigationSnapshot);
   inspectPatrolTravel(context, deltaSeconds);
-  context.engagements.tick(deltaSeconds);
-  advanceControllerFieldWorld(context, deltaSeconds);
+  measurePerformance('sim.engagements', () => context.engagements.tick(deltaSeconds));
+  measurePerformance('sim.field-world', () => advanceControllerFieldWorld(context, deltaSeconds));
   resolveControllerCombat(context, {
     starMap: () => mountControllerStarMap(context),
     mining: (reuseSeed, preserveField) => mountControllerMining(context, reuseSeed, preserveField),
@@ -387,7 +387,7 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
     );
   }
   const dayBeforeEconomy = economy.situations.currentDay;
-  tickEconomy(context, deltaSeconds);
+  measurePerformance('sim.economy', () => tickEconomy(context, deltaSeconds));
   if (economy.situations.currentDay !== dayBeforeEconomy) advanceNpcPenalCustody(context);
   state.previousLocationId = currentLocationId;
   state.shipSwitcher?.update(state.activeShip.id, navigationSnapshot.isTravelling);
