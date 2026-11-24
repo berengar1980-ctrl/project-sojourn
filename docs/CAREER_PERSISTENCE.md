@@ -1272,3 +1272,12 @@ Die Kampagne simuliert weiterhin alle bisherigen Felder. Die schnelleren
 Geometrieprüfungen der Wegsuche ändern weder gespeicherte Routen noch deren
 Format. Projektilskalierung und Performance-Messwerte sind reine Laufzeitdaten
 und werden nicht gespeichert.
+
+### Kampfwrack-Rotation und Nahansichtsdetails (2026-11-24)
+
+**Keine Speicheränderung.** Die eigenständige visuelle Rotation und das
+Taumeln einzelner Wrackfragmente werden ausschließlich aus der bestehenden
+Wrackkennung, der Darstellungszeit und den vorhandenen Rotationswerten
+abgeleitet. Es werden keine neuen physikalischen Körper und keine
+zusätzlichen Save-Felder angelegt. Bergung, Treffer, Kollision und der
+Career-Snapshot bleiben unverändert.
