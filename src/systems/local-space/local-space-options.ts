@@ -1,4 +1,4 @@
-import type { LocalSpaceInstance } from '../../core/local-space-types';
+import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { MiningChunkCollector } from './mining-chunk-service';
 import type { LocalSpaceSystemsOptions } from './local-space-ship-systems';
@@ -23,4 +23,8 @@ export interface LocalSpaceServiceOptions {
   readonly hazardCrew?: { readonly piloting: number; readonly sensors: number };
   readonly avoidanceRandom?: () => number;
   readonly onNavigationNotice?: (message: string) => void;
+  /** Dynamic wreck bodies owned by the salvage field; never integrated twice. */
+  readonly additionalObstacles?: () => readonly LocalAsteroid[];
+  /** Reflect collision impulses back to the recoverable saved wrecks. */
+  readonly onAdditionalObstacleContact?: () => void;
 }
