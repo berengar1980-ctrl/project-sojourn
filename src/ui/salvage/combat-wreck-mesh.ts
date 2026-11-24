@@ -2,6 +2,7 @@ import type { CombatWreckVariant } from '../../core/salvage-types';
 import { drawCachedSalvageMesh } from './salvage-mesh-lod-cache';
 import { ContainerMesh, drawProjectedSalvageMesh, type Face } from './salvage-container-mesh';
 import { C, fragment, ribs, scatter, shell, soot, strut } from './combat-wreck-geometry';
+import { addCombatWreckDetail } from './combat-wreck-details';
 
 function freighter(m: ContainerMesh): void {
   // Large freight spine with its forward section ripped open.
@@ -312,6 +313,7 @@ const LEGACY: Readonly<Record<CombatWreckVariant, NewVariant>> = {
 function make(variant: NewVariant): readonly Face[] {
   const m = new ContainerMesh();
   BUILDERS[variant](m);
+  addCombatWreckDetail(m, Object.keys(BUILDERS).indexOf(variant));
   return m.faces;
 }
 const meshes: Readonly<Record<NewVariant, readonly Face[]>> = {
@@ -322,57 +324,64 @@ const meshes: Readonly<Record<NewVariant, readonly Face[]>> = {
   'salvage-barge': make('salvage-barge'),
 };
 
-// Three separately cached, small wreck sections provide independent tumble at close zoom.
+// Five independent chunks, separate from the stationary mesh and its LOD cache.
 const driftingParts: readonly (readonly Face[])[] = [
-  (() => {
+  ...Array.from({ length: 5 }, (_, index) => {
     const m = new ContainerMesh();
-    fragment(m, 0, 0, 0.62, 0.3, C.hull);
+    fragment(m, 0, 0, 0.76 - index * 0.065, index * 1.19, index % 2 ? C.iron : C.hull);
+    ribs(m, -0.19, 0.17, 0.28, 3);
     return m.faces;
-  })(),
-  (() => {
-    const m = new ContainerMesh();
-    fragment(m, 0, 0, 0.43, -0.7, C.iron);
-    return m.faces;
-  })(),
-  (() => {
-    const m = new ContainerMesh();
-    fragment(m, 0, 0, 0.5, 1.1, C.dark);
-    return m.faces;
-  })(),
+  }),
 ];
 
-/** One renderer used by destroyed combatants, fleet physical wrecks and salvage. */
+/**
+ * Shared animated 3D projection, used only for destroyed ships.
+ * Animation clock is visual-only; the physical wreck keeps its single
+ * authoritative drift, collision shape and salvage state.
+ */
 export function drawCombatWreck3d(
   context: CanvasRenderingContext2D,
   variant: CombatWreckVariant,
   radius: number,
-  rotation: { x: number; y: number; z: number }
+  rotation: { x: number; y: number; z: number },
+  timeSeconds = 0,
+  effectSeed = 0
 ): void {
   const current = LEGACY[variant];
   const geometry = meshes[current];
+  const phase = effectSeed * 0.000031;
+  const animated = {
+    x: rotation.x + timeSeconds * 0.115 + phase,
+    y: rotation.y + timeSeconds * 0.092 + phase * 0.37,
+    z: rotation.z + timeSeconds * 0.068,
+  };
+  // Small silhouettes use the shared raster atlas. Above 24 screen px
+  // project the full-resolution geometry each frame: no angle quantization.
   if (
-    radius >= 40 ||
-    !drawCachedSalvageMesh(context, 'combat-wreck-v2:' + current, geometry, radius, rotation, 256)
+    radius >= 24 ||
+    !drawCachedSalvageMesh(
+      context, 'combat-wreck-v3:' + current, geometry, radius, animated, 256
+    )
   ) {
-    drawProjectedSalvageMesh(context, geometry, radius, rotation);
+    drawProjectedSalvageMesh(context, geometry, radius, animated);
   }
-  // Close LOD only: tiny detached scraps tumble and oscillate independently.
-  // The main mesh is immutable and the cached distant representation stays cheap.
-  if (radius >= 40) {
-    const phase = rotation.z * 0.7 + rotation.x * 1.3 + rotation.y;
-    for (let i = 0; i < driftingParts.length; i += 1) {
-      const a = phase * (i + 1) * 0.41 + i * 2.17;
-      context.save();
-      context.translate(
-        Math.cos(a) * radius * (0.79 + i * 0.14),
-        Math.sin(a * 0.83) * radius * (0.61 + i * 0.11)
-      );
-      drawProjectedSalvageMesh(context, driftingParts[i]!, radius, {
-        x: rotation.x + a * 0.77,
-        y: rotation.y - a * 0.43,
-        z: rotation.z + a * 1.31,
-      });
-      context.restore();
-    }
+
+  if (radius < 13) return;
+  const rootRotation = animated.z;
+  for (let i = 0; i < driftingParts.length; i += 1) {
+    const angle = i * 2.399963 + phase * 2.7;
+    const w = timeSeconds * (0.17 + i * 0.037) + phase + i * 0.42;
+    const reach = radius * (0.65 + i * 0.073);
+    const drift = radius * 0.15;
+    const x = Math.cos(angle + rootRotation) * reach + Math.sin(w) * drift;
+    const y = Math.sin(angle + rootRotation) * reach + Math.cos(w * 0.81) * drift;
+    context.save();
+    context.translate(x, y);
+    drawProjectedSalvageMesh(context, driftingParts[i]!, radius * (0.33 + i * 0.035), {
+      x: animated.x + w * (0.71 + i * 0.06),
+      y: animated.y + w * (0.48 + i * 0.04),
+      z: rootRotation + w * (0.67 - i * 0.045),
+    });
+    context.restore();
   }
 }
