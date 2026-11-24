@@ -1,11 +1,17 @@
 import type { CombatWreckVariant, SalvageField, SalvageWreck } from '../../core/salvage-types';
 import { combatWreckVariantFor } from '../../core/combat-wreck-variant';
 
-const COMBAT_WRECK_MODELS = [
-  'miner',
-  'freighter',
-  'patrol',
-] as const satisfies readonly CombatWreckVariant[];
+const COMBAT_WRECK_NAMES: Readonly<Record<CombatWreckVariant, string>> = {
+  'fractured-freighter': 'Aufgerissener Frachter',
+  'shattered-patrol': 'Zerfetzte Patrouille',
+  'ore-carrier': 'Geborstener Erztransporter',
+  'split-hull': 'Zerrissener Schiffsrumpf',
+  'salvage-barge': 'Verbrannte Bergungsbarke',
+  // Compatibility with previously recorded career wrecks.
+  miner: 'Geborstener Erztransporter',
+  freighter: 'Aufgerissener Frachter',
+  patrol: 'Zerfetzte Patrouille',
+};
 
 /** One random recoverable wreck per destroyed ship; unrelated to the destroyed ship's class. */
 export function addDestroyedShipWreck(
@@ -24,19 +30,14 @@ export function addDestroyedShipWreck(
   const existing = field.wrecks.find((wreck) => wreck.id === id);
   if (existing) return existing;
   const combatWreckVariant = combatWreckVariantFor(field.seed, ship.id, elapsedSeconds);
-  const index = COMBAT_WRECK_MODELS.indexOf(combatWreckVariant);
-  const names = [
-    'Aufgerissene Maschinenrumpfsektion',
-    'Zerborstene Frachthülle',
-    'Abgerissener Kommandorumpf',
-  ] as const;
+
   const seed = Math.floor(random() * 0x7fffffff);
   const angle = random() * Math.PI * 2;
   const quality = (1 + Math.floor(random() * 3)) as 1 | 2 | 3;
   const amount = 8 + quality * 7;
   const wreck: SalvageWreck = {
     id,
-    name: names[index]!,
+    name: COMBAT_WRECK_NAMES[combatWreckVariant],
     // Salvage kind describes the recoverable hull, not the victim's ship role.
     kind: 'salvager',
     quality,
