@@ -1,4 +1,5 @@
 import type { LocalSpaceInstance } from '../core/local-space-types';
+import type { LocalSpaceServiceOptions } from '../systems/local-space/local-space-options';
 import type { ShipDefinition } from '../core/ship-types';
 import type { WorldLocation } from '../core/world-types';
 import { miningResourceById } from '../data/resources/mining-resources';
@@ -26,7 +27,8 @@ export function createMiningLocalSpace(
   onNavigationNotice?: (message: string) => void,
   claims?: AsteroidClaimRegistry,
   isTheftDetected?: (ownerId: string, asteroidId: string) => boolean,
-  persistentField?: LocalSpaceInstance
+  persistentField?: LocalSpaceInstance,
+  wreckPhysics?: Pick<LocalSpaceServiceOptions, 'additionalObstacles' | 'onAdditionalObstacleContact'>
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
@@ -35,6 +37,7 @@ export function createMiningLocalSpace(
   if (!persistentField) claims?.restoreField(location.id, instance.asteroids);
   return createLocalSpaceService({
     instance,
+    ...wreckPhysics,
     approachSpeed: resolveShipLocalCruiseSpeed(
       ship,
       runtime.installed,
