@@ -347,6 +347,8 @@ export function drawCombatWreck3d(
   timeSeconds = performance.now() / 1000,
   effectSeed = 0
 ): void {
+  // Purely visual scale: preserve the authoritative wreck radius/collisions and hit areas.
+  const visibleRadius = radius * (2 / 3);
   const current = LEGACY[variant];
   const geometry = meshes[current];
   const phase = effectSeed * 0.000031;
@@ -358,24 +360,24 @@ export function drawCombatWreck3d(
   // Small silhouettes use the shared raster atlas. Above 24 screen px
   // project the full-resolution geometry each frame: no angle quantization.
   if (
-    radius >= 24 ||
-    !drawCachedSalvageMesh(context, 'combat-wreck-v3:' + current, geometry, radius, animated, 256)
+    visibleRadius >= 24 ||
+    !drawCachedSalvageMesh(context, 'combat-wreck-v3:' + current, geometry, visibleRadius, animated, 256)
   ) {
-    drawProjectedSalvageMesh(context, geometry, radius, animated);
+    drawProjectedSalvageMesh(context, geometry, visibleRadius, animated);
   }
 
-  if (radius < 13) return;
+  if (visibleRadius < 13) return;
   const rootRotation = animated.z;
   for (let i = 0; i < driftingParts.length; i += 1) {
     const angle = i * 2.399963 + phase * 2.7;
     const w = timeSeconds * (0.17 + i * 0.037) + phase + i * 0.42;
-    const reach = radius * (0.65 + i * 0.073);
-    const drift = radius * 0.15;
+    const reach = visibleRadius * (0.65 + i * 0.073);
+    const drift = visibleRadius * 0.15;
     const x = Math.cos(angle + rootRotation) * reach + Math.sin(w) * drift;
     const y = Math.sin(angle + rootRotation) * reach + Math.cos(w * 0.81) * drift;
     context.save();
     context.translate(x, y);
-    drawProjectedSalvageMesh(context, driftingParts[i]!, radius * (0.33 + i * 0.035), {
+    drawProjectedSalvageMesh(context, driftingParts[i]!, visibleRadius * (0.33 + i * 0.035), {
       x: animated.x + w * (0.71 + i * 0.06),
       y: animated.y + w * (0.48 + i * 0.04),
       z: rootRotation + w * (0.67 - i * 0.045),
