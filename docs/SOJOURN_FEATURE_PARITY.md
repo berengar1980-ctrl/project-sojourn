@@ -1962,3 +1962,11 @@ Kampfwrack-Renderer. Unbeschädigte Schiffe, normale Bergungsobjekte,
 Kampfphysik, Beute und die Explosionseffekte bleiben unverändert.
 Ältere Kampfwrack-Varianten bleiben beim Laden gültig und erhalten
 passende neue Silhouetten; es entstehen keine neuen Save-Felder.
+
+## Review-Log (2026-11-24) – Projektilzoom und Feldperformance (PR #394)
+
+Die bestehenden Feature-IDs behalten ihren Status. Der gemeinsame
+Projektilrenderer verwendet den Weltmaßstab der Kamera für 1vs1,
+FleetCombat und Kampagne. FleetCombat-Testläufe simulieren nur das
+Szenariofeld. Die Kampagne behält ihre Hintergrundfelder. Beide Modi
+verwenden dieselben beschleunigten Geometrieprüfungen der Wegsuche.
