@@ -1,5 +1,5 @@
 import type { ContainerMesh } from './salvage-container-mesh';
-import { C, fragment, shell, strut } from './combat-wreck-geometry';
+import { C, shell, strut } from './combat-wreck-geometry';
 
 /**
  * Fixed, deterministic close-up detail for destroyed ships. Faces are built
