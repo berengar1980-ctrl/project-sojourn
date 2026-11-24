@@ -1218,3 +1218,14 @@ werden nicht persistiert. Weder Schema noch Save-Version, NPC-Identität,
 Fracht- oder Wirtschaftszustand wurden verändert. Die bekannte
 Save/Load-Grenze für zusätzliche Teilnehmer laufender Fleet-Gefechte
 besteht weiterhin.
+
+## Kampfwracks: fünf visuelle Modelle (PR #391)
+
+**Keine Speicheränderung.** Die fünf neuen Wrackvarianten ersetzen ausschließlich
+geometrische Darstellungen zerstörter Schiffe. Das bestehende
+`combatWreckVariant`-Feld bleibt als serialisierbare Zeichenkette erhalten;
+ältere gespeicherte Werte (`miner`, `freighter`, `patrol`) werden beim
+Rendern auf die neuen Silhouetten abgebildet. Physische Wrackobjekte,
+Bergungsressourcen, Positionen, Drift und die Kampfautorität bleiben unverändert.
+Die Trümmeranimation ist rein visuell abgeleitet und benötigt keinen
+Checkpoint. Der Career-Snapshot-Vertrag erhält keine neuen Felder.
