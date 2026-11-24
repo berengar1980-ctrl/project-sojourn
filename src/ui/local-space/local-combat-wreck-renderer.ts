@@ -38,7 +38,9 @@ export function drawMiningCombatWrecks(
       context,
       wreck.combatWreckVariant,
       radius,
-      wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation }
+      wreck.rotation3d ?? { x: 0, y: 0, z: wreck.rotation },
+      performance.now() / 1000,
+      wreck.effectSeed ?? 0
     );
     context.restore();
     const hitRadius = Math.max(19, radius + 10);
