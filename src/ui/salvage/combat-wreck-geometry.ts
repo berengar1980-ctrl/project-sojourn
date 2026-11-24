@@ -1,4 +1,4 @@
-import { type Color, ContainerMesh, type Vec3 } from './salvage-container-mesh';
+import type { Color, ContainerMesh, Vec3 } from './salvage-container-mesh';
 
 /** Shared immutable mesh construction helpers for damaged hulls. */
 export const C = {
