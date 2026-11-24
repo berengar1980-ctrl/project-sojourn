@@ -22,3 +22,14 @@ export function combatWreckVariantFor(
   }
   return VARIANTS[(hash >>> 0) % VARIANTS.length]!;
 }
+
+/** Accept current wreck IDs and old save IDs without changing the save schema. */
+export function isCombatWreckVariant(value: unknown): value is CombatWreckVariant {
+  return (
+    typeof value === 'string' &&
+    (VARIANTS as readonly string[]).includes(value) ||
+    value === 'miner' ||
+    value === 'freighter' ||
+    value === 'patrol'
+  );
+}
