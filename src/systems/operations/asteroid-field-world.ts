@@ -1,6 +1,5 @@
-import type { LocalAsteroid } from '../../core/local-space-types';
 import { isCombatWreckVariant } from '../../core/combat-wreck-variant';
-import type { LocalSpaceInstance } from '../../core/local-space-types';
+import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
 import {
   advanceSalvageContainerDrift,
