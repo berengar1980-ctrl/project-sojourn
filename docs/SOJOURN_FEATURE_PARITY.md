@@ -1970,3 +1970,12 @@ Projektilrenderer verwendet den Weltmaßstab der Kamera für 1vs1,
 FleetCombat und Kampagne. FleetCombat-Testläufe simulieren nur das
 Szenariofeld. Die Kampagne behält ihre Hintergrundfelder. Beide Modi
 verwenden dieselben beschleunigten Geometrieprüfungen der Wegsuche.
+
+## Review-Log (2026-11-24) – Wrackrotation und Detaildarstellung
+
+**Keine Statusänderung** der historischen Feature-IDs. Die fünf zerstörten
+Schiffsrümpfe rotieren sichtbar in 1vs1, FleetCombat, Kampagne und lokalen
+Bergungsfeldern; abgebrochene Teile taumeln unabhängig. Die detaillierte
+Nahdarstellung umgeht den distanten Sprite-LOD. Die Bewegungen sind rein
+visuell und greifen weder in den gemeinsamen Kampftick noch in die
+physikalischen Kollisionen, Bergung oder Save-Struktur ein.
