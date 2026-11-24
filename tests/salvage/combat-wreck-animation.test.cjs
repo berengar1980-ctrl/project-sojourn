@@ -17,7 +17,7 @@ assert.match(wreck, /radius >= 24/, 'close zoom uses full mesh, not quantized sp
 assert.match(wreck, /driftingParts\.length/, 'detached sections have independent animation');
 assert.match(wreck, /timeSeconds \* \(0\.17 \+ i \*/, 'chunks use independent angular speeds');
 assert.match(combat, /radius, rotation, timeSeconds, seed/, 'combat passes visual clock and seed');
-assert.match(destruction, /}, age, arenaSeed\)/, 'death animation passes elapsed time');
+assert.match(destruction, /age,\s*arenaSeed\s*\)/, 'death animation passes elapsed time');
 assert.match(mining, /performance\.now\(\) \/ 1000/, 'local field draws moving wrecks');
 assert.match(wreck, /addCombatWreckDetail/, 'every model builds detailed geometry');
 console.log('PASS destroyed ship rotation, fragment drift and full-detail LOD wiring');
