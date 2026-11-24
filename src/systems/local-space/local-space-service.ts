@@ -23,7 +23,7 @@ import { calculateMiningImpact } from './mining-impact';
 import { localShipVelocity } from './local-space-ship-velocity';
 import { hasMineableDeposits } from './mining-chunk-service';
 import { advanceMiningFormation } from './local-space-mining-formation';
-import { selectedAsteroid, selectedRouteOptions } from './local-space-scanning';
+import { selectedAsteroid } from './local-space-scanning';
 import {
   createIdleStationKeepingState,
   resetIdleStationKeeping,
@@ -32,10 +32,11 @@ import {
 import type { LocalSpaceService } from './local-space-api';
 import { createMiningEventController } from './mining-event-service';
 import { MiningResourceRuntime } from './mining-resource-runtime';
-import {
-  type PointRoutePlanningOptions,
-  type RoutePlanningOptions,
+import type {
+  PointRoutePlanningOptions,
+  RoutePlanningOptions,
 } from './local-space-navigation';
+import { pointWreckAwareRouteOptions, selectedWreckAwareRouteOptions } from './local-space-wreck-navigation';
 import { LocalSpaceAutopilotHazards } from './local-space-autopilot-hazards';
 import { resolveLocalWreckContacts } from './local-space-wreck-contacts';
 import { LocalSpaceScanClock } from './local-space-scan-clock';
@@ -154,33 +155,18 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-  private navigationObstacles(): readonly LocalAsteroid[] {
-    const additional = this.options.additionalObstacles?.() ?? [];
-    return additional.length ? [...this.instance.asteroids, ...additional] : this.instance.asteroids;
-  }
-
-  private selectedRouteOptions(): RoutePlanningOptions | null {
-    const route = selectedRouteOptions(this.instance, this.selectedAsteroidId, this.shield);
-    return route ? { ...route, asteroids: this.navigationObstacles() } : null;
-  }
-
   getMiningRouteOptions(): RoutePlanningOptions | null {
-    return this.selectedRouteOptions();
+    return selectedWreckAwareRouteOptions(this.instance, this.selectedAsteroidId, this.shield,
+      this.options.additionalObstacles?.() ?? []);
   }
 
   getShortRangeScanRouteOptions(): RoutePlanningOptions | null {
-    return this.selectedRouteOptions();
+    return this.getMiningRouteOptions();
   }
 
   getPointRouteOptions(target: WorldPoint): PointRoutePlanningOptions {
-    return {
-      start: this.instance.ship.position,
-      target,
-      asteroids: this.navigationObstacles(),
-      clearance: Math.max(this.shield.radiusX, this.shield.radiusY) + 24,
-      width: this.instance.width,
-      height: this.instance.height,
-    };
+    return pointWreckAwareRouteOptions(this.instance, target, this.shield,
+      this.options.additionalObstacles?.() ?? []);
   }
   startNavigation(target: WorldPoint, route: readonly WorldPoint[]): LocalSpaceSnapshot {
     if (this.miningEvents.pending || route.length < 2) return this.getSnapshot();
