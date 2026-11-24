@@ -1253,3 +1253,14 @@ Die finalen Positionen beendeter NPC-Feldgefechte werden im selben
 Simulationsschritt an den Feldverkehr übergeben. Die Übergabeliste ist
 flüchtig und wird beim nächsten Kampfschritt geleert. Das Save-Format
 und die gespeicherten Felddaten ändern sich dadurch nicht.
+
+## Kampfwracks: fünf visuelle Modelle (PR #391)
+
+**Keine Speicheränderung.** Die fünf neuen Wrackvarianten ersetzen ausschließlich
+geometrische Darstellungen zerstörter Schiffe. Das bestehende
+`combatWreckVariant`-Feld bleibt als serialisierbare Zeichenkette erhalten;
+ältere gespeicherte Werte (`miner`, `freighter`, `patrol`) werden beim
+Rendern auf die neuen Silhouetten abgebildet. Physische Wrackobjekte,
+Bergungsressourcen, Positionen, Drift und die Kampfautorität bleiben unverändert.
+Die Trümmeranimation ist rein visuell abgeleitet und benötigt keinen
+Checkpoint. Der Career-Snapshot-Vertrag erhält keine neuen Felder.
