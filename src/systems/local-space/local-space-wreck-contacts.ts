@@ -21,7 +21,10 @@ export function resolveLocalWreckContacts(
     additional.length ? [...asteroids, ...additional] : asteroids,
     shield
   );
-  if (additional.length && hits.some((hit) => additional.some((body) => body.id === hit.asteroidId))) {
+  if (
+    additional.length &&
+    hits.some((hit) => additional.some((body) => body.id === hit.asteroidId))
+  ) {
     onContact?.();
   }
   return hits;

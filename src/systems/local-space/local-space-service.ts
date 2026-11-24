@@ -32,11 +32,11 @@ import {
 import type { LocalSpaceService } from './local-space-api';
 import { createMiningEventController } from './mining-event-service';
 import { MiningResourceRuntime } from './mining-resource-runtime';
-import type {
-  PointRoutePlanningOptions,
-  RoutePlanningOptions,
-} from './local-space-navigation';
-import { pointWreckAwareRouteOptions, selectedWreckAwareRouteOptions } from './local-space-wreck-navigation';
+import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
+import {
+  pointWreckAwareRouteOptions,
+  selectedWreckAwareRouteOptions,
+} from './local-space-wreck-navigation';
 import { LocalSpaceAutopilotHazards } from './local-space-autopilot-hazards';
 import { resolveLocalWreckContacts } from './local-space-wreck-contacts';
 import { LocalSpaceScanClock } from './local-space-scan-clock';

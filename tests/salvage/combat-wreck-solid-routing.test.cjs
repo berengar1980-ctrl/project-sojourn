@@ -26,7 +26,9 @@ const field = {
 const wreck = addDestroyedShipWreck(
   field,
   { id: 'lost-frigate', position: { x: 650, y: 700 }, hullHp: 0 },
-  'encounter', 40, () => 0.5
+  'encounter',
+  40,
+  () => 0.5
 );
 assert(wreck, 'combat destruction must produce a recoverable wreck');
 const bodies = salvageFieldPhysicsBodies(field);
@@ -58,9 +60,16 @@ const impacts = resolveShieldCollisions(
   bodies,
   { centerOffset: { x: 0, y: 0 }, radiusX: 24, radiusY: 18 }
 );
-assert(impacts.some((hit) => hit.asteroidId === wreck.id), 'ship shields must collide with saved wreck');
+assert(
+  impacts.some((hit) => hit.asteroidId === wreck.id),
+  'ship shields must collide with saved wreck'
+);
 syncSalvagePhysicsContacts(field);
-assert.notDeepEqual(wreck.position, startingPosition, 'wreck collision impulses reach saved position');
+assert.notDeepEqual(
+  wreck.position,
+  startingPosition,
+  'wreck collision impulses reach saved position'
+);
 
 const salvage = createSalvageFieldService({
   field,
@@ -80,12 +89,28 @@ const wiring = source('src/app/game-controller-mining-runtime.ts');
 const world = source('src/systems/operations/asteroid-field-world.ts');
 const navigation = source('src/systems/local-space/local-space-wreck-navigation.ts');
 const collisions = source('src/systems/local-space/local-space-wreck-contacts.ts');
-assert.match(local, /additionalObstacles\?\.\(\)/, 'mining local simulation reads dynamic wreck bodies');
+assert.match(
+  local,
+  /additionalObstacles\?\.\(\)/,
+  'mining local simulation reads dynamic wreck bodies'
+);
 assert.match(local, /onAdditionalObstacleContact/, 'mining contacts synchronize wreck motion');
-assert.match(local, /pointWreckAwareRouteOptions\(this\.options, target, this\.shield\)/, 'point navigation uses wreck obstacles');
+assert.match(
+  local,
+  /pointWreckAwareRouteOptions\(this\.options, target, this\.shield\)/,
+  'point navigation uses wreck obstacles'
+);
 assert.match(local, /resolveLocalWreckContacts\(/, 'shield contacts include real wreck bodies');
-assert.match(wiring, /combatWreckPhysicsBodies\(location\.id\)/, 'controller shares world wreck colliders');
+assert.match(
+  wiring,
+  /combatWreckPhysicsBodies\(location\.id\)/,
+  'controller shares world wreck colliders'
+);
 assert.match(world, /syncSalvagePhysicsContacts\(field\)/, 'contact mutations persist to salvage');
-assert.match(navigation, /navigationBodies\(instance, additional\)/, 'route planner includes physical wrecks');
+assert.match(
+  navigation,
+  /navigationBodies\(instance, additional\)/,
+  'route planner includes physical wrecks'
+);
 assert.match(collisions, /resolveShieldCollisions\(/, 'native shield collision solver is reused');
 console.log('PASS recoverable combat wrecks are solid and route-blocking in local fields');

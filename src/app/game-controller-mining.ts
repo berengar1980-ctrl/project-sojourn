@@ -28,7 +28,10 @@ export function createMiningLocalSpace(
   claims?: AsteroidClaimRegistry,
   isTheftDetected?: (ownerId: string, asteroidId: string) => boolean,
   persistentField?: LocalSpaceInstance,
-  wreckPhysics?: Pick<LocalSpaceServiceOptions, 'additionalObstacles' | 'onAdditionalObstacleContact'>
+  wreckPhysics?: Pick<
+    LocalSpaceServiceOptions,
+    'additionalObstacles' | 'onAdditionalObstacleContact'
+  >
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
 
