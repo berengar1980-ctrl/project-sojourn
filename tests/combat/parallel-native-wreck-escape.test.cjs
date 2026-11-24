@@ -64,7 +64,7 @@ fleet.tick(0.08);
 const state = fleet.getSnapshot();
 const wrecks = state.duels[0].arena.asteroids.filter((rock) => rock.id === 'fleet-wreck:b-2');
 assert.equal(wrecks.length, 1, 'a destroyed ship turns into one persistent real wreck');
-assert.equal(wrecks[0].kind, 'debris');
+assert.equal(wrecks[0].kind, 'resource', 'wrecks must block routes and resist impacts');
 assert(wrecks[0].combatWreckVariant, 'the actual salvage wreck mesh is selected');
 assert(wrecks[0].collisionRadius > 0, 'the wreck remains a physical obstacle');
 assert(
