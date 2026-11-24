@@ -40,6 +40,13 @@ interface NativeFleetFrame {
   readonly ramContacts: Map<string, number>;
 }
 
+function dynamicWreckBlockers(frame: NativeFleetFrame): StrategicCombatObstacle[] {
+  const fixed = new Set(frame.baseObstacles.map((obstacle) => obstacle.id));
+  return frame.asteroidWorld
+    .filter((rock) => rock.combatWreckVariant && !fixed.has(rock.id))
+    .map(wreckObstacle);
+}
+
 function wreckObstacle(rock: CombatVisualAsteroid): StrategicCombatObstacle {
   return { id: rock.id, position: rock.position, radius: rock.collisionRadius ?? rock.radius };
 }
@@ -93,15 +100,41 @@ function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): F
 function removeCapturedObstacles(
   blockerLists: readonly StrategicCombatObstacle[][],
   initialRockIds: ReadonlySet<string>,
-  remaining: readonly CombatVisualAsteroid[]
+  remaining: readonly CombatVisualAsteroid[],
+  removed?: Set<string>
 ): void {
   const remainingIds = new Set(remaining.map((rock) => rock.id));
+  for (const id of initialRockIds) if (!remainingIds.has(id)) removed?.add(id);
   for (const blockers of blockerLists) {
     for (let index = blockers.length - 1; index >= 0; index--) {
       const id = blockers[index]!.id;
       if (initialRockIds.has(id) && !remainingIds.has(id)) blockers.splice(index, 1);
     }
   }
+}
+
+function refreshSharedBlockers(frame: NativeFleetFrame): void {
+  const world = frame.arena.fieldWorld;
+  if (!world) return;
+  const bodies = new Map(world.asteroids.map((body) => [body.id, body]));
+  for (let i = frame.baseObstacles.length - 1; i >= 0; i--) {
+    const blocker = frame.baseObstacles[i]!;
+    if (world.removedIds.has(blocker.id)) frame.baseObstacles.splice(i, 1);
+    else {
+      const current = bodies.get(blocker.id);
+      if (current) Object.assign(blocker.position, current.position);
+    }
+  }
+}
+
+function stepWorld(frame: NativeFleetFrame): void {
+  const { arena, dt, actors, asteroidWorld, recordedWrecks, seed, elapsed } = frame;
+  if (!arena.fieldWorld?.advanced) {
+    advanceCombatAsteroids(arena, dt);
+    if (arena.fieldWorld) arena.fieldWorld.advanced = true;
+  }
+  refreshSharedBlockers(frame);
+  materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
 }
 
 /** One asteroid tick, one native actor tick, one recorded wreck per vessel. */
@@ -121,11 +154,8 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     dt,
     bystanders,
   } = frame;
-  advanceCombatAsteroids(arena, dt);
-  materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
-  let wreckBlockers = asteroidWorld
-    .filter((rock) => rock.id.startsWith('fleet-wreck:'))
-    .map(wreckObstacle);
+  stepWorld(frame);
+  let wreckBlockers = dynamicWreckBlockers(frame);
   const bystanderBlockers = bystanders.map((ship) => ({
     id: 'ship:' + ship.id,
     position: ship.position,
@@ -186,12 +216,15 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     }
     const removedRock = asteroidWorld.length !== rockCount;
     if (removedRock)
-      removeCapturedObstacles([baseObstacles, ...allObstacles], initialRockIds, asteroidWorld);
+      removeCapturedObstacles(
+        [baseObstacles, ...allObstacles],
+        initialRockIds,
+        asteroidWorld,
+        arena.fieldWorld?.removedIds
+      );
     materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
     if (removedRock || asteroidWorld.length !== rockCount) {
-      wreckBlockers = asteroidWorld
-        .filter((rock) => rock.id.startsWith('fleet-wreck:'))
-        .map(wreckObstacle);
+      wreckBlockers = dynamicWreckBlockers(frame);
     }
     if (state.boardingInitiator) break;
   }

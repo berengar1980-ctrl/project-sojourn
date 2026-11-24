@@ -33,6 +33,7 @@ function createArenaOptions(
     ...(arenaOptions?.defenderPosition ? { defenderPosition: arenaOptions.defenderPosition } : {}),
     ...initialCombatMotion(arenaOptions),
     ...(arenaOptions?.obstacles ? { obstacles: arenaOptions.obstacles } : {}),
+    ...(arenaOptions?.fieldWorld ? { fieldWorld: arenaOptions.fieldWorld } : {}),
     ...(arenaOptions?.asteroids ? { asteroids: arenaOptions.asteroids } : {}),
     ...(arenaOptions?.backdropSeed !== undefined
       ? { backdropSeed: arenaOptions.backdropSeed }

@@ -28,6 +28,10 @@ import type { StrategicCombatArenaOptions } from './strategic-combat-service';
 import { npcCombatant } from './npc-combatant-setup';
 import {
   finishPlayerCombat,
+  fieldCombat,
+  prepareFieldCombatArena,
+  resetFieldCombatSteps,
+  registerFieldCombatWreck,
   joinBackgroundCombat,
   resolveBackgroundCombats,
   restorePlayerFleet,
@@ -194,7 +198,7 @@ function beginPlayerCombat(
     target,
     runtime.options.sectorNpcs.npcs,
     playerInitiated,
-    arena,
+    prepareFieldCombatArena(runtime, target.locationId, arena),
     {
       ...(runtime.options.fieldOwnsContact && {
         fieldOwnsContact: runtime.options.fieldOwnsContact,
@@ -285,7 +289,7 @@ function beginBackgroundCombat(
     attacker,
     defender,
     runtime.options.sectorNpcs.npcs,
-    arena,
+    prepareFieldCombatArena(runtime, attacker.locationId, arena),
     {
       ...(runtime.options.fieldOwnsContact && {
         fieldOwnsContact: runtime.options.fieldOwnsContact,
@@ -383,6 +387,7 @@ function syncPlayerPursuitTarget(runtime: EngagementRuntime): void {
 }
 
 function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void {
+  resetFieldCombatSteps(runtime);
   if (runtime.options.isPlayerInCampaignSystem?.()) {
     resolveBackgroundCombats(runtime, deltaSeconds);
     return;
@@ -460,6 +465,10 @@ export function createStarMapEngagementService(
           (entry) => entry.fleet.fleet.getSnapshot().escapedShipIds
         ),
       ]),
+    fieldCombat: (locationId, seed, bystanders) =>
+      fieldCombat(runtime, locationId, seed, bystanders),
+    registerFieldCombatWreck: (locationId, seed, destroyedId, body) =>
+      registerFieldCombatWreck(runtime, locationId, seed, destroyedId, body),
     activeNpcCombatSnapshots: () =>
       [...runtime.backgroundCombats.values()].flatMap((entry) => [
         ...entry.fleet.fleet.getSnapshot().duels,

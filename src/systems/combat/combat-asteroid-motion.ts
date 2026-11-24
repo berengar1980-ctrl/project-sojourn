@@ -1,3 +1,4 @@
+import { usesNaturalCombatContour } from './combat-visible-collider';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import { integrateAsteroids } from '../local-space/local-space-physics';
 import { resolveAsteroidCollisions } from '../local-space/local-space-collision';
@@ -21,12 +22,7 @@ export function nativeCombatAsteroids(arena: StrategicCombatArenaOptions): Local
       ...(asteroid.collisionRadius !== undefined
         ? { collisionRadius: asteroid.collisionRadius }
         : {}),
-      ...(asteroid.collisionRadius !== undefined &&
-      !asteroid.debrisVariant &&
-      !asteroid.sectionVariant &&
-      !asteroid.containerVariant
-        ? { contactGeometry: 'silhouette' as const }
-        : {}),
+      ...(usesNaturalCombatContour(asteroid) ? { contactGeometry: 'silhouette' as const } : {}),
       rotation: asteroid.rotation ?? 0,
       // Combat rocks retain their campaign motion but large bodies carry much more inertia.
       // This suppresses unrealistic kickback when a 60 m ship strikes a massive asteroid.

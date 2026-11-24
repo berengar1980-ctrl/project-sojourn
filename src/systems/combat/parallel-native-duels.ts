@@ -1,4 +1,4 @@
-import { clearCombatSpawn } from './combat-field-spawns';
+import { clearCombatSpawn, fleetArrivalPosition } from './combat-field-spawns';
 import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import {
   defaultFleetHostility,
@@ -224,6 +224,7 @@ interface NativeFleetJoinContext {
   readonly teams: Map<string, string>;
   readonly escaped: ReadonlySet<string>;
   readonly radii: Map<string, number>;
+  readonly bystanders: readonly StrategicCombatBystander[];
   readonly arena: StrategicCombatArenaOptions;
   readonly obstacleSet: () => StrategicCombatObstacle[];
   readonly seed: number;
@@ -249,9 +250,18 @@ function joinNativeFleetShip(
         (hostility(affiliation, teams.get(actor.setup.id)!) ||
           hostility(teams.get(actor.setup.id)!, affiliation))
     )
-    .sort((a, b) => a.setup.id.localeCompare(b.setup.id))[0];
+    .sort((a, b) => {
+      const position = ship.position;
+      const range = position
+        ? Math.hypot(a.position.x - position.x, a.position.y - position.y) -
+          Math.hypot(b.position.x - position.x, b.position.y - position.y)
+        : 0;
+      return range || a.setup.id.localeCompare(b.setup.id);
+    })[0];
   if (!target) return false;
   const shipIndex = actors.length;
+  const position = fleetArrivalPosition(context, ship.position);
+  if (!position) return false;
   const support = createStrategicCombatService(
     ship.setup,
     target.setup,
@@ -261,11 +271,7 @@ function joinNativeFleetShip(
       obstacleSet(),
       ship,
       { id: target.setup.id, team: teams.get(target.setup.id)!, setup: target.setup },
-      ship.position ??
-        clearCombatSpawn(arena, {
-          x: arena.width * 0.5,
-          y: (arena.height * ((shipIndex % 9) + 1)) / 10,
-        }),
+      position,
       target.position
     ),
     undefined,
@@ -307,7 +313,7 @@ export function createParallelNativeDuels(
   const fleetArena: StrategicCombatArenaOptions = {
     ...arena,
     obstacles: baseObstacles,
-    asteroids: [...(arena.asteroids ?? [])],
+    asteroids: arena.fieldWorld?.asteroids ?? [...(arena.asteroids ?? [])],
     exitPoint:
       arena.exitPoint ??
       buildCombatArena(first[0]!.setup, second[0]!.setup, seed, arena).exitPoint!,
@@ -428,6 +434,7 @@ export function createParallelNativeDuels(
           teams,
           escaped: escapedRecords,
           radii: radiusById,
+          bystanders,
           arena: fleetArena,
           obstacleSet,
           seed,
@@ -438,6 +445,7 @@ export function createParallelNativeDuels(
         targetId
       );
       if (joined) {
+        bystanders = bystanders.filter((entry) => entry.id !== ship.setup.id);
         actorById.set(ship.id, actors.at(-1)!);
         cachedSnapshot = null;
       }

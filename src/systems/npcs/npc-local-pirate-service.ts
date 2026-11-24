@@ -1,3 +1,5 @@
+import { resolveFieldDebrisContacts } from '../local-space/field-debris-contact';
+import { createShieldWorldGeometry } from '../local-space/local-space-collision';
 import { droneSeesTarget } from '../operations/asteroid-security-drone';
 import { seededLocalGate } from '../../core/local-space-exit';
 import type { SectorNpcState } from '../../core/npc-types';
@@ -442,13 +444,33 @@ export class LocalPirateTraffic {
         };
       }
     }
+    for (const body of pirates) {
+      const traffic = this.ships.get(body.id)!;
+      const geometry = createShieldWorldGeometry(
+        body.ship.sprite.hardpoints,
+        body.ship.nominalLengthMeters
+      );
+      const cos = Math.cos(traffic.headingRadians);
+      const sin = Math.sin(traffic.headingRadians);
+      resolveFieldDebrisContacts(
+        {
+          x: traffic.position.x + geometry.centerOffset.x * cos - geometry.centerOffset.y * sin,
+          y: traffic.position.y + geometry.centerOffset.x * sin + geometry.centerOffset.y * cos,
+        },
+        { x: cos * traffic.speed, y: sin * traffic.speed },
+        rocks,
+        Math.max(geometry.radiusX, geometry.radiusY)
+      );
+    }
     resolveShipShieldObstacleCollisions(
       pirates,
-      rocks.map((rock) => ({
-        id: rock.id,
-        position: rock.position,
-        radius: rock.collisionRadius ?? rock.radius,
-      }))
+      rocks
+        .filter((rock) => rock.routeBlocking)
+        .map((rock) => ({
+          id: rock.id,
+          position: rock.position,
+          radius: rock.collisionRadius ?? rock.radius,
+        }))
     );
     return impacts;
   }

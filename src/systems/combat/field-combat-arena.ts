@@ -1,4 +1,7 @@
-import { invalidateSalvagePhysics } from '../salvage/salvage-container-motion';
+import {
+  invalidateSalvagePhysics,
+  salvageFieldPhysicsBodies,
+} from '../salvage/salvage-container-motion';
 import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { SalvageDebris, SalvageField } from '../../core/salvage-types';
 import type { SalvageWreck, SalvageSection } from '../../core/salvage-types';
@@ -16,6 +19,7 @@ export function miningFieldCombatArena(
   velocity: WorldPoint,
   wrecks: readonly SalvageWreck[] = []
 ): StrategicCombatArenaOptions {
+  const wreckBodies = wrecks.map(wreckCombatBody);
   return {
     width: instance.width,
     height: instance.height,
@@ -37,7 +41,7 @@ export function miningFieldCombatArena(
           : {}),
         rotation: asteroid.rotation,
       })),
-      ...wrecks.map(wreckCombatBody),
+      ...wreckBodies,
     ],
     obstacles: [
       ...instance.asteroids
@@ -47,17 +51,19 @@ export function miningFieldCombatArena(
           position: { ...asteroid.position },
           radius: asteroid.collisionRadius ?? asteroid.radius,
         })),
-      ...wrecks.map((wreck) => ({
-        id: wreck.id,
-        position: { ...wreck.position },
-        radius: wreck.radius * 0.5,
-      })),
+      ...wreckBodies
+        .filter((wreck) => wreck.kind === 'resource')
+        .map((wreck) => ({
+          id: wreck.id,
+          position: { ...wreck.position },
+          radius: wreck.collisionRadius ?? wreck.radius,
+        })),
     ],
   };
 }
 
-function wreckCombatBody(wreck: SalvageWreck): CombatVisualAsteroid {
-  const kind = wreck.sectionVariant || wreck.combatWreckVariant ? 'resource' : 'debris';
+export function wreckCombatBody(wreck: SalvageWreck): CombatVisualAsteroid {
+  const kind = wreck.containerVariant || wreck.debrisVariant ? 'debris' : 'resource';
   const variant = {
     ...(wreck.sectionVariant ? { sectionVariant: wreck.sectionVariant } : {}),
     ...(wreck.combatWreckVariant ? { combatWreckVariant: wreck.combatWreckVariant } : {}),
@@ -69,12 +75,10 @@ function wreckCombatBody(wreck: SalvageWreck): CombatVisualAsteroid {
     kind,
     position: { ...wreck.position },
     radius: wreck.radius,
-    collisionRadius: combatVisibleContactRadius({
-      id: wreck.id,
-      kind,
-      radius: wreck.radius,
-      ...variant,
-    }),
+    contactGeometry: 'circle',
+    collisionRadius: Object.keys(variant).length
+      ? combatVisibleContactRadius({ id: wreck.id, kind, radius: wreck.radius, ...variant })
+      : wreck.radius,
     velocity: { ...(wreck.driftVelocity ?? { x: 0, y: 0 }) },
     angularVelocity: wreck.spin3d?.z ?? 0,
     rotation: wreck.rotation3d?.z ?? wreck.rotation,
@@ -135,11 +139,22 @@ export function salvageFieldCombatArena(field: SalvageField): StrategicCombatAre
   const knownIds = new Set(field.wrecks.map((wreck) => wreck.id));
   const unknownDebris = (field.debris ?? []).filter((debris) => !knownIds.has(debris.id));
   const unknownSections = (field.sections ?? []).filter((section) => !knownIds.has(section.id));
+  const physics = new Map(salvageFieldPhysicsBodies(field).map((body) => [body.id, body]));
   const asteroids = [
     ...unknownDebris.map(debrisCombatBody),
     ...field.wrecks.map(wreckCombatBody),
     ...unknownSections.map(sectionCombatBody),
-  ];
+  ].map((body) => {
+    const local = physics.get(body.id);
+    if (!local) return body;
+    return {
+      ...body,
+      position: { ...local.position },
+      velocity: { ...local.physics.velocity },
+      angularVelocity: local.physics.angularVelocity,
+      rotation: local.rotation,
+    };
+  });
   return {
     width: field.width,
     height: field.height,
@@ -170,7 +185,29 @@ export function syncMiningCombatField(
     asteroid.position = { ...body.position };
     asteroid.rotation = body.rotation;
     asteroid.physics.velocity = { ...body.velocity };
-    asteroid.physics.angularVelocity = body.angularVelocity;
+    asteroid.physics.angularVelocity = body.physics?.angularVelocity ?? body.angularVelocity;
+  }
+}
+
+/** Preserve impulses from traffic and the free player between shared combat ticks. */
+export function syncFieldTrafficImpulses(
+  bodies: readonly LocalAsteroid[],
+  arena: StrategicCombatSnapshot['arena']
+): void {
+  const byId = new Map(arena.asteroids?.map((body) => [body.id, body]));
+  for (const body of bodies) {
+    const native = byId.get(body.id);
+    if (!native) continue;
+    Object.assign(native.position, body.position);
+    Object.assign(native.velocity, body.physics.velocity);
+    Object.assign(native, { angularVelocity: body.physics.angularVelocity });
+    if (native.physics) {
+      Object.assign(native.physics.velocity, body.physics.velocity);
+      native.physics.angularVelocity = body.physics.angularVelocity;
+    }
+    native.rotation = body.rotation;
+    if (native.rotation3d) native.rotation3d.z = body.rotation;
+    if (native.spin3d) Object.assign(native.spin3d, { z: body.physics.angularVelocity });
   }
 }
 

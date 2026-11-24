@@ -1,3 +1,4 @@
+import { usesNaturalCombatContour } from './combat-visible-collider';
 import { applyShieldHit } from '../shields/shield-service';
 import { resolveShieldCollisions } from '../local-space/local-space-collision';
 import { nativeCombatAsteroids } from './combat-asteroid-motion';
@@ -21,12 +22,7 @@ function separateShipFromRock(
   const shieldY = ship.position.y + offset.x * sin + offset.y * cos;
   const dx = rock.position.x - shieldX;
   const dy = rock.position.y - shieldY;
-  if (
-    rock.collisionRadius !== undefined &&
-    !rock.debrisVariant &&
-    !rock.sectionVariant &&
-    !rock.containerVariant
-  ) {
+  if (usesNaturalCombatContour(rock)) {
     const hit = compoundContact(
       shieldContactBody(
         { x: shieldX, y: shieldY },

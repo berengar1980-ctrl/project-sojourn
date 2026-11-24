@@ -21,7 +21,7 @@ for (const action of ['diagnose', 'repair', 'tow', 'evacuate']) {
 }
 assert(panel.includes('options.onStartDistressDiagnosis(id)'));
 assert(scene.includes('requestDistressDiagnosis(context, eventId)'));
-assert(scene.includes('tickDistressDiagnosis(context, deltaSeconds)'));
+assert(scene.includes('tickDistressDiagnosis(context, deltaSeconds, Boolean(fieldCombat))'));
 assert(diagnosis.includes('options.onDiagnoseDistress?.(event.id)'));
 assert(controller.includes('economy.salvageEvents.diagnoseDistress('));
 console.log('PASS distress action pointer handling and diagnosis callbacks');

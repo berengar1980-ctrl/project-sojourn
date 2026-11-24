@@ -1,3 +1,4 @@
+import { salvageDroneObstacleAsteroids } from '../salvage/salvage-patrol-geometry';
 import {
   moveFieldShip,
   type FieldRouteState,
@@ -274,7 +275,9 @@ class LocalSalvageService implements NpcLocalSalvageService {
         localCruiseSpeed(npc),
         dt,
         [
-          ...this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+          ...salvageDroneObstacleAsteroids(this.options.field).filter(
+            (entry) => entry.routeBlocking
+          ),
           ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
         ],
         65
@@ -393,7 +396,9 @@ class LocalSalvageService implements NpcLocalSalvageService {
           localCruiseSpeed(npc),
           dt,
           [
-            ...this.options.field.wrecks.filter((entry) => entry.sectionVariant),
+            ...salvageDroneObstacleAsteroids(this.options.field).filter(
+              (entry) => entry.routeBlocking
+            ),
             ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
           ],
           65
@@ -436,7 +441,13 @@ class LocalSalvageService implements NpcLocalSalvageService {
     // Only distress-rescue ships remain fixed obstacles. All drift objects use
     // the same impulse-based asteroid shield physics instead of acting as walls.
     const obstacles = this.options.field.wrecks
-      .filter((wreck) => !wreck.containerVariant && !wreck.debrisVariant && !wreck.sectionVariant)
+      .filter(
+        (wreck) =>
+          !wreck.containerVariant &&
+          !wreck.debrisVariant &&
+          !wreck.sectionVariant &&
+          !wreck.combatWreckVariant
+      )
       .map((wreck) => ({
         id: wreck.id,
         position: wreck.position,

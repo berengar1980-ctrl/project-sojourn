@@ -26,7 +26,7 @@ assert(salvage.includes('drawTargetDetailScan('));
 assert(!salvage.includes('drawNpcSalvageTether('));
 assert(salvageEffect.includes('drawSalvageWorkEffect('));
 assert(bridge.includes('activeNpcCombatSnapshots?.()'));
-assert(bridge.includes('setBystanders(bystanders)'));
+assert(bridge.includes('fieldCombat?.(field.locationId, field.instance.seed, bystanders)'));
 assert(combat.includes('resolveCombatBystanderContacts('));
 assert(!pirate.includes('nominalLengthMeters: 120'));
 assert(!pirate.includes('nominalLengthMeters: 80'));

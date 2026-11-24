@@ -30,3 +30,16 @@ export function combatVisibleContactRadius(
     return salvageSolidContactRadius(asteroid.radius, 'section');
   return asteroid.radius * asteroidContactBound(asteroid.id, asteroid.kind);
 }
+
+export function usesNaturalCombatContour(
+  asteroid: CombatVisualAsteroid
+): asteroid is CombatVisualAsteroid & { readonly collisionRadius: number } {
+  return (
+    asteroid.collisionRadius !== undefined &&
+    asteroid.contactGeometry !== 'circle' &&
+    !asteroid.containerVariant &&
+    !asteroid.debrisVariant &&
+    !asteroid.sectionVariant &&
+    !asteroid.combatWreckVariant
+  );
+}

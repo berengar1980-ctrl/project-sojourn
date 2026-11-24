@@ -229,7 +229,7 @@ function createSectorFleetEncounter(
         Math.hypot(contact.position.x - actor.position.x, contact.position.y - actor.position.y) <=
           range
       )
-        return contact;
+        return { ...contact, targetId: id };
     }
     return null;
   }
@@ -318,9 +318,9 @@ function createSectorFleetEncounter(
         )
           continue;
         conflict.include(kind);
-        const contact = localWitness ? nearbyContact(npc, opponents, localWitness) : null;
-        if (localWitness && !contact) continue;
-        const spot = contact?.position ?? npcPosition(npc);
+        const witness = localWitness ? nearbyContact(npc, opponents, localWitness) : null;
+        if (localWitness && !witness) continue;
+        const spot = witness?.position ?? npcPosition(npc);
         if (!localWitness && Math.hypot(spot.x - position.x, spot.y - position.y) > CONTACT_RANGE)
           continue;
         // A nearby patrol or drone can now observe the already ongoing attack.
@@ -329,7 +329,10 @@ function createSectorFleetEncounter(
           victimId: victim,
           witnessedBy: [npc.id],
         });
-        if (!opponents.some((actor) => conflict.isHostile(npc.id, actor.setup.id))) continue;
+        const hostiles = opponents.filter((actor) => conflict.isHostile(npc.id, actor.setup.id));
+        if (!hostiles.length) continue;
+        const contact = localWitness ? nearbyContact(npc, hostiles, localWitness) : null;
+        if (localWitness && !contact) continue;
         const setup = npcCombatant(npc);
         if (!setup) continue;
         const anchorActor = fleet.getActor(enemy.id);
@@ -359,7 +362,8 @@ function createSectorFleetEncounter(
                 ? { headingRadians: contact?.headingRadians ?? worldPose.headingOf(npc) }
                 : {}),
             },
-            npc.id
+            npc.id,
+            contact?.targetId
           )
         ) {
           const actor = fleet.getActor(npc.id);

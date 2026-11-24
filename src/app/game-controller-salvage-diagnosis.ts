@@ -31,10 +31,14 @@ export function requestDistressDiagnosis(context: DiagnosisScene, eventId: strin
   }
 }
 
-export function tickDistressDiagnosis(context: DiagnosisScene, deltaSeconds: number): void {
+export function tickDistressDiagnosis(
+  context: DiagnosisScene,
+  deltaSeconds: number,
+  combatOwnsBodies = false
+): void {
   const { service, state, options } = context;
   const serial = service.getSnapshot().diagnosisSerial;
-  service.tick(deltaSeconds);
+  service.tick(deltaSeconds, combatOwnsBodies);
   const event = state.activeSectorEvent;
   if (
     service.getSnapshot().diagnosisSerial !== serial &&

@@ -1,3 +1,4 @@
+import { wreckCombatBody } from '../systems/combat/field-combat-arena';
 import type { SalvageField, SalvageWreck } from '../core/salvage-types';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -32,7 +33,17 @@ export function recordCareerCombatWrecks(
   for (const ship of [snapshot.attacker, snapshot.defender]) {
     if (ship.hullHp > 0) continue;
     const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
-    if (wreck) created.push(wreck);
+    if (wreck) {
+      created.push(wreck);
+      if (snapshot.arena.backdropSeed !== undefined) {
+        context.engagements?.registerFieldCombatWreck?.(
+          locationId,
+          snapshot.arena.backdropSeed,
+          ship.id,
+          wreckCombatBody(wreck)
+        );
+      }
+    }
   }
   world.registerCombatWrecks(locationId, created);
   const liveField = context.state.salvageScene?.getField();

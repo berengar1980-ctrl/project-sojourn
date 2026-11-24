@@ -1941,3 +1941,14 @@ Hindernislisten gleichzeitig. Treffer und Autokanonen-Salven später
 beigetretener Schiffe verwenden die gemeinsame Effektzeit. Tritt der
 Spieler einem laufenden NPC-Gefecht bei, bleibt sein Kampf die
 Hauptansicht und der NPC-Zweikampf wird als Teilgefecht gezeichnet.
+
+## Review-Log (2026-11-24) – Feldkontakt, Deckung und Beitritt
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Leichte Trümmer erhalten beim Anflug einen Impuls. Piraten- und
+NPC-Verkehr verwenden in Asteroiden- und Wrackfeldern denselben
+Schiffskontakt. Projektile vergleichen Deckung, Schild und Hülle
+entlang derselben Strecke. Kampfwracks verwenden ihre eigene
+Kontaktgröße. Gleichzeitige Gefechte eines Felds teilen die Driftkörper,
+auch wenn der Spieler nicht kämpft. Verstärkungen behalten reale
+Anflugposen und wählen im Feld ein tatsächlich erreichtes Ziel.

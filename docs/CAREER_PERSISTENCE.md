@@ -1239,3 +1239,12 @@ Zeitachsen sind flüchtig. Der aktive Spieler kann während eines
 Raum- oder Entergefechts keine Karriere speichern oder aus dem
 Einstellungsmenü laden. Version 1 und das Einlesen älterer
 Spielstände außerhalb eines Gefechts bleiben kompatibel.
+
+### Gemeinsame Körperwelt bei Feldgefechten
+
+Gleichzeitige Begegnungen am selben Ort und mit demselben Feld-Seed
+teilen sich die beweglichen Körper. Die Koordination verhindert einen
+zweiten Drift-Tick und spiegelt Treffer, Traktorentnahmen und Verkehrsimpulse
+zurück ins Feld. Der Koordinator, die Liste entfernter Körper und seine
+Tick-Markierung sind flüchtig und bleiben außerhalb des Save-Formats.
+Außerhalb von Gefechten gelten die bestehenden Asteroiden- und Wrackdaten.

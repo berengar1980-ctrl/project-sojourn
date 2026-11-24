@@ -1,3 +1,5 @@
+import type { CombatVisualAsteroid } from './strategic-combat-types';
+import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import { createCareerFleetEncounter } from './career-fleet-encounter';
 import type { StrategicCombatService } from './strategic-combat-service-types';
 import { measurePerformance } from '../../core/performance-diagnostics';
@@ -7,6 +9,84 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
 import { settleNpcCombatPirateLoot } from './npc-combatant-setup';
 import type { EngagementRuntime } from './star-map-engagement-runtime-types';
+
+function fieldCombatServices(runtime: EngagementRuntime, locationId: string, seed: number) {
+  const services: CareerFleetEncounter[] = [];
+  if (
+    runtime.playerFleet &&
+    runtime.playerEnemy?.locationId === locationId &&
+    runtime.playerCombat?.getArena().backdropSeed === seed
+  )
+    services.push(runtime.playerFleet);
+  for (const entry of runtime.backgroundCombats.values()) {
+    if (entry.first.locationId === locationId && entry.combat.getArena().backdropSeed === seed) {
+      services.push(entry.fleet);
+    }
+  }
+  return services;
+}
+
+export function fieldCombat(
+  runtime: EngagementRuntime,
+  locationId: string,
+  seed: number,
+  bystanders?: readonly StrategicCombatBystander[]
+) {
+  const encounters = fieldCombatServices(runtime, locationId, seed);
+  if (bystanders) {
+    for (const encounter of encounters) encounter.fleet.setBystanders(bystanders);
+  }
+  return encounters[0]?.combat.getSnapshot() ?? null;
+}
+
+export function prepareFieldCombatArena(
+  runtime: EngagementRuntime,
+  locationId: string,
+  arena?: StrategicCombatArenaOptions
+): StrategicCombatArenaOptions | undefined {
+  if (arena?.backdropSeed === undefined || !arena.asteroids) return arena;
+  const existing = fieldCombatServices(runtime, locationId, arena.backdropSeed)[0];
+  const fieldWorld = existing?.combat.getArena().fieldWorld ?? {
+    asteroids: [...arena.asteroids],
+    removedIds: new Set<string>(),
+    advanced: false,
+  };
+  const blockers = arena.obstacles?.filter((obstacle) => !fieldWorld.removedIds.has(obstacle.id));
+  return {
+    ...arena,
+    asteroids: fieldWorld.asteroids,
+    ...(blockers && { obstacles: blockers }),
+    fieldWorld,
+  };
+}
+
+export function registerFieldCombatWreck(
+  runtime: EngagementRuntime,
+  locationId: string,
+  seed: number,
+  destroyedId: string,
+  body: CombatVisualAsteroid
+): void {
+  const world = fieldCombatServices(runtime, locationId, seed)[0]?.combat.getArena().fieldWorld;
+  if (!world || world.asteroids.some((entry) => entry.id === body.id)) return;
+  const oldId = 'fleet-wreck:' + destroyedId;
+  const index = world.asteroids.findIndex((entry) => entry.id === oldId);
+  if (index >= 0) {
+    world.removedIds.add(oldId);
+    world.asteroids.splice(index, 1, body);
+  } else {
+    world.asteroids.push(body);
+  }
+}
+
+export function resetFieldCombatSteps(runtime: EngagementRuntime): void {
+  const playerWorld = runtime.playerCombat?.getArena().fieldWorld;
+  if (playerWorld) playerWorld.advanced = false;
+  for (const entry of runtime.backgroundCombats.values()) {
+    const world = entry.combat.getArena().fieldWorld;
+    if (world) world.advanced = false;
+  }
+}
 
 function releaseNpc(
   runtime: EngagementRuntime,

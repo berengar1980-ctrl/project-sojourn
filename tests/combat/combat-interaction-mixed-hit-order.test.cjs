@@ -78,4 +78,40 @@ assert.equal(third.layer, 'hull', 'next hit damages exposed hull');
 assert(defender.hullHp < initialHull);
 assert(defender.hullHp >= 0);
 assert.equal(defender.shieldImpacts.length, 2, 'both shield hits retain distinct impact visuals');
+const { advanceRuntimeProjectiles } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/strategic-combat-weapons.ts'
+);
+for (const [coverX, expected] of [
+  [347, 'obstacle'],
+  [427, 'hull'],
+]) {
+  const exposed = geometry.createCombatant({ ...setup('exposed'), shieldHp: 0 }, 'defender', {
+    ...arena,
+    defenderPosition: { x: 400, y: 500 },
+  });
+  const runtime = {
+    attacker,
+    defender: exposed,
+    impactSerial: 0,
+    recentImpacts: [],
+    arena: { ...arena, obstacles: [{ id: 'cover', position: { x: coverX, y: 500 }, radius: 2 }] },
+    projectiles: [
+      {
+        owner: 'attacker',
+        kind: 'autocannon',
+        family: 'autocannon',
+        position: { x: 340, y: 500 },
+        direction: { x: 1, y: 0 },
+        speed: 1200,
+        ttlSeconds: 3,
+        shieldDamage: 10,
+        hullDamage: 20,
+        weaponIndex: 0,
+      },
+    ],
+  };
+  advanceRuntimeProjectiles(runtime, 0.08);
+  assert.equal(runtime.lastImpact.layer, expected, 'the first body along the projectile step wins');
+}
 console.log('PASS mixed laser and missile impact ordering, shield depletion and exposed hull');

@@ -53,4 +53,23 @@ const second = segmentRockHit({ x: 0, y: 100 }, { x: 200, y: 100 }, rotated);
 assert(first && second);
 assert.notEqual(first.point.x, second.point.x, 'rotating an asymmetric rock moves its hit surface');
 
+const combatWreck = {
+  ...rock,
+  id: 'fleet-wreck:test',
+  combatWreckVariant: 'freighter',
+  collisionRadius: 20,
+  position: { x: 150, y: 100 },
+};
+const staleBlocker = { id: combatWreck.id, radius: 20, position: { x: 80, y: 100 } };
+const wreckHit = firstObstacleHit(
+  { x: 0, y: 100 },
+  { x: 200, y: 100 },
+  [staleBlocker],
+  [combatWreck]
+);
+assert.equal(wreckHit.point.x, 130, 'drifting wreck cover follows its current circular hull');
+assert.equal(
+  firstObstacleHit({ x: 0, y: 121 }, { x: 200, y: 121 }, [staleBlocker], [combatWreck]),
+  null
+);
 console.log('PASS shape-matched laser/projectile raycast and legacy obstacle fallback');

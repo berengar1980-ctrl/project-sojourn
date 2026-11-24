@@ -1,3 +1,6 @@
+import type { LocalShieldShipBody } from '../systems/local-space/ship-shield-collision';
+import { getShipDefinition } from '../systems/ships';
+import { syncSalvagePhysicsContacts } from '../systems/salvage/salvage-container-motion';
 import { securityPirateApproach } from '../systems/operations/asteroid-security-drone';
 import { fieldInterceptRange, localArmedTraffic } from '../systems/npcs/npc-combat-ai';
 import type { SectorNpcState } from '../core/npc-types';
@@ -25,6 +28,7 @@ export interface SalvagePirateResponseOptions {
   readonly salvagers: NpcLocalSalvageService['ships'];
   readonly playerPosition: WorldPoint;
   readonly playerRadius: number;
+  readonly playerBody?: LocalShieldShipBody;
   readonly onFreighterExit?: (npc: SectorNpcState) => void;
   readonly dt: number;
   readonly playerCombat: StrategicCombatSnapshot | null;
@@ -108,12 +112,49 @@ function advanceDroneInterception(
     options.onDroneAttack?.(npc.id, target.position);
 }
 
+function resolveSalvageTrafficContacts(
+  options: SalvagePirateResponseOptions,
+  traffic: readonly SectorNpcState[],
+  combatants: ReadonlySet<string>,
+  rocks: ReturnType<typeof salvageDroneObstacleAsteroids>
+): void {
+  const bodies: LocalShieldShipBody[] = options.playerBody ? [options.playerBody] : [];
+  for (const salvager of options.salvagers) {
+    if (combatants.has(salvager.npcId)) continue;
+    const ship = getShipDefinition(salvager.shipId);
+    if (ship) bodies.push({ id: salvager.npcId, ship, state: salvager, pushWeight: 1 });
+  }
+  const droneId = 'security-drone:' + options.field.sourceLocationId;
+  const droneNpc = options.sectorNpcs.find((npc) => npc.id === droneId && npc.hullHp > 0);
+  const droneShip = droneNpc && getShipDefinition(droneNpc.shipId);
+  if (droneShip && !combatants.has(droneId) && options.drone.snapshot().operational) {
+    bodies.push({
+      id: droneId,
+      ship: droneShip,
+      state: {
+        position: { ...options.drone.position },
+        headingRadians: options.drone.headingRadians,
+      },
+      pushWeight: 100000,
+    });
+  }
+  const hits = options.pirates.resolveShipContacts(traffic, bodies, rocks);
+  for (const hit of hits) {
+    for (const salvager of options.salvagers) {
+      if (salvager.npcId === hit.firstId || salvager.npcId === hit.secondId)
+        delete salvager.routeState;
+    }
+  }
+  syncSalvagePhysicsContacts(options.field);
+}
+
 function advancePirateTraffic(
   options: SalvagePirateResponseOptions,
   livePirates: readonly SectorNpcState[],
   combatants: ReadonlySet<string>
 ): void {
   const { pirates, salvagers } = options;
+  const rocks = salvageDroneObstacleAsteroids(options.field);
   pirates.tick(
     options.dt,
     livePirates,
@@ -123,7 +164,7 @@ function advancePirateTraffic(
       position: ship.position,
       inCombat: combatants.has(ship.npcId),
     })),
-    salvageDroneObstacleAsteroids(options.field),
+    rocks,
     (pirateId, targetId, position) => {
       if (combatants.has(targetId) || (targetId === 'player' && options.playerCombat)) return false;
       const targetPosition =
@@ -138,6 +179,7 @@ function advancePirateTraffic(
     options.playerCombat?.defender.id,
     options.onFreighterExit
   );
+  resolveSalvageTrafficContacts(options, livePirates, combatants, rocks);
 }
 
 /** Combat owns fighting ship poses; regular traffic owns everyone else. */

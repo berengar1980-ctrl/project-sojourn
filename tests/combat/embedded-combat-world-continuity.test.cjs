@@ -25,11 +25,11 @@ assert(
   'mining field stays active in duel'
 );
 assert(
-  fieldBridge.includes('activeCombat.arena.asteroids'),
+  fieldBridge.includes('fieldCombat.arena.asteroids'),
   'mining uses authoritative combat rocks'
 );
 assert(
-  fieldBridge.includes('field.miners.tick(seconds, activeCombat?.defender.id)'),
+  fieldBridge.includes('field.miners.tick(seconds, defenderId)'),
   'non-engaged miners continue'
 );
 assert(
@@ -45,7 +45,7 @@ assert(
   'duel salvager is never moved twice'
 );
 assert(
-  salvageScene.includes('syncSalvageCombatField(context.field, combat)'),
+  salvageScene.includes('syncSalvageCombatField(context.field, fieldCombat)'),
   'visible wrecks follow combat'
 );
 
@@ -71,4 +71,15 @@ syncSalvageCombatField(field, { arena: { ...arena, asteroids: bodies } });
 assert.deepEqual(tracked.position, changed.position);
 assert.equal(tracked.rotation, changed.rotation);
 assert(!field.debris.some((body) => body.id === removed.id), 'destroyed debris does not reappear');
+const { salvageDroneObstacleAsteroids } = load('src/systems/salvage/salvage-patrol-geometry.ts');
+const { resolveFieldDebrisContacts } = load('src/systems/local-space/field-debris-contact.ts');
+const light = field.wrecks.find((body) => body.containerVariant);
+const heavy = field.wrecks.find((body) => body.sectionVariant);
+const trafficBodies = salvageDroneObstacleAsteroids(field);
+const lightBody = trafficBodies.find((body) => body.id === light.id);
+const heavyBody = trafficBodies.find((body) => body.id === heavy.id);
+assert.equal(lightBody.routeBlocking, false);
+assert.equal(heavyBody.routeBlocking, true);
+assert.equal(resolveFieldDebrisContacts(lightBody.position, { x: 80, y: 0 }, [lightBody], 15), 1);
+assert.notDeepEqual(lightBody.position, light.position);
 console.log('PASS local embedded combat keeps environmental and NPC simulations separate');

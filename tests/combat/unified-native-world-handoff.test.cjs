@@ -67,6 +67,31 @@ assert.deepEqual(fleet.getActor('c').velocity, extraVelocity);
 assert.equal(fleet.getActor('c').headingRadians, 2.15);
 assert.equal(new Set(['a', 'b', 'c'].map((id) => fleet.getActor(id))).size, 3);
 
+const joining = createParallelNativeDuels([a, b], arena, 2152);
+joining.getActor('a').position = { x: 2100, y: 780 };
+joining.setBystanders([
+  { id: 'nearby', shipId: a.setup.shipId, position: { x: 2070, y: 755 }, headingRadians: 0 },
+]);
+assert(joining.addShip({ id: 'arrival', team: 'b', setup: setup('arrival') }));
+const arrival = joining.getActor('arrival');
+assert(
+  Math.hypot(arrival.position.x - 2100, arrival.position.y - 780) >= 95,
+  'generated arrivals cannot spawn inside a live fighter'
+);
+assert(
+  Math.hypot(arrival.position.x - 2070, arrival.position.y - 755) >= 95,
+  'generated arrivals cannot spawn inside free traffic'
+);
+assert.equal(
+  joining.addShip({
+    id: 'outside',
+    team: 'b',
+    setup: setup('outside'),
+    position: { x: -5, y: 20 },
+  }),
+  false
+);
+
 // One native AI/physics owner per ship, even after introducing a new target.
 for (const id of ['a', 'b', 'c']) fleet.getActor(id).tractorThrowCooldown = 2;
 fleet.tick(0.08);

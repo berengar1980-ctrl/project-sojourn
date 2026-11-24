@@ -1,3 +1,5 @@
+import type { CombatVisualAsteroid } from './strategic-combat-types';
+import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import type { FieldWitness } from './career-fleet-encounter';
 import type { ParallelNativeDuels } from './parallel-native-duels';
 import type { SectorNpcState } from '../../core/npc-types';
@@ -31,6 +33,17 @@ export interface StarMapEngagementService {
   activePlayerCombat(): StrategicCombatService | null;
   activePlayerFleet(): ParallelNativeDuels | null;
   escapedFieldShipIds(): ReadonlySet<string>;
+  fieldCombat(
+    locationId: string,
+    seed: number,
+    bystanders?: readonly StrategicCombatBystander[]
+  ): StrategicCombatSnapshot | null;
+  registerFieldCombatWreck(
+    locationId: string,
+    seed: number,
+    destroyedId: string,
+    body: CombatVisualAsteroid
+  ): void;
   activeNpcCombatSnapshots(): readonly StrategicCombatSnapshot[];
   activePlayerEnemy(): SectorNpcState | null;
   finishPlayerCombat(boardingOutcome?: BoardingOutcome): void;

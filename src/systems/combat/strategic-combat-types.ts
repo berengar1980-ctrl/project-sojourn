@@ -268,6 +268,7 @@ export interface StrategicCombatSnapshot {
 }
 
 export interface CombatVisualAsteroid {
+  readonly contactGeometry?: 'circle';
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
   readonly combatWreckVariant?: CombatWreckVariant;
@@ -293,7 +294,14 @@ export interface StrategicCombatObstacle {
   readonly radius: number;
 }
 
+export interface SharedFieldCombatWorld {
+  readonly asteroids: CombatVisualAsteroid[];
+  readonly removedIds: Set<string>;
+  advanced: boolean;
+}
+
 export interface StrategicCombatArenaOptions {
+  readonly fieldWorld?: SharedFieldCombatWorld;
   readonly width: number;
   readonly height: number;
   readonly attackerPosition?: CombatPoint;

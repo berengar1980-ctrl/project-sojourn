@@ -61,13 +61,13 @@ export function salvageDroneShipObstacles(
 
 /** Keep all non-fighting local ships solid in the common PvP collision solver. */
 export function salvageDroneBystanders(
-  combat: StrategicCombatSnapshot,
+  combat: StrategicCombatSnapshot | null,
   ships: NpcLocalSalvageService['ships'],
   drone: AsteroidSecurityDrone,
   locationId: string,
   pirates: readonly LocalPirateContact[] = []
 ): readonly StrategicCombatBystander[] {
-  const excluded = new Set([combat.attacker.id, combat.defender.id]);
+  const excluded = new Set(combat ? [combat.attacker.id, combat.defender.id] : []);
   return [
     ...ships
       .filter((ship) => !excluded.has(ship.npcId))
@@ -85,7 +85,7 @@ export function salvageDroneBystanders(
         position: { ...ship.position },
         headingRadians: ship.headingRadians,
       })),
-    ...(excluded.has('security-drone:' + locationId)
+    ...(!drone.snapshot().operational || excluded.has('security-drone:' + locationId)
       ? []
       : [
           {
