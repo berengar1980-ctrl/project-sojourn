@@ -1,13 +1,16 @@
-import type { StrategicCombatRuntime } from './strategic-combat-types';
+import { isSecurityDrone } from '../../core/security-drone';
+import type { MutableCombatant, StrategicCombatRuntime } from './strategic-combat-types';
 import { shipContact } from './combat-ship-contact-geometry';
 import { directionalHullDamage } from './strategic-combat-damage';
 import { captureRamVisuals, emitRamContactSpark } from './combat-ram-visual-events';
 
 function ramExposure(
-  heading: number,
+  ship: MutableCombatant,
   contactDirectionX: number,
   contactDirectionY: number
 ): number {
+  if (isSecurityDrone(ship.setup?.id)) return 1;
+  const heading = ship.headingRadians;
   const facing = Math.cos(heading) * contactDirectionX + Math.sin(heading) * contactDirectionY;
   // A true side contact takes 50% more impact damage than before.
   const normal = facing >= 0 ? 1.3 - 0.6 * facing : 1.3 - 0.3 * facing;
@@ -39,8 +42,8 @@ export function applyCombatRamImpact(
   // Monotonic kinetic damage: boost speed always matters, with diminishing returns.
   const energy = Math.max(0, closing - 35) ** 2;
   const damage = closing < 35 ? 0.2 : 0.2 + 90 * (1 - Math.exp(-energy / 30000));
-  const firstDamage = damage * ramExposure(attacker.headingRadians, nx, ny);
-  const secondDamage = damage * ramExposure(defender.headingRadians, -nx, -ny);
+  const firstDamage = damage * ramExposure(attacker, nx, ny);
+  const secondDamage = damage * ramExposure(defender, -nx, -ny);
   for (const [ship, impact, contactX, contactY] of [
     [attacker, firstDamage, nx, ny],
     [defender, secondDamage, -nx, -ny],
@@ -56,7 +59,7 @@ export function applyCombatRamImpact(
     ship.hullHp = Math.max(0, ship.hullHp - armorAdjusted);
     const facing =
       Math.cos(ship.headingRadians) * contactX + Math.sin(ship.headingRadians) * contactY;
-    if (facing < -0.5 && overflow > 0) {
+    if (!isSecurityDrone(ship.setup?.id) && facing < -0.5 && overflow > 0) {
       ship.subsystems.engine = Math.max(0, ship.subsystems.engine - armorAdjusted * 0.5);
     }
   }

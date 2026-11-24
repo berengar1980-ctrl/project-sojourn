@@ -1,3 +1,4 @@
+import { DRONE_SHIELD_RADIUS_METERS, isSecurityDrone } from '../../core/security-drone';
 import type { LocalShipState } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
@@ -28,6 +29,7 @@ function rotate(point: WorldPoint, angle: number): WorldPoint {
 }
 
 function shieldCenter(body: LocalShieldShipBody): WorldPoint {
+  if (isSecurityDrone(body.id)) return body.state.position;
   const geometry = createShieldWorldGeometry(
     body.ship.sprite.hardpoints,
     body.ship.nominalLengthMeters
@@ -40,6 +42,7 @@ function shieldCenter(body: LocalShieldShipBody): WorldPoint {
 }
 
 function supportRadius(body: LocalShieldShipBody, directionWorld: WorldPoint): number {
+  if (isSecurityDrone(body.id)) return DRONE_SHIELD_RADIUS_METERS;
   const geometry = createShieldWorldGeometry(
     body.ship.sprite.hardpoints,
     body.ship.nominalLengthMeters

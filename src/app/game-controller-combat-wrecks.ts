@@ -5,6 +5,17 @@ import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { addDestroyedShipWreck } from '../systems/salvage/combat-destruction-wreck';
 
+const recordedByArena = new WeakMap<
+  NonNullable<StrategicCombatSnapshot['arena']['asteroids']>,
+  Set<string>
+>();
+
+function recordedFleetWrecks(bodies: StrategicCombatSnapshot['arena']['asteroids']): Set<string> {
+  const recorded = (bodies && recordedByArena.get(bodies)) ?? new Set<string>();
+  if (bodies) recordedByArena.set(bodies, recorded);
+  return recorded;
+}
+
 /** Store defeated ships in the authoritative career field, not in a disposable combat scene. */
 export function recordCareerCombatWrecks(
   context: ControllerRuntimeContext,
@@ -29,11 +40,16 @@ export function recordCareerCombatWrecks(
     Math.round(snapshot.elapsedSeconds * 1000),
     wrecks.length,
   ].join('-');
+  const bodies = snapshot.arena.asteroids;
+  const recorded = recordedFleetWrecks(bodies);
   const created: SalvageWreck[] = [];
   for (const ship of [snapshot.attacker, snapshot.defender]) {
     if (ship.hullHp > 0) continue;
+    const nativeWreck = bodies?.some((body) => body.id === 'fleet-wreck:' + ship.id);
+    if (!nativeWreck && recorded.has(ship.id)) continue;
     const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
     if (wreck) {
+      recorded.add(ship.id);
       created.push(wreck);
       if (snapshot.arena.backdropSeed !== undefined) {
         context.engagements?.registerFieldCombatWreck?.(

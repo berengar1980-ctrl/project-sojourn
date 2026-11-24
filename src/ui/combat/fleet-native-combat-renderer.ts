@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import { FleetNativeShipSprites } from './fleet-native-ship-sprites';
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import { drawFleetFieldWrecks } from './fleet-field-wreck-renderer';
@@ -397,11 +398,11 @@ export class FleetNativeCombatRenderer {
     if (this.paintedShips.has(combatant.id)) return;
     this.paintedShips.add(combatant.id);
     const definition = getShipDefinition(combatant.shipId);
-    const isDrone = combatant.id.startsWith('security-drone:');
-    const geometry = {
-      ...this.shipGeometry(combatant, width, height),
-      ...(isDrone ? { angle: (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS } : {}),
-    };
+    const isDrone = isSecurityDrone(combatant.id);
+    const geometry = this.shipGeometry(combatant, width, height);
+    const spriteGeometry = isDrone
+      ? { ...geometry, angle: (timeSeconds * Math.PI * 2) / DRONE_ROTATION_PERIOD_SECONDS }
+      : geometry;
     const hullRatio = clamp01(combatant.hullHp / Math.max(1, combatant.hullMaxHp));
     const hardpoints = isDrone ? undefined : definition?.sprite.hardpoints;
     const engineIntensity =
@@ -433,7 +434,7 @@ export class FleetNativeCombatRenderer {
     }
     drawCombatShipBody(
       this.context,
-      geometry,
+      spriteGeometry,
       hullRatio,
       this.sprites.image(combatant.shipId, isDrone),
       hardpoints,

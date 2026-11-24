@@ -100,6 +100,18 @@ function releaseNpc(
   runtime.options.sectorNpcs.recoverFromCombat(npc, reason, remainInField);
 }
 
+export function reportNpcBoardingResults(
+  runtime: EngagementRuntime,
+  encounter: CareerFleetEncounter
+): void {
+  for (const result of encounter.fleet.drainNpcBoardingResults()) {
+    const attacker = encounter.members.get(result.attacker.id);
+    const defender = encounter.members.get(result.defender.id);
+    if (attacker && defender) runtime.options.onNpcCombatEnded?.(result, attacker, defender);
+    runtime.options.log('NPC COMBAT > ' + result.lastEvent.toUpperCase());
+  }
+}
+
 export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSeconds: number): void {
   for (const [key, entry] of [...runtime.backgroundCombats]) {
     const center = runtime.options.sectorNpcs.livePosition(entry.first);
@@ -113,16 +125,17 @@ export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSecond
       )
     );
     measurePerformance('sim.combat.advance', () => entry.fleet.tick(deltaSeconds));
-    const boarding = entry.fleet.fleet.boardingService();
-    if (!entry.fleet.fleet.isFinished() && !boarding) continue;
-    const model = (boarding ?? entry.combat).getSnapshot();
+    reportNpcBoardingResults(runtime, entry.fleet);
+    if (!entry.fleet.fleet.isFinished()) continue;
+    const model = entry.combat.getSnapshot();
     // The fleet may have retargeted its original service; actor identity is
     // authoritative, never the mutable attacker/defender slot after promotion.
     const initialPairIntact =
       model.attacker.id === entry.first.id && model.defender.id === entry.second.id;
     if (initialPairIntact) {
       runtime.options.onNpcCombatEnded?.(model, entry.first, entry.second);
-      if (model.winner) settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
+      if (model.winner && model[model.winner].hullHp > 0)
+        settleNpcCombatPirateLoot(entry.first, entry.second, model.winner);
     }
     if (model.arena.backdropSeed !== undefined) {
       const { duels, supporters } = entry.fleet.fleet.getSnapshot();

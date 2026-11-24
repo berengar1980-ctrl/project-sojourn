@@ -41,4 +41,9 @@ assert(
     pvp.includes('DRONE_ROTATION_PERIOD_SECONDS'),
   'native combat renders GC-87 at the hitbox, scales it with zoom and keeps its spin'
 );
+assert(
+  /drawCombatShipBody\(\s*this.context,\s*spriteGeometry/.test(pvp) &&
+    pvp.includes('combatant, geometry, hullRatio, visualElapsed)'),
+  'the sprite rotates independently of the geometry used for the ram marker'
+);
 console.log('PASS drone combat position authority, single render body and zoom invariants');

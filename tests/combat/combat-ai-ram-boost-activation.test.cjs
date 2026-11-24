@@ -153,6 +153,10 @@ const npc = (job, aggression, pirate = false) => ({
 assert.equal(npcSetup.npcCombatDoctrine(npc('freighter', 30), false), 'flee');
 assert.equal(npcSetup.npcCombatDoctrine(npc('miner', 60), true), 'minefield');
 assert.equal(npcSetup.npcCombatDoctrine(npc('patrol', 85), false), 'kite');
+assert.equal(
+  npcSetup.npcCombatDoctrine({ ...npc('patrol', 85), id: 'security-drone:test' }, false, true),
+  'fight'
+);
 assert.equal(npcSetup.npcCombatDoctrine(npc('pirate', 90, true), false), 'fight');
 assert.equal(npcSetup.npcCombatDoctrine(npc('pirate', 90, true), true), 'minefield');
 const { applyCombatRamImpact } = loadStandaloneTypeScriptModule(

@@ -14,13 +14,15 @@ const geometry = {
   height: 50,
   angle: 0,
 };
-function strokeCount(ship, elapsed = 12) {
+function strokeCount(ship, elapsed = 12, rotations = []) {
   let strokes = 0;
   const context = {
     save() {},
     restore() {},
     translate() {},
-    rotate() {},
+    rotate(angle) {
+      rotations.push(angle);
+    },
     beginPath() {},
     moveTo() {},
     lineTo() {},
@@ -46,6 +48,13 @@ assert.equal(
 );
 assert.equal(strokeCount({ ramImpactAt: 12 }), 6, 'real impact adds flash and five sparks');
 assert.equal(strokeCount({ ramImpactAt: 12 }, 12.4), 0, 'impact spark window expires');
+const droneRotations = [];
+strokeCount(
+  { id: 'security-drone:field', ramPhase: 'impact', velocity: { x: 0, y: 40 } },
+  12,
+  droneRotations
+);
+assert.deepEqual(droneRotations, [Math.PI / 2], 'drone ram effects point along world travel');
 const empty = {};
 const rammed = { ramImpactAt: 12 };
 assert.deepEqual(ramCameraImpulse(empty, empty, 12), { x: 0, y: 0 });

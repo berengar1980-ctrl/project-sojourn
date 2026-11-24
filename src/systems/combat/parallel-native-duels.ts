@@ -7,6 +7,7 @@ import {
 } from './native-fleet-hostility';
 import { createStrategicCombatService } from './strategic-combat-service';
 import { buildCombatArena } from './strategic-combat-arena';
+import { NativeFleetBoarding } from './native-fleet-boarding';
 import { advanceNativeFleetFrame, escapedNativeFleetShips } from './native-fleet-advance';
 import { reassignNativeFleetTargets, type NativeFleetDriver } from './native-fleet-reassignment';
 import {
@@ -55,6 +56,7 @@ export interface ParallelNativeDuels {
   tick(dt: number, beforePrimaryAttackerReplacement?: () => void): ParallelNativeDuelSnapshot;
   advance(dt: number, beforePrimaryAttackerReplacement?: () => void): void;
   isFinished(): boolean;
+  drainNpcBoardingResults(): readonly StrategicCombatSnapshot[];
   boardingService(shipId?: string): StrategicCombatService | undefined;
   hasEscaped(shipId: string): boolean;
   getSnapshot(): ParallelNativeDuelSnapshot;
@@ -353,7 +355,9 @@ export function createParallelNativeDuels(
   let bystanders: readonly StrategicCombatBystander[] = [];
   let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
   const radiusById = nativeFleetRadii(actors);
-  const isFinished = () => nativeFleetFinished(actors, escapedRecords, teams, hostility, services);
+  const boarding = new NativeFleetBoarding();
+  const isFinished = () =>
+    !boarding.active && nativeFleetFinished(actors, escapedRecords, teams, hostility, services);
   const boardingService = (shipId?: string) =>
     services.find((service) => {
       const state = service.getStatus();
@@ -385,7 +389,8 @@ export function createParallelNativeDuels(
       elapsedSeconds: elapsed,
       escapedShipIds: [...escaped],
       engagements,
-      finished: nativeFleetFinished(actors, escaped, teams, hostility, services),
+      finished:
+        !boarding.active && nativeFleetFinished(actors, escaped, teams, hostility, services),
     };
     return cachedSnapshot;
   };
@@ -394,7 +399,7 @@ export function createParallelNativeDuels(
     if (!Number.isFinite(seconds) || seconds <= 0) return;
     const dt = Math.min(seconds, 0.08);
     cachedSnapshot = null;
-    if (services.some((service) => !service.getStatus().winner)) elapsed += dt;
+    if (boarding.active || services.some((service) => !service.getStatus().winner)) elapsed += dt;
     advanceNativeFleetFrame({
       services,
       actors,
@@ -410,6 +415,7 @@ export function createParallelNativeDuels(
       dt,
       bystanders,
       ramContacts,
+      boarding,
     });
     reassignNativeFleetTargets({
       ...(beforePrimaryAttackerReplacement ? { beforePrimaryAttackerReplacement } : {}),
@@ -456,6 +462,7 @@ export function createParallelNativeDuels(
     setBystanders(contacts) {
       bystanders = contacts.filter((ship) => !actorById.has(ship.id));
     },
+    drainNpcBoardingResults: () => boarding.drainResults(),
     getSnapshot,
     advance,
     isFinished,

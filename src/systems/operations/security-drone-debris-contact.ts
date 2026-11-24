@@ -1,9 +1,9 @@
+import { DRONE_SHIELD_RADIUS_METERS } from '../../core/security-drone';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { resolveFieldDebrisContacts } from '../local-space/field-debris-contact';
 
-/** Compact security drone shield contact footprint in world metres. */
-export const DRONE_SHIELD_RADIUS_METERS = 18;
+export { DRONE_SHIELD_RADIUS_METERS } from '../../core/security-drone';
 
 /** Keep the original GC-87 contact radius while sharing the same light-debris physics with miners. */
 export function resolveSecurityDroneDebrisContacts(

@@ -1,3 +1,4 @@
+import { DRONE_SHIELD_RADIUS_METERS, isSecurityDrone } from '../../core/security-drone';
 import { combatEquippedWeapons, combatWeaponMounts } from './combat-loadout-mounts';
 import type { SectorNpcState } from '../../core/npc-types';
 
@@ -42,6 +43,7 @@ export function npcCombatDoctrine(
   armedMines: boolean,
   armedWeapons = false
 ): 'fight' | 'kite' | 'flee' | 'minefield' {
+  if (npc.id?.startsWith('security-drone:')) return 'fight';
   if (civilianCombatRole(npc.job)) {
     const hullRatio = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;
     return civilianCombatOpening(hullRatio, npc.aggression, armedWeapons, armedMines);
@@ -53,12 +55,19 @@ export function npcCombatDoctrine(
   return 'fight';
 }
 
+function radialDroneArmor(armor: NonNullable<StrategicCombatantSetup['armor']>) {
+  const protection = (armor.front + armor.rear + armor.port + armor.starboard) / 4;
+  return { front: protection, rear: protection, port: protection, starboard: protection };
+}
+
 export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | null {
   const ship = getShipDefinition(npc.shipId);
   if (!ship) return null;
   const installed = ensureNpcInstalledComponents(npc);
   const movement = resolveShipCombatMovementStats(ship, installed);
-  const armor = resolveShipArmorProtection(installed);
+  const installedArmor = resolveShipArmorProtection(installed);
+  const drone = isSecurityDrone(npc.id);
+  const armor = drone && installedArmor ? radialDroneArmor(installedArmor) : installedArmor;
   const equippedWeapons = combatEquippedWeapons(ship, installed.weapon ?? []);
   const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
   const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
@@ -76,7 +85,14 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     name: npc.name,
     shipId: ship.id,
     shieldHp: Math.max(1, shieldMax),
-    shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
+    shieldGeometry: drone
+      ? {
+          centerOffset: { x: 0, y: 0 },
+          radiusX: DRONE_SHIELD_RADIUS_METERS,
+          radiusY: DRONE_SHIELD_RADIUS_METERS,
+          modifier: 1,
+        }
+      : createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: Math.max(1, Math.min(hullMax, npc.hullHp)),
     ...(armor ? { armor } : {}),
     weapons: equippedWeapons.map((entry) => entry.component),

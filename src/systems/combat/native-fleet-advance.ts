@@ -1,3 +1,4 @@
+import type { NativeFleetBoarding } from './native-fleet-boarding';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { getShipDefinition } from '../ships';
 import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
@@ -38,6 +39,7 @@ interface NativeFleetFrame {
   readonly dt: number;
   readonly bystanders: readonly StrategicCombatBystander[];
   readonly ramContacts: Map<string, number>;
+  readonly boarding: NativeFleetBoarding;
 }
 
 function dynamicWreckBlockers(frame: NativeFleetFrame): StrategicCombatObstacle[] {
@@ -75,6 +77,7 @@ function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): F
     claimPair(hullContacts, first, second);
   return {
     elapsedSeconds: frame.elapsed,
+    isBoarding: (id) => frame.boarding.includes(id),
     claimHullContact,
     claimGrapple: (first, second) => claimPair(grapples, first, second),
     claimRamImpact(first, second) {
@@ -155,7 +158,6 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     bystanders,
   } = frame;
   stepWorld(frame);
-  let wreckBlockers = dynamicWreckBlockers(frame);
   const bystanderBlockers = bystanders.map((ship) => ({
     id: 'ship:' + ship.id,
     position: ship.position,
@@ -165,6 +167,9 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   }));
   const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
   for (const id of escaped) escapedRecords.add(id);
+  frame.boarding.resolve(elapsed, true);
+  materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
+  let wreckBlockers = dynamicWreckBlockers(frame);
   const contacts = fleetContacts(frame, escaped);
   const initialRockIds = new Set(asteroidWorld.map((rock) => rock.id));
   for (const [index, service] of services.entries()) {
@@ -214,6 +219,8 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
         escapedRecords.add(escapedId);
       }
     }
+    const npcBoarding = frame.boarding.start(service, state, elapsed);
+    frame.boarding.resolve(elapsed, false);
     const removedRock = asteroidWorld.length !== rockCount;
     if (removedRock)
       removeCapturedObstacles(
@@ -226,6 +233,6 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     if (removedRock || asteroidWorld.length !== rockCount) {
       wreckBlockers = dynamicWreckBlockers(frame);
     }
-    if (state.boardingInitiator) break;
+    if (state.boardingInitiator && !npcBoarding) break;
   }
 }

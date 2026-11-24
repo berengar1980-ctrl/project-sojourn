@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import type { CombatPoint, MutableCombatant } from './strategic-combat-types';
 
 const ORBIT_TURN_RATE = 0.3;
@@ -66,8 +67,9 @@ export function ramFlankTarget(ship: MutableCombatant, enemy: MutableCombatant):
   const approach = ship.ramApproach;
   const targetSpeed = Math.hypot(enemy.velocity.x, enemy.velocity.y);
   if (
-    targetSpeed >= ORBIT_MIN_SPEED &&
-    Math.abs(enemy.turnRateRadiansPerSecond ?? 0) >= ORBIT_TURN_RATE
+    isSecurityDrone(enemy.setup?.id) ||
+    (targetSpeed >= ORBIT_MIN_SPEED &&
+      Math.abs(enemy.turnRateRadiansPerSecond ?? 0) >= ORBIT_TURN_RATE)
   ) {
     // Latch interception mode so the maneuver cannot flip between
     // broadside staging and interception during each direction change.

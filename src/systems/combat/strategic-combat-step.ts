@@ -149,7 +149,8 @@ function advanceCombatAttacks(
   runtime: StrategicCombatRuntime,
   dt: number,
   sides: readonly StrategicCombatSide[],
-  drivenSide?: StrategicCombatSide
+  drivenSide?: StrategicCombatSide,
+  coupled?: boolean
 ): void {
   updateCombatAsteroidThrows(runtime, dt, sides, drivenSide);
   for (const side of sides) {
@@ -178,7 +179,7 @@ function advanceCombatAttacks(
   advanceRuntimeMines(runtime, dt);
   reviewShieldBreakthroughs(runtime, previousShields);
   reviewSubsystemBreakthroughs(runtime, previousSubsystems);
-  maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side), sides);
+  if (!coupled) maybeAttemptBoarding(runtime, (side) => tryFireGrapple(runtime, side), sides);
 }
 
 function updateCombatOutcome(
@@ -195,6 +196,20 @@ function updateCombatOutcome(
   if (runtime.winner) recordCombatLog(runtime, 'system', 'result', runtime.lastEvent);
 }
 
+function boardingDrivers(
+  runtime: StrategicCombatRuntime,
+  driven: readonly StrategicCombatSide[],
+  isBoarding?: (id: string) => boolean
+) {
+  const attacker = isBoarding?.(runtime.attacker.setup.id) ?? false;
+  const defender = isBoarding?.(runtime.defender.setup.id) ?? false;
+  const coupled = attacker || defender;
+  return {
+    coupled,
+    sides: coupled ? driven.filter((side) => !(side === 'attacker' ? attacker : defender)) : driven,
+  };
+}
+
 export function tickStrategicCombat(
   runtime: StrategicCombatRuntime,
   deltaSeconds: number,
@@ -209,7 +224,9 @@ export function tickStrategicCombat(
     return;
   }
   const dt = Math.min(deltaSeconds, 0.08);
-  const sides = drivenSide ? [drivenSide] : duelSides;
+  const driven = drivenSide ? [drivenSide] : duelSides;
+  const { coupled, sides } = boardingDrivers(runtime, driven, contacts?.isBoarding);
+  if (sides.length === 0) return;
   runtime.elapsedSeconds += dt;
   for (const side of sides) {
     const ship = runtimeCombatant(runtime, side);
@@ -238,9 +255,11 @@ export function tickStrategicCombat(
       runtime.mines
     );
   }
-  if (advanceRuntimeGrapple(runtime, dt, drivenSide, contacts)) return;
-  advanceCombatContacts(runtime, bystanders, sides, drivenSide, contacts);
-  advanceCombatAttacks(runtime, dt, sides, drivenSide);
+  if (!coupled) {
+    if (advanceRuntimeGrapple(runtime, dt, drivenSide, contacts)) return;
+    advanceCombatContacts(runtime, bystanders, sides, drivenSide, contacts);
+  }
+  advanceCombatAttacks(runtime, dt, sides, drivenSide, coupled);
   recordCombatMotion(runtime);
   updateCombatOutcome(runtime, drivenSide);
 }

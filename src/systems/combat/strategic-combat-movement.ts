@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import { resolveCombatAsteroidContacts } from './combat-asteroid-contacts';
 import { usefulRamAttempt } from './combat-ram-opportunity';
 import { advancePowerlessDrift } from './combat-power-service';
@@ -177,7 +178,8 @@ function chooseWeaponPosture(input: WeaponPostureInput): {
   readonly strafe?: CombatPoint;
 } {
   const { combatant, enemy, range, desired, toward, travel } = input;
-  if (!input.canAim || input.deliberateRam) return { heading: travel };
+  if (!input.canAim || input.deliberateRam || isSecurityDrone(combatant.setup.id))
+    return { heading: travel };
 
   const dx = enemy.position.x - combatant.position.x;
   const dy = enemy.position.y - combatant.position.y;
