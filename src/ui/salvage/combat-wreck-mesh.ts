@@ -256,6 +256,13 @@ const meshes: Readonly<Record<NewVariant, readonly Face[]>> = {
   'salvage-barge': make('salvage-barge'),
 };
 
+// Three separately cached, small wreck sections provide independent tumble at close zoom.
+const driftingParts: readonly (readonly Face[])[] = [
+  (() => { const m = new ContainerMesh(); fragment(m, 0, 0, .62, .3, C.hull); return m.faces; })(),
+  (() => { const m = new ContainerMesh(); fragment(m, 0, 0, .43, -.7, C.iron); return m.faces; })(),
+  (() => { const m = new ContainerMesh(); fragment(m, 0, 0, .5, 1.1, C.dark); return m.faces; })(),
+];
+
 /** One renderer used by destroyed combatants, fleet physical wrecks and salvage. */
 export function drawCombatWreck3d(
   context: CanvasRenderingContext2D,
@@ -270,5 +277,24 @@ export function drawCombatWreck3d(
     !drawCachedSalvageMesh(context, 'combat-wreck-v2:' + current, geometry, radius, rotation, 256)
   ) {
     drawProjectedSalvageMesh(context, geometry, radius, rotation);
+  }
+  // Close LOD only: tiny detached scraps tumble and oscillate independently.
+  // The main mesh is immutable and the cached distant representation stays cheap.
+  if (radius >= 40) {
+    const phase = rotation.z * 0.7 + rotation.x * 1.3 + rotation.y;
+    for (let i = 0; i < driftingParts.length; i += 1) {
+      const a = phase * (i + 1) * 0.41 + i * 2.17;
+      context.save();
+      context.translate(
+        Math.cos(a) * radius * (0.79 + i * 0.14),
+        Math.sin(a * 0.83) * radius * (0.61 + i * 0.11)
+      );
+      drawProjectedSalvageMesh(context, driftingParts[i]!, radius, {
+        x: rotation.x + a * 0.77,
+        y: rotation.y - a * 0.43,
+        z: rotation.z + a * 1.31,
+      });
+      context.restore();
+    }
   }
 }
