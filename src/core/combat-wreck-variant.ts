@@ -27,9 +27,9 @@ export function combatWreckVariantFor(
 export function isCombatWreckVariant(value: unknown): value is CombatWreckVariant {
   return (
     typeof value === 'string' &&
-    (VARIANTS as readonly string[]).includes(value) ||
-    value === 'miner' ||
-    value === 'freighter' ||
-    value === 'patrol'
+    ((VARIANTS as readonly string[]).includes(value) ||
+      value === 'miner' ||
+      value === 'freighter' ||
+      value === 'patrol')
   );
 }
