@@ -21,7 +21,7 @@ export function drawDestroyedCombatant(
       x: 0.19,
       y: 0.16,
       z: headingRadians,
-    });
+    }, age, arenaSeed);
     context.restore();
   }
   drawShipDestruction(context, center.x, center.y, size * 0.6, age);
