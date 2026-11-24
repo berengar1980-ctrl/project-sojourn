@@ -20,7 +20,9 @@ function recordingCanvas() {
     restore() {},
     translate() {},
     rotate() {},
-    scale() {},
+    scale(x, y) {
+      operations.push({ type: 'scale', x, y });
+    },
     beginPath() {},
     closePath() {},
     arc() {},
@@ -104,6 +106,18 @@ for (const family of ['plasma_battery', 'guided_missile', 'he_missile']) {
     family + ' uses the new visual while retaining simulation-provided position/direction'
   );
   assert(image.operations.length > 0, family + ' draws visible projectile content');
+  const zoomed = recordingCanvas();
+  effects.drawVisionProjectile(
+    zoomed.context,
+    family,
+    { x: 240, y: 50 },
+    { x: 1, y: 0 },
+    0.25,
+    5,
+    0.25
+  );
+  assert.deepEqual(zoomed.operations[0], { type: 'scale', x: 0.25, y: 0.25 });
+  assert.deepEqual(zoomed.operations.slice(1), image.operations.slice(1));
 }
 assert.equal(
   effects.drawVisionProjectile(

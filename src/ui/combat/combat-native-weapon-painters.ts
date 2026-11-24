@@ -19,7 +19,7 @@ export function paintNativeProjectile(
   point: Point,
   target: Point,
   elapsedSeconds: number,
-  zoom: number
+  scale: number
 ): void {
   if (
     drawVisionProjectile(
@@ -28,7 +28,8 @@ export function paintNativeProjectile(
       point,
       projectile.direction,
       elapsedSeconds,
-      projectile.id
+      projectile.id,
+      scale
     )
   ) {
     return;
@@ -40,9 +41,10 @@ export function paintNativeProjectile(
   context.save();
   context.translate(point.x, point.y);
   context.rotate(angle);
+  context.scale(scale, scale);
   if (projectile.kind === 'plasma') {
     context.shadowColor = '#73dfff';
-    context.shadowBlur = 14;
+    context.shadowBlur = 14 * scale;
     context.fillStyle = 'rgba(78, 177, 241, 0.45)';
     context.beginPath();
     context.arc(0, 0, 7, 0, Math.PI * 2);
@@ -52,7 +54,6 @@ export function paintNativeProjectile(
     context.arc(0, 0, 3, 0, Math.PI * 2);
     context.fill();
   } else if (projectile.kind === 'missile') {
-    context.scale(zoom / 3, zoom / 3);
     drawCombatTorpedo(context);
   } else {
     context.fillStyle = 'rgba(245, 211, 156, .95)';
@@ -65,16 +66,23 @@ export function paintNativeAutocannonBursts(
   context: CanvasRenderingContext2D,
   bursts: Iterable<AutocannonVisualBurst>,
   project: (point: Point) => Point,
-  elapsedSeconds: number
+  elapsedSeconds: number,
+  scale: number
 ): void {
   for (const burst of bursts) {
+    const origin = project(burst.origin);
+    const target = project(burst.target);
+    context.save();
+    context.translate(origin.x, origin.y);
+    context.scale(scale, scale);
     drawVisionAutocannon(
       context,
-      project(burst.origin),
-      project(burst.target),
+      { x: 0, y: 0 },
+      { x: (target.x - origin.x) / scale, y: (target.y - origin.y) / scale },
       elapsedSeconds - burst.spawnedAt,
       burst.flightSeconds
     );
+    context.restore();
   }
 }
 

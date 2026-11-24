@@ -3,7 +3,7 @@ import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-com
 import type { MapCamera } from '../map/map-camera';
 import { drawCombatBeamVisual } from '../combat/combat-beam-visual';
 import { drawCombatImpactBatch } from '../combat/combat-impact-visual-batch';
-import { drawVisionProjectile } from '../combat/combat-weapon-vision-renderer';
+import { paintNativeProjectile } from '../combat/combat-native-weapon-painters';
 import { LocalNpcImpactTimeline } from './local-npc-impact-timeline';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawShipDestruction } from '../combat/ship-destruction-visual';
@@ -83,23 +83,14 @@ export function drawLocalNpcCombatEffects(
       drawCombatBeamVisual(context, beam, screen(beam.origin), screen(beam.end));
     }
     for (const projectile of duel.projectiles) {
-      const point = screen(projectile.position);
-      const drawn = drawVisionProjectile(
+      paintNativeProjectile(
         context,
-        projectile.family,
-        point,
-        projectile.direction,
+        projectile,
+        screen(projectile.position),
+        screen(projectile.target),
         duel.elapsedSeconds,
-        projectile.id
+        camera.scale(1)
       );
-      if (!drawn) {
-        context.save();
-        context.fillStyle = 'rgba(245, 211, 156, .95)';
-        context.beginPath();
-        context.arc(point.x, point.y, Math.max(1.2, camera.scale(3)), 0, Math.PI * 2);
-        context.fill();
-        context.restore();
-      }
     }
     drawCombatImpactBatch(
       context,

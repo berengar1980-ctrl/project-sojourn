@@ -317,12 +317,7 @@ export class FleetNativeCombatRenderer {
       geometry: (ship) => this.shipGeometry(ship, width, height),
       paintShip: (ship) => this.drawShip(ship, width, height, timeSeconds, visualElapsed),
       paintBeam: (beam) => this.drawBeam(beam, width, height),
-      paintProjectile: (shot) =>
-        this.drawProjectile(
-          shot,
-          this.screen(shot.position, width, height),
-          this.screen(shot.target, width, height)
-        ),
+      paintProjectile: (shot) => this.drawProjectile(shot, width, height),
       damageParticles: this.damageParticles,
       visibleImpacts: this.visibleImpacts,
       width,
@@ -349,9 +344,7 @@ export class FleetNativeCombatRenderer {
     for (const projectile of this.model.projectiles) {
       if (projectile.kind === 'autocannon') continue;
       if (Boolean(projectile.missed && missedShotAbove(projectile.id)) !== above) continue;
-      const point = this.screen(projectile.position, width, height);
-      const target = this.screen(projectile.target, width, height);
-      this.drawProjectile(projectile, point, target);
+      this.drawProjectile(projectile, width, height);
     }
   }
   private drawAutocannonBursts(width: number, height: number): void {
@@ -360,17 +353,22 @@ export class FleetNativeCombatRenderer {
       this.context,
       this.autocannonBursts.values(),
       (point) => this.screen(point, width, height),
-      this.effectClock.elapsed(performance.now() / 1000)
+      this.effectClock.elapsed(performance.now() / 1000),
+      this.camera.scale(width, height, this.model.arena.width, this.model.arena.height)
     );
   }
-  private drawProjectile(projectile: CombatProjectileSnapshot, point: Point, target: Point): void {
+  private drawProjectile(
+    projectile: CombatProjectileSnapshot,
+    width: number,
+    height: number
+  ): void {
     paintNativeProjectile(
       this.context,
       projectile,
-      point,
-      target,
+      this.screen(projectile.position, width, height),
+      this.screen(projectile.target, width, height),
       this.model.elapsedSeconds,
-      this.camera.zoom
+      this.camera.scale(width, height, this.model.arena.width, this.model.arena.height)
     );
   }
   private drawMines(width: number, height: number): void {

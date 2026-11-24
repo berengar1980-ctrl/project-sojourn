@@ -136,15 +136,23 @@ export function drawVisionIonLaser(
 function drawPlasmaProjectileBody(
   ctx: CanvasRenderingContext2D,
   elapsedSeconds: number,
-  seed: number
+  seed: number,
+  scale: number
 ): void {
   const pulse = 1 + Math.sin(elapsedSeconds * 24 + seed) * 0.17;
   for (let index = 8; index >= 0; index -= 1) {
-    circle(ctx, { x: -index * 3.8, y: 0 }, 2 + index * 0.36, '#e8668e', (1 - index / 10) * 0.27, 8);
+    circle(
+      ctx,
+      { x: -index * 3.8, y: 0 },
+      2 + index * 0.36,
+      '#e8668e',
+      (1 - index / 10) * 0.27,
+      8 * scale
+    );
   }
-  circle(ctx, { x: 0, y: 0 }, 9 * pulse, '#df6bba', 0.35, 24);
-  circle(ctx, { x: 0, y: 0 }, 7 * pulse, '#fa9b5b', 0.68, 15);
-  circle(ctx, { x: 0, y: 0 }, 4.6 * pulse, '#fff1c1', 0.96, 10);
+  circle(ctx, { x: 0, y: 0 }, 9 * pulse, '#df6bba', 0.35, 24 * scale);
+  circle(ctx, { x: 0, y: 0 }, 7 * pulse, '#fa9b5b', 0.68, 15 * scale);
+  circle(ctx, { x: 0, y: 0 }, 4.6 * pulse, '#fff1c1', 0.96, 10 * scale);
   for (let index = 0; index < 8; index += 1) {
     const a = (index * TAU) / 8 + elapsedSeconds * (index % 2 ? 2 : -1);
     const radius = 7 + 4 * Math.sin(elapsedSeconds * 9 + index);
@@ -154,7 +162,7 @@ function drawPlasmaProjectileBody(
       0.65 + (index % 3) * 0.45,
       '#ffdbba',
       0.58,
-      4
+      4 * scale
     );
   }
 }
@@ -163,7 +171,8 @@ function drawPlasmaProjectileBody(
 function drawMissileProjectileBody(
   ctx: CanvasRenderingContext2D,
   family: ShipWeaponFamily,
-  elapsedSeconds: number
+  elapsedSeconds: number,
+  scale: number
 ): void {
   const guided = family === 'guided_missile';
   const body = guided ? '#ced9c8' : '#6e5550';
@@ -176,7 +185,7 @@ function drawMissileProjectileBody(
       Math.max(0.4, 2.2 + index * (guided ? -0.16 : 0.22)),
       guided ? (index % 3 ? '#81ddad' : '#e8ffdc') : index % 3 ? '#fd864f' : '#86817f',
       alpha,
-      8
+      8 * scale
     );
   }
   ctx.fillStyle = body;
@@ -196,7 +205,7 @@ function drawMissileProjectileBody(
     ctx.fillStyle = '#c79b8e';
     ctx.fillRect(-5, -1, 9, 2);
   }
-  circle(ctx, { x: -11, y: 0 }, guided ? 1.5 : 2, guided ? '#8debc4' : '#ffb65b', 0.85, 10);
+  circle(ctx, { x: -11, y: 0 }, guided ? 1.5 : 2, guided ? '#8debc4' : '#ffb65b', 0.85, 10 * scale);
 }
 
 /** Plasma and missiles stay on their actual simulated positions and headings. */
@@ -206,17 +215,19 @@ export function drawVisionProjectile(
   point: WeaponFxPoint,
   direction: WeaponFxPoint,
   elapsedSeconds: number,
-  seed: number
+  seed: number,
+  scale = 1
 ): boolean {
   if (!['plasma_battery', 'guided_missile', 'he_missile'].includes(family)) return false;
   const angle = Math.atan2(direction.y, direction.x);
   ctx.save();
   ctx.translate(point.x, point.y);
   ctx.rotate(angle);
+  ctx.scale(scale, scale);
   if (family === 'plasma_battery') {
-    drawPlasmaProjectileBody(ctx, elapsedSeconds, seed);
+    drawPlasmaProjectileBody(ctx, elapsedSeconds, seed, scale);
   } else {
-    drawMissileProjectileBody(ctx, family, elapsedSeconds);
+    drawMissileProjectileBody(ctx, family, elapsedSeconds, scale);
   }
   ctx.restore();
   return true;

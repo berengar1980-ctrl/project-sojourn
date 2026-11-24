@@ -29,7 +29,12 @@ export function installControllerCareer(
     options.onCareerContextReady?.(context);
     saved.activate();
   }
-  fieldWorldFor(context, options.fieldExercise?.mining);
+  const exercise = options.fieldExercise;
+  fieldWorldFor(
+    context,
+    exercise?.mining,
+    exercise?.mining?.sourceLocationId ?? exercise?.salvage?.sourceLocationId
+  );
   if (!saved) {
     context.economy.salvageEvents.advanceDay(
       context.economy.situations.currentDay,

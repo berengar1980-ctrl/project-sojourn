@@ -1264,3 +1264,11 @@ Rendern auf die neuen Silhouetten abgebildet. Physische Wrackobjekte,
 Bergungsressourcen, Positionen, Drift und die Kampfautorität bleiben unverändert.
 Die Trümmeranimation ist rein visuell abgeleitet und benötigt keinen
 Checkpoint. Der Career-Snapshot-Vertrag erhält keine neuen Felder.
+
+### Feldsimulation im FleetCombat-Test
+
+Die Beschränkung auf das ausgewählte Feld gilt nur für den FleetCombat-Test.
+Die Kampagne simuliert weiterhin alle bisherigen Felder. Die schnelleren
+Geometrieprüfungen der Wegsuche ändern weder gespeicherte Routen noch deren
+Format. Projektilskalierung und Performance-Messwerte sind reine Laufzeitdaten
+und werden nicht gespeichert.
