@@ -5,188 +5,520 @@ import {
   drawProjectedSalvageMesh,
   type Color,
   type Face,
+  type Vec3,
 } from './salvage-container-mesh';
 
-// Combat wrecks deliberately have no red paint or rusty-orange tint.
+/**
+ * The five destroyed-ship silhouettes from the Sojourn wreck concept gallery.
+ * Only combat-generated ship hulls use these geometries: regular salvage
+ * containers, sections, asteroid meshes and intact ships stay untouched.
+ *
+ * Geometry is assembled once, then shared by the existing cached 2D projector.
+ * No additional WebGL context or frame-time mesh allocations are introduced.
+ */
 const C = {
-  hull: [92, 100, 106],
-  pale: [132, 137, 136],
-  iron: [104, 113, 117],
-  edge: [48, 56, 61],
-  dark: [23, 27, 30],
-  soot: [15, 17, 19],
-  brown: [82, 72, 61],
-  beige: [113, 105, 92],
+  hull: [47, 57, 62],
+  plate: [91, 99, 104],
+  steel: [122, 132, 135],
+  dark: [22, 29, 33],
+  char: [10, 13, 16],
+  iron: [66, 75, 79],
 } as const satisfies Record<string, Color>;
 
-function plate(
+type Hull = readonly (readonly [number, number])[];
+
+/** Ragged extruded plates: broken perimeter, rather than rectangular boxes. */
+function shell(m: ContainerMesh, outline: Hull, z0: number, z1: number, color: Color): void {
+  const upper: Vec3[] = outline.map(([x, y]) => [x, y, z1]);
+  const lower: Vec3[] = [...outline].reverse().map(([x, y]) => [x, y, z0]);
+  m.face(upper, [0, 0, 1], color);
+  m.face(lower, [0, 0, -1], C.dark);
+  for (let i = 0; i < outline.length; i += 1) {
+    const a = outline[i]!;
+    const b = outline[(i + 1) % outline.length]!;
+    const nx = b[1] - a[1];
+    const ny = a[0] - b[0];
+    const len = Math.hypot(nx, ny) || 1;
+    m.face(
+      [
+        [a[0], a[1], z0],
+        [b[0], b[1], z0],
+        [b[0], b[1], z1],
+        [a[0], a[1], z1],
+      ],
+      [nx / len, ny / len, 0],
+      i % 3 === 0 ? C.iron : color
+    );
+  }
+}
+
+function strut(
   m: ContainerMesh,
-  x: number,
-  y: number,
+  ax: number,
+  ay: number,
+  bx: number,
+  by: number,
   z: number,
-  width: number,
-  length: number,
-  color: Color
+  width = 0.07,
+  color: Color = C.steel
 ): void {
-  m.face(
+  const dx = bx - ax;
+  const dy = by - ay;
+  const length = Math.hypot(dx, dy) || 1;
+  const px = (-dy / length) * width;
+  const py = (dx / length) * width;
+  shell(
+    m,
     [
-      [x - width * 0.53, y - length * 0.46, z],
-      [x + width * 0.39, y - length * 0.58, z + 0.02],
-      [x + width * 0.52, y - length * 0.22, z - 0.07],
-      [x + width * 0.26, y + length * 0.12, z],
-      [x + width * 0.51, y + length * 0.48, z - 0.04],
-      [x - width * 0.36, y + length * 0.38, z],
-      [x - width * 0.55, y + length * 0.07, z - 0.05],
+      [ax + px, ay + py],
+      [bx + px, by + py],
+      [bx - px, by - py],
+      [ax - px, ay - py],
     ],
-    [0, 0, 1],
+    z - 0.045,
+    z + 0.045,
     color
   );
 }
 
-function scorch(m: ContainerMesh, x: number, y: number, z: number, size = 0.6): void {
-  plate(m, x, y, z, size, size * 0.72, C.soot);
-  plate(m, x + size * 0.12, y - size * 0.14, z + 0.008, size * 0.56, size * 0.41, C.dark);
-}
-
-function tornRibs(m: ContainerMesh, x: number, width: number): void {
-  for (let i = 0; i < 6; i += 1) {
-    const y = ((i - 2.5) * width) / 5;
-    m.box(x + (i % 3) * 0.14, y, -0.08 + (i % 2) * 0.13, 0.13, 0.1, 0.81, i % 3 ? C.iron : C.edge);
-    m.box(x + 0.42 + (i % 2) * 0.1, y, 0.02, 0.67, 0.065, 0.07, C.dark);
-  }
-}
-
-function wreckField(m: ContainerMesh, variant: CombatWreckVariant): void {
-  const count = variant === 'freighter' ? 49 : variant === 'patrol' ? 43 : 38;
+function ribs(m: ContainerMesh, from: number, to: number, width: number, count: number): void {
   for (let i = 0; i < count; i += 1) {
-    const angle = i * 2.3999632 + (variant === 'patrol' ? 1.1 : 0);
-    const radius = 1.7 + ((i * 19) % 23) / 13;
-    const x = Math.cos(angle) * radius + (i % 3) * 0.1;
-    const y = Math.sin(angle) * radius * (variant === 'freighter' ? 0.91 : 1.12);
-    const z = -0.55 + (i % 7) * 0.22;
-    const w = 0.11 + ((i * 7) % 9) * 0.054;
-    const h = 0.12 + ((i * 11) % 8) * 0.046;
-    const colors = [C.iron, C.edge, C.dark, C.brown, C.beige, C.hull] as const;
-    if (i % 3 === 0) {
-      plate(m, x, y, z, w * 2.4, h * 1.5, colors[i % colors.length]!);
-    } else {
-      m.box(x, y, z, w, h, 0.07 + (i % 4) * 0.04, colors[i % colors.length]!);
-    }
-    if (i % 4 === 0) m.box(x + 0.2, y + 0.09, z - 0.08, 0.44, 0.06, 0.08, C.dark);
+    const x = from + ((to - from) * i) / Math.max(1, count - 1);
+    strut(m, x, -width / 2, x + (i % 3) * 0.08, width / 2, 0.36, 0.065, i % 3 ? C.iron : C.steel);
+    m.box(x, 0, -0.23, 0.08, width * 0.85, 0.12, C.dark);
   }
 }
 
-function underside(m: ContainerMesh, length: number, width: number): void {
-  for (let i = 0; i < 13; i += 1) {
-    const x = -length * 0.44 + (i / 12) * length * 0.85;
-    m.box(x, 0, -0.56, 0.075, width * 0.87, 0.11, i % 3 === 0 ? C.iron : C.dark);
-    m.box(x, (i % 2 ? 1 : -1) * width * 0.3, -0.78, 0.33, 0.13, 0.17, C.brown);
-    m.box(x + 0.13, 0, -0.63, 0.12, 0.18, 0.33, C.edge);
-  }
-  for (const y of [-width * 0.39, width * 0.39]) {
-    m.box(-length * 0.05, y, -0.65, length * 0.86, 0.095, 0.12, C.iron);
-  }
-  for (let i = 0; i < 7; i += 1) {
-    const x = -length * 0.3 + i * length * 0.085;
-    scorch(m, x, i % 2 ? width * 0.21 : -width * 0.24, -0.835, 0.35);
-  }
+function soot(m: ContainerMesh, x: number, y: number, size: number): void {
+  shell(
+    m,
+    [
+      [x - size * 0.55, y - size * 0.23],
+      [x - size * 0.19, y - size * 0.5],
+      [x + size * 0.32, y - size * 0.31],
+      [x + size * 0.54, y + size * 0.16],
+      [x + size * 0.1, y + size * 0.43],
+      [x - size * 0.39, y + size * 0.3],
+    ],
+    0.56,
+    0.575,
+    C.char
+  );
 }
 
-function miner(m: ContainerMesh): void {
-  m.box(-1.06, 0, 0, 3.24, 2.0, 0.85, C.hull);
-  m.box(-1.67, 0, 0.52, 1.35, 1.4, 0.18, C.pale);
-  m.box(-2.37, 0, 0.37, 0.72, 0.86, 0.38, C.dark);
-  for (const y of [-1.12, 1.12]) {
-    m.cylinder(-1.48, y, -0.2, 1.88, 0.23, C.iron);
-    m.box(-1.05, y, 0.2, 1.65, 0.17, 0.19, C.dark);
+function fragment(
+  m: ContainerMesh,
+  x: number,
+  y: number,
+  size: number,
+  angle: number,
+  color: Color
+): void {
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  const base: Hull = [
+    [-0.62, -0.3],
+    [0.3, -0.43],
+    [0.64, -0.05],
+    [0.34, 0.47],
+    [-0.24, 0.31],
+    [-0.52, 0.09],
+  ];
+  shell(
+    m,
+    base.map(([px, py]) => [x + (px * c - py * s) * size, y + (px * s + py * c) * size] as const),
+    -0.13,
+    0.29,
+    color
+  );
+  strut(m, x - size * 0.3, y - size * 0.08, x + size * 0.33, y + size * 0.09, 0.32, 0.035);
+}
+
+function scatter(m: ContainerMesh, count: number, spread: number, seed: number): void {
+  for (let i = 0; i < count; i += 1) {
+    const a = i * 2.399963 + seed;
+    const radius = spread * (0.56 + ((i * 17) % 11) / 21);
+    fragment(
+      m,
+      Math.cos(a) * radius,
+      Math.sin(a) * radius,
+      0.12 + ((i * 7) % 5) * 0.045,
+      a * 1.7,
+      i % 5 === 0 ? C.steel : i % 3 === 0 ? C.char : C.iron
+    );
   }
-  tornRibs(m, 0.72, 1.87);
-  plate(m, -0.62, -0.76, 0.49, 1.7, 0.9, C.soot);
-  plate(m, -1.44, 0.65, 0.51, 1.1, 0.64, C.brown);
-  // Entire ore pod detached from the primary hull.
-  m.box(2.0, 1.34, 0.2, 1.56, 1.05, 0.74, C.edge);
-  plate(m, 2.0, 1.34, 0.61, 1.58, 0.85, C.hull);
-  m.box(2.58, 1.17, 0.61, 0.08, 0.82, 0.15, C.iron);
-  scorch(m, 1.99, 1.39, 0.65, 0.69);
-  underside(m, 3.2, 2.1);
-  wreckField(m, 'miner');
 }
 
 function freighter(m: ContainerMesh): void {
-  m.box(-1.59, 0, -0.06, 3.16, 1.82, 0.84, C.hull);
-  m.box(-2.51, 0, 0.48, 1.08, 1.19, 0.14, C.pale);
-  m.box(-3.13, 0, 0.19, 0.54, 0.85, 0.38, C.dark);
-  for (const y of [-0.78, 0.78]) m.box(-1.5, y, 0.48, 2.35, 0.11, 0.12, C.edge);
-  tornRibs(m, 0.34, 2.1);
-  for (let i = 0; i < 4; i += 1) {
-    m.box(0.54 + i * 0.51, -0.29 + (i % 2) * 0.5, -0.37, 0.4, 0.17, 0.13, C.iron);
-  }
-  // Cargo and engine sections violently separated, leaving an exposed fracture.
-  for (const y of [-1.34, 0, 1.34]) {
-    const x = 2.15 + (y === 0 ? 0.55 : 0);
-    m.box(x, y, -0.03, 1.2, 0.77, 0.7, y === 0 ? C.brown : C.edge);
-    plate(m, x, y, 0.37, 1.18, 0.79, C.hull);
-    scorch(m, x + 0.14, y - 0.1, 0.4, 0.51);
-    for (let k = -1; k <= 1; k += 1) m.box(x + k * 0.3, y, 0.3, 0.04, 0.72, 0.06, C.dark);
-  }
-  m.box(3.69, 0.81, -0.28, 0.92, 1.42, 0.66, C.dark);
-  for (const y of [0.4, 1.23]) m.cylinder(4.14, y, -0.25, 0.72, 0.24, C.iron);
-  underside(m, 3.0, 1.85);
-  scorch(m, -0.63, -0.24, 0.42, 0.85);
-  wreckField(m, 'freighter');
+  // Large freight spine with its forward section ripped open.
+  shell(
+    m,
+    [
+      [-2.9, -0.62],
+      [-2.54, -1.01],
+      [-1.78, -1.02],
+      [-1.58, -0.83],
+      [0.1, -0.9],
+      [0.92, -0.67],
+      [1.06, -0.35],
+      [0.55, -0.22],
+      [0.89, 0.06],
+      [0.6, 0.71],
+      [-0.83, 0.84],
+      [-1.2, 0.96],
+      [-2.66, 0.84],
+      [-2.97, 0.33],
+    ],
+    -0.35,
+    0.48,
+    C.hull
+  );
+  shell(
+    m,
+    [
+      [-2.65, -0.61],
+      [-1.02, -0.71],
+      [-0.7, -0.36],
+      [-1.05, 0.14],
+      [-2.53, 0.48],
+    ],
+    0.49,
+    0.59,
+    C.plate
+  );
+  ribs(m, -0.1, 1.28, 1.42, 7);
+  for (const y of [-0.48, 0.48]) m.cylinder(-2.78, y, -0.16, 0.6, 0.25, C.dark);
+  strut(m, 0.4, -0.52, 1.84, -0.8, 0.39, 0.09);
+  strut(m, 0.15, 0.45, 1.54, 0.96, 0.34, 0.07);
+  soot(m, -0.55, 0.42, 0.82);
+  fragment(m, 1.83, 0.92, 1.18, 0.38, C.iron);
+  fragment(m, 2.4, -0.42, 0.88, -0.74, C.dark);
+  fragment(m, -1.33, 1.85, 0.93, 0.7, C.hull);
+  scatter(m, 12, 2.55, 0.2);
 }
-
 function patrol(m: ContainerMesh): void {
-  // Central hull survives. There are no attached wings.
-  m.box(-0.99, 0, -0.02, 2.88, 1.46, 0.84, C.dark);
-  m.box(-1.58, 0, 0.51, 1.14, 1.06, 0.13, C.iron);
-  m.box(-2.26, 0, 0.17, 0.75, 0.85, 0.38, C.hull);
-  tornRibs(m, 0.46, 1.38);
-  for (const side of [-1, 1]) {
-    const y = side * 0.84;
-    // Ripped wing root, braces and jagged shear plates.
-    m.box(-0.62, y, -0.25, 0.68, 0.24, 0.23, C.edge);
-    m.box(-0.29, y + side * 0.2, -0.07, 0.52, 0.085, 0.07, C.iron);
-    plate(m, -0.34, y + side * 0.1, 0.08, 0.61, 0.37, C.soot);
-    // Entire wing is detached and offset on its corresponding side.
-    const wx = 1.11 + (side > 0 ? 0.55 : 0);
-    const wy = side * 2.53;
-    plate(m, wx, wy, 0.08, 2.65, 0.91, C.hull);
-    m.box(wx - 0.14, wy, -0.05, 1.73, 0.19, 0.19, C.iron);
-    m.box(wx + 0.37, wy + side * 0.35, 0, 0.74, 0.21, 0.15, C.edge);
-    scorch(m, wx - 0.11, wy, 0.1, 0.7);
+  // Narrow interceptor, torn wing on one side and fractured engine cluster.
+  shell(
+    m,
+    [
+      [-2.5, -0.37],
+      [-1.96, -0.53],
+      [-0.95, -0.44],
+      [-0.43, -0.3],
+      [1.13, -0.28],
+      [2.36, 0],
+      [1.13, 0.3],
+      [-0.39, 0.43],
+      [-1.57, 0.53],
+      [-2.56, 0.38],
+    ],
+    -0.27,
+    0.4,
+    C.hull
+  );
+  shell(
+    m,
+    [
+      [-1.8, -0.48],
+      [-0.36, -1.31],
+      [0.68, -1.7],
+      [0.94, -1.27],
+      [-0.23, -0.42],
+    ],
+    -0.19,
+    0.15,
+    C.iron
+  );
+  shell(
+    m,
+    [
+      [-1.8, -0.17],
+      [-1.18, -0.2],
+      [0.7, 0.18],
+      [0.1, 0.46],
+      [-1.8, 0.41],
+    ],
+    0.41,
+    0.54,
+    C.plate
+  );
+  ribs(m, 0.54, 1.64, 0.54, 5);
+  m.cylinder(-2.4, 0, 0, 0.72, 0.27, C.dark);
+  soot(m, 0.3, 0.3, 0.68);
+  // Port wing is entirely separate.
+  fragment(m, -0.06, 1.92, 1.8, -0.35, C.hull);
+  strut(m, -0.8, 0.49, -0.17, 0.98, 0.3, 0.07);
+  fragment(m, 2.3, -1.32, 0.82, 0.8, C.dark);
+  fragment(m, -2.55, -1.6, 0.7, 0.35, C.iron);
+  scatter(m, 14, 2.65, 1.12);
+}
+function oreCarrier(m: ContainerMesh): void {
+  shell(
+    m,
+    [
+      [-2.7, -0.76],
+      [-2.41, -1],
+      [-1.12, -0.89],
+      [0.26, -0.94],
+      [1.29, -0.74],
+      [1.49, -0.3],
+      [0.83, 0.04],
+      [1.51, 0.37],
+      [0.97, 0.94],
+      [-0.7, 0.82],
+      [-2.63, 0.7],
+    ],
+    -0.4,
+    0.36,
+    C.hull
+  );
+  for (const y of [-0.93, 0.93]) {
+    for (const x of [-1.65, -0.55, 0.45]) {
+      m.cylinder(x, y, -0.08, 0.87, 0.37, C.dark);
+      m.cylinder(x - 0.31, y, -0.08, 0.11, 0.39, C.steel);
+    }
   }
-  scorch(m, -0.92, 0.13, 0.57, 0.92);
-  underside(m, 2.6, 1.55);
-  wreckField(m, 'patrol');
+  ribs(m, -2.1, 0.87, 1.5, 8);
+  soot(m, -0.72, 0.3, 1.04);
+  strut(m, 1.13, -0.37, 2.2, -0.88, 0.32, 0.075);
+  strut(m, 1.08, 0.47, 2.48, 0.97, 0.28, 0.075);
+  fragment(m, 1.46, 1.73, 1.45, 0.41, C.iron);
+  fragment(m, 2.48, -0.71, 1.17, -0.9, C.hull);
+  fragment(m, -2.03, -1.84, 0.98, 0.67, C.dark);
+  scatter(m, 14, 2.66, 0.6);
+}
+function splitHull(m: ContainerMesh): void {
+  // A clean open gap between the violently separated stern and prow.
+  shell(
+    m,
+    [
+      [-3.12, -0.65],
+      [-2.72, -0.97],
+      [-1.42, -0.8],
+      [-1.07, -0.46],
+      [-1.51, -0.1],
+      [-1.01, 0.22],
+      [-1.57, 0.81],
+      [-2.89, 0.74],
+      [-3.1, 0.37],
+    ],
+    -0.42,
+    0.43,
+    C.hull
+  );
+  shell(
+    m,
+    [
+      [0.94, -0.48],
+      [1.42, -0.84],
+      [2.4, -0.62],
+      [3.02, -0.13],
+      [2.89, 0.45],
+      [2.22, 0.73],
+      [1.27, 0.81],
+      [0.79, 0.3],
+      [1.15, -0.05],
+    ],
+    -0.31,
+    0.45,
+    C.iron
+  );
+  shell(
+    m,
+    [
+      [-2.87, -0.6],
+      [-1.77, -0.66],
+      [-1.52, -0.26],
+      [-2.72, 0.48],
+    ],
+    0.45,
+    0.56,
+    C.plate
+  );
+  shell(
+    m,
+    [
+      [1.47, -0.51],
+      [2.29, -0.36],
+      [2.51, 0.29],
+      [1.58, 0.52],
+    ],
+    0.46,
+    0.55,
+    C.plate
+  );
+  for (const y of [-0.49, 0.49]) m.cylinder(-2.95, y, -0.11, 0.59, 0.24, C.dark);
+  ribs(m, -1.52, -0.84, 1.12, 5);
+  ribs(m, 0.73, 1.44, 1.22, 5);
+  for (let i = 0; i < 8; i++)
+    strut(
+      m,
+      -0.94,
+      (i - 3.5) * 0.18,
+      0.57,
+      (i - 3.5) * 0.17,
+      0.22,
+      0.025,
+      i % 2 ? C.dark : C.steel
+    );
+  soot(m, 1.85, 0.1, 0.73);
+  fragment(m, 0.15, 1.56, 1.1, 0.7, C.hull);
+  fragment(m, -0.4, -1.7, 0.91, -0.35, C.dark);
+  scatter(m, 13, 2.6, 2.45);
+}
+function barge(m: ContainerMesh): void {
+  // Irregular, deliberately non-rectangular salvage craft.
+  shell(
+    m,
+    [
+      [-2.51, -0.37],
+      [-2.13, -0.8],
+      [-1.48, -0.64],
+      [-0.94, -0.9],
+      [-0.27, -0.63],
+      [0.38, -0.86],
+      [1.22, -0.58],
+      [1.6, -0.28],
+      [1.16, 0.23],
+      [1.79, 0.6],
+      [0.94, 0.78],
+      [0.15, 0.59],
+      [-0.7, 0.94],
+      [-1.24, 0.53],
+      [-2.03, 0.65],
+      [-2.46, 0.14],
+    ],
+    -0.3,
+    0.38,
+    C.dark
+  );
+  shell(
+    m,
+    [
+      [-1.79, -0.34],
+      [-1.15, -0.67],
+      [-0.44, -0.41],
+      [0.42, -0.52],
+      [0.82, -0.12],
+      [0.51, 0.32],
+      [-0.15, 0.43],
+      [-0.8, 0.7],
+      [-1.55, 0.28],
+    ],
+    0.4,
+    0.51,
+    C.iron
+  );
+  for (let i = 0; i < 6; i++)
+    strut(
+      m,
+      -1.67 + i * 0.51,
+      -0.66,
+      -1.39 + i * 0.49,
+      0.77,
+      0.54,
+      0.045,
+      i % 2 ? C.steel : C.char
+    );
+  // Broken asymmetric grappling booms, spread out rather than box wings.
+  strut(m, -0.85, 0.5, -2.02, 1.56, 0.23, 0.075);
+  strut(m, -1.53, 0.46, -2.35, 1.33, 0.25, 0.04);
+  strut(m, 0.76, -0.31, 2.46, -1.47, 0.22, 0.08);
+  strut(m, 1.16, -0.03, 2.23, -1.21, 0.23, 0.042);
+  strut(m, 0.97, 0.46, 2.12, 1.33, 0.27, 0.07);
+  fragment(m, -1.91, 1.71, 1.03, -0.47, C.hull);
+  fragment(m, 2.23, -1.52, 0.98, 0.25, C.iron);
+  fragment(m, 2.56, 0.92, 0.68, 0.82, C.dark);
+  fragment(m, -2.45, -1.24, 0.84, -0.7, C.steel);
+  soot(m, -0.51, 0.2, 1.06);
+  soot(m, 1.11, 0.16, 0.5);
+  scatter(m, 16, 2.63, 1.6);
 }
 
-const meshes: Record<CombatWreckVariant, readonly Face[]> = {
-  miner: build('miner'),
-  freighter: build('freighter'),
-  patrol: build('patrol'),
+const BUILDERS = {
+  'fractured-freighter': freighter,
+  'shattered-patrol': patrol,
+  'ore-carrier': oreCarrier,
+  'split-hull': splitHull,
+  'salvage-barge': barge,
+} as const;
+
+type NewVariant = keyof typeof BUILDERS;
+const LEGACY: Readonly<Record<CombatWreckVariant, NewVariant>> = {
+  'fractured-freighter': 'fractured-freighter',
+  'shattered-patrol': 'shattered-patrol',
+  'ore-carrier': 'ore-carrier',
+  'split-hull': 'split-hull',
+  'salvage-barge': 'salvage-barge',
+  miner: 'ore-carrier',
+  freighter: 'fractured-freighter',
+  patrol: 'shattered-patrol',
 };
 
-function build(variant: CombatWreckVariant): readonly Face[] {
-  const mesh = new ContainerMesh();
-  if (variant === 'miner') miner(mesh);
-  else if (variant === 'freighter') freighter(mesh);
-  else patrol(mesh);
-  return mesh.faces;
+function make(variant: NewVariant): readonly Face[] {
+  const m = new ContainerMesh();
+  BUILDERS[variant](m);
+  return m.faces;
 }
+const meshes: Readonly<Record<NewVariant, readonly Face[]>> = {
+  'fractured-freighter': make('fractured-freighter'),
+  'shattered-patrol': make('shattered-patrol'),
+  'ore-carrier': make('ore-carrier'),
+  'split-hull': make('split-hull'),
+  'salvage-barge': make('salvage-barge'),
+};
 
-/** Render the same neutral, torn 3D hull in salvage and combat. */
+// Three separately cached, small wreck sections provide independent tumble at close zoom.
+const driftingParts: readonly (readonly Face[])[] = [
+  (() => {
+    const m = new ContainerMesh();
+    fragment(m, 0, 0, 0.62, 0.3, C.hull);
+    return m.faces;
+  })(),
+  (() => {
+    const m = new ContainerMesh();
+    fragment(m, 0, 0, 0.43, -0.7, C.iron);
+    return m.faces;
+  })(),
+  (() => {
+    const m = new ContainerMesh();
+    fragment(m, 0, 0, 0.5, 1.1, C.dark);
+    return m.faces;
+  })(),
+];
+
+/** One renderer used by destroyed combatants, fleet physical wrecks and salvage. */
 export function drawCombatWreck3d(
   context: CanvasRenderingContext2D,
   variant: CombatWreckVariant,
   radius: number,
   rotation: { x: number; y: number; z: number }
 ): void {
-  const mesh = meshes[variant];
+  const current = LEGACY[variant];
+  const geometry = meshes[current];
   if (
     radius >= 40 ||
-    !drawCachedSalvageMesh(context, 'combat-wreck:' + variant, mesh, radius, rotation, 256)
+    !drawCachedSalvageMesh(context, 'combat-wreck-v2:' + current, geometry, radius, rotation, 256)
   ) {
-    drawProjectedSalvageMesh(context, mesh, radius, rotation);
+    drawProjectedSalvageMesh(context, geometry, radius, rotation);
+  }
+  // Close LOD only: tiny detached scraps tumble and oscillate independently.
+  // The main mesh is immutable and the cached distant representation stays cheap.
+  if (radius >= 40) {
+    const phase = rotation.z * 0.7 + rotation.x * 1.3 + rotation.y;
+    for (let i = 0; i < driftingParts.length; i += 1) {
+      const a = phase * (i + 1) * 0.41 + i * 2.17;
+      context.save();
+      context.translate(
+        Math.cos(a) * radius * (0.79 + i * 0.14),
+        Math.sin(a * 0.83) * radius * (0.61 + i * 0.11)
+      );
+      drawProjectedSalvageMesh(context, driftingParts[i]!, radius, {
+        x: rotation.x + a * 0.77,
+        y: rotation.y - a * 0.43,
+        z: rotation.z + a * 1.31,
+      });
+      context.restore();
+    }
   }
 }
