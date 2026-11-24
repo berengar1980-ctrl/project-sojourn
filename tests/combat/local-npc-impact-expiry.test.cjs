@@ -11,6 +11,7 @@ const { LocalNpcImpactTimeline } = loadStandaloneTypeScriptModule(
 const timeline = new LocalNpcImpactTimeline();
 const first = {
   attacker: { id: 'corsair' },
+  winner: null,
   defender: { id: 'security-drone:field' },
   elapsedSeconds: 10,
   recentImpacts: [
@@ -106,4 +107,9 @@ updateParallelNativeImpacts([late], 120.1, 120.1, seen, visible);
 updateParallelAutocannonBursts([late], bursts, 120.1);
 assert.equal(visible.get(key).length, 1, 'removing an earlier duel does not restart another hit');
 assert.equal(bursts.size, 1, 'moving a duel in the snapshot does not duplicate a burst');
+const finished = { ...late, winner: 'defender' };
+updateParallelAutocannonBursts([finished], bursts, 123);
+assert.equal(bursts.size, 0, 'an existing burst expires after the loss');
+updateParallelAutocannonBursts([finished], bursts, 124);
+assert.equal(bursts.size, 0, 'the frozen loss snapshot cannot replay the burst');
 console.log('PASS local NPC impact VFX expire and do not linger as world markers');

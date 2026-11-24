@@ -47,6 +47,26 @@ export function fleetRenderSources(
   };
 }
 
+/** The player result is frozen while surviving ships continue in native duels. */
+export function liveFleetCombatView(
+  result: StrategicCombatSnapshot,
+  duels: readonly StrategicCombatSnapshot[]
+): StrategicCombatSnapshot {
+  if (result.winner === null || duels.length === 0) return result;
+  const live = (ship: StrategicCombatantSnapshot) => {
+    if (ship.hullHp <= 0) return ship;
+    const active = duels.find(
+      (duel) =>
+        duel.winner === null && (duel.attacker.id === ship.id || duel.defender.id === ship.id)
+    );
+    const source =
+      active ?? duels.find((duel) => duel.attacker.id === ship.id || duel.defender.id === ship.id);
+    if (!source) return ship;
+    return source.attacker.id === ship.id ? source.attacker : source.defender;
+  };
+  return { ...result, attacker: live(result.attacker), defender: live(result.defender) };
+}
+
 /** Keep autocannon burst IDs unique across independent native combat runtimes. */
 export function updateParallelAutocannonBursts(
   duels: readonly StrategicCombatSnapshot[],
@@ -54,6 +74,7 @@ export function updateParallelAutocannonBursts(
   elapsed: number
 ): void {
   for (const duel of duels) {
+    if (duel.winner !== null) continue;
     const source = combatEffectSource(duel);
     for (const projectile of duel.projectiles) {
       const id = source + ':' + projectile.id;

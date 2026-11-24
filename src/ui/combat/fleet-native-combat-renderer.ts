@@ -3,6 +3,7 @@ import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import {
   paintParallelNativeDuels,
   fleetRenderSources,
+  liveFleetCombatView,
   updateParallelNativeImpacts,
   updateParallelAutocannonBursts,
 } from './parallel-native-duel-overlay';
@@ -146,6 +147,7 @@ export class FleetNativeCombatRenderer {
     display?: FleetDisplayPreferences,
     fleetElapsed?: number
   ): void {
+    model = liveFleetCombatView(model, parallelDuels);
     this.parallelDuels = parallelDuels;
     this.supportingFromIndex = supportingFromIndex;
     const visibility = nativeFleetVisibility(model, parallelDuels, departedIds);
