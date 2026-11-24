@@ -119,7 +119,7 @@ function fragment(m: ContainerMesh, x: number, y: number, size: number, angle: n
   ];
   shell(
     m,
-    base.map(([px, py]) => [x + (px * c - py * s) * size, y + (px * s + py * c) * size]),
+    base.map(([px, py]) => [x + (px * c - py * s) * size, y + (px * s + py * c) * size] as const),
     -0.13,
     0.29,
     color
