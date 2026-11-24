@@ -1230,3 +1230,12 @@ wie bei einem neu begonnenen Gefecht zu. Der ursprüngliche Auslöser und
 zusätzliche Flottenteilnehmer fehlen im bestehenden Checkpoint-Format.
 Für alte Speicherstände gilt daher der Spieler als Auslöser für die
 Verstärkungslogik. Das Speicherformat bleibt bei Version 1.
+
+### Kontakte im Flottengefecht und Speichersperre
+
+Der Flottenkoordinator führt Rumpfkorrekturen und Greifhakenimpulse
+pro Schiffspaar zusammen. Kontaktbuchungen pro Tick und visuelle
+Zeitachsen sind flüchtig. Der aktive Spieler kann während eines
+Raum- oder Entergefechts keine Karriere speichern oder aus dem
+Einstellungsmenü laden. Version 1 und das Einlesen älterer
+Spielstände außerhalb eines Gefechts bleiben kompatibel.

@@ -30,8 +30,7 @@ export function advanceCombatGrappleTether(
   grapple: CombatGrapple,
   source: MutableCombatant,
   target: MutableCombatant,
-  deltaSeconds: number,
-  movesTarget = true
+  deltaSeconds: number
 ): CombatGrapple {
   if (!grapple.success || !grapple.resolved || deltaSeconds <= 0) return grapple;
 
@@ -67,10 +66,8 @@ export function advanceCombatGrappleTether(
     const correction = stretched / 2;
     source.position.x += normalX * correction;
     source.position.y += normalY * correction;
-    if (movesTarget) {
-      target.position.x -= normalX * correction;
-      target.position.y -= normalY * correction;
-    }
+    target.position.x -= normalX * correction;
+    target.position.y -= normalY * correction;
 
     // Constraint impulse also removes separating radial velocity. Without
     // this, normal combat steering can continually pull the ships apart
@@ -79,10 +76,8 @@ export function advanceCombatGrappleTether(
     const impulse = Math.max(constraintImpulse, (tension * deltaSeconds) / 2);
     source.velocity.x += normalX * impulse;
     source.velocity.y += normalY * impulse;
-    if (movesTarget) {
-      target.velocity.x -= normalX * impulse;
-      target.velocity.y -= normalY * impulse;
-    }
+    target.velocity.x -= normalX * impulse;
+    target.velocity.y -= normalY * impulse;
   }
   // The rope preserves orbital motion at range; at genuine docking distance,
   // a small symmetric damping impulse settles relative motion without
@@ -93,13 +88,11 @@ export function advanceCombatGrappleTether(
     const diffY = (target.velocity.y - source.velocity.y) * smoothing * 0.5;
     source.velocity.x += diffX;
     source.velocity.y += diffY;
-    if (movesTarget) {
-      target.velocity.x -= diffX;
-      target.velocity.y -= diffY;
-    }
+    target.velocity.x -= diffX;
+    target.velocity.y -= diffY;
   }
   source.speed = Math.hypot(source.velocity.x, source.velocity.y);
-  if (movesTarget) target.speed = Math.hypot(target.velocity.x, target.velocity.y);
+  target.speed = Math.hypot(target.velocity.x, target.velocity.y);
 
   return {
     ...grapple,

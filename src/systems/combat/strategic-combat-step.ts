@@ -1,3 +1,4 @@
+import type { FleetCombatContacts } from './strategic-combat-service-types';
 import { reviewShipContact } from './combat-contact-review';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { resolveCombatBystanderContacts } from './combat-bystander-contacts';
@@ -81,7 +82,8 @@ function recordLatestCombatImpact(runtime: StrategicCombatRuntime): void {
 function advanceRuntimeGrapple(
   runtime: StrategicCombatRuntime,
   dt: number,
-  drivenSide?: StrategicCombatSide
+  drivenSide?: StrategicCombatSide,
+  contacts?: FleetCombatContacts
 ): boolean {
   if (!runtime.grapple) return false;
   const owner = runtime.grapple.owner;
@@ -95,18 +97,17 @@ function advanceRuntimeGrapple(
     runtime.grapple = null;
     return false;
   }
-  runtime.grapple = advanceCombatGrappleTether(runtime.grapple, initiator, victim, dt, !drivenSide);
+  if (contacts?.claimGrapple(initiator.setup.id, victim.setup.id) === false) return false;
+  runtime.grapple = advanceCombatGrappleTether(runtime.grapple, initiator, victim, dt);
   if (!canDockGrappledShips(initiator, victim)) return false;
   const sharedX = (initiator.velocity.x + victim.velocity.x) / 2;
   const sharedY = (initiator.velocity.y + victim.velocity.y) / 2;
   initiator.velocity.x = sharedX;
   initiator.velocity.y = sharedY;
-  if (!drivenSide) {
-    victim.velocity.x = sharedX;
-    victim.velocity.y = sharedY;
-  }
+  victim.velocity.x = sharedX;
+  victim.velocity.y = sharedY;
   initiator.speed = Math.hypot(sharedX, sharedY);
-  if (!drivenSide) victim.speed = initiator.speed;
+  victim.speed = initiator.speed;
   runtime.boardingInitiator = owner;
   runtime.winner = owner;
   runtime.outcomeReason = 'boarding';
@@ -114,46 +115,34 @@ function advanceRuntimeGrapple(
   runtime.lastEvent = 'GREIFHAKEN > SCHIFFE GEKOPPELT · ENTERKAMPF';
   return true;
 }
-function resolveOwnedShipContacts(
-  runtime: StrategicCombatRuntime,
-  side: StrategicCombatSide,
-  bystanders: readonly StrategicCombatBystander[]
-): void {
-  const source = runtimeCombatant(runtime, side);
-  const target = runtimeEnemy(runtime, side);
-  resolveCombatBystanderContacts(source, [
-    ...bystanders,
-    {
-      id: target.setup.id,
-      shipId: target.setup.shipId,
-      position: target.position,
-      headingRadians: target.headingRadians,
-    },
-  ]);
-  resolveArenaObstacles(source, runtime.arena);
-}
-
 function advanceCombatContacts(
   runtime: StrategicCombatRuntime,
   bystanders: readonly StrategicCombatBystander[],
   sides: readonly StrategicCombatSide[],
   drivenSide?: StrategicCombatSide,
-  claimRamImpact?: (firstId: string, secondId: string) => boolean
+  contacts?: FleetCombatContacts
 ): void {
-  applyCombatRamImpact(runtime, claimRamImpact);
+  applyCombatRamImpact(runtime, contacts?.claimRamImpact, contacts?.elapsedSeconds);
   reviewShipContact(
     runtime,
     (ship, enemy, side) => reviewAndExecute(runtime, ship, enemy, side),
     drivenSide
   );
-  if (drivenSide) {
-    resolveOwnedShipContacts(runtime, drivenSide, bystanders);
-    return;
+  const separated = resolveCombatantCollision(
+    runtime.attacker,
+    runtime.defender,
+    contacts?.claimHullContact
+  );
+  for (const side of sides) {
+    resolveCombatBystanderContacts(
+      runtimeCombatant(runtime, side),
+      bystanders,
+      contacts?.resolveFleetBystander
+    );
   }
-  resolveCombatantCollision(runtime.attacker, runtime.defender);
-  for (const side of sides)
-    resolveCombatBystanderContacts(runtimeCombatant(runtime, side), bystanders);
   for (const side of sides) resolveArenaObstacles(runtimeCombatant(runtime, side), runtime.arena);
+  if (drivenSide && separated)
+    resolveArenaObstacles(runtimeEnemy(runtime, drivenSide), runtime.arena);
 }
 
 function advanceCombatAttacks(
@@ -212,10 +201,10 @@ export function tickStrategicCombat(
   bystanders: readonly StrategicCombatBystander[],
   sharedArenaPhysics: boolean,
   drivenSide?: StrategicCombatSide,
-  claimRamImpact?: (firstId: string, secondId: string) => boolean
+  contacts?: FleetCombatContacts
 ): void {
   if (runtime.winner || !Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
-  if (drivenSide && (runtime.attacker.hullHp <= 0 || runtime.defender.hullHp <= 0)) {
+  if (sharedArenaPhysics && (runtime.attacker.hullHp <= 0 || runtime.defender.hullHp <= 0)) {
     resolveRuntimeWinner(runtime);
     return;
   }
@@ -249,8 +238,8 @@ export function tickStrategicCombat(
       runtime.mines
     );
   }
-  if (advanceRuntimeGrapple(runtime, dt, drivenSide)) return;
-  advanceCombatContacts(runtime, bystanders, sides, drivenSide, claimRamImpact);
+  if (advanceRuntimeGrapple(runtime, dt, drivenSide, contacts)) return;
+  advanceCombatContacts(runtime, bystanders, sides, drivenSide, contacts);
   advanceCombatAttacks(runtime, dt, sides, drivenSide);
   recordCombatMotion(runtime);
   updateCombatOutcome(runtime, drivenSide);

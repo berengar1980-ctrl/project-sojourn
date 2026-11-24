@@ -31,13 +31,7 @@ export function mountCombatScene(context: ControllerRuntimeContext, returnToMap:
         combat,
         onReturn,
         ...returnOptions,
-        parallelDuels: () => [
-          ...fleet.getSnapshot().duels.slice(1),
-          ...fleet.getSnapshot().supporters,
-        ],
-        parallelSupportStartIndex: fleet.duels.length - 1,
-        parallelEscapedShipIds: () => fleet.getSnapshot().escapedShipIds,
-        fleetEngagements: () => fleet.getSnapshot().engagements,
+        fleet: () => fleet.getSnapshot(),
         isComplete: () => Boolean(fleet.boardingService('player')) || fleet.isFinished(),
       })
     : createFleetNativeCombatPanel({ root: context.root, combat, onReturn, ...returnOptions });

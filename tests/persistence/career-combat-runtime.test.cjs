@@ -84,4 +84,32 @@ assert.throws(
   () => createStrategicCombatService(attacker, defender, 431, arena, wrongEnemy),
   /combat runtime checkpoint/
 );
+const { controllerSettings } = loadStandaloneTypeScriptModule(
+  root,
+  'src/app/game-controller-career-install.ts',
+  {
+    'src/ui/settings/settings-menu.ts': {
+      createSettingsMenu: (_audio, _exit, _profile, save, loadCareer) => ({
+        save,
+        load: loadCareer,
+      }),
+    },
+  }
+);
+let active = true;
+let loads = 0;
+const settingsContext = {
+  state: { mode: 'local-space' },
+  engagements: { activePlayerCombat: () => (active ? {} : null) },
+};
+const controls = controllerSettings(settingsContext, { onLoadCareer: () => loads++ });
+assert.throws(controls.save, /während eines Gefechts/);
+assert.throws(controls.load, /während eines Gefechts/);
+assert.equal(loads, 0);
+active = false;
+settingsContext.state.mode = 'boarding';
+assert.throws(controls.load, /während eines Gefechts/);
+settingsContext.state.mode = 'port';
+controls.load();
+assert.equal(loads, 1);
 console.log('PASS combat career runtime: full physics, RNG and damage resume deterministically');

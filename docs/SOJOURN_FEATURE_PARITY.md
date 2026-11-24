@@ -1930,3 +1930,14 @@ gemeinsame Kampf-Renderer. Ein aus Karriere-Checkpoint geladener Zweikampf
 nutzt den Flottenkoordinator. Die Mehrparteien-Persistenz bleibt offen.
 Neun unveränderte 1vs1-Replays prüfen die vollständigen Kampfsnapshots
 gegen den Referenzstand von `main`.
+
+## Review-Log (2026-11-24) – Flottenkontakte und Effekte
+
+**Keine Statusänderung** der historischen Voidbound-Feature-IDs.
+Der native Rumpflöser und die Greifhakenphysik wirken auch für
+Verstärkungen beidseitig. Der Flottenkoordinator verbucht jeden
+Kontakt pro Paar und Phase einmal. Traktorobjekte verlassen alle
+Hindernislisten gleichzeitig. Treffer und Autokanonen-Salven später
+beigetretener Schiffe verwenden die gemeinsame Effektzeit. Tritt der
+Spieler einem laufenden NPC-Gefecht bei, bleibt sein Kampf die
+Hauptansicht und der NPC-Zweikampf wird als Teilgefecht gezeichnet.

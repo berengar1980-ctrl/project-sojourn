@@ -198,15 +198,8 @@ export function createStrategicCombatService(
   if (externalDefender) runtime.attacker.nextStrategyReviewAt = 0;
   let bystanders: readonly StrategicCombatBystander[] = [];
   let fleetDrivenSide: StrategicCombatSide | undefined = externalDefender ? 'attacker' : undefined;
-  const advance: StrategicCombatService['advance'] = (dt, claimRamImpact) =>
-    tickStrategicCombat(
-      runtime,
-      dt,
-      bystanders,
-      sharedArenaPhysics,
-      fleetDrivenSide,
-      claimRamImpact
-    );
+  const advance: StrategicCombatService['advance'] = (dt, contacts) =>
+    tickStrategicCombat(runtime, dt, bystanders, sharedArenaPhysics, fleetDrivenSide, contacts);
   const getStatus = () => ({
     winner: runtime.winner,
     outcomeReason: runtime.outcomeReason ?? null,

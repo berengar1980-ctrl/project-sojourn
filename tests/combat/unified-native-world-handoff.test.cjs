@@ -178,6 +178,43 @@ for (let step = 0; step < 10; step++) {
   engagement.tick(0.08);
   assert.deepEqual(engagement.activePlayerCombat().getSnapshot(), reference.tick(0.08));
 }
+// Normal campaign entry, the two-ship FleetCombat coordinator and
+// the direct PvP service must agree with identical prepared inputs.
+const freshEnemy = { ...enemy, combatMovement: undefined };
+const fieldEngagements = createStarMapEngagementService({
+  navigation: {
+    getSnapshot: () => ({ currentPosition: worldPose.playerPosition }),
+    stopPursuit() {},
+  },
+  sectorNpcs: {
+    npcs: [freshEnemy],
+    livePosition: () => arena.defenderPosition,
+    liveHeading: () => arena.defenderHeadingRadians,
+    markEngaged() {},
+  },
+  getPlayerCombatant: () => setup('player'),
+  log() {},
+});
+assert(fieldEngagements.engageNpcInArena(freshEnemy.id, arena));
+const fieldCombat = fieldEngagements.activePlayerCombat();
+const [playerSetup, enemySetup] = ['attacker', 'defender'].map(
+  (side) => fieldCombat.getParallelActor(side).setup
+);
+const seed = fieldCombat.exportCareerState().seed;
+const direct = createStrategicCombatService(playerSetup, enemySetup, seed, arena);
+const fleetReplay = createParallelNativeDuels(
+  [
+    { id: playerSetup.id, team: 'a', setup: playerSetup },
+    { id: enemySetup.id, team: 'b', setup: enemySetup },
+  ],
+  arena,
+  seed
+);
+for (let step = 0; step < 10; step++) {
+  fieldEngagements.tick(0.08);
+  assert.deepEqual(fleetReplay.tick(0.08).duels[0], direct.tick(0.08));
+  assert.deepEqual(fieldCombat.getSnapshot(), direct.getSnapshot());
+}
 console.log(
   'PASS shared native 1v1/fleet/career positions, velocity, heading and single motion owner'
 );

@@ -11,7 +11,8 @@ assert(
   'HTML HUD updates are throttled while the canvas renders at frame rate'
 );
 assert(
-  panel.indexOf('renderer.update(') < panel.indexOf('if (model.elapsedSeconds - lastHudTime'),
+  panel.indexOf('renderer.updateEncounter(') <
+    panel.indexOf('if (model.elapsedSeconds - lastHudTime'),
   'canvas must render even when HUD is throttled'
 );
 assert(

@@ -105,16 +105,60 @@ for (let frame = 0; frame < 2; frame++) {
   const secondRam = ramFleet.getActor('ram-second');
   firstRam.position = { x: 2100, y: 1300 };
   secondRam.position = { x: 2120, y: 1300 };
+  firstRam.subsystems.engine = 0;
+  secondRam.subsystems.engine = 0;
   firstRam.headingRadians = 0;
   secondRam.headingRadians = Math.PI;
   firstRam.velocity = { x: 100, y: 0 };
   secondRam.velocity = { x: -100, y: 0 };
   ramFleet.tick(0.01);
+  assert(
+    firstRam.position.x < 2100.5 && secondRam.position.x > 2119.5,
+    'hull separation must displace both live actors'
+  );
+  assert(
+    firstRam.velocity.x < 0 && secondRam.velocity.x > 0,
+    'both drivers obey the canonical duel collision impulse'
+  );
 }
 const ramImpacts = [...ramFleet.duels, ...ramFleet.supporters].flatMap((service) =>
   service.getCombatLog().filter((entry) => entry.detail.startsWith('Rumpfkontakt'))
 );
 assert.equal(ramImpacts.length, 1, 'both services share one ram impact per physical contact');
+
+// Capture occurs in the later support driver, after the primary
+// driver has already assembled its obstacles for this frame.
+const rock = {
+  id: 'captured-debris',
+  kind: 'debris',
+  radius: 12,
+  position: { x: 1650, y: 900 },
+  velocity: { x: 0, y: 0 },
+};
+const catcher = ship('catcher', 'b');
+Object.assign(catcher.setup, {
+  shieldHp: 0,
+  tractorRangeMeters: 500,
+  tractorCanManipulateObjects: true,
+});
+catcher.position = { x: 1550, y: 900 };
+const tractorFleet = createParallelNativeDuels(
+  [ship('target', 'a'), ship('escort', 'b'), catcher],
+  {
+    ...arena(),
+    attackerPosition: { x: 2000, y: 900 },
+    asteroids: [rock],
+    obstacles: [{ id: rock.id, position: rock.position, radius: rock.radius }],
+  },
+  994
+);
+tractorFleet.tick(0.08);
+assert.equal(tractorFleet.supporters[0].getSnapshot().thrownAsteroids[0].asteroidId, rock.id);
+for (const service of [...tractorFleet.duels, ...tractorFleet.supporters]) {
+  const field = service.getSnapshot().arena;
+  assert(!field.asteroids.some((body) => body.id === rock.id));
+  assert(!field.obstacles.some((obstacle) => obstacle.id === rock.id));
+}
 
 // The additional ship must really fire on the shared hull using the EXISTING
 // native weapon engine, not merely appear as a second ship on the screen.

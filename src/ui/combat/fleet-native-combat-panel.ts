@@ -5,7 +5,10 @@ import type {
 } from '../../systems/combat/strategic-combat-service';
 import { FleetNativeCombatRenderer } from './fleet-native-combat-renderer';
 import { createFleetDisplayMenu } from './fleet-display-menu';
-import type { NativeFleetEngagement } from '../../systems/combat/parallel-native-duels';
+import type {
+  NativeFleetEngagement,
+  ParallelNativeDuelSnapshot,
+} from '../../systems/combat/parallel-native-duels';
 import { analyzeCombatLog } from '../../systems/combat/combat-log-analysis';
 import { combatWeaponTelemetryHtml } from './combat-weapon-telemetry-panel';
 import { describeCombatStatus } from '../../systems/combat/combat-intent-labels';
@@ -24,11 +27,7 @@ interface FleetNativeCombatPanelOptions {
   readonly onReturn: () => void;
   readonly returnLabel?: string;
   readonly encounterName?: string;
-  /** Additional native 1vs1 snapshots sharing the same existing map renderer. */
-  readonly parallelDuels?: () => readonly StrategicCombatSnapshot[];
-  readonly parallelSupportStartIndex?: number;
-  readonly parallelEscapedShipIds?: () => readonly string[];
-  readonly fleetEngagements?: () => readonly NativeFleetEngagement[];
+  readonly fleet?: () => ParallelNativeDuelSnapshot;
   readonly spectator?: boolean;
   readonly isComplete?: () => boolean;
   /** Noncombat campaign NPCs are rendered by the native fleet canvas, not another scene. */
@@ -238,7 +237,7 @@ function prepareParallelDuelPanel(
     shell.querySelector<HTMLElement>('.combat-tactics')?.remove();
     shell.querySelector<HTMLElement>('.strategic-combat-grapple')?.remove();
   }
-  if (!options.parallelDuels) return null;
+  if (!options.fleet) return null;
   const status = document.createElement('aside');
   status.className = 'combat-parallel-duels-status';
   status.style.cssText =
@@ -356,16 +355,9 @@ export function createFleetNativeCombatPanel(
   const render = (): void => {
     const model = options.combat.getSnapshot();
     const display = displayMenu.get();
-    const others = options.parallelDuels?.() ?? [];
-    const engagements = options.fleetEngagements?.() ?? [];
-    renderer.update(
-      model,
-      others,
-      options.parallelSupportStartIndex,
-      options.parallelEscapedShipIds?.() ?? [],
-      engagements,
-      display
-    );
+    const fleet = options.fleet?.();
+    const engagements = fleet?.engagements ?? [];
+    renderer.updateEncounter(model, fleet, display);
     updateParallelDuelStatus(parallelStatus, engagements);
     setFleetOverlayVisible(parallelStatus, display.overview);
     setFleetOverlayVisible(playerHud, display.hud);

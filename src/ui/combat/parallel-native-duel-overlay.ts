@@ -4,7 +4,7 @@ import { drawCombatGrapple } from './combat-grapple-renderer';
 import { drawCombatMineMarker } from './combat-ship-detail-renderer';
 import { drawFleetDuelDamage } from './fleet-native-damage-visual';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
-import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
+import { appendCombatImpacts, combatEffectSource } from './combat-effect-clock';
 import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { AUTOCANNON_ROUNDS, AUTOCANNON_ROUND_INTERVAL } from '../../core/combat-visual-timings';
 import { getShipDefinition } from '../../systems/ships';
@@ -22,15 +22,41 @@ import type {
   AutocannonVisualBurst,
 } from './strategic-combat-renderer-types';
 
+/** Keep the player-view snapshot primary even when joining an existing NPC duel. */
+export function fleetRenderSources(
+  model: StrategicCombatSnapshot,
+  duels: readonly StrategicCombatSnapshot[],
+  supporters: readonly StrategicCombatSnapshot[]
+): {
+  readonly additional: readonly StrategicCombatSnapshot[];
+  readonly supportingFromIndex: number;
+} {
+  const all = [...duels, ...supporters];
+  const key = combatEffectSource(model);
+  const direct = all.findIndex((duel) => combatEffectSource(duel) === key);
+  const reversed =
+    model.boardingInitiator && direct < 0
+      ? all.findIndex(
+          (duel) => duel.attacker.id === model.defender.id && duel.defender.id === model.attacker.id
+        )
+      : -1;
+  const match = direct < 0 ? reversed : direct;
+  return {
+    additional: all.filter((_, index) => index !== match),
+    supportingFromIndex: duels.length - Number(match >= 0 && match < duels.length),
+  };
+}
+
 /** Keep autocannon burst IDs unique across independent native combat runtimes. */
 export function updateParallelAutocannonBursts(
   duels: readonly StrategicCombatSnapshot[],
   bursts: Map<string, AutocannonVisualBurst>,
   elapsed: number
 ): void {
-  for (const [duelIndex, duel] of duels.entries()) {
+  for (const duel of duels) {
+    const source = combatEffectSource(duel);
     for (const projectile of duel.projectiles) {
-      const id = duelIndex + ':' + projectile.id;
+      const id = source + ':' + projectile.id;
       if (projectile.kind !== 'autocannon' || bursts.has(id)) continue;
       const origin = projectile.origin;
       const target = projectile.target;
@@ -38,7 +64,7 @@ export function updateParallelAutocannonBursts(
       bursts.set(id, {
         origin: { ...origin },
         target: { ...target },
-        spawnedAt: duel.elapsedSeconds,
+        spawnedAt: elapsed,
         flightSeconds: Math.max(0.12, travel / 900),
       });
     }
@@ -66,7 +92,7 @@ export function paintParallelNativeDuels(options: {
   readonly paintBeam: (beam: CombatBeamSnapshot) => void;
   readonly paintProjectile: (shot: CombatProjectileSnapshot) => void;
   readonly damageParticles: Map<string, DistressDamageParticles>;
-  readonly visibleImpacts: ReadonlyMap<number, readonly VisibleCombatImpact[]>;
+  readonly visibleImpacts: ReadonlyMap<string, readonly VisibleCombatImpact[]>;
   readonly width: number;
   readonly height: number;
   readonly timeSeconds: number;
@@ -136,7 +162,7 @@ export function paintParallelNativeDuels(options: {
     );
     drawCombatImpactBatch(
       context,
-      visibleImpacts.get(index) ?? [],
+      visibleImpacts.get(combatEffectSource(duel)) ?? [],
       visualElapsed,
       project,
       (side) => geometry(duel[side]).height
@@ -147,26 +173,27 @@ export function paintParallelNativeDuels(options: {
 /** Cache only newly reported native impacts, retaining the original effect painter. */
 export function updateParallelNativeImpacts(
   duels: readonly StrategicCombatSnapshot[],
+  sharedElapsed: number,
   now: number,
-  seenImpacts: Map<number, number>,
-  visibleImpacts: Map<number, VisibleCombatImpact[]>
+  seenImpacts: Map<string, number>,
+  visibleImpacts: Map<string, VisibleCombatImpact[]>
 ): void {
-  for (const [index, duel] of duels.entries()) {
-    const seen = seenImpacts.get(index) ?? -1;
-    const impacts = [...duel.recentImpacts, ...(duel.lastImpact ? [duel.lastImpact] : [])]
-      .filter((impact) => impact.serial > seen)
-      .sort((a, b) => a.serial - b.serial);
-    const visible = visibleImpacts.get(index) ?? [];
-    for (const impact of impacts) {
-      seenImpacts.set(index, impact.serial);
-      const delay = impact.weaponFamily
-        ? WEAPON_VISUALS[impact.weaponFamily].impactDelaySeconds
-        : 0;
-      visible.push({ impact, startedAt: duel.elapsedSeconds + delay });
-    }
+  const active = new Set<string>();
+  for (const duel of duels) {
+    const source = combatEffectSource(duel);
+    if (active.has(source)) continue;
+    active.add(source);
+    const visible = visibleImpacts.get(source) ?? [];
+    const seen = appendCombatImpacts(duel, visible, seenImpacts.get(source) ?? -1, sharedElapsed);
+    seenImpacts.set(source, seen);
     visibleImpacts.set(
-      index,
+      source,
       visible.filter((effect) => now - effect.startedAt < VISION_IMPACT_SECONDS)
     );
+  }
+  for (const source of seenImpacts.keys()) {
+    if (active.has(source)) continue;
+    seenImpacts.delete(source);
+    visibleImpacts.delete(source);
   }
 }

@@ -50,6 +50,9 @@ export function redirectNativeFleetTarget(
   runtime.outcomeReason = null;
   runtime.boardingInitiator = null;
   runtime.grapple = null;
+  // Per-service timestamps belong to the former pair. The fleet guard
+  // retains cooldowns for each physical pair even when drivers change.
+  delete runtime.lastRamImpactAt;
   // Old guided shots must not magically switch their target mid-flight.
   runtime.projectiles.length = 0;
   runtime.beams.length = 0;

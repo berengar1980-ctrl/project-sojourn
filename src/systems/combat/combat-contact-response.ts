@@ -1,9 +1,13 @@
 import type { MutableCombatant } from './strategic-combat-types';
 import { shipContact } from './combat-ship-contact-geometry';
 
-export function resolveCombatantCollision(first: MutableCombatant, second: MutableCombatant): void {
+export function resolveCombatantCollision(
+  first: MutableCombatant,
+  second: MutableCombatant,
+  claim?: (firstId: string, secondId: string) => boolean
+): boolean {
   const { distance, required, normal } = shipContact(first, second);
-  if (distance >= required) return;
+  if (distance >= required || claim?.(first.setup.id, second.setup.id) === false) return false;
   const overlap = required - distance + 0.01;
   first.position.x -= normal.x * overlap * 0.5;
   first.position.y -= normal.y * overlap * 0.5;
@@ -24,4 +28,5 @@ export function resolveCombatantCollision(first: MutableCombatant, second: Mutab
   }
   first.speed = Math.hypot(first.velocity.x, first.velocity.y);
   second.speed = Math.hypot(second.velocity.x, second.velocity.y);
+  return true;
 }

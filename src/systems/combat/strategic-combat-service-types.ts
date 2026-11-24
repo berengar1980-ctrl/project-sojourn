@@ -19,14 +19,19 @@ export interface StrategicCombatStatus {
   readonly boardingInitiator: StrategicCombatSnapshot['boardingInitiator'];
 }
 
+export interface FleetCombatContacts {
+  readonly elapsedSeconds: number;
+  claimRamImpact(firstId: string, secondId: string): boolean;
+  claimHullContact(firstId: string, secondId: string): boolean;
+  claimGrapple(firstId: string, secondId: string): boolean;
+  resolveFleetBystander(ship: MutableCombatant, bystanderId: string): boolean;
+}
+
 export interface StrategicCombatService {
   exportCareerState(): CareerStrategicCombatCheckpoint;
   getSnapshot(): StrategicCombatSnapshot;
   getStatus(): StrategicCombatStatus;
-  advance(
-    deltaSeconds: number,
-    claimRamImpact?: (firstId: string, secondId: string) => boolean
-  ): void;
+  advance(deltaSeconds: number, contacts?: FleetCombatContacts): void;
   getArena(): StrategicCombatArenaOptions;
   attachToFleet(obstacles: StrategicCombatObstacle[], asteroids: CombatVisualAsteroid[]): void;
   getCombatLog(): readonly CombatLogEntry[];

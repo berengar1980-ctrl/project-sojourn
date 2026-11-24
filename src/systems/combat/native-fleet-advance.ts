@@ -8,7 +8,8 @@ import type {
   StrategicCombatArenaOptions,
   StrategicCombatObstacle,
 } from './strategic-combat-types';
-import type { StrategicCombatService } from './strategic-combat-service-types';
+import { resolveCombatantCollision } from './combat-contact-response';
+import type { FleetCombatContacts, StrategicCombatService } from './strategic-combat-service-types';
 
 export function escapedNativeFleetShips(services: readonly StrategicCombatService[]): Set<string> {
   const escaped = new Set<string>();
@@ -24,7 +25,7 @@ export function escapedNativeFleetShips(services: readonly StrategicCombatServic
 interface NativeFleetFrame {
   readonly services: readonly StrategicCombatService[];
   readonly actors: readonly MutableCombatant[];
-  readonly baseObstacles: readonly StrategicCombatObstacle[];
+  readonly baseObstacles: StrategicCombatObstacle[];
   readonly allObstacles: readonly StrategicCombatObstacle[][];
   readonly asteroidWorld: CombatVisualAsteroid[];
   readonly arena: StrategicCombatArenaOptions;
@@ -43,6 +44,66 @@ function wreckObstacle(rock: CombatVisualAsteroid): StrategicCombatObstacle {
   return { id: rock.id, position: rock.position, radius: rock.collisionRadius ?? rock.radius };
 }
 
+function pairKey(first: string, second: string): string {
+  return JSON.stringify(first < second ? [first, second] : [second, first]);
+}
+
+function claimPair(pairs: Set<string>, first: string, second: string): boolean {
+  const key = pairKey(first, second);
+  if (pairs.has(key)) return false;
+  pairs.add(key);
+  return true;
+}
+
+function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): FleetCombatContacts {
+  const activePairs = new Set<string>();
+  const hullContacts = new Set<string>();
+  const grapples = new Set<string>();
+  const actors = new Map(frame.actors.map((ship) => [ship.setup.id, ship]));
+  for (const service of frame.services) {
+    const status = service.getStatus();
+    if (!status.winner) activePairs.add(pairKey(status.attackerId, status.defenderId));
+  }
+  const claimHullContact = (first: string, second: string) =>
+    claimPair(hullContacts, first, second);
+  return {
+    elapsedSeconds: frame.elapsed,
+    claimHullContact,
+    claimGrapple: (first, second) => claimPair(grapples, first, second),
+    claimRamImpact(first, second) {
+      const key = pairKey(first, second);
+      if (frame.elapsed - (frame.ramContacts.get(key) ?? -Infinity) < 0.9) return false;
+      frame.ramContacts.set(key, frame.elapsed);
+      return true;
+    },
+    resolveFleetBystander(ship, bystanderId) {
+      const other = actors.get(bystanderId);
+      if (!other) return false;
+      // Active opponents run their own ram and hull phases. Applying a
+      // bystander correction first would swallow that pair's ram impact.
+      const active = activePairs.has(pairKey(ship.setup.id, bystanderId));
+      if (!active && other.hullHp > 0 && !escaped.has(bystanderId)) {
+        resolveCombatantCollision(ship, other, claimHullContact);
+      }
+      return true;
+    },
+  };
+}
+
+function removeCapturedObstacles(
+  blockerLists: readonly StrategicCombatObstacle[][],
+  initialRockIds: ReadonlySet<string>,
+  remaining: readonly CombatVisualAsteroid[]
+): void {
+  const remainingIds = new Set(remaining.map((rock) => rock.id));
+  for (const blockers of blockerLists) {
+    for (let index = blockers.length - 1; index >= 0; index--) {
+      const id = blockers[index]!.id;
+      if (initialRockIds.has(id) && !remainingIds.has(id)) blockers.splice(index, 1);
+    }
+  }
+}
+
 /** One asteroid tick, one native actor tick, one recorded wreck per vessel. */
 export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   const {
@@ -59,19 +120,12 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     elapsed,
     dt,
     bystanders,
-    ramContacts,
   } = frame;
   advanceCombatAsteroids(arena, dt);
   materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
   let wreckBlockers = asteroidWorld
     .filter((rock) => rock.id.startsWith('fleet-wreck:'))
     .map(wreckObstacle);
-  const claimRamImpact = (firstId: string, secondId: string) => {
-    const key = JSON.stringify(firstId < secondId ? [firstId, secondId] : [secondId, firstId]);
-    if (elapsed - (ramContacts.get(key) ?? -Infinity) < 0.9) return false;
-    ramContacts.set(key, elapsed);
-    return true;
-  };
   const bystanderBlockers = bystanders.map((ship) => ({
     id: 'ship:' + ship.id,
     position: ship.position,
@@ -81,6 +135,8 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   }));
   const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
   for (const id of escaped) escapedRecords.add(id);
+  const contacts = fleetContacts(frame, escaped);
+  const initialRockIds = new Set(asteroidWorld.map((rock) => rock.id));
   for (const [index, service] of services.entries()) {
     const source = service.getParallelActor?.('attacker');
     const target = service.getParallelActor?.('defender');
@@ -101,8 +157,9 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
         headingRadians: actor.headingRadians,
       }));
     const blockers = allObstacles[index]!;
-    blockers.splice(baseObstacles.length);
+    blockers.length = 0;
     blockers.push(
+      ...baseObstacles,
       ...wreckBlockers,
       ...bystanderBlockers.filter((ship) => !duelIds.has(ship.id.slice('ship:'.length))),
       ...others.map((ship) => ({
@@ -113,7 +170,7 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     );
     service.setBystanders([...others, ...bystanders.filter((ship) => !duelIds.has(ship.id))]);
     const rockCount = asteroidWorld.length;
-    service.advance(dt, claimRamImpact);
+    service.advance(dt, contacts);
     const state = service.getStatus();
     if (state.outcomeReason === 'escape') {
       const escapedId =
@@ -128,11 +185,14 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
       }
     }
     const removedRock = asteroidWorld.length !== rockCount;
+    if (removedRock)
+      removeCapturedObstacles([baseObstacles, ...allObstacles], initialRockIds, asteroidWorld);
     materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
     if (removedRock || asteroidWorld.length !== rockCount) {
       wreckBlockers = asteroidWorld
         .filter((rock) => rock.id.startsWith('fleet-wreck:'))
         .map(wreckObstacle);
     }
+    if (state.boardingInitiator) break;
   }
 }

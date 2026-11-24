@@ -303,15 +303,16 @@ export function createParallelNativeDuels(
   // One physical world and exactly ONE visible escape gate for every native duel.
   // Shallow-copy the asteroid list so newly created wrecks do not mutate a
   // caller's prepared campaign/PvP map; the native bodies themselves stay shared.
+  const baseObstacles = [...(arena.obstacles ?? [])];
   const fleetArena: StrategicCombatArenaOptions = {
     ...arena,
+    obstacles: baseObstacles,
     asteroids: [...(arena.asteroids ?? [])],
     exitPoint:
       arena.exitPoint ??
       buildCombatArena(first[0]!.setup, second[0]!.setup, seed, arena).exitPoint!,
   };
   const asteroidWorld = fleetArena.asteroids as CombatVisualAsteroid[];
-  const baseObstacles = fleetArena.obstacles ?? [];
   const allObstacles: StrategicCombatObstacle[][] = [];
   const obstacleSet = (): StrategicCombatObstacle[] => {
     const blockers = [...baseObstacles];
@@ -374,7 +375,7 @@ export function createParallelNativeDuels(
     cachedSnapshot = {
       duels,
       supporters: additional,
-      elapsedSeconds: Math.max(0, ...states.map((duel) => duel.elapsedSeconds)),
+      elapsedSeconds: elapsed,
       escapedShipIds: [...escaped],
       engagements,
       finished: nativeFleetFinished(actors, escaped, teams, hostility, services),
@@ -386,7 +387,7 @@ export function createParallelNativeDuels(
     if (!Number.isFinite(seconds) || seconds <= 0) return;
     const dt = Math.min(seconds, 0.08);
     cachedSnapshot = null;
-    elapsed += dt;
+    if (services.some((service) => !service.getStatus().winner)) elapsed += dt;
     advanceNativeFleetFrame({
       services,
       actors,

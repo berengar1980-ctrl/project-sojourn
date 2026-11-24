@@ -2,6 +2,7 @@ import { FleetNativeShipSprites } from './fleet-native-ship-sprites';
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
 import {
   paintParallelNativeDuels,
+  fleetRenderSources,
   updateParallelNativeImpacts,
   updateParallelAutocannonBursts,
 } from './parallel-native-duel-overlay';
@@ -29,14 +30,12 @@ import type {
   NativeFleetEngagement,
 } from '../../systems/combat/parallel-native-duels';
 import { ramCameraImpulse } from './combat-ram-effect-renderer';
-import { CombatEffectClock } from './combat-effect-clock';
+import { CombatEffectClock, combatEffectSource } from './combat-effect-clock';
 import { drawCombatImpactBatch } from './combat-impact-visual-batch';
 import { missedShotAbove } from '../../systems/combat/combat-miss-depth';
 import { CombatCamera, type CombatCameraPose } from './combat-camera';
 import { ProceduralSpaceBodyRenderer } from '../space/procedural-space-body-renderer';
 import { drawCombatShipBody } from './combat-ship-detail-renderer';
-import { WEAPON_VISUALS } from '../../core/weapon-visual-profiles';
-import { VISION_IMPACT_SECONDS } from '../../core/combat-visual-timings';
 import { drawCombatEscapeGate } from './combat-escape-gate-renderer';
 import { drawCombatBeamVisual } from './combat-beam-visual';
 import { clamp01 } from './strategic-combat-renderer-math';
@@ -80,11 +79,9 @@ export class FleetNativeCombatRenderer {
   private parallelDuels: readonly StrategicCombatSnapshot[] = [];
   private supportingFromIndex = Number.POSITIVE_INFINITY;
   private readonly fleetMarkers = new FleetEngagementMarkerPainter();
-  private readonly additionalSeenImpacts = new Map<number, number>();
-  private readonly additionalImpacts = new Map<number, VisibleCombatImpact[]>();
+  private readonly seenImpacts = new Map<string, number>();
+  private readonly visibleImpacts = new Map<string, VisibleCombatImpact[]>();
   private effectClock = new CombatEffectClock();
-  private seenImpactSerial = -1;
-  private readonly visibleImpacts: VisibleCombatImpact[] = [];
   constructor(
     private readonly canvas: HTMLCanvasElement,
     model: StrategicCombatSnapshot,
@@ -113,10 +110,8 @@ export class FleetNativeCombatRenderer {
     this.hiddenShipIds = new Set();
     this.hiddenDamageIds = new Set();
     this.supportingFromIndex = Number.POSITIVE_INFINITY;
-    this.seenImpactSerial = -1;
-    this.visibleImpacts.length = 0;
-    this.additionalSeenImpacts.clear();
-    this.additionalImpacts.clear();
+    this.seenImpacts.clear();
+    this.visibleImpacts.clear();
     this.autocannonBursts.clear();
     this.damageParticles.clear();
     this.destructionStartedAt = null;
@@ -126,13 +121,20 @@ export class FleetNativeCombatRenderer {
   suspend(): void {
     this.active = false;
   }
-  updateEncounter(model: StrategicCombatSnapshot, fleet?: ParallelNativeDuelSnapshot | null): void {
+  updateEncounter(
+    model: StrategicCombatSnapshot,
+    fleet?: ParallelNativeDuelSnapshot | null,
+    display?: FleetDisplayPreferences
+  ): void {
+    const sources = fleet && fleetRenderSources(model, fleet.duels, fleet.supporters);
     this.update(
-      fleet?.duels[0] ?? model,
-      fleet ? [...fleet.duels.slice(1), ...fleet.supporters] : [],
-      fleet ? fleet.duels.length - 1 : undefined,
+      model,
+      sources?.additional,
+      sources?.supportingFromIndex,
       fleet?.escapedShipIds,
-      fleet?.engagements
+      fleet?.engagements,
+      display,
+      fleet?.elapsedSeconds
     );
   }
   update(
@@ -141,7 +143,8 @@ export class FleetNativeCombatRenderer {
     supportingFromIndex = Number.POSITIVE_INFINITY,
     departedIds: readonly string[] = [],
     engagements: readonly NativeFleetEngagement[] = [],
-    display?: FleetDisplayPreferences
+    display?: FleetDisplayPreferences,
+    fleetElapsed?: number
   ): void {
     this.parallelDuels = parallelDuels;
     this.supportingFromIndex = supportingFromIndex;
@@ -153,38 +156,19 @@ export class FleetNativeCombatRenderer {
     if (model.winner !== null && this.model.winner === null)
       this.destructionStartedAt = performance.now() / 1000;
     if (model.winner === null) this.destructionStartedAt = null;
-    const sharedElapsed = Math.max(
-      model.elapsedSeconds,
-      ...parallelDuels.map((duel) => duel.elapsedSeconds)
-    );
+    const sharedElapsed =
+      fleetElapsed ??
+      Math.max(model.elapsedSeconds, ...parallelDuels.map((duel) => duel.elapsedSeconds));
     const allFinished =
       model.winner !== null && parallelDuels.every((duel) => duel.winner !== null);
     this.effectClock.update(sharedElapsed, allFinished, performance.now() / 1000);
     updateParallelAutocannonBursts([model, ...parallelDuels], this.autocannonBursts, sharedElapsed);
-    const recentImpacts = model.recentImpacts ?? [];
-    const finalImpact = model.lastImpact ? [model.lastImpact] : [];
-    const unseen = [...recentImpacts, ...finalImpact]
-      .filter((impact) => impact.serial > this.seenImpactSerial)
-      .sort((a, b) => a.serial - b.serial);
-    for (const impact of unseen) {
-      this.seenImpactSerial = impact.serial;
-      const flightDelay = impact.weaponFamily
-        ? WEAPON_VISUALS[impact.weaponFamily].impactDelaySeconds
-        : 0;
-      this.visibleImpacts.push({ impact, startedAt: model.elapsedSeconds + flightDelay });
-    }
-    const visualNow = this.effectClock.elapsed(performance.now() / 1000);
-    for (let index = this.visibleImpacts.length - 1; index >= 0; index -= 1) {
-      const visible = this.visibleImpacts[index]!;
-      if (visualNow - visible.startedAt >= VISION_IMPACT_SECONDS) {
-        this.visibleImpacts.splice(index, 1);
-      }
-    }
     updateParallelNativeImpacts(
-      parallelDuels,
-      visualNow,
-      this.additionalSeenImpacts,
-      this.additionalImpacts
+      visibleDuels,
+      sharedElapsed,
+      this.effectClock.elapsed(performance.now() / 1000),
+      this.seenImpacts,
+      this.visibleImpacts
     );
     this.model = model;
     this.draw();
@@ -340,7 +324,7 @@ export class FleetNativeCombatRenderer {
           this.screen(shot.target, width, height)
         ),
       damageParticles: this.damageParticles,
-      visibleImpacts: this.additionalImpacts,
+      visibleImpacts: this.visibleImpacts,
       width,
       height,
       timeSeconds,
@@ -487,7 +471,7 @@ export class FleetNativeCombatRenderer {
   private drawHullImpacts(width: number, height: number, visualElapsed: number): void {
     drawCombatImpactBatch(
       this.context,
-      this.visibleImpacts,
+      this.visibleImpacts.get(combatEffectSource(this.model)) ?? [],
       visualElapsed,
       (point) => this.screen(point, width, height),
       (side) => this.shipGeometry(this.model[side], width, height).height

@@ -141,6 +141,17 @@ for (let attempt = 0; attempt < 20; attempt++) {
   target.hullHp = 100;
   assert(support.fireGrapple('attacker'));
   if (!support.getSnapshot().grapple.success) continue;
+  target.subsystems.engine = 0;
+  attacker.subsystems.engine = 0;
+  target.position = { ...playerSpot };
+  const farX = playerSpot.x + 250;
+  attacker.position = { x: farX, y: playerSpot.y };
+  for (let step = 0; step < 9; step++) encounter.tick(0.08);
+  assert(support.getSnapshot().grapple.resolved);
+  const targetCorrection = target.position.x - playerSpot.x;
+  const sourceCorrection = farX - attacker.position.x;
+  assert(targetCorrection > 0, 'the reinforcement hook must pull the shared target');
+  assert(Math.abs(targetCorrection - sourceCorrection) < 1e-9, 'the hook preserves the midpoint');
   for (let step = 0; step < 12 && !encounter.combat.getSnapshot().boardingInitiator; step++) {
     for (const participant of [target, attacker]) {
       participant.headingRadians = 0;
