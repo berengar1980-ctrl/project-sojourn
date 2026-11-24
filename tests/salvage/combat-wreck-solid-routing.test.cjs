@@ -78,11 +78,14 @@ assert(amountAfter < amountBefore, 'recovery consumes finite saved wreck resourc
 const local = source('src/systems/local-space/local-space-service.ts');
 const wiring = source('src/app/game-controller-mining-runtime.ts');
 const world = source('src/systems/operations/asteroid-field-world.ts');
+const navigation = source('src/systems/local-space/local-space-wreck-navigation.ts');
+const collisions = source('src/systems/local-space/local-space-wreck-contacts.ts');
 assert.match(local, /additionalObstacles\?\.\(\)/, 'mining local simulation reads dynamic wreck bodies');
-assert.match(local, /onAdditionalObstacleContact\?\.\(\)/, 'mining contacts synchronize wreck motion');
-assert.match(local, /asteroids: this\.navigationObstacles\(\)/, 'point navigation uses wreck obstacles');
-assert.match(local, /additional\.length \? \[\.\.\.this\.instance\.asteroids, \.\.\.additional\]/,
-  'shield contacts include real wreck bodies');
+assert.match(local, /onAdditionalObstacleContact/, 'mining contacts synchronize wreck motion');
+assert.match(local, /pointWreckAwareRouteOptions\(this\.options, target, this\.shield\)/, 'point navigation uses wreck obstacles');
+assert.match(local, /resolveLocalWreckContacts\(/, 'shield contacts include real wreck bodies');
 assert.match(wiring, /combatWreckPhysicsBodies\(location\.id\)/, 'controller shares world wreck colliders');
 assert.match(world, /syncSalvagePhysicsContacts\(field\)/, 'contact mutations persist to salvage');
+assert.match(navigation, /navigationBodies\(instance, additional\)/, 'route planner includes physical wrecks');
+assert.match(collisions, /resolveShieldCollisions\(/, 'native shield collision solver is reused');
 console.log('PASS recoverable combat wrecks are solid and route-blocking in local fields');
