@@ -1991,3 +1991,14 @@ Autokanonen-Effekte erneut.
 Eskortdrohnen verfolgen sichtbare Piraten auch während eines laufenden
 Feldgefechts. Kampagne und FleetCombat nutzen dazu dieselbe Feldpatrouille
 und denselben Beitritt zum bestehenden Gefecht.
+
+## Review-Log (2026-11-24) – FleetCombat-Wracks und Darstellungsmaßstab
+
+**Keine Statusänderung** der bestehenden Feature-IDs. Der gemeinsame
+FleetCombat-Renderer zeichnet frisch zerstörte native Flottenwracks auch
+über eigenen Feldhintergründen, statt den normalen Wrack-Zeichenpfad
+zu überspringen. Bestehende Feldwracks werden nicht doppelt gezeichnet.
+Die fünf Kampfwrackgeometrien und ihre unabhängig taumelnden Fragmente
+erscheinen in Kampagne, 1vs1 und FleetCombat nur noch mit zwei Dritteln
+der bisherigen sichtbaren Abmessungen. Kampfphysik, Kollision,
+Bergung, Save-Struktur und ursprüngliche 1vs1-Logik bleiben unverändert.
