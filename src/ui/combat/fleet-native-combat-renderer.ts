@@ -240,8 +240,25 @@ export class FleetNativeCombatRenderer {
     const shake = ramCameraImpulse(this.model.attacker, this.model.defender, visualElapsed);
     this.context.save();
     this.context.translate(shake.x, shake.y);
-    if (this.drawField) this.drawField(width, height, timeSeconds);
-    else this.drawArena(width, height, timeSeconds);
+    if (this.drawField) {
+      this.drawField(width, height, timeSeconds);
+      // A custom campaign/FleetCombat field replaces the normal arena painter.
+      // Fleet-generated physical wrecks live in the shared combat asteroid world
+      // and must still be drawn above the field; no second geometry or physics.
+      const fleetWrecks = (this.model.arena.asteroids ?? []).filter(
+        (body) => body.id.startsWith('fleet-wreck:') && Boolean(body.combatWreckVariant)
+      );
+      if (fleetWrecks.length) {
+        drawCombatAsteroids(
+          this.spaceBodies,
+          fleetWrecks,
+          this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
+          (point) => this.screen(point, width, height),
+          this.context,
+          timeSeconds
+        );
+      }
+    } else this.drawArena(width, height, timeSeconds);
     paintNativeTractorThrows(
       this.context,
       this.model.winner === null ? this.model.thrownAsteroids : [],
