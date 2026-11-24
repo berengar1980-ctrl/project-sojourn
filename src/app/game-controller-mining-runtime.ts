@@ -40,7 +40,12 @@ export function ensureMiningCombatWorld(
         Math.hypot(owner.position.x - player.position.x, owner.position.y - player.position.y) < 650
       );
     },
-    field.instance
+    field.instance,
+    {
+      additionalObstacles: () => fieldWorldFor(context).combatWreckPhysicsBodies(location.id),
+      onAdditionalObstacleContact: () =>
+        fieldWorldFor(context).syncCombatWreckContacts(location.id),
+    }
   );
   // Both map rendering and background NPCs reference the same persistent field.
   state.localNpcMining = field.miners;

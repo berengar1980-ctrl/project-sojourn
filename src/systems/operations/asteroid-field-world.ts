@@ -1,9 +1,11 @@
 import { isCombatWreckVariant } from '../../core/combat-wreck-variant';
-import type { LocalSpaceInstance } from '../../core/local-space-types';
+import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
 import {
   advanceSalvageContainerDrift,
   invalidateSalvagePhysics,
+  salvageFieldPhysicsBodies,
+  syncSalvagePhysicsContacts,
 } from '../salvage/salvage-container-motion';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalMinerCheckpoint } from '../npcs/npc-mining-targets';
@@ -221,6 +223,37 @@ export class AsteroidFieldWorld {
     if (field) invalidateSalvagePhysics(field);
   }
 
+  /** Player navigation and shield contacts share the authoritative salvage wreck bodies. */
+  combatWreckPhysicsBodies(locationId: string): readonly LocalAsteroid[] {
+    const field = this.combatWreckMotionField(locationId);
+    return field ? salvageFieldPhysicsBodies(field) : [];
+  }
+
+  /** Publish a mining-ship impact back to the recoverable wreck's saved pose. */
+  syncCombatWreckContacts(locationId: string): void {
+    const field = this.wreckMotionFields.get(locationId);
+    if (field) syncSalvagePhysicsContacts(field);
+  }
+
+  private combatWreckMotionField(locationId: string): SalvageField | null {
+    const wrecks = this.combatWrecksByLocation.get(locationId);
+    if (!wrecks?.length) return null;
+    let field = this.wreckMotionFields.get(locationId);
+    if (!field || field.wrecks !== wrecks) {
+      const mining = this.fields.get(locationId)?.instance;
+      field = {
+        id: 'combat-wreck-motion-' + locationId,
+        sourceLocationId: locationId,
+        seed: mining?.seed ?? 0,
+        width: mining?.width ?? 2400,
+        height: mining?.height ?? 1800,
+        wrecks,
+      };
+      this.wreckMotionFields.set(locationId, field);
+    }
+    return field;
+  }
+
   /** The same 3D spin, impulse and drift physics used in salvage maps.
    * Active salvage and embedded combat own their wreck poses themselves. */
   advanceCombatWreckMotion(
@@ -241,20 +274,8 @@ export class AsteroidFieldWorld {
         continue;
       }
       if (locationId === skipLocationId || wrecks.length === 0) continue;
-      let field = this.wreckMotionFields.get(locationId);
-      if (!field || field.wrecks !== wrecks) {
-        const mining = this.fields.get(locationId)?.instance;
-        field = {
-          id: 'combat-wreck-motion-' + locationId,
-          sourceLocationId: locationId,
-          seed: mining?.seed ?? 0,
-          width: mining?.width ?? 2400,
-          height: mining?.height ?? 1800,
-          wrecks,
-        };
-        this.wreckMotionFields.set(locationId, field);
-      }
-      advanceSalvageContainerDrift(field, dt);
+      const field = this.combatWreckMotionField(locationId);
+      if (field) advanceSalvageContainerDrift(field, dt);
     }
   }
 

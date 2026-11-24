@@ -1,4 +1,4 @@
-import type { LocalSpaceInstance } from '../../core/local-space-types';
+import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { ShieldWorldGeometry } from './local-space-collision';
 import { planPointRoute } from './local-space-navigation';
@@ -14,7 +14,8 @@ export class LocalSpaceAutopilotHazards {
     private readonly speed: number,
     private readonly crew: { readonly piloting: number; readonly sensors: number },
     private readonly random: () => number,
-    private readonly notice: (message: string) => void
+    private readonly notice: (message: string) => void,
+    private readonly additionalObstacles: () => readonly LocalAsteroid[] = () => []
   ) {}
 
   reset(): void {
@@ -38,7 +39,7 @@ export class LocalSpaceAutopilotHazards {
     const hazard = findRouteAsteroidHazard(
       this.instance.ship,
       waypoint,
-      this.instance.asteroids,
+      [...this.instance.asteroids, ...this.additionalObstacles()],
       clearance,
       this.speed,
       excludedId
@@ -51,7 +52,7 @@ export class LocalSpaceAutopilotHazards {
       this.notice('NAV > ASTEROID IM KURS · AUSWEICHREAKTION NICHT RECHTZEITIG');
       return { route, index };
     }
-    const projected = this.instance.asteroids.map((asteroid) =>
+    const projected = [...this.instance.asteroids, ...this.additionalObstacles()].map((asteroid) =>
       asteroid.id === hazard.asteroid.id
         ? { ...asteroid, position: hazard.predictedPosition }
         : asteroid

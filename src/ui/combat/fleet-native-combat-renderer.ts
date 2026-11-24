@@ -1,5 +1,6 @@
 import { FleetNativeShipSprites } from './fleet-native-ship-sprites';
 import { drawCombatAsteroids } from './combat-asteroid-renderer';
+import { drawFleetFieldWrecks } from './fleet-field-wreck-renderer';
 import {
   paintParallelNativeDuels,
   fleetRenderSources,
@@ -240,8 +241,17 @@ export class FleetNativeCombatRenderer {
     const shake = ramCameraImpulse(this.model.attacker, this.model.defender, visualElapsed);
     this.context.save();
     this.context.translate(shake.x, shake.y);
-    if (this.drawField) this.drawField(width, height, timeSeconds);
-    else this.drawArena(width, height, timeSeconds);
+    if (this.drawField) {
+      this.drawField(width, height, timeSeconds);
+      drawFleetFieldWrecks(
+        this.spaceBodies,
+        this.model.arena.asteroids ?? [],
+        this.camera.scale(width, height, this.model.arena.width, this.model.arena.height),
+        (point) => this.screen(point, width, height),
+        this.context,
+        timeSeconds
+      );
+    } else this.drawArena(width, height, timeSeconds);
     paintNativeTractorThrows(
       this.context,
       this.model.winner === null ? this.model.thrownAsteroids : [],

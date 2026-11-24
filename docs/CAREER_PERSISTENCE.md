@@ -1288,3 +1288,23 @@ Eskortdrohnen können sichtbare Piraten auch während eines laufenden
 Feldgefechts anfliegen. Der vorhandene Flottenkoordinator übernimmt den
 Beitritt. Der Abfangkurs nutzt den bestehenden Routen- und Verkehrszustand.
 Das Save-Format erhält keine neuen Felder.
+
+### FleetCombat-Wrackanzeige und visuelle Skalierung (2026-11-24)
+
+**Keine Speicheränderung.** Native Flottenwracks aus dem gemeinsamen
+Asteroiden-/Kampffeld werden auch bei benutzerdefiniertem Feldhintergrund
+gezeichnet. Alle Kampfwracks werden rein visuell auf zwei Drittel ihrer
+bisherigen Größe skaliert. Autoritative Position, Kollisionsradius,
+Bergungsreichweite, gespeicherte Varianten, Schadenszustand und Drift
+bleiben unverändert; die Darstellung erzeugt keine zusätzlichen Körper.
+
+### Physische Kampfwracks in Bergbau- und FleetCombat-Feldern (2026-11-24)
+
+**Keine neuen Save-Felder.** Gespeicherte Kampfwracks bleiben die bisherigen
+`SalvageWreck`-Einträge mit unveränderten Rohstoffmengen. Die Bergbaukarte
+verwendet für Schildkontakte, Asteroidenvermeidung und Routensuche dieselben
+beweglichen Wrackkörper der Bergungssimulation. Kollisionsimpulse werden in
+deren bestehende Position und Drift zurückgeschrieben, nicht in eine zweite
+Kopie. Native FleetCombat-Wracks gelten als große, routenblockierende
+Körper. Nur ihre physikalische Kategorie wird angepasst; Kollisionskörper,
+Position, Bergungsressourcen und Speicherformat bleiben kompatibel.
