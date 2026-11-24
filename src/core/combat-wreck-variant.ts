@@ -1,6 +1,12 @@
 import type { CombatWreckVariant } from './salvage-types';
 
-const VARIANTS: readonly CombatWreckVariant[] = ['miner', 'freighter', 'patrol'];
+const VARIANTS: readonly CombatWreckVariant[] = [
+  'fractured-freighter',
+  'shattered-patrol',
+  'ore-carrier',
+  'split-hull',
+  'salvage-barge',
+];
 
 /** Stable pseudo-random choice shared by the destruction FX and persistent salvage. */
 export function combatWreckVariantFor(
