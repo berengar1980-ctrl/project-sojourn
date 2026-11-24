@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import { usesNaturalCombatContour } from './combat-visible-collider';
 import type { ShieldDamageSource } from '../../core/shield-types';
 import { segmentRockHit } from '../../core/compound-raycast';
@@ -34,9 +35,13 @@ export function combatShieldGeometry(target: MutableCombatant): CombatShieldGeom
   );
 }
 
+export function combatShieldHeading(target: MutableCombatant): number {
+  return isSecurityDrone(target.setup?.id) ? 0 : target.headingRadians;
+}
+
 export function combatShieldCenter(target: MutableCombatant): CombatPoint {
   const geometry = combatShieldGeometry(target);
-  const offset = rotate(geometry.centerOffset, target.headingRadians);
+  const offset = rotate(geometry.centerOffset, combatShieldHeading(target));
   return {
     x: target.position.x + offset.x,
     y: target.position.y + offset.y,
@@ -51,8 +56,11 @@ export function segmentShieldHit(
   if (target.shieldHp <= 0) return null;
   const geometry = combatShieldGeometry(target);
   const center = combatShieldCenter(target);
-  const start = rotate({ x: from.x - center.x, y: from.y - center.y }, -target.headingRadians);
-  const end = rotate({ x: to.x - center.x, y: to.y - center.y }, -target.headingRadians);
+  const start = rotate(
+    { x: from.x - center.x, y: from.y - center.y },
+    -combatShieldHeading(target)
+  );
+  const end = rotate({ x: to.x - center.x, y: to.y - center.y }, -combatShieldHeading(target));
   const dx = end.x - start.x;
   const dy = end.y - start.y;
   const rx = Math.max(1, geometry.radiusX);
@@ -69,7 +77,7 @@ export function segmentShieldHit(
     .sort((first, second) => first - second)[0];
   if (t == null) return null;
   const local = { x: start.x + dx * t, y: start.y + dy * t };
-  const worldOffset = rotate(local, target.headingRadians);
+  const worldOffset = rotate(local, combatShieldHeading(target));
   return {
     point: { x: center.x + worldOffset.x, y: center.y + worldOffset.y },
     surfaceAnchor: { x: local.x / rx, y: local.y / ry },
@@ -82,7 +90,7 @@ function impactAnchor(target: MutableCombatant, sourcePosition: CombatPoint): Co
     sourcePosition.x - target.position.x,
     sourcePosition.y - target.position.y
   );
-  const local = rotate(outwardWorld, -target.headingRadians);
+  const local = rotate(outwardWorld, -combatShieldHeading(target));
   const length = Math.hypot(local.x, local.y) || 1;
   return { x: local.x / length, y: local.y / length };
 }

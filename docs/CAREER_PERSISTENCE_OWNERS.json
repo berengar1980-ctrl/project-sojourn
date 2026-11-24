@@ -195,6 +195,10 @@
       "mode": "transient",
       "reason": "Disposable PvP-only fleet frame coordinator for one shared asteroid world, original 1vs1 actors, physical wrecks and escape status; it persists nothing."
     },
+    "src/systems/combat/native-fleet-boarding.ts": {
+      "mode": "transient",
+      "reason": "Tracks NPC boarding timers while the current native fleet combat is running. Completed outcomes belong to the existing combatants and wreck systems."
+    },
     "src/systems/combat/native-fleet-wrecks.ts": {
       "mode": "transient",
       "reason": "Creates physical salvage-visual wreck debris solely inside a disposable native PvP fleet arena; no career world or save authority."

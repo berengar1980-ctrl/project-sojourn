@@ -1,5 +1,13 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import type { StrategicCombatantSnapshot } from '../../systems/combat/strategic-combat-types';
 import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
+
+function ramDirection(ship: StrategicCombatantSnapshot, heading: number): number {
+  const travel = ship.velocity;
+  return isSecurityDrone(ship.id) && travel && Math.hypot(travel.x, travel.y) > 1
+    ? Math.atan2(travel.y, travel.x)
+    : heading;
+}
 
 /**
  * Deterministic bow compression arcs. No sprites, emitters or persistent
@@ -18,7 +26,7 @@ export function drawCombatRamEffect(
   const width = Math.max(9, geometry.height * 0.52);
   context.save();
   context.translate(geometry.center.x, geometry.center.y);
-  context.rotate(geometry.angle);
+  context.rotate(ramDirection(ship, geometry.angle));
   if (phase) {
     const charging = phase === 'impact' && ship.boostActive;
     const count = charging ? 3 : 1;

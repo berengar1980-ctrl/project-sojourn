@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import type { MutableCombatant } from './strategic-combat-types';
 import type { ShipWeaponProfile } from '../../core/ship-types';
 import { clamp, wrapAngle } from './strategic-combat-geometry';
@@ -12,6 +13,7 @@ export type WeaponPostureGroup = {
 function weaponGroup(ship: MutableCombatant, index: number): WeaponPostureGroup | null {
   const weapon = ship.setup.weapons[index]?.weapon;
   if (!weapon) return null;
+  if (isSecurityDrone(ship.setup.id)) return { focus: 'turret' };
   const facing = ship.setup.weaponMounts?.find((mount) => mount.slotIndex === index)?.facing;
   const mount =
     weapon.mount ??
@@ -90,7 +92,9 @@ function availableWeapons(
       continue;
     }
     const mount = ship.setup.weaponMounts?.find((point) => point.slotIndex === index);
-    const arc = Math.min(profile.arcDegrees ?? 360, mount?.arcDegrees ?? 360);
+    const arc = isSecurityDrone(ship.setup.id)
+      ? 360
+      : Math.min(profile.arcDegrees ?? 360, mount?.arcDegrees ?? 360);
     const primary = matches(installed, group);
     if (!primary && installed.focus !== 'turret') continue;
     const rate = damageRate(ship, profile, shielded);

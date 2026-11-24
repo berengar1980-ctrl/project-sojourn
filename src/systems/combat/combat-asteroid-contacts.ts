@@ -3,7 +3,7 @@ import { applyShieldHit } from '../shields/shield-service';
 import { resolveShieldCollisions } from '../local-space/local-space-collision';
 import { nativeCombatAsteroids } from './combat-asteroid-motion';
 import { compoundContact, rockContactBody, shieldContactBody } from '../../core/compound-contact';
-import { directionalHullDamage } from './strategic-combat-damage';
+import { combatShieldHeading, directionalHullDamage } from './strategic-combat-damage';
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
 
 function separateShipFromRock(
@@ -14,7 +14,7 @@ function separateShipFromRock(
   // Resolve penetration using the shield's directional ellipse, not its
   // largest axis as a circle. The old circle pushed ships away visibly
   // before their narrow-side shield had reached the asteroid.
-  const heading = ship.headingRadians;
+  const heading = combatShieldHeading(ship);
   const cos = Math.cos(heading);
   const sin = Math.sin(heading);
   const offset = geometry?.centerOffset ?? { x: 0, y: 0 };
@@ -71,7 +71,7 @@ export function resolveCombatAsteroidContacts(
   const hits = resolveShieldCollisions(
     {
       position: ship.position,
-      headingRadians: ship.headingRadians,
+      headingRadians: combatShieldHeading(ship),
       speed: ship.speed,
       turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
       angularThrust: ship.angularThrust,

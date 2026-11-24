@@ -1,8 +1,10 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import type { ShipWeaponProfile } from '../../core/ship-types';
 import type { CombatPoint, MutableCombatant } from './strategic-combat-types';
 
 /** Ship-local gun hardpoints follow rotation, never the camera. */
 export function weaponMuzzle(source: MutableCombatant, slot: number): CombatPoint {
+  if (isSecurityDrone(source.setup.id)) return { ...source.position };
   const mount = source.setup.weaponMounts?.find((point) => point.slotIndex === slot);
   if (!mount) return { ...source.position };
   const angle = source.headingRadians;
@@ -28,6 +30,7 @@ export function weaponInArc(
   slot: number,
   profile: ShipWeaponProfile
 ): boolean {
+  if (isSecurityDrone(source.setup.id)) return true;
   let kind = profile.mount;
   if (!kind) {
     if (profile.family === 'railgun' || profile.family === 'front_repeater') kind = 'forward';

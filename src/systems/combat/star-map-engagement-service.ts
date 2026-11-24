@@ -34,6 +34,7 @@ import {
   registerFieldCombatWreck,
   joinBackgroundCombat,
   resolveBackgroundCombats,
+  reportNpcBoardingResults,
   restorePlayerFleet,
 } from './star-map-engagement-fleet-resolution';
 import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
@@ -411,6 +412,7 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
       (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
     );
     runtime.playerFleet.tick(deltaSeconds);
+    reportNpcBoardingResults(runtime, runtime.playerFleet);
   }
 }
 

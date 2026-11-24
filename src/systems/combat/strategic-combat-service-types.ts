@@ -21,6 +21,7 @@ export interface StrategicCombatStatus {
 
 export interface FleetCombatContacts {
   readonly elapsedSeconds: number;
+  isBoarding?(shipId: string): boolean;
   claimRamImpact(firstId: string, secondId: string): boolean;
   claimHullContact(firstId: string, secondId: string): boolean;
   claimGrapple(firstId: string, secondId: string): boolean;
@@ -41,6 +42,7 @@ export interface StrategicCombatService {
   surrender(side: StrategicCombatSide): void;
   fireGrapple(side: StrategicCombatSide): boolean;
   resumeAfterBoarding(): boolean;
+  resolveNpcBoarding(bothDestroyed: boolean): void;
   getParallelActor?(side: StrategicCombatSide): MutableCombatant;
   retargetParallelSurvivor?(
     side: StrategicCombatSide,

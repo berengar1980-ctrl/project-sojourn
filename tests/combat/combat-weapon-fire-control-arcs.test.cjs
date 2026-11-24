@@ -60,6 +60,25 @@ const muzzle = geometry.weaponMuzzle(mountOwner, 0);
 assert(Math.abs(muzzle.x - 112) < 0.0001 && Math.abs(muzzle.y - 110) < 0.0001);
 assert(geometry.weaponInArc(mountOwner, { x: 400, y: 100 }, 0, broadside));
 
+const droneMountOwner = {
+  ...mountOwner,
+  setup: { ...mountOwner.setup, id: 'security-drone:arena:escort-2' },
+};
+for (const heading of [0, Math.PI / 2, Math.PI]) {
+  droneMountOwner.headingRadians = heading;
+  for (const [x, y] of [
+    [1, 0],
+    [0, 1],
+    [-1, 0],
+    [0, -1],
+  ]) {
+    const target = { x: 100 + x * 300, y: 100 + y * 300 };
+    assert(geometry.weaponInArc(droneMountOwner, target, 2, railgun));
+    assert(geometry.weaponInArc(droneMountOwner, target, 0, broadside));
+  }
+  assert.deepEqual(geometry.weaponMuzzle(droneMountOwner, 0), droneMountOwner.position);
+}
+
 const allWeapons = SHIP_COMPONENT_CATALOG.weapon ?? [];
 assert.equal(allWeapons.length, 60);
 for (const weapon of allWeapons) {
@@ -99,6 +118,31 @@ function setup(id, weapons) {
     ],
   };
 }
+
+const droneCombat = createStrategicCombatService(
+  setup('security-drone:arena', [rail]),
+  setup('target', []),
+  57,
+  {
+    width: 1600,
+    height: 1000,
+    attackerPosition: { x: 700, y: 500 },
+    attackerHeadingRadians: 0,
+    defenderPosition: { x: 350, y: 500 },
+  }
+);
+const armedDrone = droneCombat.getParallelActor('attacker');
+armedDrone.cooldowns[0] = 0;
+const rearShot = droneCombat.tick(0.08);
+assert.equal(
+  rearShot.attacker.weaponTelemetry[0].shotsFired,
+  1,
+  'a forward-mounted railgun fires astern on a drone'
+);
+assert(
+  rearShot.beams[0].end.x < rearShot.beams[0].origin.x,
+  'the rail shot travels toward the rear target'
+);
 
 const combat = createStrategicCombatService(
   setup('player', [pulse, pulse, pulse]),

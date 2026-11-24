@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import type { CombatTargetSubsystem, MutableCombatant } from './strategic-combat-types';
 
 /** Engines are exposed only from flank or stern; hull and tractor can be targeted anywhere. */
@@ -5,6 +6,7 @@ export function engineShotAvailable(
   source: Pick<MutableCombatant, 'position'>,
   target: MutableCombatant
 ): boolean {
+  if (isSecurityDrone(target.setup.id)) return true;
   const bearing = Math.atan2(
     source.position.y - target.position.y,
     source.position.x - target.position.x

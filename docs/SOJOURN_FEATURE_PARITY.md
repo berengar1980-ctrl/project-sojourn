@@ -1992,6 +1992,18 @@ Eskortdrohnen verfolgen sichtbare Piraten auch während eines laufenden
 Feldgefechts. Kampagne und FleetCombat nutzen dazu dieselbe Feldpatrouille
 und denselben Beitritt zum bestehenden Gefecht.
 
+## Review-Log (2026-11-24) – NPC-Enterkampf und Drohnenverteidigung
+
+FleetCombat und Kampagne nutzen dieselbe automatische Auflösung nach zehn
+Simulationssekunden. Gekoppelte Schiffe bleiben angreifbar und gehen bei
+Zerstörung eines der beiden gemeinsam verloren. KI-Sicherheitsdrohnen
+verwenden eine auf ihre Waffenreichweite ausgerichtete Kampftaktik.
+
+Bei Sicherheitsdrohnen dreht sich die Grafik unabhängig vom Flugkurs und von
+der Ramm-Anzeige. Alle eingebauten Waffen feuern rundum. Der kreisförmige
+Schild und der gleichmäßig verteilte Panzerschutz hängen nicht von der
+Ausrichtung ab.
+
 ## Review-Log (2026-11-24) – FleetCombat-Wracks und Darstellungsmaßstab
 
 **Keine Statusänderung** der bestehenden Feature-IDs. Der gemeinsame

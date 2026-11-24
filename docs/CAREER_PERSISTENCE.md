@@ -1289,6 +1289,17 @@ Feldgefechts anfliegen. Der vorhandene Flottenkoordinator übernimmt den
 Beitritt. Der Abfangkurs nutzt den bestehenden Routen- und Verkehrszustand.
 Das Save-Format erhält keine neuen Felder.
 
+### Automatische Enterkämpfe zwischen NPCs
+
+Das Zeitfenster für gekoppelte NPC-Schiffe gehört dem laufenden Flottengefecht.
+Die Kampfauflösung verwendet die vorhandenen Schiffsdaten und den Zufallsgenerator
+des Duells. Das Zeitfenster wird nicht gespeichert. Für die resultierenden Hüllen
+und Wracks gelten die bestehenden Regeln, das Save-Format bleibt gleich.
+
+Die Rundum-Waffenwinkel und der kreisförmige Drohnenschild werden aus der
+vorhandenen Drohnen-ID und Schiffsausrüstung abgeleitet. Die Sprite-Rotation
+ist ein Darstellungseffekt. Dafür entstehen keine neuen Speicherfelder.
+
 ### FleetCombat-Wrackanzeige und visuelle Skalierung (2026-11-24)
 
 **Keine Speicheränderung.** Native Flottenwracks aus dem gemeinsamen

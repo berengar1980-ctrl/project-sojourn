@@ -1,3 +1,5 @@
+import { crewCapacity } from '../crew/crew-performance';
+import { getShipDefinition } from '../ships';
 import { retargetNativeFleetSurvivor, redirectNativeFleetTarget } from './native-fleet-retarget';
 import { runtimeSnapshot } from './strategic-combat-runtime-snapshot';
 import {
@@ -16,7 +18,7 @@ import type {
 } from './strategic-combat-types';
 import type { StrategicCombatService } from './strategic-combat-service-types';
 import { createCombatant, createRng, hashSeed } from './strategic-combat-geometry';
-import { runtimeCombatant } from './strategic-combat-runtime';
+import { runtimeCombatant, runtimeEnemy } from './strategic-combat-runtime';
 import { buildCombatArena } from './strategic-combat-arena';
 import { recordCombatLog } from './strategic-combat-telemetry';
 import { tickStrategicCombat, tryFireGrapple } from './strategic-combat-step';
@@ -118,6 +120,30 @@ function initializeStrategicCombatLog(
           .join(', ')
     );
   }
+}
+
+function boardingStrength(ship: MutableCombatant): number {
+  const definition = getShipDefinition(ship.setup.shipId);
+  const crew = definition ? crewCapacity(definition) : 1;
+  return crew * (1 + (ship.setup.aiAggression ?? 50) / 100);
+}
+
+function settleNpcBoarding(runtime: StrategicCombatRuntime, bothDestroyed: boolean): void {
+  const initiator = runtime.boardingInitiator;
+  if (!initiator) return;
+  const attacker = boardingStrength(runtime.attacker);
+  const defender = boardingStrength(runtime.defender);
+  const winner = runtime.random() < attacker / (attacker + defender) ? 'attacker' : 'defender';
+  runtimeEnemy(runtime, winner).hullHp = 0;
+  if (bothDestroyed) runtimeCombatant(runtime, winner).hullHp = 0;
+  runtime.winner = winner;
+  runtime.outcomeReason = 'destruction';
+  runtime.boardingInitiator = null;
+  runtime.grapple = null;
+  runtime.lastEvent = bothDestroyed
+    ? 'ENTERKAMPF > BEIDE GEKOPPELTEN SCHIFFE ZERSTÖRT'
+    : 'ENTERKAMPF > ' + runtimeCombatant(runtime, winner).setup.name + ' SIEGT';
+  recordCombatLog(runtime, 'system', 'result', runtime.lastEvent);
 }
 
 function resumeBoardedCombat(runtime: StrategicCombatRuntime): boolean {
@@ -225,6 +251,7 @@ export function createStrategicCombatService(
     fireGrapple: (side) =>
       (!fleetDrivenSide || side === fleetDrivenSide) && tryFireGrapple(runtime, side),
     resumeAfterBoarding: () => resumeBoardedCombat(runtime),
+    resolveNpcBoarding: (bothDestroyed) => settleNpcBoarding(runtime, bothDestroyed),
     setTactic: (side, tactic) => setCombatTactic(runtime, side, tactic),
     surrender(side) {
       if (runtime.winner) return;

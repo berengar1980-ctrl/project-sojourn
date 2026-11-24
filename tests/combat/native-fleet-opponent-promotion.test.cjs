@@ -123,3 +123,99 @@ assert.equal(main(five.getSnapshot()).length, 4);
 assert.equal(extra(five.getSnapshot()).length, 1);
 assert.equal(extra(five.getSnapshot())[0].sourceId, 'a1');
 console.log('PASS FleetCombat real main-opponent promotion 1v3, 3v1 and 5v5 without double ticks');
+
+const { shipContact } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-ship-contact-geometry.ts'
+);
+
+function boardedFleet() {
+  for (let seed = 1; seed < 40; seed++) {
+    const ships = roster(1, 1).map((entry) => ({
+      ...entry,
+      setup: { ...entry.setup, aiControlled: true },
+    }));
+    const scenario = createParallelNativeDuels(ships, arena(), seed);
+    const duel = scenario.duels[0];
+    const attacker = scenario.getActor('a1');
+    const defender = scenario.getActor('b1');
+    defender.shieldHp = 0;
+    for (const participant of [attacker, defender]) {
+      participant.subsystems.engine = 0;
+      participant.velocity = { x: 0, y: 0 };
+    }
+    attacker.position = { x: 1600, y: 1200 };
+    defender.position = { x: 1670, y: 1200 };
+    defender.position.x = attacker.position.x + shipContact(attacker, defender).required + 1;
+    assert(duel.fireGrapple('attacker'));
+    if (!duel.getSnapshot().grapple.success) continue;
+    for (let i = 0; i < 12 && !duel.getStatus().boardingInitiator; i++) {
+      attacker.headingRadians = defender.headingRadians = 0;
+      attacker.velocity = { x: 0, y: 0 };
+      defender.velocity = { x: 0, y: 0 };
+      attacker.position = { x: 1600, y: 1200 };
+      defender.position = { x: 1670, y: 1200 };
+      defender.position.x = attacker.position.x + shipContact(attacker, defender).required + 1;
+      scenario.tick(0.08);
+    }
+    assert.equal(duel.getStatus().boardingInitiator, 'attacker');
+    return { fleet: scenario, duel, attacker, defender };
+  }
+  throw new Error('No successful deterministic boarding seed');
+}
+
+const timed = boardedFleet();
+for (let i = 0; i < 124; i++) timed.fleet.tick(0.08);
+assert.equal(timed.fleet.isFinished(), false, 'NPC boarding remains active for ten seconds');
+assert.equal(timed.duel.getStatus().boardingInitiator, 'attacker');
+timed.fleet.tick(0.08);
+assert.equal(timed.fleet.isFinished(), true);
+assert.equal(timed.duel.getStatus().boardingInitiator, null);
+assert.equal([timed.attacker, timed.defender].filter((actor) => actor.hullHp > 0).length, 1);
+assert.equal(
+  timed.duel.getArena().asteroids.filter((body) => body.id.startsWith('fleet-wreck:')).length,
+  1
+);
+assert.equal(timed.fleet.drainNpcBoardingResults().length, 1);
+assert.equal(timed.fleet.drainNpcBoardingResults().length, 0);
+
+const interrupted = boardedFleet();
+const { getShipComponent } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/ships/ship-component-service.ts'
+);
+const outsider = ship('third', 'a');
+outsider.setup.weapons = [getShipComponent('weapon', 'weapon1')];
+outsider.position = {
+  x: interrupted.defender.position.x + 230,
+  y: interrupted.defender.position.y,
+};
+outsider.headingRadians =
+  outsider.setup.weapons[0].weapon.mount === 'broadside' ? -Math.PI / 2 : Math.PI;
+assert(interrupted.fleet.addShip(outsider, undefined, 'b1'));
+const external = interrupted.fleet.supporters[0];
+interrupted.fleet.getActor(outsider.id).cooldowns[0] = 0;
+assert.equal(external.getStatus().defenderId, 'b1');
+const before = { ...interrupted.defender.position };
+interrupted.fleet.tick(0.08);
+assert(external.getSnapshot().elapsedSeconds > 0, 'third-party combat keeps ticking');
+assert(
+  external.getSnapshot().attacker.weaponTelemetry[0].shotsFired > 0,
+  'a third party can fire on the coupled target'
+);
+assert.deepEqual(interrupted.defender.position, before, 'the coupled target stays in place');
+interrupted.defender.hullHp = 0;
+interrupted.fleet.tick(0.08);
+assert.equal(interrupted.attacker.hullHp, 0);
+assert.equal(interrupted.duel.getStatus().boardingInitiator, null);
+const interruptedWrecks = interrupted.duel
+  .getArena()
+  .asteroids.filter((body) => body.id.startsWith('fleet-wreck:'));
+assert.deepEqual(
+  interruptedWrecks.map((body) => [body.id, body.kind]).sort(),
+  [
+    ['fleet-wreck:a1', 'resource'],
+    ['fleet-wreck:b1', 'resource'],
+  ],
+  'both boarding losses become exactly one solid route-blocking wreck each'
+);
