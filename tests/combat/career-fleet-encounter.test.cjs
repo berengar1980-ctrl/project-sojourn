@@ -235,6 +235,35 @@ assert.equal(
   'a pirate arriving near the player joins once, far from the original defender'
 );
 
+const { liveFleetCombatView } = loadStandaloneTypeScriptModule(
+  root,
+  'src/ui/combat/parallel-native-duel-overlay.ts'
+);
+const red = npc('red-pirate', 'pirate');
+const yellow = { ...npc('yellow-pirate', 'pirate'), pirateMark: 'broken-spear' };
+const defeated = createCareerFleetEncounter(player, red, [red, yellow], true, {
+  ...area,
+  attackerPosition: { x: 1400, y: 1300 },
+  defenderPosition: { x: 1600, y: 1300 },
+});
+defeated.joinNearby(worldPosition(), [yellow], worldPosition);
+assert(defeated.fleet.getActor(yellow.id), 'rival joins after the fight started');
+defeated.fleet.getActor(player.id).hullHp = 0;
+defeated.tick(0.08);
+const playerDefeat = defeated.combat.getSnapshot();
+assert.equal(playerDefeat.winner, 'defender');
+assert.equal(playerDefeat.defender.id, red.id);
+const survivors = defeated.fleet.getSnapshot();
+assert.equal(survivors.finished, false);
+for (let frame = 0; frame < 8; frame++) defeated.tick(0.08);
+const remaining = defeated.fleet.getSnapshot();
+assert.deepEqual(defeated.combat.getSnapshot().defender.position, playerDefeat.defender.position);
+const presented = liveFleetCombatView(playerDefeat, [...remaining.duels, ...remaining.supporters]);
+assert.deepEqual(presented.defender.position, defeated.fleet.getActor(red.id).position);
+assert.notDeepEqual(presented.defender.position, playerDefeat.defender.position);
+assert.equal(presented.attacker, playerDefeat.attacker);
+assert.equal(presented.winner, 'defender');
+
 const { seededLocalGate } = loadStandaloneTypeScriptModule(root, 'src/core/local-space-exit.ts');
 const fieldArena = { ...area, backdropSeed: 832 };
 for (const seedPirate of [pirate, newcomer]) {

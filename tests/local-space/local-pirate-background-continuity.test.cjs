@@ -57,3 +57,27 @@ const render = read('src/ui/local-space/local-space-scene-layers.ts');
 assert(model.includes('isPirate: contact.pirate'), 'pirates must be tagged in the view-model');
 assert(render.includes('this.context.fillText(') && render.includes("'KORSAR'"));
 console.log('PASS pirate contact persists through NPC combat and is identified on local map');
+
+const escort = {
+  ...pirate,
+  id: 'security-drone:field:escort-2',
+  job: 'patrol',
+  pirate: false,
+};
+const contacts = [pirate, escort];
+field.reconcile(contacts);
+field.syncCombatPose(pirate.id, { x: 1800, y: 1100 }, 0);
+field.syncCombatPose(escort.id, { x: 1800, y: 1400 }, 0);
+pirate.combatMovement = { mode: 'engaged' };
+let newDuels = 0;
+for (let i = 0; i < 30; i++) {
+  field.tick(0.08, contacts, null, [], [], () => {
+    newDuels++;
+    return true;
+  });
+}
+const escortPosition = field.body(escort.id).position;
+const gap = Math.hypot(escortPosition.x - 1800, escortPosition.y - 1100);
+assert(gap <= 145, 'escort approaches the active hostile from within sensor range');
+assert(gap > 125, 'escort stops within join range without flying into the pirate');
+assert.equal(newDuels, 0, 'the already engaged pirate is left to the fleet coordinator');

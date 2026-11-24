@@ -1281,3 +1281,10 @@ Wrackkennung, der Darstellungszeit und den vorhandenen Rotationswerten
 abgeleitet. Es werden keine neuen physikalischen Körper und keine
 zusätzlichen Save-Felder angelegt. Bergung, Treffer, Kollision und der
 Career-Snapshot bleiben unverändert.
+
+### Drohnenverstärkung in Feldgefechten
+
+Eskortdrohnen können sichtbare Piraten auch während eines laufenden
+Feldgefechts anfliegen. Der vorhandene Flottenkoordinator übernimmt den
+Beitritt. Der Abfangkurs nutzt den bestehenden Routen- und Verkehrszustand.
+Das Save-Format erhält keine neuen Felder.

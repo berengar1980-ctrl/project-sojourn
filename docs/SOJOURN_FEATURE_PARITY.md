@@ -1979,3 +1979,15 @@ Bergungsfeldern; abgebrochene Teile taumeln unabhängig. Die detaillierte
 Nahdarstellung umgeht den distanten Sprite-LOD. Die Bewegungen sind rein
 visuell und greifen weder in den gemeinsamen Kampftick noch in die
 physikalischen Kollisionen, Bergung oder Save-Struktur ein.
+
+## Review-Log (2026-11-24) – Überlebende nach einer Flottenniederlage
+
+Die bestehenden Feature-IDs behalten ihren Status. Der gemeinsame Renderer
+übernimmt für überlebende Schiffe im angezeigten Spielergebnis die aktuellen
+Kampfposen aus dem weiterlaufenden Gefecht. Das Spielergebnis und die native
+Kampfsimulation bleiben erhalten. Beendete Duelle starten keine alten
+Autokanonen-Effekte erneut.
+
+Eskortdrohnen verfolgen sichtbare Piraten auch während eines laufenden
+Feldgefechts. Kampagne und FleetCombat nutzen dazu dieselbe Feldpatrouille
+und denselben Beitritt zum bestehenden Gefecht.

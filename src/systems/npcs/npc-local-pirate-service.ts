@@ -1,6 +1,6 @@
 import { resolveFieldDebrisContacts } from '../local-space/field-debris-contact';
 import { createShieldWorldGeometry } from '../local-space/local-space-collision';
-import { droneSeesTarget } from '../operations/asteroid-security-drone';
+import { droneSeesTarget, securityPirateApproach } from '../operations/asteroid-security-drone';
 import { seededLocalGate } from '../../core/local-space-exit';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
@@ -369,30 +369,38 @@ export class LocalPirateTraffic {
     dt: number,
     intercept: (attacker: string, target: string, position: WorldPoint) => boolean
   ): void {
+    const drone = ship.npcId.startsWith('security-drone:');
     const hostiles = this.snapshot(
-      npcs.filter((npc) => npc.pirate && !npc.combatMovement && npc.hullHp > 0)
+      npcs.filter(
+        (npc) =>
+          npc.pirate &&
+          npc.hullHp > 0 &&
+          (!npc.combatMovement || (drone && npc.combatMovement.mode === 'engaged'))
+      )
     );
     const distance = (p: WorldPoint) => Math.hypot(p.x - ship.position.x, p.y - ship.position.y);
     const target = hostiles
       .filter((contact) =>
-        ship.npcId.startsWith('security-drone:')
+        drone
           ? droneSeesTarget(ship.position, contact.position, rocks)
           : distance(contact.position) < 650
       )
       .sort((a, b) => distance(a.position) - distance(b.position))[0];
-    if (
-      target &&
-      distance(target.position) <= fieldInterceptRange(ship.npcId, false) &&
-      intercept(ship.npcId, target.npcId, ship.position)
-    ) {
-      ship.awaitingCombat = true;
-      return;
+    if (target && distance(target.position) <= fieldInterceptRange(ship.npcId, false)) {
+      // The fleet coordinator will join the existing fight from this live pose.
+      if (npcs.find((npc) => npc.id === target.npcId)?.combatMovement?.mode === 'engaged') return;
+      if (intercept(ship.npcId, target.npcId, ship.position)) {
+        ship.awaitingCombat = true;
+        return;
+      }
     }
+    const pursuit =
+      target && drone ? securityPirateApproach(ship.position, target.position) : target?.position;
     const blockers = rocks.filter((rock) => rock.routeBlocking);
     const bearing = Math.atan2(ship.position.y - this.height / 2, ship.position.x - this.width / 2);
     for (let step = 1; step <= 8; step++) {
       const angle = bearing + (step * Math.PI) / 4;
-      const point = (step === 1 && (target?.position ?? ship.routeState?.target)) || {
+      const point = (step === 1 && (pursuit ?? ship.routeState?.target)) || {
         x: this.width * (0.5 + 0.3 * Math.cos(angle)),
         y: this.height * (0.5 + 0.3 * Math.sin(angle)),
       };
