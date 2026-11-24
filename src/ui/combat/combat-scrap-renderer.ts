@@ -57,7 +57,7 @@ export function drawCombatScrap(
       : actualRotation;
   const part = { rotation3d: rotation, effectSeed: model.effectSeed ?? 0 };
   if (model.combatWreckVariant) {
-    drawCombatWreck3d(context, model.combatWreckVariant, radius, rotation);
+    drawCombatWreck3d(context, model.combatWreckVariant, radius, rotation, timeSeconds, seed);
   } else if (model.debrisVariant) {
     drawSalvageDebris3d(context, { ...part, variant: model.debrisVariant }, radius, timeSeconds);
   } else if (model.sectionVariant) {
