@@ -344,7 +344,7 @@ export function drawCombatWreck3d(
   variant: CombatWreckVariant,
   radius: number,
   rotation: { x: number; y: number; z: number },
-  timeSeconds = 0,
+  timeSeconds = performance.now() / 1000,
   effectSeed = 0
 ): void {
   const current = LEGACY[variant];
