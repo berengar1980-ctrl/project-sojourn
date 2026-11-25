@@ -176,3 +176,26 @@ console.log('PASS reserve-backed mining, cargo capacity and physical conservatio
   assert.equal(markets.markets[0].entries.ferrite.stock, marketBefore);
   assert.equal(simulation.getResourceTotal('ferrite'), total);
 }
+
+{
+  const markets = createMarkets();
+  const trade = tradeModule.createPlayerTradeService(markets, 1000);
+  const simulation = simulationModule.createEconomySimulationService(
+    markets,
+    trade.player,
+    resources,
+    95
+  );
+  const before = simulation.getResourceTotal('ferrite');
+  const source = JSON.stringify(['greyrock-belt', 'initial-rock']);
+  const marketBefore = markets.markets[0].entries.ferrite.stock;
+  assert.equal(simulation.registerInitialPhysicalStock('ferrite', source, 40), 40);
+  assert.equal(simulation.getResourceTotal('ferrite'), before + 40);
+  assert.equal(simulation.pools.ferrite.target, before + 40);
+  assert.equal(simulation.registerInitialPhysicalStock('ferrite', source, 100), 40);
+  assert.equal(simulation.getResourceTotal('ferrite'), before + 40);
+  assert.equal(markets.markets[0].entries.ferrite.stock, marketBefore);
+  assert.equal(simulation.withdrawPhysicalStock('ferrite', source, 40), 40);
+  assert.equal(simulation.registerInitialPhysicalStock('ferrite', source, 40), 0);
+  assert.equal(simulation.getPhysicalStock('ferrite', source), 0);
+}
