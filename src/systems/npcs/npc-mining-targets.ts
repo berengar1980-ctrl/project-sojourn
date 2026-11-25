@@ -70,7 +70,12 @@ export interface NpcLocalMiningOptions {
   /** Optional live ships to include in the same route planner as asteroid obstacles. */
   readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
   readonly getAsteroids: () => readonly LocalAsteroid[];
-  readonly mine: (npc: SectorNpcState, resourceId: string, requested: number) => number;
+  readonly mine: (
+    npc: SectorNpcState,
+    resourceId: string,
+    requested: number,
+    asteroidId?: string
+  ) => number;
   readonly onAsteroidScanned?: (npc: SectorNpcState, asteroid: LocalAsteroid) => void;
   readonly onAsteroidMined?: (
     npc: SectorNpcState,
