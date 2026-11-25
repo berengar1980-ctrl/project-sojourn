@@ -5,6 +5,8 @@ import { type EconomyPoint } from './npc-resource-side-trade';
 export interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+  getPhysicalStock?(resourceId: string, sourceId: string): number | undefined;
+  withdrawPhysicalStock?(resourceId: string, sourceId: string, amount: number): number;
 }
 
 export interface TradeRoute {
@@ -29,7 +31,8 @@ export interface NpcEconomyService {
   salvageLocal(
     npc: NpcEconomyState,
     resourceId: EconomyResourceId,
-    requestedQuantity: number
+    requestedQuantity: number,
+    sourceId?: string
   ): number;
   dispatchLoadedWorker(npc: NpcEconomyState): boolean;
   tick(deltaSeconds: number): void;
