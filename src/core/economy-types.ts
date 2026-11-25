@@ -29,6 +29,10 @@ export interface EconomyResourcePool {
   reserve: number;
   externalImports: number;
   recordedLosses: number;
+  /** Reserved combat material, separate from the general reserve. */
+  combatBuffer?: number;
+  /** Material committed to individual physical resource objects. */
+  physicalStocks?: Record<string, number>;
 }
 
 export interface ResourceCirculationState {
