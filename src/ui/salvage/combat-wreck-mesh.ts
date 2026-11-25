@@ -348,7 +348,7 @@ export function drawCombatWreck3d(
   effectSeed = 0
 ): void {
   // Purely visual scale: preserve the authoritative wreck radius/collisions and hit areas.
-  const visibleRadius = radius * (2 / 3);
+  const visibleRadius = radius * 0.5;
   const current = LEGACY[variant];
   const geometry = meshes[current];
   const phase = effectSeed * 0.000031;
