@@ -140,7 +140,7 @@ const controllerSource = require('fs').readFileSync(
   'utf8'
 );
 const usesLocationEconomy = controllerSource.includes(
-  'mining.collect(resourceId, amount, runtime.cargoCapacityTons, location.id)'
+  'asteroidId ? JSON.stringify([location.id, asteroidId]) : undefined'
 );
 const usesLocationDeposits = controllerSource.includes(
   'generateMiningSpace(location.id, seed, location.minedResourceIds)'
@@ -151,3 +151,28 @@ assert(
 );
 
 console.log('PASS reserve-backed mining, cargo capacity and physical conservation');
+
+{
+  const markets = createMarkets();
+  const trade = tradeModule.createPlayerTradeService(markets, 1000);
+  const simulation = simulationModule.createEconomySimulationService(
+    markets,
+    trade.player,
+    resources,
+    94
+  );
+  const mining = miningModule.createMiningEconomyService(simulation, trade);
+  const source = JSON.stringify(['greyrock-belt', 'asteroid-1']);
+  const pool = simulation.pools.ferrite;
+  pool.reserve = 12;
+  markets.markets[0].entries.ferrite.stock -= 12;
+  assert.equal(simulation.fundPhysicalStock('ferrite', source, 12), 12);
+  const total = simulation.getResourceTotal('ferrite');
+  const marketBefore = markets.markets[0].entries.ferrite.stock;
+  assert.equal(mining.collect('ferrite', 6, 7, 'greyrock-belt', source), 6);
+  assert.equal(mining.collect('ferrite', 6, 7, 'greyrock-belt', source), 1);
+  assert.equal(simulation.getPhysicalStock('ferrite', source), 5);
+  assert.equal(mining.collect('ferrite', 6, 7, 'greyrock-belt', source), 0);
+  assert.equal(markets.markets[0].entries.ferrite.stock, marketBefore);
+  assert.equal(simulation.getResourceTotal('ferrite'), total);
+}
