@@ -75,6 +75,8 @@ function totalResource(
   let total =
     quantity(pool.reserve) + playerQuantity(player, resourceId) + npcQuantity(npcs, resourceId);
   for (const market of markets) total += marketQuantity(market, resourceId);
+  total += quantity(pool.combatBuffer ?? 0);
+  for (const amount of Object.values(pool.physicalStocks ?? {})) total += quantity(amount);
   return total;
 }
 
@@ -213,6 +215,10 @@ export interface EconomySimulationService {
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+  fundPhysicalStock(resourceId: EconomyResourceId, sourceId: string, amount: number, combat?: boolean): number;
+  withdrawPhysicalStock(resourceId: EconomyResourceId, sourceId: string, amount: number): number;
+  releasePhysicalStock(sourceId: string): void;
+  refillCombatBuffer(resourceId: EconomyResourceId, target: number): number;
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
   advanceDay(day: number): void;
   advanceNextDay(): void;
@@ -256,6 +262,54 @@ export function createEconomySimulationService(
     return allocated;
   };
   const createMinedResource = allocatePhysicalResource;
+
+  // These transactions never trigger artificial market consumption. Field objects
+  // are funded before collection; only actual collected cargo leaves their stock.
+  const fundPhysicalStock: EconomySimulationService['fundPhysicalStock'] = (
+    resourceId,
+    sourceId,
+    amount,
+    combat = false
+  ) => {
+    const pool = pools[resourceId];
+    if (!pool || !sourceId) return 0;
+    const stocks = (pool.physicalStocks ??= {});
+    const available = combat ? quantity(pool.combatBuffer ?? 0) : quantity(pool.reserve);
+    const moved = Math.min(quantity(amount), available);
+    if (!moved) return 0;
+    if (combat) pool.combatBuffer = available - moved;
+    else pool.reserve -= moved;
+    stocks[sourceId] = quantity(Object.hasOwn(stocks, sourceId) ? stocks[sourceId]! : 0) + moved;
+    return moved;
+  };
+  const withdrawPhysicalStock: EconomySimulationService['withdrawPhysicalStock'] = (
+    resourceId,
+    sourceId,
+    amount
+  ) => {
+    const stocks = pools[resourceId]?.physicalStocks;
+    if (!stocks || !Object.hasOwn(stocks, sourceId)) return 0;
+    const moved = Math.min(quantity(amount), quantity(stocks[sourceId]!));
+    stocks[sourceId]! -= moved;
+    return moved;
+  };
+  const releasePhysicalStock = (sourceId: string): void => {
+    for (const pool of Object.values(pools)) {
+      const stocks = pool.physicalStocks;
+      if (!stocks || !Object.hasOwn(stocks, sourceId)) continue;
+      pool.reserve += quantity(stocks[sourceId]!);
+      delete stocks[sourceId];
+    }
+  };
+  const refillCombatBuffer = (resourceId: string, target: number): number => {
+    const pool = pools[resourceId];
+    if (!pool) return 0;
+    const current = quantity(pool.combatBuffer ?? 0);
+    const moved = Math.min(quantity(pool.reserve), Math.max(0, quantity(target) - current));
+    pool.reserve -= moved;
+    pool.combatBuffer = current + moved;
+    return moved;
+  };
 
   const advanceDay = (day: number): void => {
     const targetDay = Math.max(0, Math.floor(day));
@@ -305,6 +359,10 @@ export function createEconomySimulationService(
       return pool ? totalResource(resourceId, markets, player, npcs, pool) : 0;
     },
     allocatePhysicalResource,
+    fundPhysicalStock,
+    withdrawPhysicalStock,
+    releasePhysicalStock,
+    refillCombatBuffer,
     createMinedResource,
     advanceDay,
     advanceNextDay() {
