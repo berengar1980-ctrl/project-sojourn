@@ -6,6 +6,17 @@ import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { generateSalvageField } from '../systems/salvage';
 import { generateSectorSalvageEventField } from '../systems/salvage/salvage-event-field-generator';
 
+function getOrCreateEventField(
+  context: ControllerRuntimeContext,
+  sectorEvent: SectorSalvageEvent
+): SalvageField {
+  const existing = context.state.salvageEventFields.get(sectorEvent.id);
+  if (existing) return existing;
+  const field = generateSectorSalvageEventField(sectorEvent);
+  context.state.salvageEventFields.set(sectorEvent.id, field);
+  return field;
+}
+
 /** Reuse the very same wreck objects in every visit; never re-roll combat salvage. */
 export function fieldWithCareerCombatWrecks(
   context: ControllerRuntimeContext,
@@ -19,11 +30,7 @@ export function fieldWithCareerCombatWrecks(
   const combatWrecks = world.combatWrecks(location.id);
   let field: SalvageField | undefined;
   if (sectorEvent) {
-    field = context.state.salvageEventFields.get(sectorEvent.id);
-    if (!field) {
-      field = generateSectorSalvageEventField(sectorEvent);
-      context.state.salvageEventFields.set(sectorEvent.id, field);
-    }
+    field = getOrCreateEventField(context, sectorEvent);
   } else if (combatWrecks.length && location.activities.mine && !location.activities.salvage) {
     const miningField = world.field(location.id)?.instance;
     field = {
