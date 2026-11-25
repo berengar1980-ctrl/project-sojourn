@@ -26,6 +26,8 @@ sectionInCombat.position.x += 17;
 sectionInCombat.position.y += 9;
 sectionInCombat.velocity.x += 2.5;
 sectionInCombat.rotation += 0.2;
+sectionInCombat.rotation3d.x += 0.3;
+sectionInCombat.rotation3d.y -= 0.15;
 
 let playerSynced = false;
 let npcSynced = false;
@@ -53,4 +55,6 @@ const restored = salvageFieldCombatArena(field);
 assert(!restored.asteroids.some((part) => part.id === container.id || part.id === debris.id));
 const restoredSection = restored.asteroids.find((part) => part.id === section.id);
 assert.equal(restoredSection.rotation, sectionInCombat.rotation);
+assert.equal(restoredSection.rotation3d.x, sectionInCombat.rotation3d.x);
+assert.equal(restoredSection.rotation3d.y, sectionInCombat.rotation3d.y);
 console.log('PASS native wreck/debris removal and section motion survive combat return');

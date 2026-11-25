@@ -78,6 +78,5 @@ for (let i = 0; i < 30; i++) {
 }
 const escortPosition = field.body(escort.id).position;
 const gap = Math.hypot(escortPosition.x - 1800, escortPosition.y - 1100);
-assert(gap <= 145, 'escort approaches the active hostile from within sensor range');
-assert(gap > 125, 'escort stops within join range without flying into the pirate');
+assert.equal(gap, 300, 'escort holds a visible hostile in range for the fleet coordinator');
 assert.equal(newDuels, 0, 'the already engaged pirate is left to the fleet coordinator');

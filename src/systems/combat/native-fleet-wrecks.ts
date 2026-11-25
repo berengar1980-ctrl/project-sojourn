@@ -20,6 +20,7 @@ export function materializeNativeFleetWrecks(
     const radius = Math.max(18, length * 0.6);
     asteroids.push({
       id: 'fleet-wreck:' + actor.setup.id,
+      destroyedShipId: actor.setup.id,
       // Large destroyed hulls block tactical routes just like salvage-map sections.
       kind: 'resource',
       combatWreckVariant: combatWreckVariantFor(seed, actor.setup.id, elapsedSeconds),

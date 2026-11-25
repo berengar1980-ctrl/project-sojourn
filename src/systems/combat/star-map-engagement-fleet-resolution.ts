@@ -1,4 +1,5 @@
-import type { CombatVisualAsteroid } from './strategic-combat-types';
+import { snapshot as snapshotCombatant } from './strategic-combat-geometry';
+import type { CombatVisualAsteroid, StrategicCombatantSnapshot } from './strategic-combat-types';
 import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import { createCareerFleetEncounter } from './career-fleet-encounter';
 import type { StrategicCombatService } from './strategic-combat-service-types';
@@ -73,7 +74,7 @@ export function registerFieldCombatWreck(
   const index = world.asteroids.findIndex((entry) => entry.id === oldId);
   if (index >= 0) {
     world.removedIds.add(oldId);
-    world.asteroids.splice(index, 1, body);
+    world.asteroids.splice(index, 1, { ...body, destroyedShipId: destroyedId });
   } else {
     world.asteroids.push(body);
   }
@@ -98,6 +99,23 @@ function releaseNpc(
   const remainInField =
     state?.duels[0]?.arena.backdropSeed !== undefined && !state.escapedShipIds.includes(npc.id);
   runtime.options.sectorNpcs.recoverFromCombat(npc, reason, remainInField);
+}
+
+export function reportFieldFleetLosses(
+  runtime: EngagementRuntime,
+  encounter: CareerFleetEncounter,
+  locationId: string
+): void {
+  const arena = encounter.combat.getArena();
+  const report = runtime.options.onFieldFleetLosses;
+  if (!report || arena.backdropSeed === undefined) return;
+  const losses: StrategicCombatantSnapshot[] = [];
+  for (const body of arena.asteroids ?? []) {
+    if (!body.destroyedShipId || !body.id.startsWith('fleet-wreck:')) continue;
+    const actor = encounter.fleet.getActor(body.destroyedShipId);
+    if (actor && actor.hullHp <= 0) losses.push(snapshotCombatant(actor));
+  }
+  if (losses.length) report(encounter.combat.getSnapshot(), losses, locationId);
 }
 
 export function reportNpcBoardingResults(
@@ -125,6 +143,7 @@ export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSecond
       )
     );
     measurePerformance('sim.combat.advance', () => entry.fleet.tick(deltaSeconds));
+    reportFieldFleetLosses(runtime, entry.fleet, entry.first.locationId);
     reportNpcBoardingResults(runtime, entry.fleet);
     if (!entry.fleet.fleet.isFinished()) continue;
     const model = entry.combat.getSnapshot();

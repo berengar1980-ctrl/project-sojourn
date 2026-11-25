@@ -8,6 +8,7 @@ import {
   drawLocalSecurityDrone,
   localDroneShieldHits,
 } from '../local-space/local-security-drone-visual';
+import { drawLocalNpcCombatEffects } from '../local-space/local-space-npc-combat-effects';
 import { drawSalvageWorkEffect } from './salvage-work-effect-renderer';
 import { drawFieldNpcThrusters } from '../combat/embedded-combat-thrusters';
 import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
@@ -167,6 +168,13 @@ export abstract class SalvageSceneLayers {
         this.context.fillText(npc.name, point.x, point.y + geometry.height / 2 + 12);
       }
     }
+    drawLocalNpcCombatEffects(
+      this.context,
+      this.camera,
+      this.model.npcCombats ?? [],
+      width,
+      height
+    );
     this.drawStationedDrone(width, height, timeSeconds, excludedIds);
     return hits;
   }

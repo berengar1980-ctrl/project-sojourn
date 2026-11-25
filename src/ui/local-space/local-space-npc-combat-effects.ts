@@ -1,9 +1,14 @@
+import { updateParallelAutocannonBursts } from '../combat/parallel-native-duel-overlay';
+import type { AutocannonVisualBurst } from '../combat/strategic-combat-renderer-types';
 import { getShipDefinition } from '../../systems/ships';
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
 import type { MapCamera } from '../map/map-camera';
 import { drawCombatBeamVisual } from '../combat/combat-beam-visual';
 import { drawCombatImpactBatch } from '../combat/combat-impact-visual-batch';
-import { paintNativeProjectile } from '../combat/combat-native-weapon-painters';
+import {
+  paintNativeAutocannonBursts,
+  paintNativeProjectile,
+} from '../combat/combat-native-weapon-painters';
 import { LocalNpcImpactTimeline } from './local-npc-impact-timeline';
 import { DistressDamageParticles } from '../salvage/distress-damage-particles';
 import { drawShipDestruction } from '../combat/ship-destruction-visual';
@@ -11,14 +16,16 @@ import { drawShipDestruction } from '../combat/ship-destruction-visual';
 const impactTimeline = new LocalNpcImpactTimeline();
 const damageParticles = new Map<string, DistressDamageParticles>();
 const destructionStarts = new Map<string, number>();
+const autocannonBursts = new Map<string, Map<string, AutocannonVisualBurst>>();
 
 function retainActiveEffects(active: ReadonlySet<string>): void {
   for (const key of damageParticles.keys()) if (!active.has(key)) damageParticles.delete(key);
   for (const key of destructionStarts.keys()) if (!active.has(key)) destructionStarts.delete(key);
+  for (const key of autocannonBursts.keys()) if (!active.has(key)) autocannonBursts.delete(key);
 }
 
-/** A background NPC duel is rendered in the existing mining scene, without
- * replacing the player's mining controls or invoking another combat renderer.
+/** A background NPC duel is rendered in the existing field scene without
+ * invoking another combat renderer.
  * Weapon beams, projectile bodies and shield/hull hits reuse native PvP FX.
  */
 export function drawLocalNpcCombatEffects(
@@ -82,7 +89,21 @@ export function drawLocalNpcCombatEffects(
       if (beam.ttlSeconds <= 0) continue;
       drawCombatBeamVisual(context, beam, screen(beam.origin), screen(beam.end));
     }
+    let bursts = autocannonBursts.get(duelKey);
+    if (!bursts) {
+      bursts = new Map();
+      autocannonBursts.set(duelKey, bursts);
+    }
+    updateParallelAutocannonBursts([duel], bursts, duel.elapsedSeconds);
+    paintNativeAutocannonBursts(
+      context,
+      bursts.values(),
+      screen,
+      duel.elapsedSeconds,
+      camera.scale(1)
+    );
     for (const projectile of duel.projectiles) {
+      if (projectile.kind === 'autocannon') continue;
       paintNativeProjectile(
         context,
         projectile,

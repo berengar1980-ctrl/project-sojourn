@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -198,6 +199,14 @@ function beginAttackPass(
   return { kind: 'pass', direction, speedFactor: 0.92 };
 }
 
+function droneNeedsClearShot(ship: MutableCombatant, range: number, firingLane: boolean): boolean {
+  return (
+    !firingLane &&
+    isSecurityDrone(ship.setup.id) &&
+    ship.setup.weapons.some((weapon) => (weapon.weapon?.rangeMeters ?? 0) >= range)
+  );
+}
+
 export function chooseCombatFlightIntent(
   ship: MutableCombatant,
   enemy: MutableCombatant,
@@ -234,6 +243,14 @@ export function chooseCombatFlightIntent(
       destination,
       direction: normalize(destination.x - ship.position.x, destination.y - ship.position.y),
       speedFactor: 1,
+    };
+  }
+  if (droneNeedsClearShot(ship, range, firingLane)) {
+    delete ship.flightPass;
+    return {
+      kind: 'intercept',
+      direction: normalize(side.x + toward.x * 0.2, side.y + toward.y * 0.2),
+      speedFactor: 0.75,
     };
   }
   const pursuing = pursuitManeuver(ship, enemy);

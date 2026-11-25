@@ -357,10 +357,9 @@ export function drawCombatWreck3d(
     y: rotation.y + timeSeconds * 0.092 + phase * 0.37,
     z: rotation.z + timeSeconds * 0.068,
   };
-  // Small silhouettes use the shared raster atlas. Above 24 screen px
-  // project the full-resolution geometry each frame: no angle quantization.
+  // Only distant specks use the angular atlas. Readable wrecks project continuously.
   if (
-    visibleRadius >= 24 ||
+    visibleRadius >= 5 ||
     !drawCachedSalvageMesh(
       context,
       'combat-wreck-v3:' + current,

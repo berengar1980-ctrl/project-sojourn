@@ -242,5 +242,16 @@ for (const map of ['asteroid_field', 'scrap_field']) {
     panels[mining ? 'mining' : 'salvage'].combat,
     'the mounted field presents the native combat snapshot'
   );
+  const fleet = ctx.engagements.activePlayerFleet();
+  const defeated = fleet.getActor('npc-1');
+  const expectedRadius = getShipDefinition(defeated.setup.shipId).nominalLengthMeters * 0.6;
+  defeated.hullHp = 0;
+  advance(1);
+  const arena = panels[mining ? 'mining' : 'salvage'].combat.arena;
+  const wrecks = arena.asteroids.filter((rock) => rock.destroyedShipId === 'npc-1');
+  assert.equal(wrecks.length, 1, 'defeated ship becomes one physical wreck on the same tick');
+  assert.match(wrecks[0].id, /^combat-wreck-/);
+  assert.equal(wrecks[0].radius, expectedRadius, 'promotion preserves the native visual radius');
+  assert(wrecks[0].rotation3d && wrecks[0].spin3d, 'promotion preserves 3D rotation');
   game.destroy();
 }

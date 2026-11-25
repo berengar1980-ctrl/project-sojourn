@@ -1,3 +1,4 @@
+import { DRONE_SCAN_RADIUS, isSecurityDrone } from '../../core/security-drone';
 import type { SectorNpcState } from '../../core/npc-types';
 
 export type NpcDefenseReaction = 'fight' | 'flee';
@@ -7,7 +8,7 @@ export function isStationedDrone(id?: string): boolean {
 }
 
 export function fieldInterceptRange(id: string, pirate: boolean): number {
-  if (id.startsWith('security-drone:')) return 145;
+  if (isSecurityDrone(id)) return DRONE_SCAN_RADIUS;
   return pirate ? 210 : 180;
 }
 

@@ -1330,3 +1330,5 @@ ihren bestehenden Startpositionen.
 ### Halbierte Kampfwrackdarstellung (2026-11-25)
 
 **Keine Speicheränderung.** Die fünf Kampfwrackmodelle und ihre unabhängig taumelnden Fragmente werden ausschließlich beim Zeichnen von zwei Dritteln auf die Hälfte der ursprünglichen sichtbaren Größe reduziert. Physische Wrackradien, Kollision, Routenplanung, Bergungsreichweite, Rohstoffmengen und vorhandene Save-Felder bleiben unverändert.
+
+Wracks aus laufenden Feldgefechten werden beim Abschuss in der bestehenden Feldwelt registriert. Größe, Position, Drift und Drehung bleiben beim Übergang erhalten und nutzen die vorhandenen Wrackdaten. Die Zuordnung zum zerstörten Schiff am Kollisionskörper gehört zur laufenden Kampfvisualisierung und wird nicht gespeichert.
