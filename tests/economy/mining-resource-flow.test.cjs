@@ -199,3 +199,42 @@ console.log('PASS reserve-backed mining, cargo capacity and physical conservatio
   assert.equal(simulation.registerInitialPhysicalStock('ferrite', source, 40), 0);
   assert.equal(simulation.getPhysicalStock('ferrite', source), 0);
 }
+
+{
+  const markets = createMarkets();
+  const trade = tradeModule.createPlayerTradeService(markets, 1000);
+  const simulation = simulationModule.createEconomySimulationService(
+    markets,
+    trade.player,
+    resources,
+    96
+  );
+  const { balanceAsteroidStocks } = loadStandaloneTypeScriptModule(
+    root,
+    'src/app/game-controller-asteroid-stocks.ts'
+  );
+  const source = JSON.stringify(['greyrock-belt', 'rock']);
+  simulation.registerInitialPhysicalStock('ferrite', source, 20);
+  const deposit = { resourceId: 'ferrite', oreRemaining: 12, oreCapacity: 20 };
+  const field = {
+    sourceLocationId: 'greyrock-belt',
+    asteroids: [{ id: 'rock', deposits: [deposit] }],
+    chunks: [{ sourceAsteroidId: 'rock', resourceId: 'ferrite', amount: 5 }],
+  };
+  balanceAsteroidStocks(simulation, field, () => true);
+  assert.equal(simulation.getPhysicalStock('ferrite', source), 17);
+  assert.equal(simulation.pools.ferrite.recordedLosses, 3);
+  assert.equal(deposit.oreRemaining, 12);
+  field.chunks.length = 0;
+  simulation.pools.ferrite.reserve = 4;
+  markets.markets[0].entries.ferrite.stock -= 4;
+  balanceAsteroidStocks(simulation, field, () => false);
+  assert.equal(simulation.pools.ferrite.recordedLosses, 8);
+  assert.equal(deposit.oreRemaining, 12);
+  const total = simulation.getResourceTotal('ferrite');
+  balanceAsteroidStocks(simulation, field, () => true);
+  assert.equal(deposit.oreRemaining, 16);
+  assert.equal(simulation.getPhysicalStock('ferrite', source), 16);
+  assert.equal(simulation.pools.ferrite.reserve, 0);
+  assert.equal(simulation.getResourceTotal('ferrite'), total);
+}
