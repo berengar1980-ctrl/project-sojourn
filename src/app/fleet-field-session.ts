@@ -1,4 +1,8 @@
-import { seededLocalGate } from '../core/local-space-exit';
+import { fleetFieldSpawns } from './fleet-field-spawn-layout';
+import {
+  miningFieldCombatArena,
+  salvageFieldCombatArena,
+} from '../systems/combat/field-combat-arena';
 import { createPlayerProfile } from '../core/player-profile';
 import type { SectorNpcState } from '../core/npc-types';
 import { narrowsSector } from '../data/maps/narrows-sector';
@@ -12,7 +16,7 @@ import { scenarioArrivals } from '../ui/start/fleet-scenario-npcs';
 import { duelInstalledComponents } from '../ui/start/duel-combatant-setup';
 import { createGameController } from './game-controller';
 import { startPlayerMiningCombat } from './game-controller-mining-combat-action';
-import { careerSalvageDrone } from './game-controller-salvage-drone-world';
+import { careerSalvageDrone, careerSalvagePirates } from './game-controller-salvage-drone-world';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 
 export function prepareFleetField(config: FleetTestConfiguration, seed: number) {
@@ -38,6 +42,11 @@ export function prepareFleetField(config: FleetTestConfiguration, seed: number) 
       )
     : undefined;
   const arrivals = scenarioArrivals(config.ships, location.id);
+  const arena = salvage
+    ? salvageFieldCombatArena(salvage)
+    : miningFieldCombatArena(mining!, { x: 0, y: 0 });
+  const spawns = fleetFieldSpawns(arena, arrivals);
+  if (mining) mining.ship.position = { ...spawns.get('player')! };
   const npcs: SectorNpcState[] = [];
   let elapsed = 0;
   let incident = config.incident;
@@ -51,17 +60,16 @@ export function prepareFleetField(config: FleetTestConfiguration, seed: number) 
       : context.economy.securityDrones.get(location.id)!;
   function deploy() {
     while (arrivals.length && arrivals[0]!.at <= elapsed) {
-      const { npc, at } = arrivals.shift()!;
+      const { npc } = arrivals.shift()!;
       npcs.push(npc);
       context.economy.legal.registerShip(npc.shipId + ':' + npc.id, npc.id);
-      if (npc.id === droneId) {
-        const drone = siteDrone();
-        const field = salvage ?? mining!;
-        drone.restore(
-          at > 0 ? seededLocalGate(field.width, field.height, seed) : drone.position,
-          true
-        );
-      }
+      const spawn = spawns.get(npc.id)!;
+      if (npc.id === droneId) siteDrone().restore(spawn, true);
+      const traffic = salvage
+        ? careerSalvagePirates(context, salvage)
+        : context.economy.localPirates.get(location.id)!;
+      traffic.reconcile(npcs);
+      traffic.syncCombatPose(npc.id, spawn, npc.pirateMark === 'black-tide' ? Math.PI : 0);
     }
   }
   return {
@@ -69,6 +77,7 @@ export function prepareFleetField(config: FleetTestConfiguration, seed: number) 
     location,
     exercise: {
       npcs,
+      spawns,
       ...(mining && { mining }),
       ...(salvage && { salvage }),
       prepare(value: ControllerRuntimeContext) {

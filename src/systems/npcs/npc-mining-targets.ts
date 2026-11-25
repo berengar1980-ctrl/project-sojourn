@@ -64,6 +64,7 @@ export interface NpcLocalMiningOptions {
   readonly width: number;
   readonly height: number;
   readonly miners: readonly SectorNpcState[];
+  readonly initialPosition?: (id: string) => WorldPoint | undefined;
   /** Disable internal contact solving when a shared world handles all NPC collisions. */
   readonly resolveLocalCollisions?: boolean;
   /** Optional live ships to include in the same route planner as asteroid obstacles. */

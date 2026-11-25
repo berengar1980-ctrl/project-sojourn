@@ -1319,3 +1319,10 @@ deren bestehende Position und Drift zurückgeschrieben, nicht in eine zweite
 Kopie. Native FleetCombat-Wracks gelten als große, routenblockierende
 Körper. Nur ihre physikalische Kategorie wird angepasst; Kollisionskörper,
 Position, Bergungsressourcen und Speicherformat bleiben kompatibel.
+
+### FleetCombat-Startaufstellung
+
+Die Startaufstellung wird für das jeweilige FleetCombat-Testszenario aus
+seinem Feld und der Teilnehmerliste berechnet. Sie wird nicht gespeichert.
+Die normalen Einstiege in Kampagnenfelder nutzen dieselben Flugdienste mit
+ihren bestehenden Startpositionen.

@@ -79,6 +79,8 @@ export interface SalvageSceneOptions {
     bystanders: readonly StrategicCombatBystander[]
   ) => void;
   readonly field?: SalvageField;
+  readonly playerStart?: WorldPoint;
+  readonly spawnPositions?: ReadonlyMap<string, WorldPoint>;
   readonly onLeaveField?: (field: SalvageField) => void;
   readonly sectorEvent?: SectorSalvageEvent | null;
   readonly onDiagnoseDistress?: (eventId: string) => void;

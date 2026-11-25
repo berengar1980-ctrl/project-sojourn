@@ -396,6 +396,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     hardpoints: options.ship.sprite.hardpoints,
     shipLengthMeters: options.ship.nominalLengthMeters,
   });
+  if (options.playerStart) service.syncCombatPose(options.playerStart, 0, 0);
   const context: SalvageSceneRuntime = {
     options,
     runtime,

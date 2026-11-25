@@ -106,6 +106,7 @@ export function fieldWorldFor(
           );
         },
         getAsteroids: () => instance.asteroids,
+        initialPosition: (id) => context.fieldExerciseSpawns?.get(id),
         mine: (npc, resourceId, requested) => economy.npcs.mineLocal(npc, resourceId, requested),
         onAsteroidScanned: (npc, asteroid) =>
           registerNpcAsteroidClaim(context, location, npc, asteroid),

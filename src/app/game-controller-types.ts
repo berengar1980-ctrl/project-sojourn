@@ -1,3 +1,4 @@
+import type { WorldPoint } from '../core/world-types';
 import type { SalvageField } from '../core/salvage-types';
 import type { LocalSpaceInstance } from '../core/local-space-types';
 import type { SectorNpcState } from '../core/npc-types';
@@ -14,6 +15,7 @@ export interface GameControllerOptions {
     readonly npcs: SectorNpcState[];
     readonly mining?: LocalSpaceInstance;
     readonly salvage?: SalvageField;
+    readonly spawns?: ReadonlyMap<string, WorldPoint>;
     prepare(context: ControllerRuntimeContext): void;
   };
   readonly root: HTMLElement;

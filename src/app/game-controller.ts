@@ -40,7 +40,7 @@ import {
 } from './game-controller-career-install';
 import { createInitialControllerState } from './game-controller-initial-state';
 import { narrowsSector } from '../data/maps/narrows-sector';
-import type { WorldMap } from '../core/world-types';
+import type { WorldMap, WorldPoint } from '../core/world-types';
 import { inspectDockArrival, inspectPatrolTravel } from './game-controller-customs';
 import { createControllerCampaignServicesWithActions } from './game-controller-campaign-setup';
 import { createCampaignNavigationTracker } from './game-controller-campaign-events';
@@ -257,7 +257,8 @@ function mountControllerSalvage(
   context: ControllerRuntimeContext,
   reuseSeed = false,
   preservedField?: SalvageField,
-  finalCombat?: StrategicCombatSnapshot
+  finalCombat?: StrategicCombatSnapshot,
+  playerStart?: WorldPoint
 ): void {
   const { state, economy } = context;
   destroyScenePanels(state.panels);
@@ -312,7 +313,7 @@ function mountControllerSalvage(
     npcEconomy: economy.npcs,
     sectorNpcs: economy.sectorNpcs.npcs,
     wreckClaims: economy.wreckClaims,
-    ...salvageSecurityActions(context),
+    ...salvageSecurityActions(context, playerStart),
     getCurrentDay: () => economy.situations.currentDay,
     player: economy.trade.player,
     componentInventory: economy.components,
@@ -396,12 +397,12 @@ function tickController(context: ControllerRuntimeContext, deltaSeconds: number)
 }
 
 function mountInitialScene(context: ControllerRuntimeContext, options: GameControllerOptions) {
-  if (options.fieldExercise) {
-    options.fieldExercise.prepare(context);
-    if (options.fieldExercise.salvage)
-      mountControllerSalvage(context, true, options.fieldExercise.salvage);
-    else mountControllerMining(context);
-  } else mountControllerStarMap(context);
+  const exercise = options.fieldExercise;
+  if (!exercise) return mountControllerStarMap(context);
+  exercise.prepare(context);
+  if (!exercise.salvage) return mountControllerMining(context);
+  const start = exercise.spawns?.get('player');
+  mountControllerSalvage(context, true, exercise.salvage, undefined, start);
 }
 export function createGameController(options: GameControllerOptions): GameController {
   const saved = options.restoredSession;
@@ -468,6 +469,7 @@ export function createGameController(options: GameControllerOptions): GameContro
   engagementWorld = () => campaignServices.world.world();
   const context: ControllerRuntimeContext = {
     ...(options.fieldExercise && { finishFieldExercise: options.onReturnToMainMenu }),
+    ...(options.fieldExercise?.spawns && { fieldExerciseSpawns: options.fieldExercise.spawns }),
     root: options.root,
     navigation: options.navigation,
     systemLog,

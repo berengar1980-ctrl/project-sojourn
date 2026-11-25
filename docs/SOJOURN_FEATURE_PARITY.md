@@ -2026,3 +2026,10 @@ Bergungskarte. Bergungsschiffe können die bestehenden Rohstoffvorräte
 nach Inspektion über den normalen Bergungsdienst abbauen. Die
 1vs1-Kampf-KI, Asteroidenticks, physische Körperanzahl, Beute und
 Save-Struktur bleiben unverändert.
+
+## Review-Log (2026-11-25) – Startaufstellung im FleetCombat-Test
+
+Die Startaufstellung verteilt Spieler, NPCs und Drohnen auf freie Positionen
+im Feld. Gelbe Piraten kommen von links, rote von rechts. Die Aufstellung
+gehört zum Testszenario. Kampagne und eigenständiges 1vs1 verwenden ihre
+bestehenden Starts.
