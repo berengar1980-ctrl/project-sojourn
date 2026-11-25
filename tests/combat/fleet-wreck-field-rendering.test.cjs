@@ -39,4 +39,4 @@ assert.match(
   /const visibleRadius = radius \* 0\.5/,
   'only displayed hulls and fragments shrink; collision radii remain unchanged'
 );
-console.log('PASS FleetCombat wreck visibility and two-thirds visual scale');
+console.log('PASS FleetCombat wreck visibility and half-original visual scale');
