@@ -16,7 +16,7 @@ import { observeControllerOperations, operationsCombatHooks } from './game-contr
 import { startPlayerMiningCombat } from './game-controller-mining-combat-action';
 import { toggleControllerAsteroidClaim } from './game-controller-claim-actions';
 import { resolveControllerCombat } from './game-controller-combat-resolution';
-import { recordCareerCombatWrecks } from './game-controller-combat-wrecks';
+import { controllerCombatWreckHooks } from './game-controller-combat-wrecks';
 import { fieldWithCareerCombatWrecks } from './game-controller-combat-salvage-field';
 import { skipControllerTickForCombatResult } from './game-controller-combat-result-guard';
 import type { SalvageField } from '../core/salvage-types';
@@ -430,9 +430,7 @@ export function createGameController(options: GameControllerOptions): GameContro
     ...fieldEngagementHooks(() => combatContext),
     isPlayerInCampaignSystem: () => foreignWorld(),
     ...operationsCombatHooks(economy),
-    onNpcCombatEnded: (snapshot, attacker) => {
-      if (combatContext) recordCareerCombatWrecks(combatContext, snapshot, attacker.locationId);
-    },
+    ...controllerCombatWreckHooks(() => combatContext),
     mayInterceptPlayer: () =>
       state.mode === 'star-map' && !state.combatResultPending && state.combatReengageSeconds <= 0,
     getPlayerShip: () => state.activeShip,

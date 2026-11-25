@@ -181,7 +181,7 @@ function syncCombatWreckPoses(
     wreck.position = { ...body.position };
     wreck.driftVelocity = { ...body.velocity };
     wreck.rotation = body.rotation;
-    if (wreck.rotation3d) wreck.rotation3d = { ...wreck.rotation3d, z: body.rotation };
+    if (body.rotation3d) wreck.rotation3d = { ...body.rotation3d };
   }
 }
 

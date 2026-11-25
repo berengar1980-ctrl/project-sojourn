@@ -104,6 +104,42 @@ for (let i = 0; i < 300; i++) {
   local.tick(0.08);
   assert.notEqual(actor.tactic, 'flee');
 }
+// A drone can enter the existing engagement and actually fire on a visible
+// pirate while still outside the old close-contact interception distance.
+const patrolDrone = {
+  ...drone,
+  installedComponents: { reactor: ['reactor3'], weapon: ['weapon-front-repeater-3'] },
+};
+const droneRoster = [pirate, miner, patrolDrone];
+const dronePose = { position: { x: 1930, y: 1600 }, headingRadians: Math.PI / 2 };
+let hasSensorContact = false;
+const droneIntercept = createNpcFleetEncounter(
+  pirate,
+  miner,
+  droneRoster,
+  {
+    ...area,
+    backdropSeed: 17,
+    attackerPosition: { x: 1930, y: 1300 },
+    defenderPosition: { x: 2300, y: 1300 },
+  },
+  {
+    positionOf: worldPosition,
+    headingOf: () => 0,
+    fieldWitness: () => (hasSensorContact ? dronePose : null),
+  }
+);
+droneIntercept.joinNearby(worldPosition(), droneRoster, worldPosition);
+assert.equal(droneIntercept.fleet.getActor(patrolDrone.id), null);
+hasSensorContact = true;
+droneIntercept.joinNearby(worldPosition(), droneRoster, worldPosition);
+const interceptor = droneIntercept.fleet.getActor(patrolDrone.id);
+assert(interceptor, 'sensor contact inside 300 m joins the ongoing combat');
+for (let i = 0; i < 10; i++) droneIntercept.tick(0.08);
+assert(
+  interceptor.weaponTelemetry.some((weapon) => weapon.shotsFired > 0),
+  'drone fires with clear line of sight'
+);
 // An incoming grapple from a single-driver reinforcement is still a
 // campaign boarding encounter and freezes the shared field until resolved.
 const { shipContact } = loadStandaloneTypeScriptModule(

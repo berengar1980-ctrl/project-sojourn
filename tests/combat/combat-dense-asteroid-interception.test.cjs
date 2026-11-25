@@ -122,6 +122,16 @@ assert(
   blockedOrbit.direction.x > 0.8,
   'even 360-degree weapons must approach if asteroids block their firing lane'
 );
+const drone = {
+  ...forwardPilot,
+  setup: {
+    ...forwardPilot.setup,
+    id: 'security-drone:test',
+    weapons: [{ weapon: rail.weapon ?? rail }],
+  },
+};
+const droneFlank = chooseCombatFlightIntent(drone, targetPilot, 1280, arena, 0.08, false);
+assert(Math.abs(droneFlank.direction.y) > 0.8, 'an armed drone flanks the obstructed firing lane');
 const passing = {
   ...forwardPilot,
   velocity: { x: 100, y: 0 },

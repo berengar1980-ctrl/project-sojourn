@@ -88,6 +88,9 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log (PR #311: Märkte; PR #312: Ressourcen-Pools; keine Statusänderung)
 
+- Sicherheitsdrohnen können einen sichtbaren Piraten innerhalb ihres Sensorbereichs abfangen. Keine Statusänderung.
+- FleetCombat und Kampagne übernehmen zerstörte Schiffe direkt als Wracks in der Feldwelt, inklusive Größe und Drehung. Feldgefechte zeigen dieselben Autokanonen-Salven wie die direkte Kampfansicht. Keine Statusänderung.
+
 | 2026-11-17 | PR #329: Treibstoff-Routenplanung – unerreichbare Tankstopps | **Keine Statusänderung** der 241 Voidbound-Feature-IDs. Eine Luftlinien-Untergrenze zwischen tatsächlichen Orbitalpositionen verwirft sicher unerreichbare Teilstrecken, bevor der Gefahrzonen-Pathfinder aufgerufen wird. Erreichbare Routen, Tankreserven und Spielregeln bleiben unverändert; keine Save/Load-Schema-Änderung. |
 
 | 2026-11-17 | Karteninteraktion und Render-Performance | **Keine Statusänderung** der Voidbound-Feature-IDs. Schiff-/NPC-Simulation bleibt voll getaktet; Stern-/Mining-/Bergungs-/Kampf-Darstellungen werden begrenzt, statische Berichte zwischengespeichert und wiederholte Treibstoff-Teilrouten innerhalb einer Suche wiederverwendet. Auftragsschaltfläche erscheint nur in strategischer Sternkarte und Hafen, nicht in lokalen Arbeits- oder Kampfgebieten. Keine Save-Schema-Änderung. |

@@ -268,6 +268,7 @@ export interface StrategicCombatSnapshot {
 }
 
 export interface CombatVisualAsteroid {
+  readonly destroyedShipId?: string;
   readonly contactGeometry?: 'circle';
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;

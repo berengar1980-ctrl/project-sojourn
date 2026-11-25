@@ -6,6 +6,13 @@ import type {
   StrategicCombatSnapshot,
 } from '../../systems/combat/strategic-combat-types';
 
+function destroyedShipId(body: CombatVisualAsteroid): string | undefined {
+  const prefix = 'fleet-wreck:';
+  return (
+    body.destroyedShipId ?? (body.id.startsWith(prefix) ? body.id.slice(prefix.length) : undefined)
+  );
+}
+
 /** Every native snapshot agrees about exits and every wreck replaces one hull. */
 export function nativeFleetVisibility(
   first: StrategicCombatSnapshot,
@@ -20,9 +27,8 @@ export function nativeFleetVisibility(
   }
   const damageHidden = new Set(escaped);
   for (const rock of first.arena.asteroids ?? []) {
-    if (rock.id.startsWith('fleet-wreck:')) {
-      damageHidden.add(rock.id.slice('fleet-wreck:'.length));
-    }
+    const destroyed = destroyedShipId(rock);
+    if (destroyed) damageHidden.add(destroyed);
   }
   return { escaped, damageHidden };
 }
@@ -50,19 +56,20 @@ export class CombatFleetWreckEffects {
       scale: (meters: number) => meters * scale,
     };
     for (const rock of bodies) {
-      if (!rock.id.startsWith('fleet-wreck:')) continue;
-      const firstSeen = this.firstSeenAt.get(rock.id) ?? now;
-      this.firstSeenAt.set(rock.id, firstSeen);
+      const id = destroyedShipId(rock);
+      if (!id) continue;
+      const firstSeen = this.firstSeenAt.get(id) ?? now;
+      this.firstSeenAt.set(id, firstSeen);
       const center = project(rock.position);
       const size = rock.radius * scale;
       const age = now - firstSeen;
       if (age < 2.8) {
         drawShipDestruction(context, center.x, center.y, size * 0.7, age);
       }
-      let particles = this.smokeById.get(rock.id);
+      let particles = this.smokeById.get(id);
       if (!particles) {
         particles = new DistressDamageParticles();
-        this.smokeById.set(rock.id, particles);
+        this.smokeById.set(id, particles);
       }
       particles.update(
         now,

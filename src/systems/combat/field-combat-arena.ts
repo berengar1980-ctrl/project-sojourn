@@ -229,7 +229,8 @@ export function syncSalvageCombatField(
       wreck.position = { ...live.position };
       wreck.rotation = live.rotation;
       wreck.driftVelocity = { ...live.velocity };
-      if (wreck.rotation3d) wreck.rotation3d = { ...wreck.rotation3d, z: live.rotation };
+      const tilt = live.rotation3d ?? wreck.rotation3d;
+      if (tilt) wreck.rotation3d = { ...tilt, z: live.rotation };
     }
     for (let index = (field.debris?.length ?? 0) - 1; index >= 0; index -= 1) {
       const part = field.debris![index]!;

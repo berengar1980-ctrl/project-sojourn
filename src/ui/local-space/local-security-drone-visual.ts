@@ -1,5 +1,5 @@
 import { isStationedDrone } from '../../systems/npcs/npc-combat-ai';
-import { DRONE_SCAN_RADIUS } from '../../systems/operations/asteroid-security-drone';
+import { DRONE_SCAN_RADIUS } from '../../core/security-drone';
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
 import type { MapCamera } from '../map/map-camera';
 import type { ShieldImpactEffect } from '../../core/shield-types';

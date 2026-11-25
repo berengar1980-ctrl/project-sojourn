@@ -1,3 +1,4 @@
+import { DRONE_SCAN_RADIUS } from '../../core/security-drone';
 import {
   moveFieldShip,
   type FieldRouteObstacle,
@@ -24,7 +25,6 @@ export interface SecurityDroneSnapshot {
   readonly shieldContactSeconds: number;
 }
 const DRONE_CRUISE = 115;
-export const DRONE_SCAN_RADIUS = 460;
 
 /** Physical patrol and line-of-sight based claim enforcement.
  * A ship is reported only while it is actively mining a protected asteroid.

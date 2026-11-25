@@ -1,6 +1,9 @@
 import { wreckCombatBody } from '../systems/combat/field-combat-arena';
 import type { SalvageField, SalvageWreck } from '../core/salvage-types';
-import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
+import type {
+  CombatVisualAsteroid,
+  StrategicCombatSnapshot,
+} from '../systems/combat/strategic-combat-types';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { addDestroyedShipWreck } from '../systems/salvage/combat-destruction-wreck';
@@ -16,11 +19,42 @@ function recordedFleetWrecks(bodies: StrategicCombatSnapshot['arena']['asteroids
   return recorded;
 }
 
+function adoptNativeWreckPose(wreck: SalvageWreck, native: CombatVisualAsteroid): void {
+  Object.assign(wreck, {
+    radius: native.radius,
+    effectSeed: native.effectSeed ?? 0,
+    position: { ...native.position },
+    rotation: native.rotation,
+    driftVelocity: { ...native.velocity },
+    ...(native.combatWreckVariant && { combatWreckVariant: native.combatWreckVariant }),
+    ...(native.rotation3d && { rotation3d: { ...native.rotation3d } }),
+    ...(native.spin3d && { spin3d: { ...native.spin3d, z: native.angularVelocity } }),
+  });
+}
+
+export function controllerCombatWreckHooks(getContext: () => ControllerRuntimeContext | null) {
+  return {
+    onNpcCombatEnded(snapshot: StrategicCombatSnapshot, attacker: { locationId: string }) {
+      const context = getContext();
+      if (context) recordCareerCombatWrecks(context, snapshot, attacker.locationId);
+    },
+    onFieldFleetLosses(
+      snapshot: StrategicCombatSnapshot,
+      losses: readonly StrategicCombatSnapshot['attacker'][],
+      locationId: string
+    ) {
+      const context = getContext();
+      if (context) recordCareerCombatWrecks(context, snapshot, locationId, losses);
+    },
+  };
+}
+
 /** Store defeated ships in the authoritative career field, not in a disposable combat scene. */
 export function recordCareerCombatWrecks(
   context: ControllerRuntimeContext,
   snapshot: StrategicCombatSnapshot,
-  locationId: string | null
+  locationId: string | null,
+  losses = [snapshot.attacker, snapshot.defender] as readonly StrategicCombatSnapshot['attacker'][]
 ): readonly SalvageWreck[] {
   if (!locationId) return [];
   const world = fieldWorldFor(context);
@@ -43,12 +77,13 @@ export function recordCareerCombatWrecks(
   const bodies = snapshot.arena.asteroids;
   const recorded = recordedFleetWrecks(bodies);
   const created: SalvageWreck[] = [];
-  for (const ship of [snapshot.attacker, snapshot.defender]) {
+  for (const ship of losses) {
     if (ship.hullHp > 0) continue;
-    const nativeWreck = bodies?.some((body) => body.id === 'fleet-wreck:' + ship.id);
+    const nativeWreck = bodies?.find((body) => body.id === 'fleet-wreck:' + ship.id);
     if (!nativeWreck && recorded.has(ship.id)) continue;
     const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
     if (wreck) {
+      if (nativeWreck) adoptNativeWreckPose(wreck, nativeWreck);
       recorded.add(ship.id);
       created.push(wreck);
       if (snapshot.arena.backdropSeed !== undefined) {
