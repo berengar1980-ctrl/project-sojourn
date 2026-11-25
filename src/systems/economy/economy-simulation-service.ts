@@ -223,6 +223,7 @@ export interface EconomySimulationService {
   ): number;
   withdrawPhysicalStock(resourceId: EconomyResourceId, sourceId: string, amount: number): number;
   getPhysicalStock(resourceId: EconomyResourceId, sourceId: string): number | undefined;
+  registerInitialPhysicalStock(resourceId: string, sourceId: string, amount: number): number;
   releasePhysicalStock(sourceId: string): void;
   refillCombatBuffer(resourceId: EconomyResourceId, target: number): number;
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
@@ -284,7 +285,23 @@ function createPhysicalStockTransactions(pools: Record<EconomyResourceId, Econom
     return stocks && Object.hasOwn(stocks, sourceId) ? stocks[sourceId] : undefined;
   };
 
+  const registerInitialPhysicalStock = (
+    resourceId: string,
+    sourceId: string,
+    amount: number
+  ): number => {
+    const pool = pools[resourceId];
+    if (!pool || !sourceId) return 0;
+    const existing = getPhysicalStock(resourceId, sourceId);
+    if (existing !== undefined) return existing;
+    const initial = quantity(amount);
+    (pool.physicalStocks ??= {})[sourceId] = initial;
+    pool.target += initial;
+    return initial;
+  };
+
   return {
+    registerInitialPhysicalStock,
     fundPhysicalStock,
     withdrawPhysicalStock,
     releasePhysicalStock,
