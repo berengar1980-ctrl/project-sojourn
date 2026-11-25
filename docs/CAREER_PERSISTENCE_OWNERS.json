@@ -262,6 +262,10 @@
     "src/systems/local-space/local-space-wreck-navigation.ts": {
       "mode": "derived",
       "reason": "Builds local route planning options from current asteroid and saved wreck physics; the helper holds no independent state or checkpoint."
+    },
+    "src/systems/salvage/salvage-stock-id.ts": {
+      "mode": "derived",
+      "reason": "Deterministically derives stock identifiers from field and wreck identifiers; owns no mutable state or checkpoint."
     }
   }
 }
