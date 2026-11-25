@@ -67,7 +67,12 @@ export interface NpcLocalSalvageOptions {
   /** Disable internal contacts when the shared world solves all physical ships once. */
   readonly resolveLocalCollisions?: boolean;
   readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
-  readonly recover: (npc: SectorNpcState, resourceId: string, requested: number) => number;
+  readonly recover: (
+    npc: SectorNpcState,
+    resourceId: string,
+    requested: number,
+    sourceId?: string
+  ) => number;
   readonly depart: (npc: SectorNpcState) => boolean;
   readonly canWorkWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
   readonly registerWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
@@ -230,7 +235,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       return;
     }
     const requested = Math.min(recoveryAmount(npc, wreck), deposit.remainingAmount);
-    const accepted = this.options.recover(npc, deposit.resourceId, requested);
+    const accepted = this.options.recover(npc, deposit.resourceId, requested, wreck.id);
     if (accepted > 0) deposit.remainingAmount = Math.max(0, deposit.remainingAmount - accepted);
 
     if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity)) {
