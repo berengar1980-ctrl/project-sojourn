@@ -55,8 +55,8 @@ export function createNpcSalvageRuntime(
       npc.credits -= result.fee;
       return true;
     },
-    recover: (npc, resourceId, requested) =>
-      options.npcEconomy.salvageLocal(npc, resourceId, requested),
+    recover: (npc, resourceId, requested, sourceId) =>
+      options.npcEconomy.salvageLocal(npc, resourceId, requested, sourceId),
     depart: (npc) => options.npcEconomy.dispatchLoadedWorker(npc),
     playerShip: options.ship,
     getPlayerShipState: () => service.getSnapshot().ship,
