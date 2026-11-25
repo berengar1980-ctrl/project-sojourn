@@ -263,6 +263,7 @@ export function advanceControllerFieldWorld(
   const fieldWorld = fieldWorldFor(context);
   syncFinishedFieldPoses(context, fieldWorld, finished);
   fieldWorld.advanceCombatWreckLifetime(deltaSeconds, (locationId, ids) => {
+    for (const id of ids) context.economy.simulation.releasePhysicalStock(id);
     context.engagements.removeFieldCombatWrecks(ids);
     const sceneField = context.state.salvageScene?.getField();
     const fields = new Set([sceneField, ...context.state.salvageEventFields.values()]);
