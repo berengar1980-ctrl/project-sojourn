@@ -215,7 +215,12 @@ export interface EconomySimulationService {
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
-  fundPhysicalStock(resourceId: EconomyResourceId, sourceId: string, amount: number, combat?: boolean): number;
+  fundPhysicalStock(
+    resourceId: EconomyResourceId,
+    sourceId: string,
+    amount: number,
+    combat?: boolean
+  ): number;
   withdrawPhysicalStock(resourceId: EconomyResourceId, sourceId: string, amount: number): number;
   releasePhysicalStock(sourceId: string): void;
   refillCombatBuffer(resourceId: EconomyResourceId, target: number): number;
