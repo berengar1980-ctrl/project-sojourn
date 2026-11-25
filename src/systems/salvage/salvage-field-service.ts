@@ -14,7 +14,8 @@ export interface SalvageResourceCollector {
     resourceId: string,
     requestedQuantity: number,
     cargoCapacityTons: number,
-    originId?: string
+    originId?: string,
+    sourceId?: string
   ): number;
 }
 
@@ -161,7 +162,8 @@ export function createSalvageFieldService(options: {
         deposit.resourceId,
         Math.min(wanted, deposit.remainingAmount),
         setup.cargoCapacityTons,
-        field.sourceLocationId
+        field.sourceLocationId,
+        wreck.id
       );
       if (recovered <= 0) return null;
 
