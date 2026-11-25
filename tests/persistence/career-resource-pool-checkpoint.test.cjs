@@ -101,3 +101,39 @@ for (const change of [
   assert.throws(() => stageCareerResourcePools(invalid, resources, 41));
 }
 console.log('PASS career resource pools: day resume, allocation sequence and validation');
+
+// Physical stock funding and release are transfers, not imports or losses.
+const cycleMarkets = createEconomyMarketService(ports, resources);
+const cyclePlayer = player();
+const cycle = createEconomySimulationService(cycleMarkets, cyclePlayer, resources, 41);
+cycle.advanceDay(5);
+const total = cycle.getResourceTotal('ore');
+const free = cycle.pools.ore.reserve;
+assert(free > 0);
+assert.equal(cycle.refillCombatBuffer('ore', 12), Math.min(12, free));
+const funded = cycle.fundPhysicalStock('ore', 'combat-wreck-example', 10, true);
+assert(funded > 0);
+assert.equal(cycle.getResourceTotal('ore'), total);
+const recovered = cycle.withdrawPhysicalStock('ore', 'combat-wreck-example', 3);
+cyclePlayer.cargo.ore = { qty: recovered, totalCost: 0 };
+assert.equal(cycle.getResourceTotal('ore'), total);
+const beforeRelease = cycle.exportState();
+const restoredCycle = createEconomySimulationService(
+  stageCareerMarkets(captureCareerMarkets(cycleMarkets), ports, resources),
+  copy(cyclePlayer),
+  resources,
+  41,
+  [],
+  beforeRelease
+);
+assert.deepEqual(restoredCycle.exportState(), beforeRelease);
+const reserveBefore = restoredCycle.pools.ore.reserve;
+restoredCycle.releasePhysicalStock('combat-wreck-example');
+assert.equal(restoredCycle.pools.ore.reserve, reserveBefore + funded - recovered);
+restoredCycle.releasePhysicalStock('combat-wreck-example');
+assert.equal(restoredCycle.getResourceTotal('ore'), total);
+assert.equal(restoredCycle.withdrawPhysicalStock('ore', 'combat-wreck-example', 100), 0);
+assert.deepEqual(cycle.exportState(), beforeRelease);
+const invalidPhysical = copy(beforeRelease);
+invalidPhysical.pools.ore.physicalStocks['combat-wreck-example'] = -1;
+assert.throws(() => stageCareerResourcePools(invalidPhysical, resources, 41));
