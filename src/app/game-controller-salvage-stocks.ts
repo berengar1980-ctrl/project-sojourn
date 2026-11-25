@@ -10,11 +10,7 @@ export function registerPermanentSalvageStocks(
     if (wreck.combatWreckVariant) continue;
     const sourceId = salvageStockId(field, wreck);
     for (const deposit of wreck.resources) {
-      simulation.registerInitialPhysicalStock(
-        deposit.resourceId,
-        sourceId,
-        deposit.remainingAmount
-      );
+      simulation.registerInitialPhysicalStock(deposit.resourceId, sourceId, deposit.remainingAmount);
     }
   }
 }
