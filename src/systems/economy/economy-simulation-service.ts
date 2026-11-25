@@ -229,45 +229,7 @@ export interface EconomySimulationService {
   advanceNextDay(): void;
 }
 
-export function createEconomySimulationService(
-  marketsService: EconomyMarketService,
-  player: PlayerEconomyState,
-  resources: readonly EconomyResourceDefinition[],
-  seed = 1,
-  npcs: readonly EconomyCargoHold[] = [],
-  checkpoint?: CareerResourcePoolCheckpoint
-): EconomySimulationService {
-  const markets = marketsService.snapshot();
-  const staged = checkpoint ? stageCareerResourcePools(checkpoint, resources, seed) : null;
-  const pools = staged?.pools ?? initialPools(resources, markets, player, npcs);
-  let lastDay = staged?.lastDay ?? -1;
-  let physicalAllocationCounter = staged?.physicalAllocationCounter ?? 0;
-
-  const allocatePhysicalResource = (resourceId: EconomyResourceId, amount: number): number => {
-    const pool = pools[resourceId];
-    const requested = quantity(amount);
-    if (!pool || requested <= 0) return 0;
-
-    let allocated = Math.min(requested, quantity(pool.reserve));
-    pool.reserve -= allocated;
-
-    if (allocated < requested) {
-      const random = seededRandom(seed + 0x45d9f3b + physicalAllocationCounter * 104729);
-      physicalAllocationCounter += 1;
-      consumeToReserve(resourceId, requested - allocated, markets, pool, random);
-      const fromReserve = Math.min(requested - allocated, quantity(pool.reserve));
-      pool.reserve -= fromReserve;
-      allocated += fromReserve;
-
-      for (const market of markets) {
-        if (market.entries[resourceId]) marketsService.recalculate(market.locationId, resourceId);
-      }
-    }
-
-    return allocated;
-  };
-  const createMinedResource = allocatePhysicalResource;
-
+function createPhysicalStockTransactions(pools: Record<EconomyResourceId, EconomyResourcePool>) {
   // These transactions never trigger artificial market consumption. Field objects
   // are funded before collection; only actual collected cargo leaves their stock.
   const fundPhysicalStock: EconomySimulationService['fundPhysicalStock'] = (
@@ -315,6 +277,50 @@ export function createEconomySimulationService(
     pool.combatBuffer = current + moved;
     return moved;
   };
+
+  return { fundPhysicalStock, withdrawPhysicalStock, releasePhysicalStock, refillCombatBuffer };
+}
+
+export function createEconomySimulationService(
+  marketsService: EconomyMarketService,
+  player: PlayerEconomyState,
+  resources: readonly EconomyResourceDefinition[],
+  seed = 1,
+  npcs: readonly EconomyCargoHold[] = [],
+  checkpoint?: CareerResourcePoolCheckpoint
+): EconomySimulationService {
+  const markets = marketsService.snapshot();
+  const staged = checkpoint ? stageCareerResourcePools(checkpoint, resources, seed) : null;
+  const pools = staged?.pools ?? initialPools(resources, markets, player, npcs);
+  let lastDay = staged?.lastDay ?? -1;
+  let physicalAllocationCounter = staged?.physicalAllocationCounter ?? 0;
+
+  const allocatePhysicalResource = (resourceId: EconomyResourceId, amount: number): number => {
+    const pool = pools[resourceId];
+    const requested = quantity(amount);
+    if (!pool || requested <= 0) return 0;
+
+    let allocated = Math.min(requested, quantity(pool.reserve));
+    pool.reserve -= allocated;
+
+    if (allocated < requested) {
+      const random = seededRandom(seed + 0x45d9f3b + physicalAllocationCounter * 104729);
+      physicalAllocationCounter += 1;
+      consumeToReserve(resourceId, requested - allocated, markets, pool, random);
+      const fromReserve = Math.min(requested - allocated, quantity(pool.reserve));
+      pool.reserve -= fromReserve;
+      allocated += fromReserve;
+
+      for (const market of markets) {
+        if (market.entries[resourceId]) marketsService.recalculate(market.locationId, resourceId);
+      }
+    }
+
+    return allocated;
+  };
+  const createMinedResource = allocatePhysicalResource;
+
+  const physicalStocks = createPhysicalStockTransactions(pools);
 
   const advanceDay = (day: number): void => {
     const targetDay = Math.max(0, Math.floor(day));
@@ -364,10 +370,7 @@ export function createEconomySimulationService(
       return pool ? totalResource(resourceId, markets, player, npcs, pool) : 0;
     },
     allocatePhysicalResource,
-    fundPhysicalStock,
-    withdrawPhysicalStock,
-    releasePhysicalStock,
-    refillCombatBuffer,
+    ...physicalStocks,
     createMinedResource,
     advanceDay,
     advanceNextDay() {
