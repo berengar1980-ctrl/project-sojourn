@@ -212,6 +212,7 @@ function driftDemand(
 
 export interface EconomySimulationService {
   exportState(): CareerResourcePoolCheckpoint;
+  readonly currentDay: number;
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
@@ -225,6 +226,7 @@ export interface EconomySimulationService {
   getPhysicalStock(resourceId: EconomyResourceId, sourceId: string): number | undefined;
   registerInitialPhysicalStock(resourceId: string, sourceId: string, amount: number): number;
   releasePhysicalStock(sourceId: string): void;
+  losePhysicalStock(resourceId: string, sourceId: string, amount: number): number;
   refillCombatBuffer(resourceId: EconomyResourceId, target: number): number;
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
   advanceDay(day: number): void;
@@ -300,7 +302,15 @@ function createPhysicalStockTransactions(pools: Record<EconomyResourceId, Econom
     return initial;
   };
 
+  const losePhysicalStock = (resourceId: string, sourceId: string, amount: number): number => {
+    const lost = withdrawPhysicalStock(resourceId, sourceId, amount);
+    const pool = pools[resourceId];
+    if (pool) pool.recordedLosses += lost;
+    return lost;
+  };
+
   return {
+    losePhysicalStock,
     registerInitialPhysicalStock,
     fundPhysicalStock,
     withdrawPhysicalStock,
@@ -391,6 +401,9 @@ export function createEconomySimulationService(
 
   return {
     pools,
+    get currentDay() {
+      return lastDay;
+    },
     exportState() {
       return captureCareerResourcePools(pools, seed, lastDay, physicalAllocationCounter);
     },
