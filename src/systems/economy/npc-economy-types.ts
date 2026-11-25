@@ -27,7 +27,12 @@ export interface NpcEconomyCheckpoint {
 export interface NpcEconomyService {
   exportState(): NpcEconomyCheckpoint;
   readonly npcs: readonly NpcEconomyState[];
-  mineLocal(npc: NpcEconomyState, resourceId: EconomyResourceId, requestedQuantity: number): number;
+  mineLocal(
+    npc: NpcEconomyState,
+    resourceId: EconomyResourceId,
+    requestedQuantity: number,
+    sourceId?: string
+  ): number;
   salvageLocal(
     npc: NpcEconomyState,
     resourceId: EconomyResourceId,
