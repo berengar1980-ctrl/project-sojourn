@@ -10,7 +10,8 @@ export function registerPermanentSalvageStocks(
     if (wreck.combatWreckVariant) continue;
     const sourceId = salvageStockId(field, wreck);
     for (const deposit of wreck.resources) {
-      simulation.registerInitialPhysicalStock(deposit.resourceId, sourceId, deposit.remainingAmount);
+      const { resourceId, remainingAmount } = deposit;
+      simulation.registerInitialPhysicalStock(resourceId, sourceId, remainingAmount);
     }
   }
 }
@@ -27,12 +28,14 @@ export function balancePermanentSalvageStocks(
       const stock = simulation.getPhysicalStock(deposit.resourceId, sourceId);
       if (stock === undefined) continue;
       if (stock > deposit.remainingAmount) {
-        simulation.losePhysicalStock(deposit.resourceId, sourceId, stock - deposit.remainingAmount);
+        const loss = stock - deposit.remainingAmount;
+        simulation.losePhysicalStock(deposit.resourceId, sourceId, loss);
       }
       if (stock < deposit.remainingAmount) deposit.remainingAmount = stock;
       if (!canRefill(wreck.id)) continue;
       const deficit = deposit.initialAmount - deposit.remainingAmount;
-      deposit.remainingAmount += simulation.fundPhysicalStock(deposit.resourceId, sourceId, deficit);
+      const funded = simulation.fundPhysicalStock(deposit.resourceId, sourceId, deficit);
+      deposit.remainingAmount += funded;
     }
   }
 }
