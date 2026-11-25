@@ -13,8 +13,16 @@ assert(panel.includes('data-layer="tractor"'), 'tractor integrity bar is rendere
 assert(panel.includes('enginePercent'), 'engine integrity uses subsystem health percentage');
 assert(panel.includes('tractorPercent'), 'tractor integrity uses subsystem health percentage');
 assert(panel.includes('tractorRangeMeters > 0'), 'missing tractor marked unmounted');
-assert(panel.includes('playerHud.innerHTML = combatantHud(model.attacker, model.elapsedSeconds)'));
-assert(panel.includes('enemyHud.innerHTML = combatantHud(model.defender, model.elapsedSeconds)'));
+assert(
+  /playerHud.innerHTML = combatantHud\(\s*model\.attacker,\s*model\.elapsedSeconds,\s*display\.playerWeapons/.test(
+    panel
+  )
+);
+assert(
+  /enemyHud.innerHTML = combatantHud\(\s*model\.defender,\s*model\.elapsedSeconds,\s*display\.enemyWeapons/.test(
+    panel
+  )
+);
 assert(css.includes('.combat-hud-bar--engine i'));
 assert(css.includes('.combat-hud-bar--tractor i'));
 console.log('PASS dual ship engine/tractor subsystem integrity HUD coverage');

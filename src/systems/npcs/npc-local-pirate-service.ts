@@ -186,7 +186,10 @@ export class LocalPirateTraffic {
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
       const npc = pirates.find((candidate) => candidate.id === id);
-      if (npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0) {
+      if (
+        !id.startsWith('security-drone:') &&
+        (npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0)
+      ) {
         this.combatReturnPositions.set(id, { ...ship.position });
       } else {
         this.combatReturnPositions.delete(id);

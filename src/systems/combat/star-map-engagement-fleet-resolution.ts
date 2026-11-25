@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import { snapshot as snapshotCombatant } from './strategic-combat-geometry';
 import type { CombatVisualAsteroid, StrategicCombatantSnapshot } from './strategic-combat-types';
 import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
@@ -15,12 +16,15 @@ function fieldCombatServices(runtime: EngagementRuntime, locationId: string, see
   const services: CareerFleetEncounter[] = [];
   if (
     runtime.playerFleet &&
-    runtime.playerEnemy?.locationId === locationId &&
+    runtime.playerFleet.fieldLocationId === locationId &&
     runtime.playerCombat?.getArena().backdropSeed === seed
   )
     services.push(runtime.playerFleet);
   for (const entry of runtime.backgroundCombats.values()) {
-    if (entry.first.locationId === locationId && entry.combat.getArena().backdropSeed === seed) {
+    if (
+      entry.fleet.fieldLocationId === locationId &&
+      entry.combat.getArena().backdropSeed === seed
+    ) {
       services.push(entry.fleet);
     }
   }
@@ -80,6 +84,25 @@ export function registerFieldCombatWreck(
   }
 }
 
+export function removeFieldCombatWrecks(
+  runtime: EngagementRuntime,
+  ids: ReadonlySet<string>
+): void {
+  const worlds = new Set([
+    runtime.playerCombat?.getArena().fieldWorld,
+    ...[...runtime.backgroundCombats.values()].map((entry) => entry.combat.getArena().fieldWorld),
+  ]);
+  for (const world of worlds) {
+    if (!world) continue;
+    for (let i = world.asteroids.length - 1; i >= 0; i--) {
+      const id = world.asteroids[i]!.id;
+      if (!ids.has(id)) continue;
+      world.asteroids.splice(i, 1);
+      world.removedIds.add(id);
+    }
+  }
+}
+
 export function resetFieldCombatSteps(runtime: EngagementRuntime): void {
   const playerWorld = runtime.playerCombat?.getArena().fieldWorld;
   if (playerWorld) playerWorld.advanced = false;
@@ -103,19 +126,28 @@ function releaseNpc(
 
 export function reportFieldFleetLosses(
   runtime: EngagementRuntime,
-  encounter: CareerFleetEncounter,
-  locationId: string
+  encounter: CareerFleetEncounter
 ): void {
   const arena = encounter.combat.getArena();
-  const report = runtime.options.onFieldFleetLosses;
-  if (!report || arena.backdropSeed === undefined) return;
+  if (arena.backdropSeed === undefined) return;
   const losses: StrategicCombatantSnapshot[] = [];
   for (const body of arena.asteroids ?? []) {
     if (!body.destroyedShipId || !body.id.startsWith('fleet-wreck:')) continue;
     const actor = encounter.fleet.getActor(body.destroyedShipId);
     if (actor && actor.hullHp <= 0) losses.push(snapshotCombatant(actor));
   }
-  if (losses.length) report(encounter.combat.getSnapshot(), losses, locationId);
+  if (losses.length)
+    runtime.options.onFieldFleetLosses?.(
+      encounter.combat.getSnapshot(),
+      losses,
+      encounter.fieldLocationId
+    );
+  for (const loss of losses) {
+    const npc = encounter.members.get(loss.id);
+    if (!npc || !isSecurityDrone(npc.id)) continue;
+    runtime.options.sectorNpcs.recoverFromCombat(npc, 'Zerstört');
+    encounter.detachMember(npc.id);
+  }
 }
 
 export function reportNpcBoardingResults(
@@ -143,7 +175,7 @@ export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSecond
       )
     );
     measurePerformance('sim.combat.advance', () => entry.fleet.tick(deltaSeconds));
-    reportFieldFleetLosses(runtime, entry.fleet, entry.first.locationId);
+    reportFieldFleetLosses(runtime, entry.fleet);
     reportNpcBoardingResults(runtime, entry.fleet);
     if (!entry.fleet.fleet.isFinished()) continue;
     const model = entry.combat.getSnapshot();

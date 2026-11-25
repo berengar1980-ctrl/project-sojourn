@@ -1332,3 +1332,7 @@ ihren bestehenden Startpositionen.
 **Keine Speicheränderung.** Die fünf Kampfwrackmodelle und ihre unabhängig taumelnden Fragmente werden ausschließlich beim Zeichnen von zwei Dritteln auf die Hälfte der ursprünglichen sichtbaren Größe reduziert. Physische Wrackradien, Kollision, Routenplanung, Bergungsreichweite, Rohstoffmengen und vorhandene Save-Felder bleiben unverändert.
 
 Wracks aus laufenden Feldgefechten werden beim Abschuss in der bestehenden Feldwelt registriert. Größe, Position, Drift und Drehung bleiben beim Übergang erhalten und nutzen die vorhandenen Wrackdaten. Die Zuordnung zum zerstörten Schiff am Kollisionskörper gehört zur laufenden Kampfvisualisierung und wird nicht gespeichert.
+
+### Feldsicherheit und Kampfwrack-Ablauf
+
+Die Sektor-NPCs speichern die 180 Sekunden bis zur Ersatzdrohne über das bestehende Feld `combatRecoverySeconds`. Die Wiederankunft benutzt die vorhandenen Feldpositionen und Aufenthaltsdaten. Kampfwracks speichern optional ihre verbleibende Dauer über `remainingLifetimeSeconds` im vorhandenen Feld-Checkpoint. Ältere Kampfwracks beginnen beim ersten Tick mit zehn Minuten Restlaufzeit. Natürliche Wracks verwenden diesen Timer nicht.

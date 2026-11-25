@@ -241,6 +241,7 @@ function moveSecurityDroneAndIntercept(
   const droneId = 'security-drone:' + runtime.locationId;
   const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === droneId);
   if (npc?.combatMovement?.mode === 'engaged') return;
+  runtime.drone.syncAvailability(npc);
   const pirate = detectedSecurityPirate(context, runtime);
   const drone = runtime.drone;
   drone.tick(

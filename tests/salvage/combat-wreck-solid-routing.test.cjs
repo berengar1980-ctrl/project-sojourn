@@ -71,6 +71,29 @@ assert.notDeepEqual(
   'wreck collision impulses reach saved position'
 );
 
+const { resolveCombatAsteroidContacts } = load('src/systems/combat/combat-asteroid-contacts.ts');
+const { createCombatant } = load('src/systems/combat/strategic-combat-geometry.ts');
+const { wreckCombatBody } = load('src/systems/combat/field-combat-arena.ts');
+const vessel = {
+  id: 'npc-contact',
+  name: 'NPC',
+  shipId: 'patrol-60m-variant-01',
+  hullHp: 100,
+  shieldHp: 100,
+  weapons: [],
+  combatSpeed: 120,
+};
+const nativeWreck = { ...wreckCombatBody(wreck), velocity: { x: 0, y: 0 } };
+const start = { x: nativeWreck.position.x - 12, y: nativeWreck.position.y };
+const npc = createCombatant(vessel, 'attacker', { ...field, attackerPosition: start });
+npc.velocity = { x: 70, y: 0 };
+resolveCombatAsteroidContacts(npc, { asteroids: [nativeWreck] });
+assert(npc.position.x < start.x, 'combat solver pushes the NPC out of a wreck');
+assert(npc.velocity.x < 0, 'combat wreck physically deflects an approaching NPC');
+const stationary = createCombatant(vessel, 'defender', { ...field, defenderPosition: start });
+nativeWreck.velocity.x = 0;
+resolveCombatAsteroidContacts(stationary, { asteroids: [nativeWreck] });
+assert(stationary.position.x < start.x, 'solid wreck resolves overlap without impact speed');
 const salvage = createSalvageFieldService({
   field,
   setup: { available: true, cargoCapacityTons: 100, yieldMultiplier: 1 },

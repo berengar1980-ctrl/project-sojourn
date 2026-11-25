@@ -1,3 +1,4 @@
+import type { FleetDisplayPreferences } from '../combat/fleet-display-menu';
 import { isStationedDrone } from '../../systems/npcs/npc-combat-ai';
 import { pickNearestHitArea } from '../salvage/salvage-hit-test';
 import { drawLocalSecurityDrone, localDroneShieldHits } from './local-security-drone-visual';
@@ -11,7 +12,6 @@ import type {
   LocalAsteroidView,
   LocalSpaceViewModel,
 } from '../../features/local-space/local-space-view-model';
-import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
 import { type ScreenPoint } from '../map/map-camera';
 import { PvPMapCamera } from '../combat/pvp-map-camera';
@@ -59,9 +59,11 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
   protected scanLabelsVisible = true;
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    model: LocalSpaceViewModel
+    model: LocalSpaceViewModel,
+    combatDisplay?: FleetDisplayPreferences
   ) {
     super();
+    if (combatDisplay) this.combatDisplay = combatDisplay;
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Local-space canvas context unavailable.');
 
@@ -79,7 +81,8 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     this.spaceBodies = new ProceduralSpaceBodyRenderer(context);
     this.resize();
   }
-  update(model: LocalSpaceViewModel): void {
+  update(model: LocalSpaceViewModel, combatDisplay = this.combatDisplay): void {
+    this.combatDisplay = combatDisplay;
     this.model = model;
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     if (model.combat) {
@@ -126,7 +129,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       } else if (resumedCombat) {
         this.sharedCombatRenderer.beginEncounter(model.combat);
       }
-      this.sharedCombatRenderer.updateEncounter(model.combat, model.fleet);
+      this.sharedCombatRenderer.updateEncounter(model.combat, model.fleet, this.combatDisplay);
       // The native PvP renderer owns combat; career bystanders remain in its scene overlay.
       return;
     }
@@ -486,9 +489,7 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
       source,
       geometry
     );
-    if (this.model.combat) {
-      drawEmbeddedCombatShipTelemetry(this.context, this.model.combat.attacker, geometry);
-    }
+    this.drawPlayerCombatAnnotations(geometry);
   }
   protected drawNavigationRoute(width: number, height: number): void {
     drawLocalNavigationRoute(this.context, this.camera, this.model, width, height);

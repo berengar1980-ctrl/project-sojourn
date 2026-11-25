@@ -1,3 +1,5 @@
+import { drawCombatPlayerMarker } from '../combat/combat-ship-detail-renderer';
+import { DEFAULT_COMBAT_DISPLAY, type FleetDisplayPreferences } from '../combat/fleet-display-menu';
 import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { drawFieldShipSprite } from '../ships/field-ship-sprite';
 import { drawFieldEscort } from './local-security-drone-visual';
@@ -27,6 +29,7 @@ export interface NpcHitArea {
 }
 export { hashId } from './local-space-visual-hash';
 export abstract class LocalSpaceSceneLayers {
+  protected combatDisplay: FleetDisplayPreferences = DEFAULT_COMBAT_DISPLAY;
   protected abstract context: CanvasRenderingContext2D;
   protected abstract model: LocalSpaceViewModel;
   protected abstract camera: PvPMapCamera;
@@ -36,6 +39,16 @@ export abstract class LocalSpaceSceneLayers {
   protected abstract shipLighting: ShipLightingRenderer;
   protected abstract shieldImpacts: ShieldImpactRenderer;
   protected abstract shipGeometry(width: number, height: number): ShipScreenGeometry;
+  protected drawPlayerCombatAnnotations(geometry: ShipScreenGeometry): void {
+    if (this.model.combat)
+      drawEmbeddedCombatShipTelemetry(
+        this.context,
+        this.model.combat.attacker,
+        geometry,
+        this.combatDisplay
+      );
+    if (this.combatDisplay.playerMarker) drawCombatPlayerMarker(this.context, geometry);
+  }
   protected drawNpcSelection(point: ScreenPoint, geometry: ShipScreenGeometry): void {
     this.context.save();
     this.context.strokeStyle = 'rgba(235, 91, 76, .95)';
@@ -141,7 +154,8 @@ export abstract class LocalSpaceSceneLayers {
           geometry
         );
       }
-      if (combatDefender) drawEmbeddedCombatShipTelemetry(this.context, combatDefender, geometry);
+      if (combatDefender)
+        drawEmbeddedCombatShipTelemetry(this.context, combatDefender, geometry, this.combatDisplay);
 
       hits.push({
         id: npc.id,
@@ -150,12 +164,12 @@ export abstract class LocalSpaceSceneLayers {
       });
       if (npc.pirateMark) drawPirateInsignia(this.context, npc.pirateMark, geometry);
       if (npc.isSelected) this.drawNpcSelection(point, geometry);
-      if (npc.isPirate) this.drawPirateMarker(point, geometry);
+      if (npc.isPirate && this.combatDisplay.names) this.drawPirateMarker(point, geometry);
 
       this.drawNpcWorkEffects(npc, point, geometry, width, height, timeSeconds);
 
       const zoom = this.camera.getRelativeZoom();
-      if (zoom >= 1.55) {
+      if (this.combatDisplay.names && zoom >= 1.55) {
         this.context.fillStyle = 'rgba(184, 210, 216, .78)';
         this.context.font = '9px ui-monospace, monospace';
         this.context.textAlign = 'center';

@@ -20,6 +20,8 @@ import { hashId } from '../npcs/npc-mining-targets';
 import { AsteroidSecurityDrone } from './asteroid-security-drone';
 import type { AsteroidClaimRegistry } from './asteroid-claim-registry';
 
+const COMBAT_WRECK_LIFETIME_SECONDS = 600;
+
 export interface AsteroidFieldRuntime {
   readonly locationId: string;
   readonly instance: LocalSpaceInstance;
@@ -72,6 +74,10 @@ function restoredCombatWrecks(
           !wreck.id.startsWith('combat-wreck-') ||
           !wreck.combatWreckVariant ||
           !isCombatWreckVariant(wreck.combatWreckVariant) ||
+          (wreck.remainingLifetimeSeconds !== undefined &&
+            (!Number.isFinite(wreck.remainingLifetimeSeconds) ||
+              wreck.remainingLifetimeSeconds < 0 ||
+              wreck.remainingLifetimeSeconds > COMBAT_WRECK_LIFETIME_SECONDS)) ||
           !Number.isFinite(wreck.position.x) ||
           !Number.isFinite(wreck.position.y) ||
           !Array.isArray(wreck.resources) ||
@@ -221,6 +227,36 @@ export class AsteroidFieldWorld {
     this.combatWrecksByLocation.set(locationId, recorded);
     const field = this.wreckMotionFields.get(locationId);
     if (field) invalidateSalvagePhysics(field);
+  }
+
+  advanceCombatWreckLifetime(
+    deltaSeconds: number,
+    onRemove: (locationId: string, ids: ReadonlySet<string>) => void
+  ): void {
+    const dt = Math.min(0.25, Math.max(0, deltaSeconds));
+    if (!Number.isFinite(dt)) return;
+    for (const [locationId, wrecks] of this.combatWrecksByLocation) {
+      if (!wrecks.length) continue;
+      const removed = new Set<string>();
+      for (let i = wrecks.length - 1; i >= 0; i--) {
+        const wreck = wrecks[i]!;
+        wreck.remainingLifetimeSeconds = Math.max(
+          0,
+          (wreck.remainingLifetimeSeconds ?? COMBAT_WRECK_LIFETIME_SECONDS) - dt
+        );
+        if (
+          wreck.remainingLifetimeSeconds > 0 &&
+          wreck.resources.some((deposit) => deposit.remainingAmount > 0)
+        )
+          continue;
+        removed.add(wreck.id);
+        wrecks.splice(i, 1);
+      }
+      if (!removed.size) continue;
+      const motion = this.wreckMotionFields.get(locationId);
+      if (motion) invalidateSalvagePhysics(motion);
+      onRemove(locationId, removed);
+    }
   }
 
   /** Player navigation and shield contacts share the authoritative salvage wreck bodies. */

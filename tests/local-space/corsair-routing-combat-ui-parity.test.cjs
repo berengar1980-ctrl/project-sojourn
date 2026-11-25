@@ -40,14 +40,17 @@ const localNpc = read('src/ui/local-space/local-space-scene-layers.ts');
 const salvageNpc = read('src/ui/salvage/salvage-scene-layers.ts');
 const shared = read('src/ui/combat/embedded-combat-ship-telemetry.ts');
 const combat = read('src/ui/combat/fleet-native-ship-annotations.ts');
-for (const source of [mine, salvage, localNpc, salvageNpc]) {
+for (const source of [localNpc, salvageNpc]) {
   assert(
     source.includes('drawEmbeddedCombatShipTelemetry'),
     'both local maps must draw strategy and boost on both duelling ships'
   );
 }
 assert(shared.includes('drawCombatShipStatus(') && shared.includes('drawCombatBoostMeter('));
-assert(combat.includes('drawCombatShipStatus(') && combat.includes('drawCombatBoostMeter('));
+assert(combat.includes('drawEmbeddedCombatShipTelemetry('));
+assert(
+  [mine, salvage].every((source) => source.includes('this.drawPlayerCombatAnnotations(geometry)'))
+);
 
 const safety = read('src/systems/combat/combat-steering-safety.ts');
 const steering = read('src/systems/combat/combat-route-steering.ts');

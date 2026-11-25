@@ -49,6 +49,7 @@ function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> 
     for (const ship of [duel.attacker, duel.defender]) {
       const npc = sectorNpcs.find((entry) => entry.id === ship.id);
       if (npc?.locationId !== field.sourceLocationId) continue;
+      if (ship.hullHp <= 0) continue;
       combatants.add(npc.id);
       pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians, ship.speed);
       for (const salvager of salvagers) {
@@ -85,7 +86,7 @@ function advanceDroneInterception(
 ): void {
   const { drone, field, sectorNpcs, salvagers } = options;
   const defender = sectorNpcs.find((npc) => npc.id === 'security-drone:' + field.sourceLocationId);
-  if (defender && defender.hullHp <= 0) drone.destroy();
+  drone.syncAvailability(defender);
   const target = closestVisiblePirate(options, pirateShips);
   const busy = Boolean(defender?.combatMovement || combatants.has(defender?.id ?? ''));
   let pursuit: WorldPoint | undefined;

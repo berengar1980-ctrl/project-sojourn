@@ -58,7 +58,7 @@ export function interceptSecurityPirate(
   const pirateNpc = context.economy.sectorNpcs.npcs.find((npc) => npc.id === pirate.id);
   if (!pirateNpc || pirateNpc.combatMovement) return false;
   const started = context.engagements.engageNpcsInArena(pirate.id, defender.id, {
-    ...localMiningCombatArena(field.instance, { x: 0, y: 0 }),
+    ...localMiningCombatArena(field.instance, { x: 0, y: 0 }, field.combatWrecks),
     attackerPosition: { ...pirate.position },
     attackerHeadingRadians: 0,
     attackerVelocity: { x: 0, y: 0 },

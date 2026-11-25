@@ -1,3 +1,4 @@
+import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { LocalSpaceInstance } from '../core/local-space-types';
 import type { SectorNpcState } from '../core/npc-types';
@@ -130,6 +131,10 @@ export function fieldWorldFor(
     const field = fields.field(location.id);
     if (!field) continue;
     economy.securityDrones.set(location.id, field.drone);
+    const npc = economy.sectorNpcs.npcs.find(
+      (entry) => entry.id === 'security-drone:' + location.id
+    );
+    field.drone.syncAvailability(npc);
     economy.localPirates.set(location.id, field.pirates);
   }
   return fields;
@@ -147,6 +152,7 @@ function syncNpcDuelFieldPoses(
     for (const combatant of [duel.attacker, duel.defender]) {
       const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === combatant.id);
       if (npc?.locationId !== field.locationId) continue;
+      if (combatant.hullHp <= 0 && npc.hullHp > 0) continue;
       field.miners.syncCombatPose(
         combatant.id,
         combatant.position,
@@ -256,6 +262,18 @@ export function advanceControllerFieldWorld(
   const localDuels = localFieldDuels(background, fleet);
   const fieldWorld = fieldWorldFor(context);
   syncFinishedFieldPoses(context, fieldWorld, finished);
+  fieldWorld.advanceCombatWreckLifetime(deltaSeconds, (locationId, ids) => {
+    context.engagements.removeFieldCombatWrecks(ids);
+    const sceneField = context.state.salvageScene?.getField();
+    const fields = new Set([sceneField, ...context.state.salvageEventFields.values()]);
+    for (const field of fields) {
+      if (field?.sourceLocationId !== locationId) continue;
+      for (let i = field.wrecks.length - 1; i >= 0; i--) {
+        if (ids.has(field.wrecks[i]!.id)) field.wrecks.splice(i, 1);
+      }
+      invalidateSalvagePhysics(field);
+    }
+  });
   const combatLocations = new Set<string>();
   for (const duel of background) {
     if (duel.arena.backdropSeed === undefined) continue;
@@ -294,8 +312,8 @@ export function advanceControllerFieldWorld(
     // The combat engine owns drone motion while it is fighting.
     // A second patrol tick would jump its sprite away from the hitbox.
     const droneId = 'security-drone:' + field.locationId;
-    const droneFightingNpc = poseDuels.some(
-      (duel) => duel.attacker.id === droneId || duel.defender.id === droneId
+    const droneFightingNpc = poseDuels.some((duel) =>
+      [duel.attacker, duel.defender].some((ship) => ship.id === droneId && ship.hullHp > 0)
     );
     if (activeCombat?.defender.id !== droneId && !droneFightingNpc) {
       measurePerformance('sim.field.security', () => tickFieldSecurity(context, seconds, field));

@@ -44,9 +44,19 @@ function percent(current: number, maximum: number): number {
   return maximum <= 0 ? 0 : Math.max(0, Math.min(100, (current / maximum) * 100));
 }
 
+function combatHudWeapons(
+  combatant: StrategicCombatSnapshot['attacker'],
+  elapsedSeconds: number,
+  visible: boolean
+): string {
+  if (!visible) return '';
+  return `<span>WAFFEN BEREIT ${combatant.readyWeapons} / ${combatant.installedWeapons}</span>${combatWeaponTelemetryHtml(combatant, elapsedSeconds)}`;
+}
+
 export function combatantHud(
   combatant: StrategicCombatSnapshot['attacker'],
-  elapsedSeconds: number
+  elapsedSeconds: number,
+  weaponsVisible = true
 ): string {
   const shield = Math.round(percent(combatant.shieldHp, combatant.shieldMaxHp));
   const hull = Math.round(percent(combatant.hullHp, combatant.hullMaxHp));
@@ -76,8 +86,7 @@ export function combatantHud(
     <small>STRATEGIE · ${status.strategy}</small>
     <small>MANÖVER · ${maneuver}</small>
     <small>${energyLine}</small>
-    <span>WAFFEN BEREIT ${combatant.readyWeapons} / ${combatant.installedWeapons}</span>
-    ${combatWeaponTelemetryHtml(combatant, elapsedSeconds)}
+    ${combatHudWeapons(combatant, elapsedSeconds, weaponsVisible)}
     <span>MINEN ${combatant.mineCount > 0 ? combatant.mineCount : 'Keine Minen ausgerüstet'} · TRAKTOR ${combatant.tractorRangeMeters > 0 ? combatant.tractorRangeMeters + ' m' : 'NICHT MONTIERT'}</span>
   `;
 }
@@ -316,12 +325,36 @@ function updateCombatActionButtons(
   if (surrenderButton) surrenderButton.disabled = model.winner !== null;
 }
 
+function updateCombatEncounterTime(
+  shell: HTMLElement,
+  encounterName: string,
+  elapsedSeconds: number
+): void {
+  const timer = shell.querySelector<HTMLElement>('.combat-encounter-time');
+  if (timer) {
+    const seconds = Math.floor(elapsedSeconds);
+    timer.textContent =
+      encounterName +
+      ' · ' +
+      String(Math.floor(seconds / 60)).padStart(2, '0') +
+      ':' +
+      String(seconds % 60).padStart(2, '0');
+  }
+}
+
+function combatPanelDisplay(shell: HTMLElement, options: FleetNativeCombatPanelOptions) {
+  return createFleetDisplayMenu(shell, [
+    ...(!options.fleet ? (['lines', 'assignments', 'overview'] as const) : []),
+    ...(options.spectator ? (['playerMarker'] as const) : []),
+  ]);
+}
+
 export function createFleetNativeCombatPanel(
   options: FleetNativeCombatPanelOptions
 ): FleetNativeCombatPanel {
   const shell = makeCombatShell(options.root, options.canvas);
   const parallelStatus = prepareParallelDuelPanel(shell, options);
-  const displayMenu = createFleetDisplayMenu(shell);
+  const displayMenu = combatPanelDisplay(shell, options);
 
   const canvas = options.canvas ?? shell.querySelector<HTMLCanvasElement>('.strategic-combat-map');
   const playerHud = shell.querySelector<HTMLElement>('.combat-hud--player');
@@ -357,11 +390,15 @@ export function createFleetNativeCombatPanel(
     const display = displayMenu.get();
     const fleet = options.fleet?.();
     const engagements = fleet?.engagements ?? [];
-    renderer.updateEncounter(model, fleet, display);
+    renderer.updateEncounter(
+      model,
+      fleet,
+      options.spectator ? { ...display, playerMarker: false } : display
+    );
     updateParallelDuelStatus(parallelStatus, engagements);
     setFleetOverlayVisible(parallelStatus, display.overview);
-    setFleetOverlayVisible(playerHud, display.hud);
-    setFleetOverlayVisible(enemyHud, display.hud);
+    setFleetOverlayVisible(playerHud, display.playerHud);
+    setFleetOverlayVisible(enemyHud, display.enemyHud);
     setFleetOverlayVisible(event, display.events);
     if (
       !options.spectator &&
@@ -377,24 +414,24 @@ export function createFleetNativeCombatPanel(
     // avoidable layout and garbage-collection work during longer duels.
     if (model.elapsedSeconds - lastHudTime < 0.1 && model.winner === null) return;
     lastHudTime = model.elapsedSeconds;
-    playerHud.innerHTML = combatantHud(model.attacker, model.elapsedSeconds);
-    enemyHud.innerHTML = combatantHud(model.defender, model.elapsedSeconds);
+    if (display.playerHud)
+      playerHud.innerHTML = combatantHud(
+        model.attacker,
+        model.elapsedSeconds,
+        display.playerWeapons
+      );
+    if (display.enemyHud)
+      enemyHud.innerHTML = combatantHud(model.defender, model.elapsedSeconds, display.enemyWeapons);
     event.textContent = model.lastEvent;
-    const timer = shell.querySelector<HTMLElement>('.combat-encounter-time');
-    if (timer) {
-      const seconds = Math.floor(model.elapsedSeconds);
-      timer.textContent =
-        (options.encounterName ?? 'Freies Duell') +
-        ' · ' +
-        String(Math.floor(seconds / 60)).padStart(2, '0') +
-        ':' +
-        String(seconds % 60).padStart(2, '0');
-    }
+    updateCombatEncounterTime(shell, options.encounterName ?? 'Freies Duell', model.elapsedSeconds);
     updateCombatReturnButton(returnButton, options, model, defeatReturnStartedAt);
     updateCombatActionButtons(grappleButton, fleeButton, surrenderButton, model);
   };
 
-  displayMenu.onChange(render);
+  displayMenu.onChange(() => {
+    lastHudTime = -Infinity;
+    render();
+  });
   returnButton.addEventListener('click', () => {
     if (defeatReturnStartedAt !== null && performance.now() - defeatReturnStartedAt < 2200) return;
     options.onReturn();

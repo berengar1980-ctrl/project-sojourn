@@ -118,9 +118,10 @@ assert(
   'pirates must intercept travelling players, raid civilian ships and steal up to ten cargo units'
 );
 
+const recovery = readModuleSource(root, 'src/systems/npcs/npc-sector-combat-recovery.ts');
 assert(
-  sector.includes('private beginCombatRecovery = (') &&
-    sector.includes("npc.activityId = 'repair'") &&
+  sector.includes('beginNpcCombatRecovery(') &&
+    recovery.includes("npc.activityId = 'repair'") &&
     engagement.includes('KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'),
   'pirates and civilians must survive defeat as disabled ships and recover instead of dying'
 );

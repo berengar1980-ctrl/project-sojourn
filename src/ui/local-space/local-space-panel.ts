@@ -7,7 +7,7 @@ import { bindScanDataToggle } from '../local-operations/local-operations-hud';
 import { bindLocalSpaceInput } from './local-space-input';
 
 import { LocalSpaceRenderer } from './local-space-renderer';
-import { createEmbeddedCombatHud } from '../combat/embedded-combat-hud';
+import { createEmbeddedCombatDisplay } from '../combat/embedded-combat-hud';
 
 import type { SystemLogService } from '../../core/system-log-types';
 
@@ -176,7 +176,7 @@ function bindCombatTactics(combatTactics: HTMLElement, options: LocalSpacePanelO
 
 export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpacePanel {
   const shell = createLocalSpaceShell(options);
-  const combatHud = createEmbeddedCombatHud(shell);
+  const display = createEmbeddedCombatDisplay(shell);
   const controls = localSpaceControls(shell);
   const {
     canvas,
@@ -195,7 +195,8 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
 
   let model = options.model;
   let selectedCombatWreckId: string | null = null;
-  const renderer = new LocalSpaceRenderer(canvas, model);
+  const renderer = new LocalSpaceRenderer(canvas, model, display.get());
+  display.onChange(() => renderer.update(model, display.get()));
   const systemLog = createSystemLogPanel({
     root: shell,
     log: options.log,
@@ -216,7 +217,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   );
 
   const updateOverlay = (): void => {
-    combatHud.update(model.combat);
+    display.update(model.combat);
     updateLocalOverlay({
       model,
       controls,
@@ -261,7 +262,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     update(nextModel): void {
       model = nextModel;
       renderer.update(model);
-      if (model.combat) combatHud.update(model.combat);
+      if (model.combat) display.update(model.combat);
       const now = performance.now();
       if (now - lastOverlayUpdate >= 100) {
         lastOverlayUpdate = now;

@@ -50,13 +50,17 @@ assert(
 );
 assert(
   duelHud.includes('export function combatantHud(') &&
-    sharedHud.includes('combatantHud(snapshot.attacker, snapshot.elapsedSeconds)') &&
-    sharedHud.includes('combatantHud(snapshot.defender, snapshot.elapsedSeconds)'),
+    /combatantHud\(\s*snapshot\.attacker,\s*snapshot\.elapsedSeconds,\s*display\.playerWeapons/.test(
+      sharedHud
+    ) &&
+    /combatantHud\(\s*snapshot\.defender,\s*snapshot\.elapsedSeconds,\s*display\.enemyWeapons/.test(
+      sharedHud
+    ),
   'embedded combat must reuse native duel shield, subsystem and weapon telemetry'
 );
 assert(
-  miningPanel.includes('createEmbeddedCombatHud(shell)') &&
-    salvagePanel.includes('createEmbeddedCombatHud(shell)'),
+  miningPanel.includes('createEmbeddedCombatDisplay(shell)') &&
+    salvagePanel.includes('createEmbeddedCombatDisplay(shell)'),
   'mining and salvage scenes must share the same combat HUD'
 );
 assert(

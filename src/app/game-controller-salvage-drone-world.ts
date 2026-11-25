@@ -39,6 +39,9 @@ export function careerSalvageDrone(
     return existing.drone;
   }
   const drone = createSalvageSecurityDrone(field, context.economy.wreckClaims);
+  const id = 'security-drone:' + field.sourceLocationId;
+  const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === id);
+  if (!npc?.combatMovement) drone.syncAvailability(npc);
   active.set(field.sourceLocationId, { field, drone });
   context.economy.wreckClaims.rememberField(field, drone.exportState());
   return drone;
@@ -80,6 +83,10 @@ export function advanceCareerSalvageDrones(
   accumulators.set(context, accumulator);
   for (const [locationId, world] of worlds(context)) {
     if (locationId === activeLocation) continue;
+    const droneId = 'security-drone:' + locationId;
+    const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === droneId);
+    if (npc?.combatMovement) continue;
+    world.drone.syncAvailability(npc);
     // Bounded steps preserve waypoint transitions and keep expensive route
     // recalculations outside the rendering cadence.
     for (let i = 0; i < elapsed * 5; i += 1)

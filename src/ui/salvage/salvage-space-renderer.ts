@@ -1,3 +1,4 @@
+import type { FleetDisplayPreferences } from '../combat/fleet-display-menu';
 import { centerSalvageCamera } from './salvage-camera-centering';
 import { FleetNativeCombatRenderer } from '../combat/fleet-native-combat-renderer';
 import { pickNearestHitArea } from './salvage-hit-test';
@@ -16,7 +17,6 @@ import type {
 import { drawDistressScanEffect, drawDistressShipSprite } from './salvage-distress-scan-effect';
 import { drawDistressTow } from './distress-tow-renderer';
 import { drawTargetDetailScan, drawWideAreaScan } from '../local-operations/scan-effects';
-import { drawEmbeddedCombatShipTelemetry } from '../combat/embedded-combat-ship-telemetry';
 import { drawFieldPlayerThrusters } from '../combat/embedded-combat-thrusters';
 import { type ScreenPoint } from '../map/map-camera';
 import { PvPMapCamera } from '../combat/pvp-map-camera';
@@ -53,9 +53,11 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
   private lastFrameAt = -Infinity;
   constructor(
     private readonly canvas: HTMLCanvasElement,
-    model: SalvageSpaceViewModel
+    model: SalvageSpaceViewModel,
+    combatDisplay?: FleetDisplayPreferences
   ) {
     super();
+    if (combatDisplay) this.combatDisplay = combatDisplay;
     const context = canvas.getContext('2d');
     if (!context) throw new Error('Salvage-space canvas context unavailable.');
     this.context = context;
@@ -64,7 +66,8 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
     this.background = new SpaceBackgroundRenderer(context, model.backgroundSeed);
     this.resize();
   }
-  update(model: SalvageSpaceViewModel): void {
+  update(model: SalvageSpaceViewModel, combatDisplay = this.combatDisplay): void {
+    this.combatDisplay = combatDisplay;
     this.model = model;
     for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     if (model.combat) {
@@ -91,7 +94,7 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       } else if (resumedCombat) {
         this.sharedCombatRenderer.beginEncounter(model.combat);
       }
-      this.sharedCombatRenderer.updateEncounter(model.combat, model.fleet);
+      this.sharedCombatRenderer.updateEncounter(model.combat, model.fleet, this.combatDisplay);
       return;
     }
     if (this.sharedCombatRenderer && this.sharedCombatActive) {
@@ -478,8 +481,6 @@ export class SalvageSpaceRenderer extends SalvageSceneLayers {
       this.canvas.clientWidth,
       this.canvas.clientHeight
     );
-    if (this.model.combat) {
-      drawEmbeddedCombatShipTelemetry(this.context, this.model.combat.attacker, geometry);
-    }
+    this.drawPlayerCombatAnnotations(geometry);
   }
 }

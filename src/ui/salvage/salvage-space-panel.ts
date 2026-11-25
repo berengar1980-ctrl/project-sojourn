@@ -17,7 +17,7 @@ import { renderSectorEvent } from './salvage-sector-event';
 import { bindSalvageSpaceInput } from './salvage-space-input';
 
 import { SalvageSpaceRenderer } from './salvage-space-renderer';
-import { createEmbeddedCombatHud } from '../combat/embedded-combat-hud';
+import { createEmbeddedCombatDisplay } from '../combat/embedded-combat-hud';
 
 import {
   type SalvageControls,
@@ -359,16 +359,17 @@ function bindSalvagePanelActions(
 
 export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): SalvageSpacePanel {
   const shell = createShell(options);
-  const combatHud = createEmbeddedCombatHud(shell);
+  const display = createEmbeddedCombatDisplay(shell);
   const ui = controls(shell);
   let model = options.model;
-  const renderer = new SalvageSpaceRenderer(ui.canvas, model);
+  const renderer = new SalvageSpaceRenderer(ui.canvas, model, display.get());
   const workSelector = new SalvageWorkSelector(
     ui.resources,
     ui.workButton,
     options.onStrip,
     options.onRecoverComponent
   );
+  display.onChange(() => renderer.update(model, display.get()));
   const systemLog = createSystemLogPanel({
     root: shell,
     log: options.log,
@@ -389,7 +390,7 @@ export function createSalvageSpacePanel(options: SalvageSpacePanelOptions): Salv
   const update = (next: SalvageSpaceViewModel): void => {
     model = next;
     renderer.update(model);
-    combatHud.update(model.combat);
+    display.update(model.combat);
     const now = performance.now();
     if (now - lastHudUpdate < 100) return;
     lastHudUpdate = now;

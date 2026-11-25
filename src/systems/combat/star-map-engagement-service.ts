@@ -32,6 +32,7 @@ import {
   prepareFieldCombatArena,
   resetFieldCombatSteps,
   registerFieldCombatWreck,
+  removeFieldCombatWrecks,
   joinBackgroundCombat,
   resolveBackgroundCombats,
   reportFieldFleetLosses,
@@ -413,8 +414,7 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
       (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
     );
     runtime.playerFleet.tick(deltaSeconds);
-    if (runtime.playerEnemy)
-      reportFieldFleetLosses(runtime, runtime.playerFleet, runtime.playerEnemy.locationId);
+    reportFieldFleetLosses(runtime, runtime.playerFleet);
     reportNpcBoardingResults(runtime, runtime.playerFleet);
   }
 }
@@ -476,6 +476,7 @@ export function createStarMapEngagementService(
       fieldCombat(runtime, locationId, seed, bystanders),
     registerFieldCombatWreck: (locationId, seed, destroyedId, body) =>
       registerFieldCombatWreck(runtime, locationId, seed, destroyedId, body),
+    removeFieldCombatWrecks: (ids) => removeFieldCombatWrecks(runtime, ids),
     finishedFieldCombatSnapshots: () => runtime.finishedFieldDuels,
     activeNpcCombatSnapshots: () =>
       [...runtime.backgroundCombats.values()].flatMap((entry) => [

@@ -1,3 +1,5 @@
+import type { SectorNpcState } from '../../core/npc-types';
+import { edgePoint } from '../npcs/npc-mining-targets';
 import { DRONE_SCAN_RADIUS } from '../../core/security-drone';
 import {
   moveFieldShip,
@@ -108,6 +110,17 @@ export class AsteroidSecurityDrone {
       shieldContactSeconds: this.shieldContactSeconds,
     };
   }
+  syncAvailability(npc?: Pick<SectorNpcState, 'id' | 'hullHp' | 'combatDefeats'>): void {
+    if (!npc || npc.hullHp <= 0) this.destroy();
+    else if (!this.operational) {
+      const key = npc.id + ':' + (npc.combatDefeats ?? 0);
+      this.restore(edgePoint(key, this.width, this.height), true);
+      const target = this.patrol[this.nextWaypoint]!;
+      this.headingRadians = Math.atan2(target.y - this.position.y, target.x - this.position.x);
+      this.speed = 0;
+    }
+  }
+
   destroy(): void {
     this.operational = false;
   }

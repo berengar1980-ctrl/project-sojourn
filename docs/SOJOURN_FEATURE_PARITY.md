@@ -88,6 +88,8 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log (PR #311: Märkte; PR #312: Ressourcen-Pools; keine Statusänderung)
 
+- Die gemeinsame Kampfanzeige erlaubt in Duellen, FleetCombat und Kampagne einzeln schaltbare Schiffsbeschriftungen, Waffenstatistiken und eine Spielerschiffmarkierung. Keine Statusänderung.
+- Minen- und Bergungsfelder staffeln die Sicherheitsdrohnen nach Gefahrenstufe. Ersatzdrohnen kommen nach drei Minuten vom Kartenrand. Kampfwracks bleiben für Kollisionen aktiv, bis sie leer sind oder zehn Minuten verstrichen sind. Keine Statusänderung.
 - Sicherheitsdrohnen können einen sichtbaren Piraten innerhalb ihres Sensorbereichs abfangen. Keine Statusänderung.
 - FleetCombat und Kampagne übernehmen zerstörte Schiffe direkt als Wracks in der Feldwelt, inklusive Größe und Drehung. Feldgefechte zeigen dieselben Autokanonen-Salven wie die direkte Kampfansicht. Keine Statusänderung.
 

@@ -138,6 +138,8 @@ assert(
   'background physics must resume from the live salvage/combat pose, not an old cached body'
 );
 assert(battleWreck.rotation3d.x > 0.4, '3D rotation must continue from the live pose');
+first.advanceCombatWreckLifetime(0.25, () => assert.fail('fresh wreck must survive'));
+assert.equal(battleWreck.remainingLifetimeSeconds, 599.75);
 const combatSave = first.exportState();
 const combatRestore = new AsteroidFieldWorld(
   narrowsSector.locations,
@@ -154,6 +156,23 @@ assert.notEqual(
   restoredWreck.resources[0].remainingAmount,
   battleWreck.resources[0].remainingAmount
 );
+const emptyWreck = {
+  ...structuredClone(restoredWreck),
+  id: 'combat-wreck-empty',
+  resources: restoredWreck.resources.map((resource) => ({ ...resource, remainingAmount: 0 })),
+};
+combatRestore.registerCombatWrecks(fieldId, [emptyWreck]);
+const removed = [];
+const age = () =>
+  combatRestore.advanceCombatWreckLifetime(0.25, (location, ids) => {
+    assert.equal(location, fieldId);
+    removed.push(...ids);
+  });
+for (let tick = 0; tick < 2398; tick++) age();
+assert.deepEqual(removed, [emptyWreck.id], 'depleted wreck disappears before the timer');
+assert.equal(restoredWreck.remainingLifetimeSeconds, 0.25);
+age();
+assert.deepEqual(removed, [emptyWreck.id, restoredWreck.id], 'wreck expires at ten minutes');
 combatRestore.reconcileCombatWrecks(fieldId, []);
 assert.equal(combatRestore.combatWrecks(fieldId).length, 0);
 const invalidWreckSave = JSON.parse(JSON.stringify(combatSave));
