@@ -2026,3 +2026,7 @@ Bergungskarte. Bergungsschiffe können die bestehenden Rohstoffvorräte
 nach Inspektion über den normalen Bergungsdienst abbauen. Die
 1vs1-Kampf-KI, Asteroidenticks, physische Körperanzahl, Beute und
 Save-Struktur bleiben unverändert.
+
+## Review-Log (2026-11-25) – Kampfwracks halb so groß
+
+**Keine Statusänderung** der bestehenden Sojourn-Feature-IDs. Die fünf Kampfwracks und ihre unabhängigen Trümmerteile werden nun rein visuell mit 50 % der ursprünglichen Größe dargestellt statt mit 66,7 %. Die vorhandene 1vs1-Kampfphysik, Kollisionskörper, Routenplanung, Bergungsressourcen und Speicherstruktur bleiben unverändert.
