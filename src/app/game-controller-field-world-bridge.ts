@@ -1,3 +1,4 @@
+import { balanceAsteroidStocks } from './game-controller-asteroid-stocks';
 import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { LocalSpaceInstance } from '../core/local-space-types';
@@ -65,6 +66,27 @@ export function fieldWitnessFor(
 }
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
+const lastAsteroidBalanceDay = new WeakMap<ControllerRuntimeContext, number>();
+
+function balanceDailyAsteroids(
+  context: ControllerRuntimeContext,
+  fields: AsteroidFieldWorld,
+  localId: string | null
+): void {
+  const simulation = context.economy.simulation;
+  const day = simulation.currentDay;
+  const previous = lastAsteroidBalanceDay.get(context);
+  if (previous !== undefined && day <= previous) return;
+  lastAsteroidBalanceDay.set(context, day);
+  fields.forEachField((field) => {
+    const activeTargets = new Set(field.miners.ships.map((ship) => ship.targetAsteroidId));
+    balanceAsteroidStocks(simulation, field.instance, (id) => {
+      if (field.locationId === localId || activeTargets.has(id)) return false;
+      const asteroid = field.instance.asteroids.find((entry) => entry.id === id);
+      return !!asteroid && !context.economy.asteroidClaims.claim(field.locationId, asteroid);
+    });
+  });
+}
 
 function registerInitialAsteroidStocks(
   context: ControllerRuntimeContext,
@@ -97,6 +119,7 @@ export function bindCareerFieldWorld(
 ): void {
   if (fieldWorlds.has(context)) throw new Error('Field world already installed');
   registerInitialAsteroidStocks(context, fields);
+  lastAsteroidBalanceDay.set(context, context.economy.simulation.currentDay);
   fieldWorlds.set(context, fields);
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
@@ -158,6 +181,7 @@ export function fieldWorldFor(
     initial
   );
   registerInitialAsteroidStocks(context, fields);
+  lastAsteroidBalanceDay.set(context, context.economy.simulation.currentDay);
   fieldWorlds.set(context, fields);
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
@@ -294,6 +318,7 @@ export function advanceControllerFieldWorld(
   const localDuels = localFieldDuels(background, fleet);
   const fieldWorld = fieldWorldFor(context);
   syncFinishedFieldPoses(context, fieldWorld, finished);
+  balanceDailyAsteroids(context, fieldWorld, localId);
   fieldWorld.advanceCombatWreckLifetime(deltaSeconds, (locationId, ids) => {
     for (const id of ids) context.economy.simulation.releasePhysicalStock(id);
     context.engagements.removeFieldCombatWrecks(ids);
