@@ -41,6 +41,7 @@ export function createNpcSalvageRuntime(
       return !claim || claim.ownerId === npc.id;
     },
     registerWreck: (npc, wreck) => {
+      if (wreck.combatWreckVariant) return true;
       const claim = options.wreckClaims.claim(field.id, wreck.id, options.getCurrentDay());
       if (claim) return claim.ownerId === npc.id;
       const result = options.wreckClaims.register(

@@ -25,6 +25,28 @@ const field = {
 };
 const registry = new WreckClaimRegistry();
 const wreck = field.wrecks[0];
+const combatWreck = { ...wreck, id: 'combat-wreck-test', combatWreckVariant: 'split-hull' };
+for (const owner of ['player', 'npc-1']) {
+  assert.deepEqual(registry.register(field, combatWreck, owner, 2, 1000), {
+    ok: false,
+    reason: 'combat-wreck',
+  });
+}
+assert.deepEqual(registry.exportState().claims, []);
+const legacy = new WreckClaimRegistry();
+legacy.restoreState({
+  ...registry.exportState(),
+  claims: [
+    {
+      fieldId: field.id,
+      wreckId: combatWreck.id,
+      ownerId: 'npc-1',
+      registeredDay: 2,
+      expiresDay: 16,
+    },
+  ],
+});
+assert.equal(legacy.claim(field.id, combatWreck.id, 3), null);
 assert.equal(registry.register(field, wreck, 'player', 2, 100).ok, false);
 const result = registry.register(field, wreck, 'player', 2, 1000);
 assert.deepEqual(result, { ok: true, fee: 650 });

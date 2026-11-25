@@ -1336,3 +1336,5 @@ Wracks aus laufenden Feldgefechten werden beim Abschuss in der bestehenden Feldw
 ### Feldsicherheit und Kampfwrack-Ablauf
 
 Die Sektor-NPCs speichern die 180 Sekunden bis zur Ersatzdrohne über das bestehende Feld `combatRecoverySeconds`. Die Wiederankunft benutzt die vorhandenen Feldpositionen und Aufenthaltsdaten. Kampfwracks speichern optional ihre verbleibende Dauer über `remainingLifetimeSeconds` im vorhandenen Feld-Checkpoint. Ältere Kampfwracks beginnen beim ersten Tick mit zehn Minuten Restlaufzeit. Natürliche Wracks verwenden diesen Timer nicht.
+
+Alte Konzessionen für Wracks aus Schiffszerstörungen werden beim Laden verworfen. Das bestehende Format für reguläre Bergungskonzessionen bleibt erhalten.
