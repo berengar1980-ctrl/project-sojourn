@@ -32,10 +32,17 @@ export interface WreckClaimCheckpoint {
 
 export type WreckClaimResult =
   | { readonly ok: true; readonly fee: number }
-  | { readonly ok: false; readonly reason: 'unscanned' | 'empty' | 'occupied' | 'unaffordable' };
+  | {
+      readonly ok: false;
+      readonly reason: 'unscanned' | 'empty' | 'occupied' | 'unaffordable' | 'combat-wreck';
+    };
 
 const CLAIM_DURATION_DAYS = 14;
 const CLAIM_FEE = 650;
+
+function isCombatWreckId(id: string): boolean {
+  return id.startsWith('combat-wreck-');
+}
 
 export class WreckClaimRegistry {
   private readonly claims = new Map<string, WreckClaim>();
@@ -120,6 +127,8 @@ export class WreckClaimRegistry {
     credits: number,
     fee = CLAIM_FEE
   ): WreckClaimResult {
+    if (wreck.combatWreckVariant || isCombatWreckId(wreck.id))
+      return { ok: false, reason: 'combat-wreck' };
     if (!wreck.inspected && wreck.scanLevel !== 'analyzed') {
       return { ok: false, reason: 'unscanned' };
     }
@@ -175,7 +184,8 @@ export class WreckClaimRegistry {
     this.claims.clear();
     this.fields.clear();
     for (const claim of saved.claims) {
-      this.claims.set(this.key(claim.fieldId, claim.wreckId), { ...claim });
+      if (!isCombatWreckId(claim.wreckId))
+        this.claims.set(this.key(claim.fieldId, claim.wreckId), { ...claim });
     }
     for (const [id, field] of saved.fields) {
       this.fields.set(id, {

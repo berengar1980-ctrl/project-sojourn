@@ -177,7 +177,8 @@ function showSalvageWreck(
   }
   ui.boardButton.hidden = !wreck.boardable || !model.salvageAvailable;
   const owner = model.wreckClaimOwners[wreck.id];
-  ui.claimButton.hidden = !model.salvageAvailable || owner === 'player';
+  ui.claimButton.hidden =
+    Boolean(wreck.combatWreckVariant) || !model.salvageAvailable || owner === 'player';
   ui.claimButton.disabled = Boolean(owner) || !wreck.inspected;
   ui.claimButton.textContent = owner ? 'WRACK BEREITS BEANSPRUCHT' : 'WRACK BEANSPRUCHEN · 650 CR';
   ui.meta.textContent =

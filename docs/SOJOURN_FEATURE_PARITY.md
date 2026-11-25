@@ -88,6 +88,7 @@ Automatisiert wird das durch `scripts/check-feature-parity.cjs` und `tests/quali
 
 ## Review-Log (PR #311: Märkte; PR #312: Ressourcen-Pools; keine Statusänderung)
 
+- Wracks zerstörter Schiffe bleiben für Spieler und NPCs ohne Konzession bergbar. Keine Statusänderung.
 - Die gemeinsame Kampfanzeige erlaubt in Duellen, FleetCombat und Kampagne einzeln schaltbare Schiffsbeschriftungen, Waffenstatistiken und eine Spielerschiffmarkierung. Keine Statusänderung.
 - Minen- und Bergungsfelder staffeln die Sicherheitsdrohnen nach Gefahrenstufe. Ersatzdrohnen kommen nach drei Minuten vom Kartenrand. Kampfwracks bleiben für Kollisionen aktiv, bis sie leer sind oder zehn Minuten verstrichen sind. Keine Statusänderung.
 - Sicherheitsdrohnen können einen sichtbaren Piraten innerhalb ihres Sensorbereichs abfangen. Keine Statusänderung.

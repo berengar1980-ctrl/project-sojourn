@@ -30,7 +30,11 @@ export function createWreckClaimActions(options: WreckClaimActionsOptions) {
       player.credits -= result.fee;
       log.write('BERGUNG > WRACKANSPRUCH REGISTRIERT');
     } else {
-      log.write('BERGUNG > ANSPRUCH NICHT MÖGLICH: ' + result.reason);
+      log.write(
+        result.reason === 'combat-wreck'
+          ? 'BERGUNG > KAMPFWRACK OHNE KONZESSION FREI BERGBAR'
+          : 'BERGUNG > ANSPRUCH NICHT MÖGLICH: ' + result.reason
+      );
     }
     refresh();
   };
