@@ -52,8 +52,14 @@ export function controllerCombatWreckHooks(getContext: () => ControllerRuntimeCo
 function fundCombatWreck(context: ControllerRuntimeContext, wreck: SalvageWreck): void {
   const simulation = context.economy.simulation;
   for (const deposit of wreck.resources) {
-    // Reserve enough for several comparable wrecks, but never create material.
-    simulation.refillCombatBuffer(deposit.resourceId, deposit.initialAmount * 5);
+    // Bootstrap legacy/new pools once from existing market stock. Subsequent
+    // wrecks only use the protected buffer and normal returned consumption.
+    const pool = simulation.pools[deposit.resourceId];
+    const target = deposit.initialAmount * 5;
+    if (pool && pool.combatBuffer === undefined) {
+      pool.combatBuffer = simulation.allocatePhysicalResource(deposit.resourceId, target);
+    }
+    simulation.refillCombatBuffer(deposit.resourceId, target);
     const funded = simulation.fundPhysicalStock(
       deposit.resourceId,
       wreck.id,
