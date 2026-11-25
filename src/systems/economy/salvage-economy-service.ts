@@ -2,6 +2,8 @@ import type { EconomyResourceId, PlayerEconomyState } from '../../core/economy-t
 
 interface PhysicalResourceAllocator {
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+  getPhysicalStock?(resourceId: string, sourceId: string): number | undefined;
+  withdrawPhysicalStock?(resourceId: string, sourceId: string, amount: number): number;
 }
 
 interface PlayerCargoReceiver {
@@ -29,7 +31,8 @@ export interface SalvageEconomyService {
     resourceId: EconomyResourceId,
     requestedQuantity: number,
     cargoCapacityTons: number,
-    originId?: string
+    originId?: string,
+    sourceId?: string
   ): number;
 }
 
@@ -38,12 +41,23 @@ export function createSalvageEconomyService(
   cargo: PlayerCargoReceiver
 ): SalvageEconomyService {
   return {
-    recover(resourceId, requestedQuantity, cargoCapacityTons, originId) {
+    recover(resourceId, requestedQuantity, cargoCapacityTons, originId, sourceId) {
       const requested = quantity(requestedQuantity);
       const free = Math.max(0, quantity(cargoCapacityTons) - cargoUsed(cargo.player));
       const wanted = Math.min(requested, free);
       if (wanted <= 0) return 0;
 
+      const stock = sourceId ? allocator.getPhysicalStock?.(resourceId, sourceId) : undefined;
+      if (sourceId && stock !== undefined && allocator.withdrawPhysicalStock) {
+        const received = cargo.receiveCargo(
+          resourceId,
+          Math.min(wanted, stock),
+          cargoCapacityTons,
+          originId
+        );
+        allocator.withdrawPhysicalStock(resourceId, sourceId, received);
+        return received;
+      }
       const allocated = allocator.allocatePhysicalResource(resourceId, wanted);
       if (allocated <= 0) return 0;
       return cargo.receiveCargo(resourceId, allocated, cargoCapacityTons, originId);
