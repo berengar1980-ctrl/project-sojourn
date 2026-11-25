@@ -49,6 +49,22 @@ export function controllerCombatWreckHooks(getContext: () => ControllerRuntimeCo
   };
 }
 
+function fundCombatWreck(context: ControllerRuntimeContext, wreck: SalvageWreck): void {
+  const simulation = context.economy.simulation;
+  for (const deposit of wreck.resources) {
+    // Reserve enough for several comparable wrecks, but never create material.
+    simulation.refillCombatBuffer(deposit.resourceId, deposit.initialAmount * 5);
+    const funded = simulation.fundPhysicalStock(
+      deposit.resourceId,
+      wreck.id,
+      deposit.initialAmount,
+      true
+    );
+    deposit.initialAmount = funded;
+    deposit.remainingAmount = funded;
+  }
+}
+
 /** Store defeated ships in the authoritative career field, not in a disposable combat scene. */
 export function recordCareerCombatWrecks(
   context: ControllerRuntimeContext,
@@ -80,11 +96,12 @@ export function recordCareerCombatWrecks(
   for (const ship of losses) {
     if (ship.hullHp > 0) continue;
     const nativeWreck = bodies?.find((body) => body.id === 'fleet-wreck:' + ship.id);
-    if (!nativeWreck && recorded.has(ship.id)) continue;
+    if (recorded.has(ship.id)) continue;
     const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
     if (wreck) {
       if (nativeWreck) adoptNativeWreckPose(wreck, nativeWreck);
       recorded.add(ship.id);
+      fundCombatWreck(context, wreck);
       created.push(wreck);
       if (snapshot.arena.backdropSeed !== undefined) {
         context.engagements?.registerFieldCombatWreck?.(
