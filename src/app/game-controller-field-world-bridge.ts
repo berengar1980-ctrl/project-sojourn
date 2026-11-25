@@ -104,11 +104,7 @@ function balanceDailySalvage(context: ControllerRuntimeContext, day: number): vo
     if (seed === undefined) continue;
     const field = generateSalvageField(location.id, seed, location.dangerLevel);
     wreckClaims.restoreField(field);
-    balancePermanentSalvageStocks(
-      simulation,
-      field,
-      (id) => !wreckClaims.claim(field.id, id, day)
-    );
+    balancePermanentSalvageStocks(simulation, field, (id) => !wreckClaims.claim(field.id, id, day));
     wreckClaims.rememberField(field);
   }
 }
