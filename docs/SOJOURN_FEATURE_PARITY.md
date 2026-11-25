@@ -2033,3 +2033,7 @@ Die Startaufstellung verteilt Spieler, NPCs und Drohnen auf freie Positionen
 im Feld. Gelbe Piraten kommen von links, rote von rechts. Die Aufstellung
 gehört zum Testszenario. Kampagne und eigenständiges 1vs1 verwenden ihre
 bestehenden Starts.
+
+## Review-Log (2026-11-25) – Kampfwracks halb so groß
+
+**Keine Statusänderung** der bestehenden Sojourn-Feature-IDs. Die fünf Kampfwracks und ihre unabhängigen Trümmerteile werden nun rein visuell mit 50 % der ursprünglichen Größe dargestellt statt mit 66,7 %. Die vorhandene 1vs1-Kampfphysik, Kollisionskörper, Routenplanung, Bergungsressourcen und Speicherstruktur bleiben unverändert.

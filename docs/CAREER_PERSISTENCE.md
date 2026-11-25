@@ -1326,3 +1326,7 @@ Die Startaufstellung wird für das jeweilige FleetCombat-Testszenario aus
 seinem Feld und der Teilnehmerliste berechnet. Sie wird nicht gespeichert.
 Die normalen Einstiege in Kampagnenfelder nutzen dieselben Flugdienste mit
 ihren bestehenden Startpositionen.
+
+### Halbierte Kampfwrackdarstellung (2026-11-25)
+
+**Keine Speicheränderung.** Die fünf Kampfwrackmodelle und ihre unabhängig taumelnden Fragmente werden ausschließlich beim Zeichnen von zwei Dritteln auf die Hälfte der ursprünglichen sichtbaren Größe reduziert. Physische Wrackradien, Kollision, Routenplanung, Bergungsreichweite, Rohstoffmengen und vorhandene Save-Felder bleiben unverändert.

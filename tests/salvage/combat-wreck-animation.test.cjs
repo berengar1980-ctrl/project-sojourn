@@ -19,6 +19,6 @@ assert.match(combat, /radius, rotation, timeSeconds, seed/, 'combat passes visua
 assert.match(wreck, /timeSeconds = performance\.now\(\) \/ 1000/, '1v1 uses shared renderer clock');
 assert.match(mining, /performance\.now\(\) \/ 1000/, 'local field draws moving wrecks');
 assert.match(wreck, /addCombatWreckDetail/, 'every model builds detailed geometry');
-assert.match(wreck, /const visibleRadius = radius \* \(2 \/ 3\)/, 'wrecks draw at two-thirds size');
+assert.match(wreck, /const visibleRadius = radius \* 0\.5/, 'wrecks draw at half original size');
 assert.match(wreck, /const reach = visibleRadius \*/, 'fragment spacing also scales down');
 console.log('PASS destroyed ship rotation, fragment drift and full-detail LOD wiring');
