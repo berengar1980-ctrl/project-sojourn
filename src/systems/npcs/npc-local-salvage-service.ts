@@ -1,3 +1,4 @@
+import { salvageStockId } from '../salvage/salvage-stock-id';
 import { salvageDroneObstacleAsteroids } from '../salvage/salvage-patrol-geometry';
 import {
   moveFieldShip,
@@ -235,7 +236,12 @@ class LocalSalvageService implements NpcLocalSalvageService {
       return;
     }
     const requested = Math.min(recoveryAmount(npc, wreck), deposit.remainingAmount);
-    const accepted = this.options.recover(npc, deposit.resourceId, requested, wreck.id);
+    const accepted = this.options.recover(
+      npc,
+      deposit.resourceId,
+      requested,
+      salvageStockId(this.options.field, wreck)
+    );
     if (accepted > 0) deposit.remainingAmount = Math.max(0, deposit.remainingAmount - accepted);
 
     if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity)) {
