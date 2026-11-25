@@ -1348,3 +1348,5 @@ Optionale Checkpoint-Felder bleiben mit alten Pool-Snapshots kompatibel und werd
 und detached kopiert. Die Aktivierung an den Weltobjekten, die Wiederbefüllung regulärer
 Felder und die Migration bestehender Feldbestände sind gesondert zu integrieren; ohne
 Aktivierung bleibt die bisherige Allokation erhalten.
+
+Asteroid physical stock includes uncollected mining chunks. The daily world balance records missing material as loss and refills only unclaimed, inactive, off-screen deposits from the existing reserve; restored stock entries are not registered twice.
