@@ -158,7 +158,7 @@ function mine(
   }
 
   const requested = Math.min(MINING_AMOUNT, deposit.oreRemaining);
-  const accepted = runtime.options.mine(npc, deposit.resourceId, requested);
+  const accepted = runtime.options.mine(npc, deposit.resourceId, requested, asteroid.id);
   if (accepted > 0) {
     // A real successful mining cycle spawns one collecting ore fragment.
     // The existing player chunk/tractor visualizer renders its travel.
