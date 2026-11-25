@@ -1,3 +1,5 @@
+import { balancePermanentSalvageStocks } from './game-controller-salvage-stocks';
+import { generateSalvageField } from '../systems/salvage';
 import { balanceAsteroidStocks } from './game-controller-asteroid-stocks';
 import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import { measurePerformance } from '../core/performance-diagnostics';
@@ -78,6 +80,7 @@ function balanceDailyAsteroids(
   const previous = lastAsteroidBalanceDay.get(context);
   if (previous !== undefined && day <= previous) return;
   lastAsteroidBalanceDay.set(context, day);
+  balanceDailySalvage(context, day);
   fields.forEachField((field) => {
     const activeTargets = new Set(field.miners.ships.map((ship) => ship.targetAsteroidId));
     balanceAsteroidStocks(simulation, field.instance, (id) => {
@@ -86,6 +89,28 @@ function balanceDailyAsteroids(
       return !!asteroid && !context.economy.asteroidClaims.claim(field.locationId, asteroid);
     });
   });
+}
+
+function balanceDailySalvage(context: ControllerRuntimeContext, day: number): void {
+  const { simulation, wreckClaims } = context.economy;
+  const mounted = context.state.salvageScene?.getField();
+  for (const location of narrowsSector.locations) {
+    if (!location.activities.salvage) continue;
+    if (mounted?.sourceLocationId === location.id) {
+      balancePermanentSalvageStocks(simulation, mounted, () => false);
+      continue;
+    }
+    const seed = wreckClaims.storedSeed(location.id);
+    if (seed === undefined) continue;
+    const field = generateSalvageField(location.id, seed, location.dangerLevel);
+    wreckClaims.restoreField(field);
+    balancePermanentSalvageStocks(
+      simulation,
+      field,
+      (id) => !wreckClaims.claim(field.id, id, day)
+    );
+    wreckClaims.rememberField(field);
+  }
 }
 
 function registerInitialAsteroidStocks(
