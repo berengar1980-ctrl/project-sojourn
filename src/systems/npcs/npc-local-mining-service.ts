@@ -78,12 +78,15 @@ function syncArrivals(runtime: MinerRuntime): void {
       runtime.options.height,
       runtime.options.seed ?? 0
     );
-    const resumePosition = runtime.combatReturnPositions.get(npc.id);
+    const spawn =
+      runtime.combatReturnPositions.get(npc.id) ??
+      runtime.options.initialPosition?.(npc.id) ??
+      entry;
     runtime.ships.push({
       npcId: npc.id,
       name: npc.name,
       shipId: npc.shipId,
-      position: resumePosition ? { ...resumePosition } : { ...entry },
+      position: { ...spawn },
       headingRadians: 0,
       speed: localCruiseSpeed(npc),
       phase: 'entering',

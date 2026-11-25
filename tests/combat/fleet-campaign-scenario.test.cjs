@@ -127,10 +127,36 @@ const { createGameController } = load('src/app/game-controller.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 const { createNavigationService } = load('src/systems/navigation/navigation-service.ts');
 const { createPlayerProfile } = load('src/core/player-profile.ts');
+for (const map of ['empty', 'asteroid_field', 'scrap_field']) {
+  const fleetGroups = ['npc', 'drone', 'pirates-yellow', 'pirates-red'].map((group) => ({
+    group,
+    initial: 5,
+    joining: 2,
+    afterSeconds: 25,
+  }));
+  const config = { map, incident: 'none', ships: createFleetScenarioRoster(fleetGroups, map) };
+  const session = prepareFleetField(config, 4321);
+  const { mining, salvage, spawns } = session.exercise;
+  const { width } = mining ?? salvage;
+  for (const [id, point] of spawns) {
+    if (id.startsWith('pirates-yellow')) assert(point.x < width / 4);
+    else if (id.startsWith('pirates-red')) assert(point.x > (width * 3) / 4);
+    else assert(point.x > width / 4 && point.x < (width * 3) / 4);
+  }
+  const points = [...spawns.values()];
+  for (let i = 0; i < points.length; i++) {
+    for (const other of points.slice(i + 1)) {
+      assert(Math.hypot(points[i].x - other.x, points[i].y - other.y) >= 170);
+    }
+  }
+}
+
 for (const map of ['asteroid_field', 'scrap_field']) {
   const stagedGroups = [
     { group: 'npc', initial: 1, joining: 3, afterSeconds: 1 },
     { group: 'drone', initial: 0, joining: 2, afterSeconds: 1 },
+    { group: 'pirates-yellow', initial: 1, joining: 0, afterSeconds: 0 },
+    { group: 'pirates-red', initial: 1, joining: 0, afterSeconds: 0 },
   ];
   const config = { map, incident: 'none', ships: createFleetScenarioRoster(stagedGroups, map) };
   const session = prepareFleetField(config, 4321);
@@ -160,7 +186,20 @@ for (const map of ['asteroid_field', 'scrap_field']) {
   });
   const mining = map === 'asteroid_field';
   assert.equal(ctx.state.mode, mining ? 'local-space' : 'salvage-space');
-  assert.equal(ctx.economy.sectorNpcs.npcs.length, 1);
+  const playerBody = mining
+    ? ctx.state.localSpace.getSnapshot().instance.ship
+    : ctx.state.salvageScene.body('player');
+  assert.deepEqual(playerBody.position, session.exercise.spawns.get('player'));
+  const traffic = ctx.economy.localPirates.get(session.location.id);
+  for (const [id, heading] of [
+    ['pirates-yellow-1', 0],
+    ['pirates-red-1', Math.PI],
+  ]) {
+    assert.deepEqual(traffic.body(id).position, session.exercise.spawns.get(id));
+    assert.equal(traffic.body(id).headingRadians, heading);
+  }
+
+  assert.equal(ctx.economy.sectorNpcs.npcs.length, 3);
   function advance(count) {
     for (let n = 0; n < count; n++) {
       clock += 80;
@@ -169,9 +208,9 @@ for (const map of ['asteroid_field', 'scrap_field']) {
     }
   }
   advance(10);
-  assert.equal(ctx.economy.sectorNpcs.npcs.length, 1);
+  assert.equal(ctx.economy.sectorNpcs.npcs.length, 3);
   advance(5);
-  assert.equal(ctx.economy.sectorNpcs.npcs.length, 6);
+  assert.equal(ctx.economy.sectorNpcs.npcs.length, 8);
   const body = (id) =>
     mining
       ? ctx.economy.localPirates.get(session.location.id).body(id)

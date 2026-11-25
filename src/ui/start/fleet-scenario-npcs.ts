@@ -59,6 +59,9 @@ export function scenarioArrivals(roster: readonly FleetScenarioShip[], location:
           }
         : {}),
     };
+    delete npc.travel;
+    delete npc.combatMovement;
+    delete npc.orbit;
     if (!npc.pirate) delete npc.pirateMark;
     arrivals.push({ at: ship.arrivalSeconds, npc });
   }

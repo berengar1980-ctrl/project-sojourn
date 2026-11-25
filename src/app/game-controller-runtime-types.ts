@@ -1,3 +1,4 @@
+import type { WorldPoint } from '../core/world-types';
 import type { SalvageField } from '../core/salvage-types';
 import type { CampaignEventBus } from '../systems/campaigns/campaign-event-bus';
 import type { CampaignRuntime } from '../systems/campaigns/campaign-runtime';
@@ -62,6 +63,7 @@ export interface ControllerRuntimeState {
 
 export interface ControllerRuntimeContext {
   readonly finishFieldExercise?: () => void;
+  readonly fieldExerciseSpawns?: ReadonlyMap<string, WorldPoint>;
   readonly root: HTMLElement;
   readonly navigation: NavigationService;
   readonly systemLog: SystemLogService;

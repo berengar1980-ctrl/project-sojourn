@@ -1,3 +1,4 @@
+import type { WorldPoint } from '../core/world-types';
 import type { SectorNpcState } from '../core/npc-types';
 import { localFieldDuels } from '../systems/combat/dynamic-fleet-combat';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -9,7 +10,10 @@ import {
 } from './game-controller-salvage-pirate-combat';
 
 /** Wire local salvage traffic to existing authoritative career services. */
-export function salvageSecurityActions(context: ControllerRuntimeContext) {
+export function salvageSecurityActions(
+  context: ControllerRuntimeContext,
+  playerStart?: WorldPoint
+) {
   const getNpcCombats = () => {
     const field = context.state.salvageScene?.getField();
     return field
@@ -19,6 +23,8 @@ export function salvageSecurityActions(context: ControllerRuntimeContext) {
       : [];
   };
   return {
+    ...(playerStart && { playerStart }),
+    ...(context.fieldExerciseSpawns && { spawnPositions: context.fieldExerciseSpawns }),
     resolveDrone: (field: Parameters<typeof careerSalvageDrone>[1]) =>
       careerSalvageDrone(context, field),
     resolvePirateTraffic: (field: Parameters<typeof careerSalvagePirates>[1]) =>
