@@ -46,7 +46,7 @@ const context = {
   economy: {
     asteroidClaims: claims,
     legal,
-    sectorNpcs: { npcs: [npc] },
+    sectorNpcs: { npcs: [npc, { id: 'security-drone:' + locationId, hullHp: 100 }] },
     trade: { player: { credits: 0 } },
     situations: { currentDay: 3 },
   },

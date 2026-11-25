@@ -30,6 +30,7 @@ export function nativeCombatAsteroids(arena: StrategicCombatArenaOptions): Local
         asteroid.kind === 'resource'
           ? {
               ...physics,
+              velocity: { ...physics.velocity },
               mass: physics.mass * Math.max(8, asteroid.radius / 3),
               momentOfInertia: physics.momentOfInertia * Math.max(8, asteroid.radius / 3),
             }

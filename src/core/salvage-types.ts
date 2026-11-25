@@ -80,6 +80,7 @@ export interface SalvageWreck {
   readonly debrisVariant?: SalvageDebrisVariant;
   readonly sectionVariant?: SalvageSectionVariant;
   readonly combatWreckVariant?: CombatWreckVariant;
+  remainingLifetimeSeconds?: number;
   readonly effectSeed?: number;
   driftVelocity?: WorldPoint;
   rotation3d?: { x: number; y: number; z: number };

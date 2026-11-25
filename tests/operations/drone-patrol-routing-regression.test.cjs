@@ -61,7 +61,10 @@ const field = {
 };
 const registry = new WreckClaimRegistry();
 const context = {
-  economy: { wreckClaims: registry },
+  economy: {
+    wreckClaims: registry,
+    sectorNpcs: { npcs: [{ id: 'security-drone:' + field.sourceLocationId, hullHp: 100 }] },
+  },
   state: { mode: 'salvage-space', salvageScene: { getField: () => field } },
 };
 const drone = careerSalvageDrone(context, field);

@@ -85,7 +85,8 @@ export function resolveCombatAsteroidContacts(
       radiusY: geometry?.radiusY ?? 20,
     }
   );
-  // The shared solver changes asteroid positions and impulses, not the player's ship position.
+  const impactVelocities = new Map<string, { x: number; y: number }>();
+  // The shared solver moves the rock. Separate the ship as well, including at rest.
   native.forEach((body, index) => {
     const visual = arena.asteroids![index]!;
     // A ship cannot teleport a massive rock out of its way: limit impulse response
@@ -97,21 +98,25 @@ export function resolveCombatAsteroidContacts(
     const velocity = visual.velocity as { x: number; y: number };
     velocity.x = original.velocity.x + (body.physics.velocity.x - original.velocity.x) / resistance;
     velocity.y = original.velocity.y + (body.physics.velocity.y - original.velocity.y) / resistance;
+    if (body.position.x !== original.x || body.position.y !== original.y) {
+      impactVelocities.set(visual.id, original.velocity);
+      if (visual.kind === 'resource' || hits.some((hit) => hit.asteroidId === visual.id))
+        separateShipFromRock(ship, visual, geometry);
+    }
   });
   for (const hit of hits) {
     // The shared campaign solver pushes the asteroid but never updates the ship.
     // Resolve the equal-and-opposite ship response before applying damage.
-    const rock = arena.asteroids.find((asteroid) => asteroid.id === hit.asteroidId);
+    const impactVelocity = impactVelocities.get(hit.asteroidId);
     const approach =
-      (ship.velocity.x - (rock?.velocity.x ?? 0)) * hit.normal.x +
-      (ship.velocity.y - (rock?.velocity.y ?? 0)) * hit.normal.y;
+      (ship.velocity.x - (impactVelocity?.x ?? 0)) * hit.normal.x +
+      (ship.velocity.y - (impactVelocity?.y ?? 0)) * hit.normal.y;
     if (approach > 0) {
       const impulse = approach * 1.15;
       ship.velocity.x -= hit.normal.x * impulse;
       ship.velocity.y -= hit.normal.y * impulse;
       ship.speed = Math.hypot(ship.velocity.x, ship.velocity.y);
     }
-    if (rock) separateShipFromRock(ship, rock, geometry);
     const damage =
       Math.min(14, Math.max(0, hit.impactSpeed - 7) * 0.22) /
       Math.max(0.1, geometry?.modifier ?? 1);

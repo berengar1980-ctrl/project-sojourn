@@ -8,8 +8,14 @@ const renderer = fs.readFileSync(
   path.join(root, 'src/ui/combat/fleet-native-ship-annotations.ts'),
   'utf8'
 );
+const telemetry = fs.readFileSync(
+  path.join(root, 'src/ui/combat/embedded-combat-ship-telemetry.ts'),
+  'utf8'
+);
 assert(
-  renderer.includes('drawCombatShipStatus(context, combatant, geometry);'),
+  telemetry.includes(
+    'drawCombatShipStatus(context, combatant, geometry, display?.actions, display?.maneuvers);'
+  ),
   'combat HUD derives strategy and maneuver labels independently'
 );
 const statusRenderer = fs.readFileSync(
@@ -22,8 +28,8 @@ assert(
   'ram effects fade using visual time even after the winner freezes combat'
 );
 assert(!renderer.includes('combatant.combatIntent + (combatant.boostActive'));
-assert(renderer.includes('drawCombatBoostMeter('), 'boost visuals and charge meter remain');
-assert(renderer.includes('combatant.boostActive'), 'engine boost visual effects remain');
+assert(telemetry.includes('drawCombatBoostMeter('), 'boost visuals and charge meter remain');
+assert(telemetry.includes('combatant.boostActive'), 'engine boost visual effects remain');
 
 const { resolveCombatantCollision } = loadStandaloneTypeScriptModule(
   root,

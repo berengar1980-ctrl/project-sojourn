@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import type {
   NpcCombatMovementMode,
   NpcCombatTargetKind,
@@ -7,7 +8,7 @@ import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../ships';
 import { npcOperationalSpeed } from './npc-upgrade-service';
 import { replanNpcTravel } from './npc-sector-live-replan';
-import { npcRecoveryLocation } from './npc-sector-recovery-location';
+import { advanceNpcCombatRecovery, beginNpcCombatRecovery } from './npc-sector-combat-recovery';
 import { advanceNpcCombatMovement, resumeNpcFieldActivity } from './npc-sector-combat-movement';
 import {
   planRouteFromPoint,
@@ -17,7 +18,6 @@ import {
 } from '../navigation/route-planner';
 import {
   FUEL_DISTANCE_SCALE,
-  hashId,
   nearestLocation,
   patrolDestination,
   pirateHuntDestination,
@@ -44,10 +44,6 @@ import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-typ
 export type { NpcSectorServiceOptions } from './npc-sector-types';
 export type { NpcSectorService } from './npc-sector-types';
 
-const COMBAT_RECOVERY_MIN_SECONDS = 45;
-
-const COMBAT_RECOVERY_SPAN_SECONDS = 76;
-
 class SectorService implements NpcSectorService {
   constructor(
     private readonly world: WorldMap,
@@ -60,52 +56,6 @@ class SectorService implements NpcSectorService {
   advanceDay = (day: number): void => {
     this.currentDay = Math.max(this.currentDay, Math.floor(day));
     this.options.population?.advanceDay(this.currentDay);
-  };
-  private beginCombatRecovery = (
-    npc: SectorNpcState,
-    position: WorldPoint,
-    reason: string = 'Kampfunfähig'
-  ): boolean => {
-    const destinationId = npcRecoveryLocation(this.world, npc, position);
-    if (!destinationId) return false;
-
-    delete npc.travel;
-    delete npc.combatMovement;
-    npc.locationId = destinationId;
-    npc.orbit = npcOrbitStateFor(this.world, npc, destinationId);
-    // Emergency recovery returns a disabled ship to port, not a free full repair.
-    npc.hullHp = 1;
-    npc.combatDefeats = (npc.combatDefeats ?? 0) + 1;
-    if (this.options.population?.scheduleDefeated(npc, this.currentDay)) return true;
-    npc.combatRecoveryLocationId = destinationId;
-    npc.combatRecoverySeconds =
-      COMBAT_RECOVERY_MIN_SECONDS +
-      (hashId(npc.id + ':' + npc.combatDefeats) % COMBAT_RECOVERY_SPAN_SECONDS);
-    npc.activityId = 'repair';
-    npc.activity = reason + ' · geborgen · Reparatur';
-    return true;
-  };
-  private advanceCombatRecovery = (npc: SectorNpcState, deltaSeconds: number): boolean => {
-    const remaining = npc.combatRecoverySeconds ?? 0;
-    if (remaining <= 0) return false;
-    npc.combatRecoverySeconds = Math.max(0, remaining - deltaSeconds);
-    if (npc.combatRecoverySeconds > 0) return true;
-
-    serviceNpcAtLocation(this.world, npc);
-    delete npc.combatRecoverySeconds;
-    delete npc.combatRecoveryLocationId;
-    const intact = npc.hullHp >= npc.hullMaxHp;
-    npc.activityId = intact
-      ? npc.pirate
-        ? 'raiding'
-        : npc.job === 'patrol'
-          ? 'patrol'
-          : 'dock'
-      : 'maintenance';
-    npc.activity = intact
-      ? 'Reparatur abgeschlossen · bereit'
-      : 'Teilreparatur · weitere Wartung nur gegen Credits';
-    return true;
   };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
     const base = planRouteWithProfile(
@@ -373,10 +323,17 @@ class SectorService implements NpcSectorService {
   recoverFromCombat = (npc: SectorNpcState, reason = 'Rückzug', remainInField = false): boolean => {
     const movement = npc.combatMovement;
     const position = movement ? { ...movement.position } : this.livePosition(npc);
-    if (npc.hullHp <= 0) return this.beginCombatRecovery(npc, position, reason);
+    if (npc.hullHp <= 0)
+      return beginNpcCombatRecovery(
+        this.world,
+        npc,
+        position,
+        reason,
+        () => this.options.population?.scheduleDefeated(npc, this.currentDay) ?? false
+      );
     if (!movement) return false;
     delete npc.combatMovement;
-    if (remainInField) return resumeNpcFieldActivity(npc, reason);
+    if (remainInField || isSecurityDrone(npc.id)) return resumeNpcFieldActivity(npc, reason);
     const destinationId = nearestLocation(this.world, position);
     if (!destinationId) return false;
     return this.startDeepSpaceLeg(npc, position, destinationId, reason);
@@ -472,9 +429,10 @@ class SectorService implements NpcSectorService {
 
     for (const npc of this.npcs) {
       if (npc.retiredUntilDay !== undefined) continue;
-      if (this.advanceCombatRecovery(npc, dt)) continue;
+      if (advanceNpcCombatRecovery(this.world, npc, dt)) continue;
       if (npc.hullHp <= 0) {
-        this.beginCombatRecovery(npc, this.livePosition(npc), 'Notbergung');
+        if (!isSecurityDrone(npc.id) || !npc.combatMovement)
+          this.recoverFromCombat(npc, 'Notbergung');
         continue;
       }
       const movement = npc.combatMovement;

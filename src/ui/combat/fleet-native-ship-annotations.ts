@@ -1,7 +1,6 @@
 import { drawCombatRamEffect } from './combat-ram-effect-renderer';
 import { drawCombatShipCaption } from './combat-ship-detail-renderer';
-import { drawCombatShipStatus } from './combat-status-renderer';
-import { drawCombatBoostMeter } from './combat-boost-meter-renderer';
+import { drawEmbeddedCombatShipTelemetry } from './embedded-combat-ship-telemetry';
 import type { FleetDisplayPreferences } from './fleet-display-menu';
 import type { ShipScreenGeometry } from '../ships/ship-hardpoint-projector';
 import type { StrategicCombatantSnapshot } from '../../systems/combat/strategic-combat-types';
@@ -17,14 +16,5 @@ export function paintFleetShipAnnotations(
 ): void {
   drawCombatRamEffect(context, combatant, geometry, visualElapsed);
   if (display?.names !== false) drawCombatShipCaption(context, combatant.name, hullRatio, geometry);
-  if (display?.actions !== false) drawCombatShipStatus(context, combatant, geometry);
-  if (display?.boost !== false) {
-    drawCombatBoostMeter(
-      context,
-      geometry.center,
-      geometry.height,
-      combatant.boostSeconds,
-      combatant.boostActive
-    );
-  }
+  drawEmbeddedCombatShipTelemetry(context, combatant, geometry, display);
 }

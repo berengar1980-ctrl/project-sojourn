@@ -37,6 +37,8 @@ export interface CareerFleetEncounter {
   readonly fleet: ParallelNativeDuels;
   readonly combat: StrategicCombatService;
   readonly members: ReadonlyMap<string, SectorNpcState>;
+  readonly fieldLocationId: string;
+  detachMember(id: string): void;
   joinPlayer(
     player: StrategicCombatantSetup,
     targetId: string,
@@ -109,6 +111,7 @@ function createSectorFleetEncounter(
   worldPose?: CareerFleetWorldPose,
   restoredDuel?: StrategicCombatService
 ): CareerFleetEncounter {
+  const fieldLocationId = enemy.locationId;
   const enemySetup = npcCombatant(enemy);
   if (!enemySetup) throw new Error('Campaign enemy lacks a combat setup');
   const seed = restoredDuel?.exportCareerState().seed ?? hashSeed(firstSetup.id + ':' + enemy.id);
@@ -223,7 +226,7 @@ function createSectorFleetEncounter(
       const id = actor.setup.id;
       if (!conflict.isHostile(npc.id, id) && (npc.pirate || (id !== initiator && id !== victim)))
         continue;
-      const contact = witness(enemy.locationId, npc, actor.position);
+      const contact = witness(fieldLocationId, npc, actor.position);
       if (
         contact &&
         Math.hypot(contact.position.x - actor.position.x, contact.position.y - actor.position.y) <=
@@ -239,6 +242,11 @@ function createSectorFleetEncounter(
       ? playerCombatView(primary, fleet, firstSetup.id, () => playerResult ?? primary.getSnapshot())
       : primary,
     members,
+    fieldLocationId,
+    detachMember(id) {
+      members.delete(id);
+      worldOffsets.delete(id);
+    },
     joinPlayer(player, targetId, field) {
       const state = fleet.getSnapshot();
       const target = fleet.getActor(targetId);
@@ -294,7 +302,7 @@ function createSectorFleetEncounter(
       );
       for (const npc of npcs) {
         if (
-          members.has(npc.id) ||
+          fleet.getActor(npc.id) ||
           npc.hullHp <= 0 ||
           npc.combatMovement ||
           (npc.combatRecoverySeconds ?? 0) > 0

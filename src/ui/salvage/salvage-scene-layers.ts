@@ -1,3 +1,5 @@
+import { drawCombatPlayerMarker } from '../combat/combat-ship-detail-renderer';
+import { DEFAULT_COMBAT_DISPLAY, type FleetDisplayPreferences } from '../combat/fleet-display-menu';
 import { drawPirateInsignia } from '../ships/pirate-insignia-renderer';
 import { drawFieldShipSprite } from '../ships/field-ship-sprite';
 import { isStationedDrone } from '../../systems/npcs/npc-combat-ai';
@@ -44,6 +46,7 @@ export function hashId(id: string): number {
   return hash >>> 0;
 }
 export abstract class SalvageSceneLayers {
+  protected combatDisplay: FleetDisplayPreferences = DEFAULT_COMBAT_DISPLAY;
   protected abstract model: SalvageSpaceViewModel;
   protected abstract camera: PvPMapCamera;
   protected abstract ensureNpcImage(url: string): HTMLImageElement;
@@ -52,6 +55,16 @@ export abstract class SalvageSceneLayers {
   protected abstract shipLighting: ShipLightingRenderer;
   protected abstract shieldImpacts: ShieldImpactRenderer;
   protected abstract shipGeometry(width: number, height: number): ShipScreenGeometry;
+  protected drawPlayerCombatAnnotations(geometry: ShipScreenGeometry): void {
+    if (this.model.combat)
+      drawEmbeddedCombatShipTelemetry(
+        this.context,
+        this.model.combat.attacker,
+        geometry,
+        this.combatDisplay
+      );
+    if (this.combatDisplay.playerMarker) drawCombatPlayerMarker(this.context, geometry);
+  }
   protected drawExitGate(width: number, height: number): void {
     drawLocalSpaceExitGate(
       this.context,
@@ -150,7 +163,8 @@ export abstract class SalvageSceneLayers {
           geometry
         );
       }
-      if (combatDefender) drawEmbeddedCombatShipTelemetry(this.context, combatDefender, geometry);
+      if (combatDefender)
+        drawEmbeddedCombatShipTelemetry(this.context, combatDefender, geometry, this.combatDisplay);
       hits.push({
         id: npc.id,
         point,
@@ -161,7 +175,7 @@ export abstract class SalvageSceneLayers {
 
       this.drawNpcWork(npc, point, geometry, width, height, timeSeconds);
 
-      if (this.camera.getRelativeZoom() >= 1.55) {
+      if (this.combatDisplay.names && this.camera.getRelativeZoom() >= 1.55) {
         this.context.fillStyle = 'rgba(215, 202, 168, 0.8)';
         this.context.font = '9px ui-monospace, monospace';
         this.context.textAlign = 'center';

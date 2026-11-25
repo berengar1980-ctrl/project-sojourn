@@ -1,3 +1,4 @@
+import { fieldSecurityDroneCount, isSecurityDrone } from '../core/security-drone';
 import type { NpcEconomyServiceOptions } from '../systems/economy/npc-economy-types';
 import { BlockadeService } from '../systems/operations/blockade-service';
 import { WreckClaimRegistry } from '../systems/operations/wreck-claim-registry';
@@ -163,34 +164,59 @@ export function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): vo
   // Drones have normal sector NPC combatants so the existing two-ship AI
   // combat mode can be entered without creating a second combat engine.
   // The local drone service remains the authority for field sensor movement.
-  const patrolTemplate = npcStates.find((npc) => npc.job === 'patrol' && !npc.pirate);
-  if (patrolTemplate) {
-    for (const location of narrowsSector.locations.filter(
-      (entry) => entry.activities.mine || entry.activities.salvage
-    )) {
-      const existing = npcStates.find((npc) => npc.id === 'security-drone:' + location.id);
+  const fields = narrowsSector.locations.filter(
+    (location) => location.activities.mine || location.activities.salvage
+  );
+  const expected = fields.flatMap((field) => {
+    const id = 'security-drone:' + field.id;
+    return Array.from({ length: fieldSecurityDroneCount(field.dangerLevel) }, (_, index) =>
+      index === 0 ? id : id + ':escort-' + (index + 1)
+    );
+  });
+  for (let i = npcStates.length - 1; i >= 0; i--) {
+    const npc = npcStates[i]!;
+    if (isSecurityDrone(npc.id) && !expected.includes(npc.id)) npcStates.splice(i, 1);
+  }
+  const patrolTemplate = npcStates.find(
+    (npc) => npc.job === 'patrol' && !npc.pirate && !isSecurityDrone(npc.id)
+  );
+  if (!patrolTemplate) return;
+  for (const location of fields) {
+    const id = 'security-drone:' + location.id;
+    for (let index = 0; index < fieldSecurityDroneCount(location.dangerLevel); index++) {
+      const droneId = index === 0 ? id : id + ':escort-' + (index + 1);
+      const existing = npcStates.find((npc) => npc.id === droneId);
       if (existing) {
+        if (existing.locationId !== location.id) {
+          existing.locationId = location.id;
+          delete existing.travel;
+          delete existing.combatMovement;
+          delete existing.orbit;
+        }
         equipSecurityDroneMk3(existing);
         continue;
       }
       const drone: SectorNpcState = {
         ...patrolTemplate,
-        id: 'security-drone:' + location.id,
-        name: 'SEC-' + location.id.toUpperCase(),
+        id: droneId,
+        name: 'SEC-' + location.id.toUpperCase() + (index ? '-' + (index + 1) : ''),
         locationId: location.id,
         homePortId: location.id,
         cargo: {},
         marketIntel: {},
         workResourceIds: [],
         credits: 0,
+        hullHp: patrolTemplate.hullMaxHp,
         activityId: 'patrol',
         activity: 'Lokale Konzessionsüberwachung',
       };
-      // Combatant templates can already be travelling or orbiting elsewhere.
-      // The new local defender must not inherit those foreign movement states.
       delete drone.travel;
       delete drone.combatMovement;
       delete drone.orbit;
+      delete drone.combatRecoverySeconds;
+      delete drone.combatRecoveryLocationId;
+      delete drone.combatDefeats;
+      delete drone.retiredUntilDay;
       equipSecurityDroneMk3(drone);
       npcStates.push(drone);
     }

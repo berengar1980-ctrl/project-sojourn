@@ -26,6 +26,7 @@ import type {
   AutocannonVisualBurst,
   VisibleCombatImpact,
 } from './strategic-combat-renderer-types';
+import { drawCombatPlayerMarker } from './combat-ship-detail-renderer';
 import type { FleetDisplayPreferences } from './fleet-display-menu';
 import { FleetEngagementMarkerPainter } from './fleet-engagement-markers';
 import type {
@@ -149,6 +150,7 @@ export class FleetNativeCombatRenderer {
     display?: FleetDisplayPreferences,
     fleetElapsed?: number
   ): void {
+    this.markedPlayerId = display?.playerMarker ? model.attacker.id : null;
     model = liveFleetCombatView(model, parallelDuels);
     this.parallelDuels = parallelDuels;
     this.supportingFromIndex = supportingFromIndex;
@@ -387,6 +389,8 @@ export class FleetNativeCombatRenderer {
   private drawMines(width: number, height: number): void {
     paintNativeMines(this.context, this.model.mines, (point) => this.screen(point, width, height));
   }
+  private markedPlayerId: string | null = null;
+
   private drawShip(
     combatant: StrategicCombatSnapshot['attacker'],
     width: number,
@@ -478,6 +482,9 @@ export class FleetNativeCombatRenderer {
       this.shieldImpacts.draw(this.context, combatant.shieldImpacts, hardpoints, geometry);
     }
     this.fleetMarkers.paintAnnotations(this.context, combatant, geometry, hullRatio, visualElapsed);
+    if (combatant.id === this.markedPlayerId && hullRatio > 0) {
+      drawCombatPlayerMarker(this.context, geometry);
+    }
   }
   private drawHullImpacts(width: number, height: number, visualElapsed: number): void {
     drawCombatImpactBatch(

@@ -3,10 +3,15 @@ export interface FleetDisplayPreferences {
   readonly lines: boolean;
   readonly assignments: boolean;
   readonly actions: boolean;
+  readonly maneuvers: boolean;
   readonly names: boolean;
   readonly boost: boolean;
   readonly overview: boolean;
-  readonly hud: boolean;
+  readonly playerHud: boolean;
+  readonly enemyHud: boolean;
+  readonly playerWeapons: boolean;
+  readonly enemyWeapons: boolean;
+  readonly playerMarker: boolean;
   readonly events: boolean;
 }
 
@@ -16,38 +21,58 @@ export interface FleetDisplayMenu {
 }
 
 const STORAGE_KEY = 'sojourn.fleet-combat.display.v1';
-const DEFAULTS: FleetDisplayPreferences = {
+export const DEFAULT_COMBAT_DISPLAY: FleetDisplayPreferences = {
   lines: true,
   assignments: true,
   actions: true,
+  maneuvers: true,
   names: true,
   boost: true,
   overview: true,
-  hud: true,
+  playerHud: true,
+  enemyHud: true,
+  playerWeapons: true,
+  enemyWeapons: true,
+  playerMarker: false,
   events: true,
 };
 
 const CONTROLS: readonly { key: keyof FleetDisplayPreferences; label: string }[] = [
   { key: 'lines', label: 'Zielverbindungen' },
   { key: 'assignments', label: 'Duell-Zuordnung (D / +)' },
-  { key: 'actions', label: 'Strategie & Manöver' },
+  { key: 'actions', label: 'Strategie' },
+  { key: 'maneuvers', label: 'Manöver' },
   { key: 'names', label: 'Schiffsnamen' },
   { key: 'boost', label: 'Boostanzeigen' },
   { key: 'overview', label: 'Duellübersicht' },
-  { key: 'hud', label: 'Schiffs-HUD' },
+  { key: 'playerHud', label: 'Übersicht Spielerschiff' },
+  { key: 'enemyHud', label: 'Übersicht Gegnerschiff' },
+  { key: 'playerWeapons', label: 'Waffenstatistik Spieler' },
+  { key: 'enemyWeapons', label: 'Waffenstatistik Gegner' },
+  { key: 'playerMarker', label: 'Spielerschiff markieren' },
   { key: 'events', label: 'Kampfmeldungen' },
 ];
 
 function restorePreferences(): FleetDisplayPreferences {
   try {
     const saved: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? 'null');
-    if (!saved || typeof saved !== 'object' || Array.isArray(saved)) return { ...DEFAULTS };
+    if (!saved || typeof saved !== 'object' || Array.isArray(saved))
+      return { ...DEFAULT_COMBAT_DISPLAY };
     const values = saved as Record<string, unknown>;
     return Object.fromEntries(
-      CONTROLS.map(({ key }) => [key, typeof values[key] === 'boolean' ? values[key] : true])
+      CONTROLS.map(({ key }) => [
+        key,
+        typeof values[key] === 'boolean'
+          ? values[key]
+          : (key === 'playerHud' || key === 'enemyHud') && typeof values.hud === 'boolean'
+            ? values.hud
+            : key === 'maneuvers' && typeof values.actions === 'boolean'
+              ? values.actions
+              : DEFAULT_COMBAT_DISPLAY[key],
+      ])
     ) as unknown as FleetDisplayPreferences;
   } catch {
-    return { ...DEFAULTS };
+    return { ...DEFAULT_COMBAT_DISPLAY };
   }
 }
 
@@ -60,22 +85,25 @@ function savePreferences(preferences: FleetDisplayPreferences): void {
 }
 
 /** One collapsible, keyboard-accessible options menu for the entire FleetCombat view. */
-export function createFleetDisplayMenu(shell: HTMLElement): FleetDisplayMenu {
+export function createFleetDisplayMenu(
+  shell: HTMLElement,
+  hiddenOptions: readonly (keyof FleetDisplayPreferences)[] = [],
+  top = 12
+): FleetDisplayMenu {
   let preferences = restorePreferences();
   let notify: () => void = () => undefined;
   const details = document.createElement('details');
   details.className = 'combat-fleet-display-menu';
   details.style.cssText =
-    'position:absolute;right:14px;top:50px;z-index:7;width:230px;max-width:45vw;' +
+    `position:absolute;left:50%;top:${top}px;transform:translateX(-50%);z-index:20;width:max-content;max-width:90vw;` +
     'background:rgba(7,19,26,.96);border:1px solid #607c89;' +
     'color:#dbeef3;font:11px ui-monospace,monospace;box-shadow:0 8px 24px #0008;';
   const summary = document.createElement('summary');
-  summary.textContent = 'ANZEIGE ⚙';
-  summary.style.cssText = 'cursor:pointer;padding:9px 12px;font-weight:700;letter-spacing:.5px;';
-  summary.setAttribute('aria-label', 'FleetCombat-Anzeigeoptionen öffnen oder schließen');
+  summary.textContent = 'ANZEIGE';
+  summary.style.cssText = 'cursor:pointer;padding:4px 7px;font-weight:700;letter-spacing:.5px;';
+  summary.setAttribute('aria-label', 'Kampfanzeige öffnen oder schließen');
   const body = document.createElement('div');
-  body.style.cssText =
-    'padding:5px 10px 10px;display:grid;gap:9px;max-height:65vh;overflow-y:auto;';
+  body.style.cssText = 'padding:4px 8px 7px;display:grid;gap:3px;max-height:65vh;overflow-y:auto;';
   const inputs = new Map<keyof FleetDisplayPreferences, HTMLInputElement>();
 
   const apply = (next: FleetDisplayPreferences): void => {
@@ -85,7 +113,8 @@ export function createFleetDisplayMenu(shell: HTMLElement): FleetDisplayMenu {
     notify();
   };
 
-  for (const { key, label } of CONTROLS) {
+  const controls = CONTROLS.filter(({ key }) => !hiddenOptions.includes(key));
+  for (const { key, label } of controls) {
     const row = document.createElement('label');
     row.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;';
     const input = document.createElement('input');
@@ -111,11 +140,7 @@ export function createFleetDisplayMenu(shell: HTMLElement): FleetDisplayMenu {
       'flex:1;cursor:pointer;border:1px solid #587682;background:#142834;' +
       'color:#d9eef4;font:11px ui-monospace,monospace;padding:6px;';
     button.addEventListener('click', () =>
-      apply(
-        Object.fromEntries(
-          CONTROLS.map(({ key }) => [key, visible])
-        ) as unknown as FleetDisplayPreferences
-      )
+      apply({ ...preferences, ...Object.fromEntries(controls.map(({ key }) => [key, visible])) })
     );
     actions.append(button);
   }

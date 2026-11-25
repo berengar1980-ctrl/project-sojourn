@@ -2752,6 +2752,10 @@ body {
   pointer-events: none;
 }
 
+.combat-hud[hidden] {
+  display: none;
+}
+
 .combat-hud--player {
   left: 20px;
 }

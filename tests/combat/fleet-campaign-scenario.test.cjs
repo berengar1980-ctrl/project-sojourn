@@ -127,6 +127,35 @@ const { createGameController } = load('src/app/game-controller.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 const { createNavigationService } = load('src/systems/navigation/navigation-service.ts');
 const { createPlayerProfile } = load('src/core/player-profile.ts');
+const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
+const { registerSecurityDroneCombatants } = load('src/app/game-controller-economy.ts');
+const { createNpcSectorService } = load('src/systems/npcs/npc-sector-service.ts');
+const { AsteroidSecurityDrone } = load('src/systems/operations/asteroid-security-drone.ts');
+const roster = createSectorNpcEconomyStates();
+registerSecurityDroneCombatants(roster);
+for (const location of narrowsSector.locations) {
+  if (!location.activities.mine && !location.activities.salvage) continue;
+  const id = 'security-drone:' + location.id;
+  const count = roster.filter((entry) => entry.id === id || entry.id.startsWith(id + ':')).length;
+  assert.equal(count, [2, 2, 1, 0][location.dangerLevel], location.id + ' security');
+}
+const replacement = roster.find((entry) => entry.id === 'security-drone:greyrock-belt');
+const sector = createNpcSectorService(narrowsSector, [replacement]);
+const droneBody = new AsteroidSecurityDrone(2400, 1800, []);
+replacement.hullHp = 0;
+sector.recoverFromCombat(replacement);
+droneBody.syncAvailability(replacement);
+assert.equal(droneBody.snapshot().operational, false);
+for (let i = 0; i < 719; i++) sector.tick(0.25);
+assert.equal(replacement.hullHp, 0, 'drone remains absent for the first 179.75 seconds');
+sector.tick(0.25);
+assert.equal(replacement.hullHp, replacement.hullMaxHp);
+droneBody.syncAvailability(replacement);
+const edge = { ...droneBody.position };
+assert.equal(Math.min(edge.x, edge.y, 2400 - edge.x, 1800 - edge.y), 18);
+droneBody.tick(0.25, [], []);
+assert.notDeepEqual(droneBody.position, edge, 'replacement flies from the edge into the field');
+
 for (const map of ['empty', 'asteroid_field', 'scrap_field']) {
   const fleetGroups = ['npc', 'drone', 'pirates-yellow', 'pirates-red'].map((group) => ({
     group,
@@ -253,5 +282,17 @@ for (const map of ['asteroid_field', 'scrap_field']) {
   assert.match(wrecks[0].id, /^combat-wreck-/);
   assert.equal(wrecks[0].radius, expectedRadius, 'promotion preserves the native visual radius');
   assert(wrecks[0].rotation3d && wrecks[0].spin3d, 'promotion preserves 3D rotation');
+  const salvageWrecks = mining
+    ? panels.mining.combatWrecks
+    : ctx.state.salvageScene.getField().wrecks;
+  const recoverable = salvageWrecks.find((wreck) => wreck.id === wrecks[0].id);
+  assert(recoverable, 'the arena wreck is the recoverable wreck');
+  for (const deposit of recoverable.resources) deposit.remainingAmount = 0;
+  advance(1);
+  assert(!salvageWrecks.some((wreck) => wreck.id === recoverable.id));
+  assert(
+    !arena.asteroids.some((rock) => rock.id === recoverable.id),
+    'depletion removes the live combat collider'
+  );
   game.destroy();
 }

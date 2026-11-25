@@ -1,4 +1,9 @@
 import type { StrategicCombatSnapshot } from '../../systems/combat/strategic-combat-types';
+import {
+  createFleetDisplayMenu,
+  DEFAULT_COMBAT_DISPLAY,
+  type FleetDisplayPreferences,
+} from './fleet-display-menu';
 import { combatantHud } from './fleet-native-combat-panel';
 
 /**
@@ -7,7 +12,7 @@ import { combatantHud } from './fleet-native-combat-panel';
  * Only the HUD is shared: the local scene retains its own moving field.
  */
 export function createEmbeddedCombatHud(shell: HTMLElement): {
-  update(snapshot: StrategicCombatSnapshot | null): void;
+  update(snapshot: StrategicCombatSnapshot | null, display?: FleetDisplayPreferences): void;
 } {
   const player = document.createElement('aside');
   player.className = 'combat-hud combat-hud--player embedded-combat-hud';
@@ -19,17 +24,49 @@ export function createEmbeddedCombatHud(shell: HTMLElement): {
 
   let wasActive = false;
   return {
-    update(snapshot): void {
+    update(snapshot, display = DEFAULT_COMBAT_DISPLAY): void {
       const active = snapshot !== null;
       if (active !== wasActive) {
         wasActive = active;
         shell.classList.toggle('is-embedded-combat', active);
-        player.setAttribute('aria-hidden', String(!active));
-        enemy.setAttribute('aria-hidden', String(!active));
       }
+      player.hidden = !active || !display.playerHud;
+      enemy.hidden = !active || !display.enemyHud;
+      player.setAttribute('aria-hidden', String(player.hidden));
+      enemy.setAttribute('aria-hidden', String(enemy.hidden));
       if (!snapshot) return;
-      player.innerHTML = combatantHud(snapshot.attacker, snapshot.elapsedSeconds);
-      enemy.innerHTML = combatantHud(snapshot.defender, snapshot.elapsedSeconds);
+      if (!player.hidden)
+        player.innerHTML = combatantHud(
+          snapshot.attacker,
+          snapshot.elapsedSeconds,
+          display.playerWeapons
+        );
+      if (!enemy.hidden)
+        enemy.innerHTML = combatantHud(
+          snapshot.defender,
+          snapshot.elapsedSeconds,
+          display.enemyWeapons
+        );
+    },
+  };
+}
+
+/** Use the same menu and stored settings as the standalone combat screen. */
+export function createEmbeddedCombatDisplay(shell: HTMLElement) {
+  const menu = createFleetDisplayMenu(shell, ['overview', 'events'], 54);
+  const hud = createEmbeddedCombatHud(shell);
+  let snapshot: StrategicCombatSnapshot | null = null;
+  return {
+    get: menu.get,
+    onChange(redraw: () => void): void {
+      menu.onChange(() => {
+        hud.update(snapshot, menu.get());
+        redraw();
+      });
+    },
+    update(next: StrategicCombatSnapshot | null): void {
+      snapshot = next;
+      hud.update(next, menu.get());
     },
   };
 }

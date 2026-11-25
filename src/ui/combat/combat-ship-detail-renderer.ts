@@ -88,3 +88,23 @@ export function drawCombatShipCaption(
     geometry.center.y + geometry.height * 0.8 + 18
   );
 }
+
+/** A screen-space reticle remains legible at the minimum map zoom. */
+export function drawCombatPlayerMarker(
+  context: CanvasRenderingContext2D,
+  geometry: ShipScreenGeometry
+): void {
+  const radius = Math.max(15, Math.max(geometry.width, geometry.height) * 0.52 + 5);
+  context.save();
+  context.translate(geometry.center.x, geometry.center.y);
+  context.strokeStyle = '#7fffea';
+  context.lineWidth = 2;
+  context.beginPath();
+  for (let index = 0; index < 4; index += 1) {
+    const angle = (index * Math.PI) / 2;
+    context.arc(0, 0, radius, angle + 0.25, angle + Math.PI / 2 - 0.25);
+    context.stroke();
+    context.beginPath();
+  }
+  context.restore();
+}
