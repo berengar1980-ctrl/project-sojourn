@@ -66,12 +66,37 @@ export function fieldWitnessFor(
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
 
+function registerInitialAsteroidStocks(
+  context: ControllerRuntimeContext,
+  fields: AsteroidFieldWorld
+): void {
+  fields.forEachField((field) => {
+    const pending = new Map<string, number>();
+    for (const chunk of field.instance.chunks) {
+      const key = JSON.stringify([chunk.sourceAsteroidId, chunk.resourceId]);
+      pending.set(key, (pending.get(key) ?? 0) + chunk.amount);
+    }
+    for (const asteroid of field.instance.asteroids) {
+      const sourceId = JSON.stringify([field.locationId, asteroid.id]);
+      for (const deposit of asteroid.deposits) {
+        const key = JSON.stringify([asteroid.id, deposit.resourceId]);
+        context.economy.simulation.registerInitialPhysicalStock(
+          deposit.resourceId,
+          sourceId,
+          deposit.oreRemaining + (pending.get(key) ?? 0)
+        );
+      }
+    }
+  });
+}
+
 /** Install the already staged field authority instead of generating new ore/NPCs. */
 export function bindCareerFieldWorld(
   context: ControllerRuntimeContext,
   fields: AsteroidFieldWorld
 ): void {
   if (fieldWorlds.has(context)) throw new Error('Field world already installed');
+  registerInitialAsteroidStocks(context, fields);
   fieldWorlds.set(context, fields);
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
@@ -132,6 +157,7 @@ export function fieldWorldFor(
     undefined,
     initial
   );
+  registerInitialAsteroidStocks(context, fields);
   fieldWorlds.set(context, fields);
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
