@@ -23,7 +23,12 @@ export function captureCareerResourcePools(
     seed,
     lastDay,
     physicalAllocationCounter,
-    pools: Object.fromEntries(Object.entries(pools).map(([id, pool]) => [id, { ...pool, ...(pool.physicalStocks ? { physicalStocks: { ...pool.physicalStocks } } : {}) }])),
+    pools: Object.fromEntries(
+      Object.entries(pools).map(([id, pool]) => [
+        id,
+        { ...pool, ...(pool.physicalStocks ? { physicalStocks: { ...pool.physicalStocks } } : {}) },
+      ])
+    ),
   };
 }
 
@@ -64,7 +69,15 @@ function copyValidatedPool(pool: Readonly<EconomyResourcePool> | undefined): Eco
     typeof pool !== 'object' ||
     Array.isArray(pool) ||
     Object.keys(pool).some(
-      (key) => !['target', 'reserve', 'externalImports', 'recordedLosses', 'combatBuffer', 'physicalStocks'].includes(key)
+      (key) =>
+        ![
+          'target',
+          'reserve',
+          'externalImports',
+          'recordedLosses',
+          'combatBuffer',
+          'physicalStocks',
+        ].includes(key)
     ) ||
     (pool.combatBuffer !== undefined && !validCount(pool.combatBuffer)) ||
     (pool.physicalStocks !== undefined &&
