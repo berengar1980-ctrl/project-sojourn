@@ -237,6 +237,7 @@ function stageCareerCommerceOperations(
           prisoners.has(npc.id) ||
           npc.id.startsWith('security-drone:') ||
           (npc.role === 'miner' &&
+            npc.workLocationId === npc.locationId &&
             npc.autonomy?.phase === 'working' &&
             deps.baseWorld.locations.some(
               (location) => location.id === npc.locationId && location.activities.mine
