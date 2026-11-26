@@ -276,9 +276,12 @@ export function createControllerEconomy(
   const marketIntel = createMarketIntelService(markets);
   marketIntel.recordHistory(0);
   const npcStates: SectorNpcState[] = initialPopulation ?? createSectorNpcEconomyStates();
-  const smuggling = createSmugglingService(trade.player, npcStates);
   const shipyardResearch = createShipyardResearchService();
   const { simulation, population } = createSectorPopulation(markets, trade, npcStates);
+  const smuggling = createSmugglingService(trade.player, npcStates, (id, amount) => {
+    const pool = simulation.pools[id];
+    if (pool) pool.recordedLosses += amount;
+  });
   const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
     markets,
