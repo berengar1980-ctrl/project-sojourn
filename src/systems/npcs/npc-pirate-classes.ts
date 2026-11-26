@@ -1,3 +1,4 @@
+import { isSecurityDrone, SECURITY_DRONE_THREAT_WEIGHT } from '../../core/security-drone';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
 import { fixedDangerAtPoint } from '../navigation/fixed-danger-geography';
@@ -41,7 +42,8 @@ export function pirateHuntAllowedAt(
 
 /** Stronger pirate hulls count more heavily in risk-aware course planning. */
 export function pirateThreatStrength(npc: SectorNpcState): number {
-  const condition = Math.max(0.4, npc.hullHp / Math.max(1, npc.hullMaxHp));
+  const condition = Math.max(0, Math.min(1, npc.hullHp / Math.max(1, npc.hullMaxHp)));
+  if (isSecurityDrone(npc.id)) return condition * SECURITY_DRONE_THREAT_WEIGHT;
   const classWeight =
     npc.pirateClass === 'marauder'
       ? 1.85
@@ -50,5 +52,5 @@ export function pirateThreatStrength(npc: SectorNpcState): number {
         : npc.pirateClass === 'raider'
           ? 0.8
           : 1;
-  return condition * classWeight;
+  return Math.max(0.4, condition) * classWeight;
 }
