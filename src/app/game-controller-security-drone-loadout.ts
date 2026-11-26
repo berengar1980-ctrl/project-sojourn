@@ -1,3 +1,4 @@
+import { SECURITY_DRONE_SHIP_ID } from '../core/security-drone';
 import { securityDroneMk3WeaponIds } from '../systems/ships/security-drone-weapon-loadout';
 import type { SectorNpcState } from '../core/npc-types';
 import type { NpcInstalledComponents } from '../core/npc-types';
@@ -12,9 +13,11 @@ import {
 
 /** Each active security drone weapon mount, hull and shield is Mk III. */
 export function equipSecurityDroneMk3(npc: SectorNpcState): void {
-  const ship = getShipDefinition(npc.shipId);
+  const ship = getShipDefinition(SECURITY_DRONE_SHIP_ID);
   if (!ship) return;
-  const current = npc.installedComponents ?? defaultInstalledShipComponents(ship);
+  npc.shipId = SECURITY_DRONE_SHIP_ID;
+  npc.aggression = 100;
+  const current = defaultInstalledShipComponents(ship);
   const weapons = securityDroneMk3WeaponIds(ship, current.weapon);
   const mutable = Object.fromEntries(
     Object.entries(current).map(([type, ids]) => [type, [...(ids ?? [])]])
@@ -22,6 +25,12 @@ export function equipSecurityDroneMk3(npc: SectorNpcState): void {
   const installed: NpcInstalledComponents = {
     ...mutable,
     weapon: weapons,
+    armor: ['armor-all-3'],
+    engine: ['engine3'],
+    sensor: ['sensor3'],
+    cargo: [],
+    mine: [],
+    tractor: [],
     hull: ['hull3'],
     shield: ['shield3'],
     reactor: ['reactor3'],
