@@ -105,4 +105,9 @@ for (const report of integratedReports) {
 }
 assert(integratedReports[2].fieldActivity.minedUnits > 0);
 assert(integratedReports[2].fieldActivity.recoveredUnits > 0);
+const visitedMiningSites = Object.values(integratedReports[2].fieldActivity.miningSitesByNpc);
+assert(
+  visitedMiningSites.some((sites) => sites.length > 1),
+  'at least one integrated NPC miner must extract ore at different fields'
+);
 console.log('PASS 90/180/365-day integrated NPC and physical field audit');
