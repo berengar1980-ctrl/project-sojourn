@@ -30,6 +30,7 @@ import {
   recordNpcAsteroidTheft,
 } from './game-controller-field-miner-events';
 import { tickFieldPirates, tickFieldSecurity } from './game-controller-security';
+import { bindMiningTraffic, miningTrafficObstacles } from './game-controller-mining-traffic';
 import type {
   CombatVisualAsteroid,
   StrategicCombatSnapshot,
@@ -200,6 +201,7 @@ export function bindCareerFieldWorld(
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
     if (!field) continue;
+    bindMiningTraffic(context, field);
     context.economy.securityDrones.set(location.id, field.drone);
     context.economy.localPirates.set(location.id, field.pirates);
   }
@@ -230,6 +232,7 @@ export function fieldWorldFor(
         },
         dynamicRoster: true,
         getAsteroids: () => instance.asteroids,
+        getTrafficObstacles: (id) => miningTrafficObstacles(instance, id),
         initialPosition: (id) => context.fieldExerciseSpawns?.get(id),
         mine: (npc, resourceId, requested, asteroidId) =>
           economy.npcs.mineLocal(
@@ -271,6 +274,7 @@ export function fieldWorldFor(
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
     if (!field) continue;
+    bindMiningTraffic(context, field);
     economy.securityDrones.set(location.id, field.drone);
     const npc = economy.sectorNpcs.npcs.find(
       (entry) => entry.id === 'security-drone:' + location.id

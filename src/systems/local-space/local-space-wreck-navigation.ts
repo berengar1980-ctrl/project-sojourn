@@ -4,6 +4,7 @@ import type { ShieldWorldGeometry } from './local-space-collision';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 import { selectedRouteOptions } from './local-space-scanning';
 import type { LocalSpaceServiceOptions } from './local-space-options';
+import { trafficRouteBodies } from '../navigation/field-traffic-obstacles';
 
 /** Merge moving, recoverable wrecks into the normal asteroid route graph. */
 function navigationBodies(
@@ -14,23 +15,29 @@ function navigationBodies(
 }
 
 export function selectedWreckAwareRouteOptions(
-  options: Pick<LocalSpaceServiceOptions, 'instance' | 'additionalObstacles'>,
+  options: Pick<LocalSpaceServiceOptions, 'instance' | 'additionalObstacles' | 'getTrafficObstacles'>,
   selectedId: string | null,
   shield: ShieldWorldGeometry
 ): RoutePlanningOptions | null {
   const instance = options.instance;
-  const additional = options.additionalObstacles?.() ?? [];
+  const additional = [
+    ...(options.additionalObstacles?.() ?? []),
+    ...trafficRouteBodies(options.getTrafficObstacles?.() ?? []),
+  ];
   const route = selectedRouteOptions(instance, selectedId, shield);
   return route ? { ...route, asteroids: navigationBodies(instance, additional) } : null;
 }
 
 export function pointWreckAwareRouteOptions(
-  options: Pick<LocalSpaceServiceOptions, 'instance' | 'additionalObstacles'>,
+  options: Pick<LocalSpaceServiceOptions, 'instance' | 'additionalObstacles' | 'getTrafficObstacles'>,
   target: WorldPoint,
   shield: ShieldWorldGeometry
 ): PointRoutePlanningOptions {
   const instance = options.instance;
-  const additional = options.additionalObstacles?.() ?? [];
+  const additional = [
+    ...(options.additionalObstacles?.() ?? []),
+    ...trafficRouteBodies(options.getTrafficObstacles?.() ?? []),
+  ];
   return {
     start: instance.ship.position,
     target,

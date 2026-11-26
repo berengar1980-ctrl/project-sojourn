@@ -24,6 +24,7 @@ import {
   recordNpcAsteroidTheft,
 } from './game-controller-field-miner-events';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import { miningTrafficObstacles } from './game-controller-mining-traffic';
 
 export interface PreparedControllerCareer {
   readonly session: StagedFullCareerSession;
@@ -58,6 +59,7 @@ function careerDependencies(
             miners: operations.sector.npcs.filter((npc) => npc.job === 'miner'),
             dynamicRoster: true,
             getAsteroids: () => instance.asteroids,
+            getTrafficObstacles: (id) => miningTrafficObstacles(instance, id),
             mine: (npc, id, amount, asteroidId) =>
               commerce.commerce.economy.npcs.mineLocal(
                 npc,
