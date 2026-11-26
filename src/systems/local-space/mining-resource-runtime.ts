@@ -29,7 +29,16 @@ export class MiningResourceRuntime {
     private readonly nominalLengthMeters: number,
     private readonly yieldMultiplier: number,
     private readonly collector?: MiningChunkCollector
-  ) {}
+  ) {
+    const prefix = 'chunk-' + instance.seed + '-';
+    for (const chunk of instance.chunks) {
+      if (!chunk.id.startsWith(prefix)) continue;
+      const index = Number(chunk.id.slice(prefix.length));
+      if (Number.isSafeInteger(index) && index >= 0) {
+        this.chunkCounter = Math.max(this.chunkCounter, index + 1);
+      }
+    }
+  }
 
   selectionFor(asteroidId: string | null): MiningResourceSelection {
     if (!asteroidId) return null;
