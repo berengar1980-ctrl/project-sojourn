@@ -37,7 +37,10 @@ const restoredClaims = new AsteroidClaimRegistry();
 assert(restoredClaims.restoreState(savedClaims));
 const restored = new AsteroidFieldWorld([location], restoredClaims, miners, checkpoint);
 const restoredInstance = restored.field(location.id).instance;
-assert.deepEqual(restoredInstance.chunks, instance.chunks);
+// Career JSON deliberately clones records with null prototypes.
+const restoredValues = JSON.parse(JSON.stringify(restoredInstance.chunks));
+assert.deepEqual(restoredValues, instance.chunks);
+assert.deepEqual(restoredInstance.chunks, checkpoint.fields[location.id].chunks);
 assert.notEqual(restoredInstance.chunks[0], instance.chunks[0]);
 const restoredAsteroid = restoredInstance.asteroids.find((entry) => entry.id === asteroid.id);
 assert.equal(restoredAsteroid.deposits[0].oreRemaining, deposit.oreRemaining);
