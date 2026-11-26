@@ -380,9 +380,9 @@ function verifyPhysicalCareerRoundTrip() {
   assert.equal(mined, 2);
   chunk.amount -= mined;
   const field = permanentSalvageField(originalContext, red);
-  const wreck = field.wrecks.find((item) => item.resources.some((d) => d.remainingAmount >= 3));
+  const wreck = field.wrecks.find((item) => item.resources.some((d) => d.remainingAmount >= 4));
   assert(wreck);
-  const deposit = wreck.resources.find((item) => item.remainingAmount >= 3);
+  const deposit = wreck.resources.find((item) => item.remainingAmount >= 4);
   const source = salvageStockId(field, wreck);
   const amount = originalEconomy.salvage.recover(deposit.resourceId, 3, 1000, red.id, source);
   assert.equal(amount, 3);
@@ -415,9 +415,22 @@ function verifyPhysicalCareerRoundTrip() {
     restoredEconomy.simulation.getPhysicalStock(deposit.resourceId, source),
     deposit.remainingAmount
   );
-  for (const economy of [originalEconomy, restoredEconomy]) {
+  const timelines = [
+    { economy: originalEconomy, chunk, deposit, field },
+    {
+      economy: restoredEconomy,
+      chunk: restoredInstance.chunks[0],
+      deposit: restoredDeposit,
+      field: restoredField,
+    },
+  ];
+  for (const timeline of timelines) {
+    const { economy } = timeline;
     assert.equal(economy.mining.collect(ore.resourceId, 1, 1000, location.id, rockSource), 1);
+    timeline.chunk.amount -= 1;
     assert.equal(economy.salvage.recover(deposit.resourceId, 1, 1000, red.id, source), 1);
+    timeline.deposit.remainingAmount -= 1;
+    economy.wreckClaims.rememberField(timeline.field);
     economy.simulation.advanceNextDay();
   }
   assert.deepEqual(restoredEconomy.trade.player.cargo, originalEconomy.trade.player.cargo);
