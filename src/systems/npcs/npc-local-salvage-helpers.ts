@@ -50,6 +50,8 @@ export function eligible(npc: SectorNpcState, locationId: string): boolean {
     npcOperationalRoleAllowed(npc, 'salvage') &&
     npc.workLocationId === locationId &&
     npc.locationId === locationId &&
+    npc.hullHp > 0 && npc.retiredUntilDay === undefined &&
+    !npc.combatMovement && (npc.combatRecoverySeconds ?? 0) <= 0 &&
     !npc.travel &&
     npc.autonomy?.phase === 'working' &&
     cargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity))
