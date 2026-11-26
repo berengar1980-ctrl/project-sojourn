@@ -201,15 +201,7 @@ function chooseReadyAction(
     return;
   }
   if (npc.role === 'miner' || npc.role === 'salvager') {
-    chooseWorkerAction(
-      npc,
-      markets,
-      resources,
-      positions,
-      day,
-      quoteTravel,
-      options.workPlanning
-    );
+    chooseWorkerAction(npc, markets, resources, positions, day, quoteTravel, options.workPlanning);
     return;
   }
   if (npc.role === 'patrol') {
