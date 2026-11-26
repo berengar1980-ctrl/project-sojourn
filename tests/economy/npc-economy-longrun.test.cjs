@@ -22,6 +22,8 @@ const { createStarMapEngagementService } = load(
 const { getShipDefinition } = load('src/systems/ships/ship-registry.ts');
 const { createNpcSmugglingService } = load('src/systems/economy/npc-smuggling-service.ts');
 
+const integrated = process.env.SOJOURN_INTEGRATED_FIELDS === '1';
+const secondsPerDay = integrated ? 180 : 16;
 const days = Number(process.env.SOJOURN_LONGRUN_DAYS ?? 90);
 assert(Number.isInteger(days));
 assert(days >= 1 && days <= 365);
@@ -68,6 +70,11 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
     population.collectTradeCommission(Math.max(0, Math.round((gross * 0.06) / 0.94)));
   },
   positions,
+  isManaged: (npc) =>
+    integrated &&
+    npc.role === 'miner' &&
+    npc.autonomy?.phase === 'working' &&
+    narrowsSector.locations.some((entry) => entry.id === npc.locationId && entry.activities.mine),
   travel: {
     requestTravel: (npc, destination, reason) => sector.requestTravel(npc, destination, reason),
     requestPatrol: (npc) => sector.requestPatrol(npc),
@@ -75,6 +82,11 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
     quoteTravel: (npc, destination, credits) => sector.quoteTravel(npc, destination, credits),
   },
 });
+
+const { createIntegratedFieldAudit } = require('./integrated-field-audit.cjs');
+const fieldAudit = integrated
+  ? createIntegratedFieldAudit(load, narrowsSector, physical, economy, sector, player)
+  : null;
 
 const combatStats = {
   encounters: 0,
@@ -100,6 +112,7 @@ const engagements = createStarMapEngagementService({
     throw new Error('Player combat is excluded from this NPC-only audit');
   },
   log: combatLog,
+  ...(fieldAudit ? { onNpcCombatEnded: fieldAudit.combatEnded } : {}),
 });
 
 const initial = {};
@@ -138,68 +151,86 @@ function validate(day) {
   }
 }
 
+function printReport(elapsedDays) {
+  const roles = ['freighter', 'miner', 'salvager', 'patrol', 'pirate'];
+  const report = [];
+  for (const role of roles) {
+    const members = ships.filter((ship) => ship.job === role);
+    const sum = (fn) => members.reduce((total, ship) => total + fn(ship), 0);
+    report.push({
+      role,
+      ships: members.length,
+      startingCredits: sum((ship) => initial[ship.id].credits),
+      finalCredits: sum((ship) => ship.credits),
+      netCreditChange: sum((ship) => ship.credits - initial[ship.id].credits),
+      completedLegs: sum((ship) => ship.successfulRuns - initial[ship.id].runs),
+      noTravel: members.filter((ship) => ship.successfulRuns === initial[ship.id].runs).length,
+      inactive30Days: members.filter((ship) => elapsedDays - activity[ship.id] > 30).length,
+      zeroCreditDays: sum((ship) => bankruptDays[ship.id]),
+      lowFuel: members.filter((ship) => ship.fuel < ship.fuelCapacity * 0.1).length,
+      lootRevenue: sum((ship) => ship.pirateLootRevenue ?? 0),
+      expenses: sum((ship) => ship.pirateOperatingExpenses ?? 0),
+      civilianOperatingExpenses: sum((ship) => ship.civilianOperatingExpenses ?? 0),
+      hullUpgrades: sum((ship) => ship.hullUpgradeCount ?? 0),
+      replacements: sum((ship) => ship.replacementGeneration ?? 0),
+      defeats: sum((ship) => ship.combatDefeats ?? 0),
+      smugglingFines: sum((ship) => ship.smugglingFinesPaid ?? 0),
+      smugglingConfiscated: sum((ship) => ship.smugglingConfiscated ?? 0),
+      smugglingProtectionFees: sum((ship) => ship.smugglingProtectionFees ?? 0),
+      unsoldCargoUnits: sum((ship) =>
+        Object.values(ship.cargo).reduce((total, units) => total + units, 0)
+      ),
+    });
+  }
+  assert.equal(ships.length, 33);
+  assert.equal(report.find((group) => group.role === 'pirate').ships, 9);
+  console.log(
+    JSON.stringify({
+      days: elapsedDays,
+      automaticCombat: true,
+      integratedFields: integrated,
+      secondsPerDay,
+      ...(fieldAudit ? { fieldActivity: { ...fieldAudit.stats } } : {}),
+      combat: combatStats,
+      smuggling: smuggling.stats,
+      population: {
+        replacementCount: population.replacementCount,
+        outstanding: population.outstanding,
+        insuranceFundCredits: population.fundCredits,
+      },
+      report,
+      resourceBalance: physical.getResourceBalance(),
+    })
+  );
+}
+
 for (let day = 0; day < days; day += 1) {
   physical.advanceDay(day);
+  fieldAudit?.beginDay(day);
   economy.advanceDay(day);
   sector.advanceDay(day);
   smuggling.advanceDay(day);
-  for (let step = 0; step < 64; step += 1) {
+  fieldAudit?.balanceDay();
+  if (day > 0) fieldAudit?.validate();
+  for (let step = 0; step < secondsPerDay * 4; step += 1) {
     economy.tick(0.25);
     sector.tick(0.25);
     smuggling.tick(0.25);
     engagements.tick(0.25);
+    fieldAudit?.tick(0.25);
   }
   validate(day);
+  if (integrated && [90, 180, 365].includes(day + 1) && day + 1 !== days) {
+    printReport(day + 1);
+  }
 }
 
-const roles = ['freighter', 'miner', 'salvager', 'patrol', 'pirate'];
-const report = [];
-for (const role of roles) {
-  const members = ships.filter((ship) => ship.job === role);
-  const sum = (fn) => members.reduce((total, ship) => total + fn(ship), 0);
-  report.push({
-    role,
-    ships: members.length,
-    startingCredits: sum((ship) => initial[ship.id].credits),
-    finalCredits: sum((ship) => ship.credits),
-    netCreditChange: sum((ship) => ship.credits - initial[ship.id].credits),
-    completedLegs: sum((ship) => ship.successfulRuns - initial[ship.id].runs),
-    noTravel: members.filter((ship) => ship.successfulRuns === initial[ship.id].runs).length,
-    inactive30Days: members.filter((ship) => days - activity[ship.id] > 30).length,
-    zeroCreditDays: sum((ship) => bankruptDays[ship.id]),
-    lowFuel: members.filter((ship) => ship.fuel < ship.fuelCapacity * 0.1).length,
-    lootRevenue: sum((ship) => ship.pirateLootRevenue ?? 0),
-    expenses: sum((ship) => ship.pirateOperatingExpenses ?? 0),
-    civilianOperatingExpenses: sum((ship) => ship.civilianOperatingExpenses ?? 0),
-    hullUpgrades: sum((ship) => ship.hullUpgradeCount ?? 0),
-    replacements: sum((ship) => ship.replacementGeneration ?? 0),
-    defeats: sum((ship) => ship.combatDefeats ?? 0),
-    smugglingFines: sum((ship) => ship.smugglingFinesPaid ?? 0),
-    smugglingConfiscated: sum((ship) => ship.smugglingConfiscated ?? 0),
-    smugglingProtectionFees: sum((ship) => ship.smugglingProtectionFees ?? 0),
-    unsoldCargoUnits: sum((ship) =>
-      Object.values(ship.cargo).reduce((total, units) => total + units, 0)
-    ),
-  });
+if (fieldAudit) {
+  assert(fieldAudit.stats.minedUnits > 0, 'integrated NPC miners must extract physical ore');
+  assert(fieldAudit.stats.recoveredUnits > 0, 'integrated NPC salvagers must recover real stock');
 }
-assert.equal(ships.length, 33);
-assert.equal(report.find((group) => group.role === 'pirate').ships, 9);
 console.log('ECONOMY LONGRUN AUDIT');
-console.log(
-  JSON.stringify({
-    days,
-    automaticCombat: true,
-    combat: combatStats,
-    smuggling: smuggling.stats,
-    population: {
-      replacementCount: population.replacementCount,
-      outstanding: population.outstanding,
-      insuranceFundCredits: population.fundCredits,
-    },
-    report,
-    resourceBalance: physical.getResourceBalance(),
-  })
-);
+printReport(days);
 console.log('ECONOMY BY SHIP');
 for (const ship of ships) {
   console.log(
