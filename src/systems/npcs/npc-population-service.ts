@@ -11,6 +11,7 @@ import { hashId } from './npc-sector-routing';
 
 /** Pre-funded civilian insurance pool; receipts are actual withheld NPC trade commissions. */
 const INITIAL_FUND = 12000000;
+
 function replacementDelay(npc: SectorNpcState): number {
   const roll = hashId(npc.id + ':' + (npc.replacementGeneration ?? 0));
   if (npc.pirate) return 1 + (roll % 4);
@@ -32,6 +33,32 @@ function refinance(npc: SectorNpcState, day: number): number {
   npc.refinancingCredits = (npc.refinancingCredits ?? 0) + funding;
   delete npc.insolventSinceDay;
   return funding;
+}
+
+function returnRetiredCargo(
+  npc: SectorNpcState,
+  original: SectorNpcState,
+  markets: EconomyMarketService,
+  recordLoss: (id: string, units: number) => void
+): void {
+  // Goods do not vanish when a company closes: recovered cargo is deposited
+  // in actual markets, or recorded as an explicit circulation loss.
+  for (const [resourceId, units] of Object.entries(npc.cargo)) {
+    const amount = Math.max(0, Math.floor(units));
+    if (!amount) continue;
+    const preferred = original.homePortId ?? original.locationId;
+    const market =
+      markets
+        .snapshot()
+        .find((item) => item.locationId === preferred && item.entries[resourceId]) ??
+      markets.snapshot().find((item) => item.entries[resourceId]);
+    if (market) {
+      market.entries[resourceId]!.stock += amount;
+      markets.recalculate(market.locationId, resourceId);
+    } else {
+      recordLoss(resourceId, amount);
+    }
+  }
 }
 
 export interface NpcPopulationService {
@@ -63,24 +90,7 @@ export function createNpcPopulationService(
     if (!ship) return false;
     const capital = Math.max(300000, npcWorkingCapital(original) * 3);
     const cost = shipPurchasePrice(ship) + capital;
-    // Goods do not vanish when a company closes: recovered cargo is deposited
-    // in actual markets, or recorded as an explicit circulation loss.
-    for (const [resourceId, units] of Object.entries(npc.cargo)) {
-      const amount = Math.max(0, Math.floor(units));
-      if (!amount) continue;
-      const preferred = original.homePortId ?? original.locationId;
-      const market =
-        markets
-          .snapshot()
-          .find((item) => item.locationId === preferred && item.entries[resourceId]) ??
-        markets.snapshot().find((item) => item.entries[resourceId]);
-      if (market) {
-        market.entries[resourceId]!.stock += amount;
-        markets.recalculate(market.locationId, resourceId);
-      } else {
-        recordLoss(resourceId, amount);
-      }
-    }
+    returnRetiredCargo(npc, original, markets, recordLoss);
     const insured = original.pirate || original.job === 'patrol' ? 0 : Math.min(fund, cost);
     externalFunding += cost - insured;
     fund -= insured;
