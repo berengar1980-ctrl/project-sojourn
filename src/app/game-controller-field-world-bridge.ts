@@ -224,6 +224,12 @@ export function fieldWorldFor(
             requested,
             asteroidId ? JSON.stringify([location.id, asteroidId]) : undefined
           ),
+        fundMiningBonus: (asteroidId, id, amount) =>
+          economy.simulation.fundPhysicalStock(
+            id,
+            JSON.stringify([location.id, asteroidId]),
+            amount
+          ),
         onAsteroidScanned: (npc, asteroid) =>
           registerNpcAsteroidClaim(context, location, npc, asteroid),
         onAsteroidMined: (npc, asteroid, resourceId, amount) =>
