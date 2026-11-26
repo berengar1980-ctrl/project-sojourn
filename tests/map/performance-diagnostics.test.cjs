@@ -41,6 +41,7 @@ for (const section of ['route-plan', 'route-plan-emergency', 'route-replan', 'po
   assert(has('src/systems/npcs/npc-sector-service.ts', 'sim.npcs.' + section));
 }
 assert(has('src/systems/economy/npc-economy-service.ts', 'sim.npcs.decision'));
+assert(has('src/systems/economy/npc-economy-service.ts', 'decisionTravelQuotes'));
 assert(has('src/app/bootstrap.ts', 'frame.interval'));
 assert(has('src/app/bootstrap.ts', 'frame.controller'));
 assert(has('src/app/game-controller-scene-tick.ts', 'sim.salvage-world'));

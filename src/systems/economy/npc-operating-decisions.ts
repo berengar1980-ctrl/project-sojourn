@@ -18,6 +18,40 @@ export type NpcTravelQuoteFn = (
   availableCredits: number
 ) => NpcTravelOperatingQuote | null;
 
+interface DestinationQuotes {
+  direct?: NpcTravelOperatingQuote;
+  readonly byBudget: Map<number, NpcTravelOperatingQuote | null>;
+}
+
+/**
+ * Reuse quotes only within one synchronous decision, before fuel, position,
+ * contacts, or blockade state can change. Hypothetical NPCs use separate keys.
+ */
+export function decisionTravelQuotes(quote?: NpcTravelQuoteFn): NpcTravelQuoteFn | undefined {
+  if (!quote) return undefined;
+  const byNpc = new WeakMap<NpcEconomyState, Map<string, DestinationQuotes>>();
+  return (npc, destinationId, credits) => {
+    if (!Number.isFinite(credits) || credits < 0) return quote(npc, destinationId, credits);
+    let destinations = byNpc.get(npc);
+    if (!destinations) {
+      destinations = new Map();
+      byNpc.set(npc, destinations);
+    }
+    let entry = destinations.get(destinationId);
+    if (!entry) {
+      entry = { byBudget: new Map() };
+      destinations.set(destinationId, entry);
+    }
+    if (entry.direct) return entry.direct;
+    const existing = entry.byBudget.get(credits);
+    if (existing !== undefined) return existing;
+    const result = quote(npc, destinationId, credits);
+    if (result?.budgetIndependent) entry.direct = result;
+    else entry.byBudget.set(credits, result);
+    return result;
+  };
+}
+
 export interface NpcVoyageEconomics {
   readonly quantity: number;
   readonly distance: number;

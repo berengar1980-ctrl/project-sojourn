@@ -60,6 +60,51 @@ assert.equal(npc.fuel, 50, 'quoting travel cannot alter the tank');
 assert.equal(npc.credits, 800, 'quoting travel cannot debit credits');
 assert.equal(npc.travel, undefined, 'quoting travel cannot start a flight');
 
+const { decisionTravelQuotes, evaluateNpcPurchaseVoyage } = load(
+  'src/systems/economy/npc-operating-decisions.ts'
+);
+
+function assertDecisionQuoteReuse() {
+  const live = { ...npc, credits: 1000000 };
+  let calls = 0;
+  const quote = (ship, destination, credits) => {
+    calls++;
+    return sector.quoteTravel(ship, destination, credits);
+  };
+  const direct = sector.quoteTravel(live, 'fuel-a', 0);
+  assert(direct?.budgetIndependent, 'direct flight must be explicitly certified');
+  assert.deepEqual(sector.quoteTravel(live, 'fuel-a', 500), direct);
+  const scoped = decisionTravelQuotes(quote);
+  const args = [live, 'fuel-a', 32, 10, 100, 400];
+  const baseline = evaluateNpcPurchaseVoyage(...args, quote);
+  const baselineCalls = calls;
+  calls = 0;
+  assert.deepEqual(evaluateNpcPurchaseVoyage(...args, scoped), baseline);
+  assert(baseline);
+  assert.equal(calls, 1);
+  assert(baselineCalls > calls);
+  assert.deepEqual(evaluateNpcPurchaseVoyage(...args, scoped), baseline);
+  assert.equal(calls, 1);
+
+  // Budget-dependent routes must preserve affordability and failed quotes.
+  assert.equal(scoped(npc, 'destination', 400), null);
+  assert.deepEqual(scoped(npc, 'destination', 800), quoted);
+  const beforeRepeat = calls;
+  assert.equal(scoped(npc, 'destination', 400), null);
+  assert.deepEqual(scoped(npc, 'destination', 800), quoted);
+  assert.equal(calls, beforeRepeat);
+
+  // Hypothetical ships and fresh decisions must never inherit an old quote.
+  const empty = { ...live, fuel: 0 };
+  assert.equal(scoped(empty, 'fuel-a', 0), null);
+  assert.equal(scoped(live, 'fuel-a', -1), null);
+  live.fuel = 0;
+  assert.equal(decisionTravelQuotes(quote)(live, 'fuel-a', 0), null);
+  assert.equal(npc.fuel, 50);
+}
+
+assertDecisionQuoteReuse();
+
 npc.hullHp = Math.floor(npc.hullMaxHp * 0.3);
 npc.homePortId = 'fuel-a';
 assert.equal(

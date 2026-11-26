@@ -206,6 +206,9 @@ class SectorService implements NpcSectorService {
       distance: planned.totalDistance,
       refuelCost: planned.fuelCost + emergency.cost,
       fuelExpense: Math.ceil(planned.totalFuel * FUEL_PRICE_PER_UNIT) + emergency.cost,
+      ...(planned.stopIds.length === 0 && emergency.units === 0
+        ? { budgetIndependent: true as const }
+        : {}),
     };
   };
   requestTravel = (
@@ -380,7 +383,12 @@ class SectorService implements NpcSectorService {
   private advanceTravel = (npc: SectorNpcState, dt: number): void => {
     if (npc.travel)
       measurePerformance('sim.npcs.route-replan', () =>
-        replanNpcTravel(this.world, npc, () => npcRouteThreats(npc, this.npcs, this.livePosition), dt)
+        replanNpcTravel(
+          this.world,
+          npc,
+          () => npcRouteThreats(npc, this.npcs, this.livePosition),
+          dt
+        )
       );
     const travel = npc.travel;
     if (!travel) {

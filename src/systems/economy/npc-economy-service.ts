@@ -36,7 +36,7 @@ import {
 import { observeNpcMarket, initializeNpcMarketIntel } from './npc-market-knowledge';
 
 import { npcCargoUsed, cargoFree, quantity } from './npc-cargo';
-import { maxAffordableShipment } from './npc-operating-decisions';
+import { decisionTravelQuotes, maxAffordableShipment } from './npc-operating-decisions';
 import { chargeNpcDailyOperatingExpenses } from './npc-operating-expenses';
 import { finishNpcWorksite } from './npc-work-planning';
 
@@ -195,8 +195,9 @@ function chooseReadyAction(
     return;
   }
 
+  const quoteTravel = decisionTravelQuotes(options.travel?.quoteTravel);
   if (npc.role === 'trader' || npc.role === 'freighter') {
-    chooseTraderAction(npc, markets, resources, positions, day, options.travel?.quoteTravel);
+    chooseTraderAction(npc, markets, resources, positions, day, quoteTravel);
     return;
   }
   if (npc.role === 'miner' || npc.role === 'salvager') {
@@ -206,14 +207,14 @@ function chooseReadyAction(
       resources,
       positions,
       day,
-      options.travel?.quoteTravel,
+      quoteTravel,
       options.workPlanning
     );
     return;
   }
   if (npc.role === 'patrol') {
     const pirate = 'pirate' in npc && npc.pirate;
-    if (!pirate && handleCargoSale(npc, positions, day, options.travel?.quoteTravel)) return;
+    if (!pirate && handleCargoSale(npc, positions, day, quoteTravel)) return;
     const accepted = options.travel?.requestPatrol?.(npc) ?? false;
     if (accepted) markNpcTravelStarted(npc);
     else beginNpcAutonomyPhase(npc, 'patrol-rest');
