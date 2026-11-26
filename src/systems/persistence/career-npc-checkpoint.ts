@@ -100,6 +100,8 @@ function validNpcIdentity(value: Record<string, unknown>, world: WorldMap): bool
 function validNpcFinances(value: Record<string, unknown>): boolean {
   return (
     number(value.credits) &&
+    (value.insolventSinceDay === undefined || number(value.insolventSinceDay)) &&
+    (value.refinancingCredits === undefined || number(value.refinancingCredits)) &&
     number(value.fuel) &&
     number(value.fuelCapacity) &&
     number(value.hullHp) &&
