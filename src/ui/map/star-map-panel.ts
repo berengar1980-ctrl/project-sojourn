@@ -28,6 +28,7 @@ interface StarMapPanelOptions {
   readonly onSelectNpc: (id: string) => void;
   readonly onAttackNpc: (id: string) => void;
   readonly onStartTravel: () => void;
+  readonly onEmergencyRefuel?: () => void;
   readonly onRouteProfileChange?: (profile: RouteProfile) => void;
   readonly onDock: () => void;
   readonly getCampaignJournal?: () => readonly CampaignJournalEntry[];
@@ -444,7 +445,7 @@ export function createStarMapPanel(options: StarMapPanelOptions): StarMapPanel {
 
   const updateSelection = (): void => {
     updateTravelStatus(model, travelStatus);
-    updateStarMapFuelStatus(model, fuelStatus);
+    updateStarMapFuelStatus(model, fuelStatus, options.onEmergencyRefuel);
     const hasSelection = updateNpcSelection() || updateLocationSelection();
     card.hidden = !hasSelection;
   };
