@@ -12,9 +12,8 @@ const { createNpcEconomyService } = load('src/systems/economy/npc-economy-servic
 const { createNpcLocalMiningService } = load('src/systems/npcs/npc-local-mining-service.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
-const { captureCareerNpcs, stageCareerNpcs } = load(
-  'src/systems/persistence/career-npc-checkpoint.ts'
-);
+const checkpoint = load('src/systems/persistence/career-npc-checkpoint.ts');
+const { captureCareerNpcs, stageCareerNpcs } = checkpoint;
 
 const resources = [
   { id: 'ferrite', basePrice: 100, legality: 'legal' },
@@ -24,6 +23,7 @@ const a = 'greyrock-belt';
 const b = 'copper-crown-field';
 const positions = {
   haven: { x: 0, y: 0 },
+  crown: { x: 0, y: 0 },
   [a]: { x: 100, y: 0 },
   [b]: { x: 100, y: 0 },
 };
@@ -102,9 +102,8 @@ assert.equal(second.ships[0].npcId, npc.id);
 console.log('PASS dynamic worker profit ranking, empty departure, mobile roster and save/load');
 
 const { knownWorkPrice } = load('src/systems/economy/npc-work-planning.ts');
-const { npcMarketConfidence, observeNpcMarket } = load(
-  'src/systems/economy/npc-market-knowledge.ts'
-);
+const marketKnowledge = load('src/systems/economy/npc-market-knowledge.ts');
+const { npcMarketConfidence, observeNpcMarket } = marketKnowledge;
 delete npc.lastWorkLocationId;
 npc.locationId = 'haven';
 npc.marketIntel = {
