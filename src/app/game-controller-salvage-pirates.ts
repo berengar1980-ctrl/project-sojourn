@@ -28,7 +28,7 @@ export interface SalvagePirateResponseOptions {
   readonly pirates: LocalPirateTraffic;
   readonly sectorNpcs: readonly SectorNpcState[];
   readonly salvagers: NpcLocalSalvageService['ships'];
-  readonly playerPosition: WorldPoint;
+  readonly playerPosition: WorldPoint | null;
   readonly playerRadius: number;
   readonly playerBody?: LocalShieldShipBody;
   readonly onFreighterExit?: (npc: SectorNpcState) => void;
@@ -47,7 +47,7 @@ export interface SalvagePirateResponseOptions {
 function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> {
   const { field, drone, pirates, salvagers, sectorNpcs } = options;
   const combatants = new Set<string>();
-  for (const duel of options.npcCombats ?? []) {
+  for (const duel of [...(options.npcCombats ?? []), ...(options.playerCombat ? [options.playerCombat] : [])]) {
     for (const ship of [duel.attacker, duel.defender]) {
       const npc = sectorNpcs.find((entry) => entry.id === ship.id);
       if (npc?.locationId !== field.sourceLocationId) continue;
@@ -72,7 +72,11 @@ function closestVisiblePirate(
   const dronePosition = options.drone.position;
   return (
     pirateShips
-      .filter((pirate) => salvageDroneCanSee(options.drone, options.field, pirate.position))
+      .filter((pirate) => {
+        const npc = options.sectorNpcs.find((entry) => entry.id === pirate.npcId);
+        return Boolean(npc && !npc.combatMovement && (npc.combatRecoverySeconds ?? 0) <= 0 &&
+          salvageDroneCanSee(options.drone, options.field, pirate.position));
+      })
       .sort(
         (a, b) =>
           Math.hypot(a.position.x - dronePosition.x, a.position.y - dronePosition.y) -
@@ -88,9 +92,9 @@ function advanceDroneInterception(
 ): void {
   const { drone, field, sectorNpcs, salvagers } = options;
   const defender = sectorNpcs.find((npc) => npc.id === 'security-drone:' + field.sourceLocationId);
-  drone.syncAvailability(defender);
-  const target = closestVisiblePirate(options, pirateShips);
   const busy = Boolean(defender?.combatMovement || combatants.has(defender?.id ?? ''));
+  if (!busy) drone.syncAvailability(defender);
+  const target = closestVisiblePirate(options, pirateShips);
   let pursuit: WorldPoint | undefined;
   if (target && !busy) {
     pursuit = securityPirateApproach(drone.position, target.position);
@@ -98,7 +102,7 @@ function advanceDroneInterception(
   const obstacles = salvageDroneShipObstacles(
     [
       ...salvagers.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
-      ...pirateShips.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
+      ...options.pirates.snapshot(sectorNpcs).map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
     ],
     options.playerPosition,
     options.playerRadius
@@ -160,7 +164,7 @@ function advancePirateTraffic(
   pirates.tick(
     options.dt,
     livePirates,
-    options.playerPosition,
+    options.playerCombat ? null : options.playerPosition,
     salvagers.map((ship) => ({
       npcId: ship.npcId,
       position: ship.position,
