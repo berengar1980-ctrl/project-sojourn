@@ -110,10 +110,24 @@ function createFieldInstance(
       : generateMiningSpace(location.id, seed, location.minedResourceIds);
   return instance;
 }
+function validMiningChunkMotion(chunk: MiningChunk): boolean {
+  return (
+    Number.isFinite(chunk.ageSeconds) &&
+    chunk.ageSeconds >= 0 &&
+    Number.isFinite(chunk.position?.x) &&
+    Number.isFinite(chunk.position?.y) &&
+    Number.isFinite(chunk.velocity?.x) &&
+    Number.isFinite(chunk.velocity?.y) &&
+    typeof chunk.tractorActive === 'boolean' &&
+    (chunk.tractorHardpointId === null || typeof chunk.tractorHardpointId === 'string')
+  );
+}
+
 function restoreMiningChunks(
   instance: LocalSpaceInstance,
-  chunks: readonly MiningChunk[] | undefined
+  saved: CareerAsteroidFieldCheckpoint['fields'][string] | undefined
 ): void {
+  const chunks = saved?.chunks;
   if (chunks === undefined) return;
   if (!Array.isArray(chunks) || chunks.length > 10000) {
     throw new Error('Invalid saved mining chunks');
@@ -128,14 +142,7 @@ function restoreMiningChunks(
       !asteroid?.deposits.some((entry) => entry.resourceId === chunk.resourceId) ||
       !Number.isFinite(chunk.amount) ||
       chunk.amount <= 0 ||
-      !Number.isFinite(chunk.ageSeconds) ||
-      chunk.ageSeconds < 0 ||
-      !Number.isFinite(chunk.position?.x) ||
-      !Number.isFinite(chunk.position?.y) ||
-      !Number.isFinite(chunk.velocity?.x) ||
-      !Number.isFinite(chunk.velocity?.y) ||
-      typeof chunk.tractorActive !== 'boolean' ||
-      (chunk.tractorHardpointId !== null && typeof chunk.tractorHardpointId !== 'string')
+      !validMiningChunkMotion(chunk)
     ) {
       throw new Error('Invalid saved mining chunk');
     }
@@ -191,7 +198,7 @@ export class AsteroidFieldWorld {
       const seed = instance.seed;
       claims.restoreField(location.id, instance.asteroids);
       const saved = checkpoint?.fields[location.id];
-      restoreMiningChunks(instance, saved?.chunks);
+      restoreMiningChunks(instance, saved);
       if (!this.combatWrecksByLocation.has(location.id))
         this.combatWrecksByLocation.set(location.id, []);
       this.fields.set(location.id, {
