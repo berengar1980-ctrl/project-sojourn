@@ -267,6 +267,10 @@
       "mode": "derived",
       "reason": "Deterministically derives stock identifiers from field and wreck identifiers; owns no mutable state or checkpoint."
     },
+    "src/systems/economy/resource-balance-report.ts": {
+      "mode": "derived",
+      "reason": "Read-only accounting and market diagnostics derived from existing resource pools, markets and cargo; no independent persistence."
+    },
     "src/systems/economy/physical-reserve-policy.ts": {
       "mode": "derived",
       "reason": "Deterministic daily budget transfers operate on the persisted resource pools; the policy owns no independent state."
