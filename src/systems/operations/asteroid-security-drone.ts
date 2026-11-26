@@ -74,6 +74,8 @@ export class AsteroidSecurityDrone {
     return {
       version: 1,
       position: { ...this.position },
+      headingRadians: this.headingRadians,
+      speed: this.speed,
       ...(this.routeState ? { routeState: structuredClone(this.routeState) } : {}),
       scanRadius: this.scanRadius,
       operational: this.operational,
@@ -94,6 +96,8 @@ export class AsteroidSecurityDrone {
     const instance = new AsteroidSecurityDrone(width, height, asteroids, scanRadius);
     const data = stageSecurityDroneCheckpoint(checkpoint, scanRadius, instance.patrol.length);
     instance.position = { ...data.position };
+    instance.headingRadians = data.headingRadians ?? 0;
+    instance.speed = data.speed ?? 0;
     if (data.routeState) instance.routeState = structuredClone(data.routeState);
     instance.operational = data.operational;
     instance.nextWaypoint = data.nextWaypoint;
