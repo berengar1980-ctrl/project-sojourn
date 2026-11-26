@@ -291,7 +291,17 @@ export function createControllerEconomy(
     simulation,
     onSmugglingNotice
   );
-  const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, onSmugglingNotice);
+  const npcSmuggling = createNpcSmugglingService(
+    npcStates,
+    sectorNpcs,
+    onSmugglingNotice,
+    Math.random,
+    0,
+    (id, amount) => {
+      const pool = simulation.pools[id];
+      if (pool) pool.recordedLosses += amount;
+    }
+  );
 
   const npcPrisoners = new Set<string>();
   const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {
