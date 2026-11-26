@@ -325,7 +325,11 @@ export function stageCareerFullSession(
     commerce.commerce.trade.player,
     commerce.commerce.npcs,
     commerce.ships.ownership.snapshot().ownedShipIds,
-    deps.factionIds
+    deps.factionIds,
+    (id, amount) => {
+      const pool = commerce.commerce.economy.simulation.pools[id];
+      if (pool) pool.recordedLosses += amount;
+    }
   );
   const crew = createCrewRosterService(profile, section<CareerCrewCheckpoint>(sections.crew));
   validateCrewShips(crew, commerce);
