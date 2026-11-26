@@ -81,9 +81,12 @@ export function createNpcPopulationService(
         recordLoss(resourceId, amount);
       }
     }
-    externalFunding += Math.max(0, cost - fund);
-    fund = Math.max(0, fund - cost);
+    const insured = original.pirate || original.job === 'patrol' ? 0 : Math.min(fund, cost);
+    externalFunding += cost - insured;
+    fund -= insured;
     const generation = (npc.replacementGeneration ?? 0) + 1;
+    const previousCapital = npc.replacementCapitalSpent ?? 0;
+    const previousRefinancing = npc.refinancingCredits ?? 0;
     const key = npc.id;
     for (const field of Object.keys(npc)) delete (npc as unknown as Record<string, unknown>)[field];
     Object.assign(npc, original, {
@@ -94,7 +97,8 @@ export function createNpcPopulationService(
       marketIntel: {},
       successfulRuns: 0,
       replacementGeneration: generation,
-      replacementCapitalSpent: (original.replacementCapitalSpent ?? 0) + cost,
+      replacementCapitalSpent: previousCapital + cost,
+      refinancingCredits: previousRefinancing,
       hullMaxHp: resolveShipGameplayStats(ship).hullPoints,
       hullHp: resolveShipGameplayStats(ship).hullPoints,
     });
@@ -102,7 +106,12 @@ export function createNpcPopulationService(
     return true;
   };
   return {
-    exportState: () => ({ version: 1, fundCredits: fund, replacementCount, externalFunding }),
+    exportState: () => ({
+      version: 1,
+      fundCredits: fund,
+      replacementCount,
+      ...(externalFunding > 0 ? { externalFunding } : {}),
+    }),
     get externalFunding() {
       return externalFunding;
     },
