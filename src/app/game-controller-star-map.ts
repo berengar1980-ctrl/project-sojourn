@@ -126,7 +126,7 @@ export function createControllerStarPanel(options: {
         panel?.update(options.getModel());
       }),
     onDock: options.onDock,
-    onEmergencyRefuel: options.onEmergencyRefuel,
+    ...(options.onEmergencyRefuel ? { onEmergencyRefuel: options.onEmergencyRefuel } : {}),
   });
   return panel;
 }
