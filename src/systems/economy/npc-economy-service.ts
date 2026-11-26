@@ -283,6 +283,10 @@ function abstractWorkerDay(
   const autonomy = ensureNpcAutonomy(npc);
   if (autonomy.phase !== 'working') return;
   if (npc.workLocationId && npc.locationId !== npc.workLocationId) return;
+  if (npc.role === 'salvager' && options.physicalSalvageWorker) {
+    options.physicalSalvageWorker(npc, day);
+    return;
+  }
 
   const candidates = npc.workResourceIds;
   if (candidates.length === 0) return;
@@ -388,6 +392,7 @@ export function createNpcEconomyService(
 ): NpcEconomyService {
   if (checkpoint) validateNpcEconomyCheckpoint(checkpoint, npcs);
   let lastDay = checkpoint?.lastDay ?? -1;
+  let dailyOptions = options;
   const positions = options.positions ?? {};
   if (!checkpoint) initializeNpcEconomy(npcs, markets, positions);
 
@@ -397,7 +402,7 @@ export function createNpcEconomyService(
 
     for (let current = lastDay + 1; current <= target; current += 1) {
       for (const npc of npcs) {
-        processNpcEconomyDay(npc, current, markets, allocator, options);
+        processNpcEconomyDay(npc, current, markets, allocator, dailyOptions);
       }
     }
     lastDay = target;
@@ -442,6 +447,9 @@ export function createNpcEconomyService(
       if (allocated <= 0) return 0;
       npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;
       return allocated;
+    },
+    setPhysicalSalvageWorker(worker) {
+      dailyOptions = { ...options, physicalSalvageWorker: worker };
     },
     dispatchLoadedWorker(npc) {
       if (npcCargoUsed(npc) <= 0) return false;
