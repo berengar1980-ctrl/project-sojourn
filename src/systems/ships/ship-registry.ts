@@ -75,9 +75,39 @@ const securityDrone: ShipDefinition = {
       maneuverThrusters: [],
       miningLasers: [],
       weaponMounts: [
-        { id: 'gc87-laser-a', slotIndex: 0, x: 48, y: 24, width: 3, facing: 'forward', allowedMounts: ['turret'], allowedFamilies: ['pulse_laser'], arcDegrees: 360 },
-        { id: 'gc87-laser-b', slotIndex: 1, x: 48, y: 72, width: 3, facing: 'forward', allowedMounts: ['turret'], allowedFamilies: ['pulse_laser'], arcDegrees: 360 },
-        { id: 'gc87-missile', slotIndex: 2, x: 72, y: 48, width: 3, facing: 'forward', allowedMounts: ['guided'], allowedFamilies: ['guided_missile'], arcDegrees: 360 },
+        {
+          id: 'gc87-laser-a',
+          slotIndex: 0,
+          x: 48,
+          y: 24,
+          width: 3,
+          facing: 'forward',
+          allowedMounts: ['turret'],
+          allowedFamilies: ['pulse_laser'],
+          arcDegrees: 360,
+        },
+        {
+          id: 'gc87-laser-b',
+          slotIndex: 1,
+          x: 48,
+          y: 72,
+          width: 3,
+          facing: 'forward',
+          allowedMounts: ['turret'],
+          allowedFamilies: ['pulse_laser'],
+          arcDegrees: 360,
+        },
+        {
+          id: 'gc87-missile',
+          slotIndex: 2,
+          x: 72,
+          y: 48,
+          width: 3,
+          facing: 'forward',
+          allowedMounts: ['guided'],
+          allowedFamilies: ['guided_missile'],
+          arcDegrees: 360,
+        },
       ],
       shield: { centerX: 48, centerY: 48, radiusX: 72, radiusY: 72, maxHp: 100, modifier: 1 },
     },
@@ -117,6 +147,7 @@ export function getAllShipDefinitions(): readonly ShipDefinition[] {
   return definitions.filter(
     (definition) =>
       definition.id !== SECURITY_DRONE_SHIP_ID &&
-      !definition.id.endsWith('-mk4') && !definition.id.startsWith('pirate-')
+      !definition.id.endsWith('-mk4') &&
+      !definition.id.startsWith('pirate-')
   );
 }

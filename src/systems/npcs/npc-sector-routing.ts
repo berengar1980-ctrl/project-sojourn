@@ -192,9 +192,7 @@ export function pirateHuntDestination(
       // contacts count, not nominal protection or destroyed replacements.
       const relativeSecurity = patrols / Math.max(0.25, pirateThreatStrength(npc));
       const riskCost =
-        relativeSecurity * (1800 - npc.aggression * 9) +
-        rivals * 450 +
-        (1 - hullFraction) * 1400;
+        relativeSecurity * (1800 - npc.aggression * 9) + rivals * 450 + (1 - hullFraction) * 1400;
       const homeDistance = home
         ? Math.hypot(home.position.x - location.position.x, home.position.y - location.position.y)
         : 2000;

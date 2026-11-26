@@ -161,27 +161,44 @@ function verifySalvageWorkers(value: unknown): void {
   if (!Array.isArray(value) || value.length > 1000)
     throw new Error('Ungültige Bergungsschiff-Liste.');
   const seen = new Set<string>();
-  const point = (candidate: unknown) => isRecord(candidate) &&
-    validFinite(candidate.x, -Infinity) && validFinite(candidate.y, -Infinity);
+  const point = (candidate: unknown) =>
+    isRecord(candidate) &&
+    validFinite(candidate.x, -Infinity) &&
+    validFinite(candidate.y, -Infinity);
   for (const ship of value) {
     if (
-      !isRecord(ship) || !validIdentity(ship, ['npcId', 'shipId', 'name']) ||
-      typeof ship.npcId !== 'string' || seen.has(ship.npcId) ||
-      !point(ship.position) || !point(ship.exitPoint) ||
-      !validFinite(ship.headingRadians, -Infinity) || !validFinite(ship.speed) ||
-      !['entering', 'approaching', 'scanning', 'salvaging', 'exiting'].includes(ship.phase as string) ||
+      !isRecord(ship) ||
+      !validIdentity(ship, ['npcId', 'shipId', 'name']) ||
+      typeof ship.npcId !== 'string' ||
+      seen.has(ship.npcId) ||
+      !point(ship.position) ||
+      !point(ship.exitPoint) ||
+      !validFinite(ship.headingRadians, -Infinity) ||
+      !validFinite(ship.speed) ||
+      !['entering', 'approaching', 'scanning', 'salvaging', 'exiting'].includes(
+        ship.phase as string
+      ) ||
       (ship.targetWreckId !== null && typeof ship.targetWreckId !== 'string') ||
       typeof ship.salvageActive !== 'boolean' ||
-      !validFinite(ship.scanProgress) || ship.scanProgress > 1 ||
+      !validFinite(ship.scanProgress) ||
+      ship.scanProgress > 1 ||
       !validFinite(ship.workAccumulator, -Infinity)
-    ) throw new Error('Ungültiger physischer Bergungsschiff-Zustand.');
+    )
+      throw new Error('Ungültiger physischer Bergungsschiff-Zustand.');
     const route = ship.routeState;
-    if (route !== undefined && (
-      !isRecord(route) || !point(route.target) || !Array.isArray(route.points) ||
-      !route.points.length || route.points.length > 1000 ||
-      !route.points.every(point) || !validFinite(route.index) ||
-      !Number.isInteger(route.index) || route.index >= route.points.length
-    )) throw new Error('Ungültige gespeicherte Bergungsroute.');
+    if (
+      route !== undefined &&
+      (!isRecord(route) ||
+        !point(route.target) ||
+        !Array.isArray(route.points) ||
+        !route.points.length ||
+        route.points.length > 1000 ||
+        !route.points.every(point) ||
+        !validFinite(route.index) ||
+        !Number.isInteger(route.index) ||
+        route.index >= route.points.length)
+    )
+      throw new Error('Ungültige gespeicherte Bergungsroute.');
     seen.add(ship.npcId);
   }
 }
@@ -207,13 +224,21 @@ function verifyWreckField(pair: unknown, fields: Set<string>): void {
   const escorts = pair[1].securityEscorts;
   if (escorts !== undefined) {
     if (
-      !isRecord(escorts) || escorts.version !== 1 || escorts.seed !== pair[1].seed ||
-      !validFinite(escorts.width, 1) || !validFinite(escorts.height, 1) ||
+      !isRecord(escorts) ||
+      escorts.version !== 1 ||
+      escorts.seed !== pair[1].seed ||
+      !validFinite(escorts.width, 1) ||
+      !validFinite(escorts.height, 1) ||
       !validLocalTrafficSceneData(escorts, escorts.width, escorts.height) ||
-      !Array.isArray(escorts.ships) || escorts.ships.length > 1 ||
-      !Array.isArray(escorts.combatReturns) || escorts.combatReturns.length !== 0 ||
-      !escorts.ships.every((ship) => isRecord(ship) && ship.npcId === 'security-drone:' + pair[0] + ':escort-2')
-    ) throw new Error('Ungültiger Sicherheitsdrohnen-Spielstand.');
+      !Array.isArray(escorts.ships) ||
+      escorts.ships.length > 1 ||
+      !Array.isArray(escorts.combatReturns) ||
+      escorts.combatReturns.length !== 0 ||
+      !escorts.ships.every(
+        (ship) => isRecord(ship) && ship.npcId === 'security-drone:' + pair[0] + ':escort-2'
+      )
+    )
+      throw new Error('Ungültiger Sicherheitsdrohnen-Spielstand.');
   }
   const ids = new Set<string>();
   for (const wreck of pair[1].wrecks) verifyWreckRecord(wreck, ids);

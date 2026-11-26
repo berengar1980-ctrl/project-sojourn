@@ -190,9 +190,11 @@ export class LocalPirateTraffic {
     const active = new Set<string>();
     for (const npc of pirates) {
       if (
-        localArmedTraffic(npc) && npc.hullHp > 0 &&
+        localArmedTraffic(npc) &&
+        npc.hullHp > 0 &&
         (npc.combatRecoverySeconds ?? 0) <= 0 &&
-        npc.retiredUntilDay === undefined && (!npc.travel || npc.combatMovement)
+        npc.retiredUntilDay === undefined &&
+        (!npc.travel || npc.combatMovement)
       ) {
         active.add(npc.id);
       }
@@ -428,7 +430,15 @@ export class LocalPirateTraffic {
         x: this.width * (0.5 + 0.3 * Math.cos(angle)),
         y: this.height * (0.5 + 0.3 * Math.sin(angle)),
       };
-      const arrived = moveFieldShip(ship, point, drone ? DRONE_PATROL_SPEED : 118, dt, blockers, 40, 'patrol');
+      const arrived = moveFieldShip(
+        ship,
+        point,
+        drone ? DRONE_PATROL_SPEED : 118,
+        dt,
+        blockers,
+        40,
+        'patrol'
+      );
       if (arrived || ship.routeState) return;
     }
   }

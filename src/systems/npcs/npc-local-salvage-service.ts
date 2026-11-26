@@ -104,7 +104,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
       const npc = this.byId.get(saved.npcId);
       if (!npc || !eligible(npc, options.locationId) || npc.shipId !== saved.shipId) continue;
       const ship = structuredClone(saved);
-      if (ship.targetWreckId && !options.field.wrecks.some((wreck) => wreck.id === ship.targetWreckId)) {
+      if (
+        ship.targetWreckId &&
+        !options.field.wrecks.some((wreck) => wreck.id === ship.targetWreckId)
+      ) {
         ship.phase = 'approaching';
         ship.targetWreckId = null;
         ship.salvageActive = false;
@@ -149,7 +152,8 @@ class LocalSalvageService implements NpcLocalSalvageService {
         position: { ...(this.options.initialPosition?.(npc.id) ?? entry) },
         headingRadians: 0,
         speed: localCruiseSpeed(npc),
-        phase: cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) ? 'exiting' : 'entering',
+        phase:
+          cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) ? 'exiting' : 'entering',
         targetWreckId: null,
         salvageActive: false,
         scanProgress: 0,
@@ -380,7 +384,13 @@ class LocalSalvageService implements NpcLocalSalvageService {
       const npc = this.byId.get(ship.npcId);
       // Keep the combatant under duel authority; do not remove or move it.
       if (ship.npcId === combatantId) continue;
-      if (!npc || npc.hullHp <= 0 || npc.retiredUntilDay !== undefined || npc.travel || npc.locationId !== this.options.locationId) {
+      if (
+        !npc ||
+        npc.hullHp <= 0 ||
+        npc.retiredUntilDay !== undefined ||
+        npc.travel ||
+        npc.locationId !== this.options.locationId
+      ) {
         this.ships.splice(index, 1);
         continue;
       }

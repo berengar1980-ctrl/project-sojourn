@@ -53,7 +53,8 @@ export function stageSecurityDroneCheckpoint(
   if (
     (value.headingRadians !== undefined && !validNumber(value.headingRadians, -Infinity)) ||
     (value.speed !== undefined && !validNumber(value.speed))
-  ) throw new Error('Ungültige gespeicherte Drohnenbewegung.');
+  )
+    throw new Error('Ungültige gespeicherte Drohnenbewegung.');
   if (value.routeState !== undefined && !validRouteState(value.routeState)) {
     throw new Error('Ungültige gespeicherte Drohnenroute.');
   }

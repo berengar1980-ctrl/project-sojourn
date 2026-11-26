@@ -113,7 +113,9 @@ export class AsteroidSecurityDrone {
       shieldContactSeconds: this.shieldContactSeconds,
     };
   }
-  syncAvailability(npc?: Pick<SectorNpcState, 'id' | 'hullHp' | 'combatDefeats' | 'combatRecoverySeconds'>): void {
+  syncAvailability(
+    npc?: Pick<SectorNpcState, 'id' | 'hullHp' | 'combatDefeats' | 'combatRecoverySeconds'>
+  ): void {
     if (!npc || npc.hullHp <= 0 || (npc.combatRecoverySeconds ?? 0) > 0) this.destroy();
     else if (!this.operational) {
       const key = npc.id + ':' + (npc.combatDefeats ?? 0);

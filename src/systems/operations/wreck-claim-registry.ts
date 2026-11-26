@@ -207,7 +207,9 @@ export class WreckClaimRegistry {
         {
           ...field,
           ...(field.drone ? { drone: structuredClone(field.drone) } : {}),
-          ...(field.securityEscorts ? { securityEscorts: structuredClone(field.securityEscorts) } : {}),
+          ...(field.securityEscorts
+            ? { securityEscorts: structuredClone(field.securityEscorts) }
+            : {}),
           ...(field.workers ? { workers: structuredClone(field.workers) } : {}),
           wrecks: field.wrecks.map((wreck) => ({
             ...wreck,
@@ -229,8 +231,10 @@ export class WreckClaimRegistry {
       this.fields.set(id, {
         ...field,
         ...(field.drone ? { drone: structuredClone(field.drone) } : {}),
-          ...(field.securityEscorts ? { securityEscorts: structuredClone(field.securityEscorts) } : {}),
-          ...(field.workers ? { workers: structuredClone(field.workers) } : {}),
+        ...(field.securityEscorts
+          ? { securityEscorts: structuredClone(field.securityEscorts) }
+          : {}),
+        ...(field.workers ? { workers: structuredClone(field.workers) } : {}),
         wrecks: field.wrecks.map((wreck) => ({
           ...wreck,
           resources: { ...wreck.resources },
