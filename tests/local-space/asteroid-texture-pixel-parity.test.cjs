@@ -73,7 +73,7 @@ function asteroidTextureSize(kind, detail) {
 
 function legacyTexture(id, kind, detail = 'normal') {
   const size = asteroidTextureSize(kind, detail);
-  const canvas = document.createElement('canvas');
+  const canvas = global.document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const context = canvas.getContext('2d');

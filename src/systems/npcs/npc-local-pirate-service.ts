@@ -265,34 +265,39 @@ export class LocalPirateTraffic {
     miners: ReadonlyArray<{ npcId: string; position: WorldPoint; inCombat?: boolean }>,
     player: WorldPoint | null
   ) {
-    const rivals = this.snapshot(
-      npcs.filter((other) => rivalPirateGroups(npc, other) && npcMayTargetNpc(npc, other))
-    );
-    const targets = [
-      ...rivals.map((other) => ({ id: other.npcId, position: other.position })),
-      ...this.snapshot(
-        npcs.filter(
-          (other) =>
-            other.job === 'freighter' &&
-            npcMayTargetNpc(npc, other) &&
-            other.smugglingProtectionFaction !== npc.factionId &&
-            Object.values(other.cargo).some((amount) => amount > 0)
-        )
-      ).map((other) => ({ id: other.npcId, position: other.position })),
-      ...miners
-        .filter((miner) => !miner.inCombat && miner.npcId !== pirate.npcId)
-        .map((miner) => ({
-          id: miner.npcId,
-          position: miner.position,
-        })),
-      ...(player ? [{ id: 'player', position: player }] : []),
-    ];
-    targets.sort(
-      (a, b) =>
-        Math.hypot(a.position.x - pirate.position.x, a.position.y - pirate.position.y) -
-        Math.hypot(b.position.x - pirate.position.x, b.position.y - pirate.position.y)
-    );
-    return targets[0];
+    const byId = new Map(npcs.map((other) => [other.id, other]));
+    let nearest: { id: string; position: WorldPoint } | undefined;
+    let bestDistance = Infinity;
+    const consider = (id: string, position: WorldPoint): void => {
+      const distance = Math.hypot(position.x - pirate.position.x, position.y - pirate.position.y);
+      if (!nearest || distance < bestDistance) {
+        nearest = { id, position };
+        bestDistance = distance;
+      }
+    };
+    // Preserve the original stable sort's tie order: rivals, loaded freighters,
+    // workers, then the player. Map iteration is the snapshot's original order.
+    for (const ship of this.ships.values()) {
+      const other = byId.get(ship.npcId);
+      if (other && rivalPirateGroups(npc, other) && npcMayTargetNpc(npc, other))
+        consider(other.id, ship.position);
+    }
+    for (const ship of this.ships.values()) {
+      const other = byId.get(ship.npcId);
+      if (
+        other &&
+        other.job === 'freighter' &&
+        npcMayTargetNpc(npc, other) &&
+        other.smugglingProtectionFaction !== npc.factionId &&
+        Object.values(other.cargo).some((amount) => amount > 0)
+      )
+        consider(other.id, ship.position);
+    }
+    for (const miner of miners) {
+      if (!miner.inCombat && miner.npcId !== pirate.npcId) consider(miner.npcId, miner.position);
+    }
+    if (player) consider('player', player);
+    return nearest;
   }
   private advanceFreighter(
     pirate: PirateRuntime,

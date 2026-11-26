@@ -215,11 +215,13 @@ function advanceSalvageField(
   elapsed: number
 ): void {
   const combatWrecks = wreckWorld.combatWrecks(locationId);
-  const known = new Set(world.field.wrecks.map((wreck) => wreck.id));
-  for (const wreck of combatWrecks) {
-    if (known.has(wreck.id)) continue;
-    world.field.wrecks.push(wreck);
-    invalidateSalvagePhysics(world.field);
+  if (combatWrecks.length) {
+    const known = new Set(world.field.wrecks.map((wreck) => wreck.id));
+    for (const wreck of combatWrecks) {
+      if (known.has(wreck.id)) continue;
+      world.field.wrecks.push(wreck);
+      invalidateSalvagePhysics(world.field);
+    }
   }
   const traffic = careerSalvagePirates(context, world.field);
   const npcs = context.economy.sectorNpcs.npcs;

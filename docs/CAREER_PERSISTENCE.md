@@ -1458,3 +1458,9 @@ numerische Besuchsmarkierungen und unveränderte Gefahrenprüfungen. Die
 Texturgenerierung berechnet dieselben Lattice-Werte pro Raster einmal.
 Die Zeitverteilung autoritativer Feld-Ticks bleibt bis zu einer sicheren
 modulübergreifenden Lösung unverändert. Keine neuen Save-Daten.
+
+Lokale Rasterrouten speichern die Prüfung eines Gitterpunkts ausschließlich
+innerhalb derselben synchronen Suche. Piraten wählen das nächste zulässige
+Ziel ohne Render-Snapshots und Sortierung, bei identischer Priorität im
+Gleichstand. Leere Kampfwracklisten erzeugen keinen temporären ID-Index.
+Die autoritative Reihenfolge der Feld-Ticks und Save-Daten bleiben unverändert.

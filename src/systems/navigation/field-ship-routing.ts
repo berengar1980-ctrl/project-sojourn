@@ -1,5 +1,6 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { measurePerformance } from '../../core/performance-diagnostics';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
 
@@ -111,7 +112,9 @@ export function fieldRouteTarget(
   }
   const current = ship.routeState;
   if (!current || distance(current.target, target) > 1 || current.index >= current.points.length) {
-    const points = makeRoute(ship.position, target, obstacles, clearance, mode);
+    const points = measurePerformance('sim.field.route-search', () =>
+      makeRoute(ship.position, target, obstacles, clearance, mode)
+    );
     if (points.length === 0) {
       delete ship.routeState;
       return null;
