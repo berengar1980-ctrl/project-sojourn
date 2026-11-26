@@ -53,7 +53,10 @@ for (const days of horizons) {
 }
 console.log('PASS 90/180/365-day NPC economic progression, customs and insurance audit');
 
-const physicalTest = path.resolve(__dirname, '../tests/economy/physical-resource-horizons.test.cjs');
+const physicalTest = path.resolve(
+  __dirname,
+  '../tests/economy/physical-resource-horizons.test.cjs'
+);
 const physicalRun = spawnSync(process.execPath, [physicalTest], {
   cwd: path.resolve(__dirname, '..'),
   encoding: 'utf8',
