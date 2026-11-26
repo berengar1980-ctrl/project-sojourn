@@ -29,7 +29,8 @@ export function installNpcWorkPlanning(
       sites.push({ ...base, role: 'miner', resourceIds: location.minedResourceIds ?? [] });
     }
     if (location.activities.salvage) {
-      sites.push({ ...base, role: 'salvager', resourceIds: salvageResources(location.dangerLevel) });
+      const resourceIds = salvageResources(location.dangerLevel);
+      sites.push({ ...base, role: 'salvager', resourceIds });
     }
   }
   const { npcs, sectorNpcs, asteroidClaims } = context.economy;
