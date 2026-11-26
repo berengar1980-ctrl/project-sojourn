@@ -77,8 +77,8 @@ export interface NpcLocalSalvageOptions {
   readonly depart: (npc: SectorNpcState) => boolean;
   readonly canWorkWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
   readonly registerWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
-  readonly playerShip?: ShipDefinition;
-  readonly getPlayerShipState?: () => LocalShipState;
+  readonly playerShip?: ShipDefinition | undefined;
+  readonly getPlayerShipState?: () => LocalShipState | undefined;
   readonly onPlayerShieldContact?: (normal: WorldPoint, overlap: number) => void;
 }
 
@@ -365,7 +365,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       const npc = this.byId.get(ship.npcId);
       // Keep the combatant under duel authority; do not remove or move it.
       if (ship.npcId === combatantId) continue;
-      if (!npc || npc.hullHp <= 0 || npc.locationId !== this.options.locationId) {
+      if (!npc || npc.hullHp <= 0 || npc.retiredUntilDay !== undefined || npc.travel || npc.locationId !== this.options.locationId) {
         this.ships.splice(index, 1);
         continue;
       }
@@ -373,7 +373,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       // The native PvP combat actor owns this ship while engaged. Suspend
       // work without moving the salvager or losing its field identity.
       if (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
-        ship.speed = 0;
+        // The duel pose was mirrored before this tick; preserve its velocity.
         ship.salvageActive = false;
         ship.targetWreckId = null;
         ship.phase = 'approaching';
