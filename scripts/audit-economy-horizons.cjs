@@ -101,6 +101,11 @@ for (const report of integratedReports) {
   const populationSize = report.report.reduce((sum, group) => sum + group.ships, 0);
   assert.equal(populationSize, 33);
   const discrepancies = report.resourceBalance.filter((row) => row.discrepancy !== 0);
+  assert.deepEqual(discrepancies, [], 'integrated resource balance must reconcile');
+  const { combatWrecksCreated, combatWrecksExpired } = report.fieldActivity;
+  assert(combatWrecksCreated > 0, 'integrated combat must create wrecks');
+  assert(combatWrecksExpired > 0, 'integrated combat wrecks must be removed');
+  assert(combatWrecksExpired <= combatWrecksCreated, 'cannot remove more wrecks than created');
   console.log(JSON.stringify({ ...report, unexplainedResources: discrepancies }));
 }
 assert(integratedReports[2].fieldActivity.minedUnits > 0);
