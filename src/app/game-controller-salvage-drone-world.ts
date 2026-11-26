@@ -66,6 +66,7 @@ export function careerSalvageDrone(
         location,
         sectorNpcs: context.economy.sectorNpcs.npcs,
         npcEconomy: context.economy.npcs,
+        economy: context.economy.salvage,
         wreckClaims: context.economy.wreckClaims,
         getCurrentDay: () => context.economy.situations.currentDay,
       },

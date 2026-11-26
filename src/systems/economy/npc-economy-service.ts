@@ -460,8 +460,8 @@ export function createNpcEconomyService(
       if (wanted <= 0) return 0;
       const stock = sourceId ? allocator.getPhysicalStock?.(resourceId, sourceId) : undefined;
       const allocated =
-        sourceId && stock !== undefined && allocator.withdrawPhysicalStock
-          ? allocator.withdrawPhysicalStock(resourceId, sourceId, wanted)
+        sourceId && allocator.getPhysicalStock && allocator.withdrawPhysicalStock
+          ? stock === undefined ? 0 : allocator.withdrawPhysicalStock(resourceId, sourceId, wanted)
           : allocator.allocatePhysicalResource(resourceId, wanted);
       if (allocated <= 0) return 0;
       npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;

@@ -385,6 +385,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     sensorModifier: runtime.sensorModifier,
     sensorCrewSkill: runtime.sensorCrewSkill,
     collect: options.economy.recover,
+    onWreckEventResolved: (wreck, result) => options.economy.reconcileWreckEvent?.(field, wreck, result) ?? result,
     collectComponent(type, componentId, sourceWreckId, cargoCapacityTons) {
       return (
         options.componentInventory.store(type, componentId, sourceWreckId, cargoCapacityTons) !==
