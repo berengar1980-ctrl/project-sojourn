@@ -195,4 +195,12 @@ export const narrowsDangerZones: readonly WorldRegion[] = [
     dangerLevel: 3,
     lobes: [ellipse(5850, 4570, 390, 420)],
   },
+  // Local protected starter field takes precedence over the surrounding frontier.
+  {
+    id: 'copper-crown-security-pocket',
+    name: 'Copper Crown Sicherheitsraum',
+    center: point(5200, 3250),
+    radius: 235,
+    dangerLevel: 1,
+  },
 ];
