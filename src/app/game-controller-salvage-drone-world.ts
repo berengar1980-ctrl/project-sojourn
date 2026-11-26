@@ -60,6 +60,12 @@ function restoreKnownPatrols(context: ControllerRuntimeContext): void {
     const field = permanentSalvageField(context, location, saved.seed);
     careerSalvageDrone(context, field);
   }
+  // Permanent salvage security exists before the player visits a field.
+  for (const location of narrowsSector.locations) {
+    if (!location.activities.salvage || location.dangerLevel >= 3) continue;
+    if (worlds(context).has(location.id)) continue;
+    careerSalvageDrone(context, permanentSalvageField(context, location));
+  }
 }
 
 /** Offscreen patrols continue at 1Hz without rendering or route-grid work. */
