@@ -3,7 +3,9 @@ import {
   balancePermanentSalvageStocks,
   permanentSalvageField,
   recoverBackgroundSalvage,
+  regionalSalvageResourceIds,
 } from './game-controller-salvage-stocks';
+import { installNpcWorkPlanning, reviewNpcMiningClaims } from './game-controller-npc-work-planning';
 import { balanceAsteroidStocks } from './game-controller-asteroid-stocks';
 import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import { measurePerformance } from '../core/performance-diagnostics';
@@ -84,6 +86,7 @@ export function balanceDailyAsteroids(
   const previous = lastAsteroidBalanceDay.get(context);
   if (previous !== undefined && day <= previous) return;
   lastAsteroidBalanceDay.set(context, day);
+  reviewNpcMiningClaims(context, fields);
   balanceDailySalvage(context, day);
   releaseExpiredEventStocks(context);
   fields.forEachField((field) => {
@@ -176,6 +179,7 @@ export function bindCareerFieldWorld(
 ): void {
   if (fieldWorlds.has(context)) throw new Error('Field world already installed');
   installPermanentSalvageEconomy(context);
+  installNpcWorkPlanning(context, fields, regionalSalvageResourceIds);
   registerInitialAsteroidStocks(context, fields);
   fields.forEachField((field) =>
     balanceAsteroidStocks(context.economy.simulation, field.instance, () => false)
@@ -211,10 +215,9 @@ export function fieldWorldFor(
         width: instance.width,
         height: instance.height,
         get miners() {
-          return economy.sectorNpcs.npcs.filter(
-            (npc) => npc.job === 'miner' && npc.workLocationId === location.id
-          );
+          return economy.sectorNpcs.npcs.filter((npc) => npc.job === 'miner');
         },
+        dynamicRoster: true,
         getAsteroids: () => instance.asteroids,
         initialPosition: (id) => context.fieldExerciseSpawns?.get(id),
         mine: (npc, resourceId, requested, asteroidId) =>
@@ -247,7 +250,10 @@ export function fieldWorldFor(
     undefined,
     initial
   );
-  if (!exerciseLocationId) installPermanentSalvageEconomy(context);
+  if (!exerciseLocationId) {
+    installPermanentSalvageEconomy(context);
+    installNpcWorkPlanning(context, fields, regionalSalvageResourceIds);
+  }
   registerInitialAsteroidStocks(context, fields);
   lastAsteroidBalanceDay.set(context, context.economy.simulation.currentDay);
   fieldWorlds.set(context, fields);
