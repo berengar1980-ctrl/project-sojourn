@@ -79,7 +79,7 @@ function validCombatReturn(entry: unknown, width: number, height: number): boole
   return typeof entry[0] === 'string' && validPosition(entry[1], width, height);
 }
 
-function validSceneData(value: Record<string, unknown>, width: number, height: number): boolean {
+export function validLocalTrafficSceneData(value: Record<string, unknown>, width: number, height: number): boolean {
   if (!Array.isArray(value.ships) || !Array.isArray(value.combatReturns)) return false;
   if (value.ships.length > 1000 || value.combatReturns.length > 1000) return false;
   if (!value.ships.every((ship) => validShip(ship, width, height))) return false;
@@ -101,7 +101,7 @@ export function stageLocalPirateCheckpoint(
   if (value.width !== width || value.height !== height || value.seed !== seed) {
     throw new Error('Falsche Version oder Asteroidenkarte im Piraten-Spielstand.');
   }
-  if (!validSceneData(value, width, height)) {
+  if (!validLocalTrafficSceneData(value, width, height)) {
     throw new Error('Beschädigte lokale Piratenzustände.');
   }
   const snapshot = value as unknown as LocalPirateCheckpoint;
