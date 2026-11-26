@@ -7,6 +7,7 @@ import type {
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { addDestroyedShipWreck } from '../systems/salvage/combat-destruction-wreck';
+import { combatBufferTarget } from '../systems/economy/physical-reserve-policy';
 
 const recordedByArena = new WeakMap<
   NonNullable<StrategicCombatSnapshot['arena']['asteroids']>,
@@ -55,11 +56,10 @@ function fundCombatWreck(context: ControllerRuntimeContext, wreck: SalvageWreck)
     // Bootstrap legacy/new pools once from existing market stock. Subsequent
     // wrecks only use the protected buffer and normal returned consumption.
     const pool = simulation.pools[deposit.resourceId];
-    const target = deposit.initialAmount * 5;
+    const target = combatBufferTarget(deposit.resourceId);
     if (pool && pool.combatBuffer === undefined) {
       pool.combatBuffer = simulation.allocatePhysicalResource(deposit.resourceId, target);
     }
-    simulation.refillCombatBuffer(deposit.resourceId, target);
     const funded = simulation.fundPhysicalStock(
       deposit.resourceId,
       wreck.id,
