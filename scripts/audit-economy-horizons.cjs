@@ -45,6 +45,9 @@ for (const days of horizons) {
       population: summary.population,
       hullUpgrades: summary.report.reduce((sum, group) => sum + group.hullUpgrades, 0),
       completedLegs: summary.report.reduce((sum, group) => sum + group.completedLegs, 0),
+      resourceBalance: summary.resourceBalance,
+      unexplainedResources: summary.resourceBalance.filter((row) => row.discrepancy !== 0),
+      roles: summary.report,
     })
   );
 }
