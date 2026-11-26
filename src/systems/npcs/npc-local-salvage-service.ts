@@ -103,6 +103,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
   }
   private beginExit = (ship: LocalNpcSalvagerState): void => {
     ship.phase = 'exiting';
+    delete ship.routeState;
     ship.targetWreckId = null;
     ship.salvageActive = false;
     ship.scanProgress = 0;
@@ -115,7 +116,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
   private syncArrivals = (): void => {
     const active = new Set(this.ships.map((ship) => ship.npcId));
     for (const npc of this.options.salvagers) {
-      if (!this.byId.has(npc.id)) {
+      if (this.byId.get(npc.id) !== npc) {
         this.byId.set(npc.id, npc);
         this.events.set(
           npc.id,
@@ -380,6 +381,13 @@ class LocalSalvageService implements NpcLocalSalvageService {
         delete ship.routeState;
         continue;
       }
+
+      if (npc.workLocationId !== this.options.locationId || npc.autonomy?.phase !== 'working') {
+        this.ships.splice(index, 1);
+        continue;
+      }
+      if (cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) && ship.phase !== 'exiting')
+        this.beginExit(ship);
 
       if (ship.phase === 'entering') {
         if (!this.assignTarget(ship, npc)) continue;
