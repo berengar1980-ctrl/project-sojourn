@@ -1,12 +1,13 @@
-import { campaignCombatPresets, campaignPresetDraft, SECURITY_DRONE_PRESET_ID } from './campaign-combat-preset';
+import {
+  campaignCombatPresets,
+  campaignPresetDraft,
+  SECURITY_DRONE_PRESET_ID,
+} from './campaign-combat-preset';
 import { npcJobShipRole } from '../../core/npc-types';
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
-import {
-  fitsWeaponHardpoint,
-  getAllShipDefinitions,
-} from '../../systems/ships';
+import { fitsWeaponHardpoint, getAllShipDefinitions } from '../../systems/ships';
 import type { DuelDraft } from './duel-combatant-setup';
 
 export type FleetScenarioGroup = 'npc' | 'pirates-yellow' | 'pirates-red' | 'drone';
@@ -89,10 +90,14 @@ function campaignDraft(
   const roster = campaignCombatPresets();
   const candidates = roster.filter((npc) => {
     if (group === 'drone') return npc.id === SECURITY_DRONE_PRESET_ID;
-    if (group === 'pirates-yellow') return npc.pirate && npc.pirateClass !== 'marauder' && npc.factionId === 'pirates';
+    if (group === 'pirates-yellow')
+      return npc.pirate && npc.pirateClass !== 'marauder' && npc.factionId === 'pirates';
     if (group === 'pirates-red') return npc.pirate && npc.factionId === 'pirates2';
-    return !npc.pirate && npc.id !== SECURITY_DRONE_PRESET_ID &&
-      (!workRole || npcJobShipRole(npc.job) === workRole);
+    return (
+      !npc.pirate &&
+      npc.id !== SECURITY_DRONE_PRESET_ID &&
+      (!workRole || npcJobShipRole(npc.job) === workRole)
+    );
   });
   const npc = pick(candidates);
   return { name: npc.name, draft: campaignPresetDraft(npc.id) };

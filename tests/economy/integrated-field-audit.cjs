@@ -74,7 +74,12 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
       npcSalvageEvents,
       salvage: createSalvageEconomyService(physical, { player }),
     },
-    state: { mode: 'star-map', salvageEventFields: new Map(), activeShip: getShipDefinition(sector.npcs[0].shipId), combatReengageSeconds: 0 },
+    state: {
+      mode: 'star-map',
+      salvageEventFields: new Map(),
+      activeShip: getShipDefinition(sector.npcs[0].shipId),
+      combatReengageSeconds: 0,
+    },
     world: { world: () => world },
     systemLog: { write() {} },
   };
@@ -113,7 +118,9 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
   return {
     stats,
     hooks: bridge.fieldEngagementHooks(() => context),
-    bindEngagements(engagements) { context.engagements = engagements; },
+    bindEngagements(engagements) {
+      context.engagements = engagements;
+    },
     beginDay(day) {
       context.economy.situations.currentDay = day;
       events.advanceDay(day, { x: -99999, y: -99999 }, false);
@@ -123,7 +130,8 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
     },
     tick(dt) {
       npcSalvageEvents.tick();
-      const count = () => world.locations.reduce((sum, location) => sum + fields.combatWrecks(location.id).length, 0);
+      const count = () =>
+        world.locations.reduce((sum, location) => sum + fields.combatWrecks(location.id).length, 0);
       const before = count();
       advanceControllerFieldWorld(context, dt);
       salvageWorld.advanceCareerSalvageDrones(context, dt, fields);

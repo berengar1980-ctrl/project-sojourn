@@ -48,7 +48,8 @@ function trial(droneCount, pirateCount, pirates, seed) {
   );
   for (let frame = 0; frame < 4500 && !fleet.isFinished(); frame++) fleet.advance(0.08);
   const alive = (ships) =>
-    ships.filter((ship) => (fleet.getActor(ship.id)?.hullHp ?? 0) > 0 && !fleet.hasEscaped(ship.id)).length;
+    ships.filter((ship) => (fleet.getActor(ship.id)?.hullHp ?? 0) > 0 && !fleet.hasEscaped(ship.id))
+      .length;
   const d = alive(defenders);
   const p = alive(attackers);
   return d > 0 && p === 0 ? 'wins' : p > 0 && d === 0 ? 'losses' : 'unresolved';

@@ -115,7 +115,10 @@ for (let day = 0; day < 365; day++) {
   const deposit = wreck?.resources.find((entry) => entry.remainingAmount > 0);
   if (wreck && deposit) {
     const recovered = npcs.salvageLocal(
-      npc, deposit.resourceId, Math.min(5, deposit.remainingAmount), salvageStockId(field, wreck)
+      npc,
+      deposit.resourceId,
+      Math.min(5, deposit.remainingAmount),
+      salvageStockId(field, wreck)
     );
     deposit.remainingAmount -= recovered;
     extracted += recovered;

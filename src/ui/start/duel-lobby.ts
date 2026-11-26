@@ -199,7 +199,14 @@ function playerCard(
   if (draft.campaignNpcId) {
     const setup = duelCombatant(index, draft, getShipDefinition(draft.shipId)!);
     const summary = document.createElement('p');
-    summary.textContent = setup.name + ' · Hülle ' + setup.hullHp + ' · Schild ' + setup.shieldHp + ' · ' + setup.weapons.map((weapon) => weapon.name).join(', ');
+    summary.textContent =
+      setup.name +
+      ' · Hülle ' +
+      setup.hullHp +
+      ' · Schild ' +
+      setup.shieldHp +
+      ' · ' +
+      setup.weapons.map((weapon) => weapon.name).join(', ');
     card.append(summary, powerBudget(draft));
     return card;
   }

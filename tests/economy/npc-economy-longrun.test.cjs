@@ -73,11 +73,14 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
   },
   positions,
   isManaged: (npc) =>
-    isDrone(npc) || (integrated &&
-    npc.role === 'miner' &&
-    npc.workLocationId === npc.locationId &&
-    npc.autonomy?.phase === 'working' &&
-    narrowsSector.locations.some((entry) => entry.id === npc.locationId && entry.activities.mine)),
+    isDrone(npc) ||
+    (integrated &&
+      npc.role === 'miner' &&
+      npc.workLocationId === npc.locationId &&
+      npc.autonomy?.phase === 'working' &&
+      narrowsSector.locations.some(
+        (entry) => entry.id === npc.locationId && entry.activities.mine
+      )),
   travel: {
     requestTravel: (npc, destination, reason) => sector.requestTravel(npc, destination, reason),
     requestPatrol: (npc) => sector.requestPatrol(npc),

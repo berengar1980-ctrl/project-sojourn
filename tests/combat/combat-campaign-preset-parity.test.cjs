@@ -25,11 +25,14 @@ for (const template of presets.campaignCombatPresets()) {
   const draft = presets.campaignPresetDraft(template.id);
   const duel = duelCombatant(0, draft, getShipDefinition(npc.shipId));
   assert.deepEqual(combatValues(duel), combatValues(expected), template.id + ' PvP');
-  const group = template.id === presets.SECURITY_DRONE_PRESET_ID
-    ? 'drone'
-    : template.pirate
-      ? template.factionId === 'pirates' ? 'pirates-yellow' : 'pirates-red'
-      : 'npc';
+  const group =
+    template.id === presets.SECURITY_DRONE_PRESET_ID
+      ? 'drone'
+      : template.pirate
+        ? template.factionId === 'pirates'
+          ? 'pirates-yellow'
+          : 'pirates-red'
+        : 'npc';
   const [arrival] = scenarioArrivals(
     [{ id: 'test-' + template.id, name: template.name, group, draft, arrivalSeconds: 0 }],
     'greyrock-belt'

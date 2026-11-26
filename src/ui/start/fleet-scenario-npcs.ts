@@ -22,12 +22,15 @@ export function scenarioArrivals(roster: readonly FleetScenarioShip[], location:
     if (ship.group === 'player') continue;
     const job = jobFor(ship);
     const preset = ship.draft.campaignNpcId ? campaignCombatPreset(ship.draft.campaignNpcId) : null;
-    const template = preset ??
+    const template =
+      preset ??
       templates.find(
         (candidate) => candidate.job === job && candidate.shipId === ship.draft.shipId
-      ) ?? templates.find((candidate) => candidate.job === job);
+      ) ??
+      templates.find((candidate) => candidate.job === job);
     if (!template) throw new Error('Missing career NPC template for ' + job);
-    const hull = preset?.hullHp ?? duelCombatant(0, ship.draft, getShipDefinition(ship.draft.shipId)!).hullHp;
+    const hull =
+      preset?.hullHp ?? duelCombatant(0, ship.draft, getShipDefinition(ship.draft.shipId)!).hullHp;
     const npc: SectorNpcState = {
       ...structuredClone(template),
       id:
