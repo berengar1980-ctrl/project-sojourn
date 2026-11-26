@@ -263,8 +263,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
     update(nextModel): void {
       model = nextModel;
       measurePerformance('scene.local.renderer', () => renderer.update(model));
-      if (model.combat)
-        measurePerformance('scene.local.hud', () => display.update(model.combat));
+      if (model.combat) measurePerformance('scene.local.hud', () => display.update(model.combat));
       const now = performance.now();
       if (now - lastOverlayUpdate >= 100) {
         lastOverlayUpdate = now;

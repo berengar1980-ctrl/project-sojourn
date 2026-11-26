@@ -1445,3 +1445,9 @@ Die lokale Frachtanzeige hält ihre DOM-Zeilen bei gleicher Ressourcen-ID und
 Reihenfolge montiert und schreibt nur geänderte Anzeigewerte. Diese rein
 visuellen Referenzen besitzen keinen Spielzustand und werden nicht gespeichert.
 Die zusätzlichen Messpunkte ändern keine Aktualisierungsintervalle.
+
+Der gemeinsame prozedurale Renderer verwendet dieselbe gezeichnete Kontur
+für Beleuchtung und Rand; der Clip wird vor dem Rand aufgehoben. Fertige
+Asteroidensprites behalten keine zweite, unbenutzte Rohtextur. Die Änderung
+betrifft ausschließlich flüchtige Darstellung, keine Geometrie der Physik,
+Spielzustände oder Save-Daten.
