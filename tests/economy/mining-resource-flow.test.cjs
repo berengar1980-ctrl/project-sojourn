@@ -238,3 +238,51 @@ console.log('PASS reserve-backed mining, cargo capacity and physical conservatio
   assert.equal(simulation.pools.ferrite.reserve, 0);
   assert.equal(simulation.getResourceTotal('ferrite'), total);
 }
+
+{
+  const markets = createMarkets();
+  const trade = tradeModule.createPlayerTradeService(markets, 1000);
+  const simulation = simulationModule.createEconomySimulationService(
+    markets,
+    trade.player,
+    resources,
+    97
+  );
+  const { createSalvageEconomyService } = loadStandaloneTypeScriptModule(
+    root,
+    'src/systems/economy/salvage-economy-service.ts'
+  );
+  const salvage = createSalvageEconomyService(simulation, trade);
+  const deposit = { resourceId: 'ferrite', initialAmount: 12, remainingAmount: 12 };
+  const field = {
+    id: 'sector-event-field-salvage-special-test',
+    wrecks: [{ id: 'event-wreck-test', resources: [deposit] }],
+  };
+  const source = JSON.stringify([field.id, field.wrecks[0].id]);
+  simulation.pools.ferrite.reserve = 8;
+  markets.markets[0].entries.ferrite.stock -= 8;
+  const total = simulation.getResourceTotal('ferrite');
+  salvage.prepareEventField(field);
+  assert.equal(deposit.remainingAmount, 8);
+  assert.equal(simulation.pools.ferrite.reserve, 0);
+  assert.equal(simulation.getPhysicalStock('ferrite', source), 8);
+  const recovered = salvage.recover('ferrite', 3, 20, 'event', source);
+  assert.equal(recovered, 3);
+  deposit.remainingAmount -= recovered;
+  salvage.prepareEventField(field);
+  assert.equal(deposit.remainingAmount, 5);
+  assert.equal(simulation.getPhysicalStock('ferrite', source), 5);
+  simulation.releasePhysicalStock(source);
+  assert.equal(simulation.pools.ferrite.reserve, 5);
+  assert.equal(simulation.getResourceTotal('ferrite'), total);
+
+  const empty = { resourceId: 'ferrite', initialAmount: 20, remainingAmount: 20 };
+  const emptyField = { id: 'event-empty', wrecks: [{ id: 'empty', resources: [empty] }] };
+  const emptySource = JSON.stringify([emptyField.id, 'empty']);
+  simulation.fundPhysicalStock('ferrite', 'other', 5);
+  salvage.prepareEventField(emptyField);
+  assert.equal(empty.remainingAmount, 0);
+  assert.equal(simulation.getPhysicalStock('ferrite', emptySource), 0);
+  assert.equal(salvage.recover('ferrite', 1, 20, 'event', emptySource), 0);
+  assert.equal(simulation.getResourceTotal('ferrite'), total);
+}
