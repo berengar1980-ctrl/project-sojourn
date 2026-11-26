@@ -11,7 +11,9 @@ const { economyResources } = load('src/data/economy/economy-resources.ts');
 const { sectorPorts } = load('src/data/ports/sector-ports.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
-const { createEconomySimulationService } = load('src/systems/economy/economy-simulation-service.ts');
+const { createEconomySimulationService } = load(
+  'src/systems/economy/economy-simulation-service.ts'
+);
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
 const { WreckClaimRegistry } = load('src/systems/operations/wreck-claim-registry.ts');
 const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
