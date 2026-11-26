@@ -6,7 +6,7 @@ import {
 } from './game-controller-salvage-stocks';
 import { installNpcWorkPlanning, reviewNpcMiningClaims } from './game-controller-npc-work-planning';
 import { balanceAsteroidStocks } from './game-controller-asteroid-stocks';
-import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
+import { advanceFieldWreckLifetime, advanceRemainingWreckMotion } from './game-controller-field-wreck-lifecycle';
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { LocalSpaceInstance } from '../core/local-space-types';
 import type { SectorNpcState } from '../core/npc-types';
@@ -483,47 +483,3 @@ export function fieldEngagementHooks(get: () => ControllerRuntimeContext | null)
   };
 }
 
-function advanceFieldWreckLifetime(
-  context: ControllerRuntimeContext,
-  fieldWorld: AsteroidFieldWorld,
-  deltaSeconds: number
-): void {
-  fieldWorld.advanceCombatWreckLifetime(deltaSeconds, (locationId, ids) => {
-    for (const id of ids) context.economy.simulation.releasePhysicalStock(id);
-    context.engagements.removeFieldCombatWrecks(ids);
-    const sceneField = context.state.salvageScene?.getField();
-    const fields = new Set([
-      sceneField,
-      backgroundSalvagePatrol(context, locationId)?.field,
-      ...context.state.salvageEventFields.values(),
-    ]);
-    for (const field of fields) {
-      if (field?.sourceLocationId !== locationId) continue;
-      for (let i = field.wrecks.length - 1; i >= 0; i--) {
-        if (ids.has(field.wrecks[i]!.id)) field.wrecks.splice(i, 1);
-      }
-      invalidateSalvagePhysics(field);
-    }
-  });
-}
-
-function advanceRemainingWreckMotion(
-  context: ControllerRuntimeContext,
-  fieldWorld: AsteroidFieldWorld,
-  deltaSeconds: number,
-  localId: string | null,
-  combatLocations: Set<string>
-): void {
-  const salvageLocation =
-    context.state.mode === 'salvage-space'
-      ? context.state.salvageScene?.getField().sourceLocationId
-      : null;
-  // Permanent salvage runtimes own their own wreck drift and combat poses.
-  for (const location of narrowsSector.locations)
-    if (backgroundSalvagePatrol(context, location.id)) combatLocations.add(location.id);
-  fieldWorld.advanceCombatWreckMotion(
-    deltaSeconds,
-    context.state.embeddedCombat === 'local-space' ? localId : salvageLocation,
-    combatLocations
-  );
-}
