@@ -177,6 +177,9 @@ export function bindCareerFieldWorld(
   if (fieldWorlds.has(context)) throw new Error('Field world already installed');
   installPermanentSalvageEconomy(context);
   registerInitialAsteroidStocks(context, fields);
+  fields.forEachField((field) =>
+    balanceAsteroidStocks(context.economy.simulation, field.instance, () => false)
+  );
   lastAsteroidBalanceDay.set(context, context.economy.simulation.currentDay);
   fieldWorlds.set(context, fields);
   for (const location of narrowsSector.locations) {
