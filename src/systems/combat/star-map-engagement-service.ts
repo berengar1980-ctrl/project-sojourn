@@ -45,6 +45,7 @@ import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
 const PLAYER_ID = 'player';
 
 const NPC_ATTACK_SCAN_RANGE = 650;
+const FLEE_GAIN_REQUIRED = 520;
 
 
 function engagementNpc(runtime: EngagementRuntime, id: string): SectorNpcState | null {

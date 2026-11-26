@@ -44,6 +44,15 @@ jobs:
       - name: Physical ledger regression
         if: always()
         run: node tests/economy/physical-resource-horizons.test.cjs
+      - name: Previously failing targeted regressions
+        if: always()
+        run: |
+          node tests/combat/pirate-interception-policy.test.cjs
+          node tests/local-space/local-pirate-background-continuity.test.cjs
+          node tests/operations/drone-patrol-routing-regression.test.cjs
+          node tests/operations/security-drone-debris-shield-mk3.test.cjs
+          node tests/quality/architecture.test.cjs
+          node tests/quality/feature-parity.test.cjs
       - name: Integrated economy smoke (3 days)
         if: always()
         env:

@@ -50,28 +50,49 @@ const begun = performance.now();
 planFieldPatrolRoute({ x: 90, y: 430 }, { x: 1400, y: 430 }, dense, 40);
 assert(performance.now() - begun < 2000, 'Dense patrol must avoid multi-second grid searches');
 
-const field = {
-  id: 'salvage-fast-route',
-  sourceLocationId: 'salvage-fast-route',
-  seed: 29,
-  width: 1200,
-  height: 800,
-  wrecks: [],
-  sections: [],
-};
+// Use the real permanent-field lifecycle, including its resource ledger.
+const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
+const { economyResources } = load('src/data/economy/economy-resources.ts');
+const { sectorPorts } = load('src/data/ports/sector-ports.ts');
+const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
+const { registerSecurityDroneCombatants } = load('src/app/game-controller-economy.ts');
+const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
+const { createEconomySimulationService } = load('src/systems/economy/economy-simulation-service.ts');
+const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
+const { createSalvageEconomyService } = load('src/systems/economy/salvage-economy-service.ts');
+const { permanentSalvageField } = load('src/app/game-controller-salvage-stocks.ts');
+const location = narrowsSector.locations.find((entry) => entry.activities.salvage && entry.dangerLevel <= 1);
+assert(location);
+const roster = createSectorNpcEconomyStates();
+registerSecurityDroneCombatants(roster);
+const ships = roster.filter((npc) => npc.id === 'security-drone:' + location.id);
+assert.equal(ships.length, 1);
+const player = { credits: 0, cargo: {} };
+const markets = createEconomyMarketService(sectorPorts, economyResources);
+const simulation = createEconomySimulationService(markets, player, economyResources, 29, ships);
 const registry = new WreckClaimRegistry();
 const context = {
   economy: {
+    simulation,
+    npcs: createNpcEconomyService(markets, simulation, economyResources, ships),
+    salvage: createSalvageEconomyService(simulation, { player }),
     wreckClaims: registry,
-    sectorNpcs: { npcs: [{ id: 'security-drone:' + field.sourceLocationId, hullHp: 100 }] },
+    sectorNpcs: { npcs: ships },
+    localPirates: new Map(),
+    situations: { currentDay: 0 },
   },
-  state: { mode: 'salvage-space', salvageScene: { getField: () => field } },
+  engagements: { engageNpcsInArena: () => false },
+  state: { mode: 'star-map' },
 };
+const field = permanentSalvageField(context, location, 29);
+context.state.mode = 'salvage-space';
+context.state.salvageScene = { getField: () => field };
+const wreckWorld = { combatWrecks: () => [], reconcileCombatWrecks() {} };
 const drone = careerSalvageDrone(context, field);
 const initial = { ...drone.position };
 for (let index = 0; index < 16; index++) {
   context.state.mode = 'star-map';
-  advanceCareerSalvageDrones(context, 0.25);
+  advanceCareerSalvageDrones(context, 0.25, wreckWorld);
 }
 assert.notDeepEqual(drone.position, initial, 'Drone patrol advances while scene is absent');
 assert.deepEqual(
