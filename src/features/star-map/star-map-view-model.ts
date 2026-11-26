@@ -77,6 +77,7 @@ export interface StarMapFuelView {
   readonly fuel: number;
   readonly capacity: number;
   readonly fuelPerHundred: number;
+  readonly emergencyQuote?: { readonly units: number; readonly cost: number };
   readonly planned: FuelRoutePlan | null;
   readonly unreachable: boolean;
   readonly estimatedSeconds?: number;
