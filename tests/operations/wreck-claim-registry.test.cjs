@@ -81,6 +81,34 @@ assert.equal(regenerated.wrecks[0].scanLevel, 'analyzed');
 assert.equal(registry.abandon(field.id, wreck.id, 'player'), false);
 assert.equal(registry.abandon(field.id, wreck.id, 'npc-1'), true);
 
+// Refreshing wreck stock must preserve isolated worker and security snapshots.
+const isolated = new WreckClaimRegistry();
+const worker = { npcId: 'npc-1', position: { x: 5, y: 6 } };
+const drone = { position: { x: 7, y: 8 } };
+const escorts = { seed: field.seed, ships: [{ npcId: 'escort', position: { x: 9, y: 10 } }] };
+isolated.rememberField(field, drone);
+isolated.rememberWorkers(field, [worker]);
+isolated.rememberSecurityEscorts(field.sourceLocationId, escorts);
+worker.position.x = 50;
+drone.position.x = 70;
+escorts.ships[0].position.x = 90;
+isolated.rememberField(field);
+assert.equal(isolated.workerCheckpoint(field)[0].position.x, 5);
+assert.equal(isolated.droneCheckpoint(field.sourceLocationId).position.x, 7);
+assert.equal(isolated.securityEscortCheckpoint(field.sourceLocationId).ships[0].position.x, 9);
+const exported = isolated.exportState().fields[0][1];
+exported.workers[0].position.x = 500;
+exported.drone.position.x = 700;
+exported.securityEscorts.ships[0].position.x = 900;
+isolated.rememberField(field);
+assert.equal(isolated.workerCheckpoint(field)[0].position.x, 5);
+assert.equal(isolated.droneCheckpoint(field.sourceLocationId).position.x, 7);
+assert.equal(isolated.securityEscortCheckpoint(field.sourceLocationId).ships[0].position.x, 9);
+isolated.rememberField({ ...field, seed: field.seed + 1 });
+assert.deepEqual(isolated.workerCheckpoint({ ...field, seed: field.seed + 1 }), []);
+assert.equal(isolated.droneCheckpoint(field.sourceLocationId), null);
+assert.equal(isolated.securityEscortCheckpoint(field.sourceLocationId), null);
+
 for (const role of ['mining', 'freighter', 'salvage', 'patrol']) {
   assert.equal(operationalRoleAllowed(role, 'salvage'), role === 'salvage');
   assert.equal(operationalRoleAllowed(role, 'mining'), role === 'mining');

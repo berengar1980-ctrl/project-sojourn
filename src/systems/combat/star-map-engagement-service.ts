@@ -450,10 +450,10 @@ export function createStarMapEngagementService(
     removeFieldCombatWrecks: (ids) => removeFieldCombatWrecks(runtime, ids),
     finishedFieldCombatSnapshots: () => runtime.finishedFieldDuels,
     activeNpcCombatSnapshots: () =>
-      [...runtime.backgroundCombats.values()].flatMap((entry) => [
-        ...entry.fleet.fleet.getSnapshot().duels,
-        ...entry.fleet.fleet.getSnapshot().supporters,
-      ]),
+      [...runtime.backgroundCombats.values()].flatMap((entry) => {
+        const snapshot = entry.fleet.fleet.getSnapshot();
+        return [...snapshot.duels, ...snapshot.supporters];
+      }),
     activePlayerEnemy: () => runtime.playerEnemy,
     restorePlayerCareerCombat(combat, enemyId) {
       if (runtime.playerCombat || runtime.playerEnemy) {

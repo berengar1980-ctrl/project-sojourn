@@ -80,7 +80,14 @@ console.log('PASS 90/180/365-day physical resource balance audit');
 
 const integratedRun = spawnSync(process.execPath, [test], {
   cwd: path.resolve(__dirname, '..'),
-  env: { ...process.env, SOJOURN_LONGRUN_DAYS: '365', SOJOURN_INTEGRATED_FIELDS: '1' },
+  env: {
+    ...process.env,
+    SOJOURN_LONGRUN_DAYS: '365',
+    SOJOURN_INTEGRATED_FIELDS: '1',
+    SOJOURN_PROFILE: process.env.SOJOURN_PROFILE ?? '1',
+  },
+  // Keep JSON reports on stdout, but stream progress and failures immediately.
+  stdio: ['ignore', 'pipe', 'inherit'],
   encoding: 'utf8',
   maxBuffer: 8 * 1024 * 1024,
 });

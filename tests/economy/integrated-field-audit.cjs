@@ -2,9 +2,8 @@
 
 const assert = require('node:assert/strict');
 
-function validateFieldStocks(fields, physical, salvageLocations, context, load, stocks) {
+function validateFieldStocks(fields, physical, salvageLocations, context, salvageStockId, stocks) {
   const { permanentSalvageField } = stocks;
-  const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
   fields.forEachField((field) => {
     for (const asteroid of field.instance.asteroids) {
       const source = JSON.stringify([field.locationId, asteroid.id]);
@@ -32,7 +31,16 @@ function recordWorkedSite(sites, npc, amount) {
   if (!visited.includes(npc.locationId)) visited.push(npc.locationId);
 }
 
-function createIntegratedFieldAudit(load, world, physical, npcs, sector, player) {
+function createIntegratedFieldAudit(
+  load,
+  world,
+  physical,
+  npcs,
+  sector,
+  player,
+  profile = (_name, work) => work
+) {
+  const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
   const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
   const { WreckClaimRegistry } = load('src/systems/operations/wreck-claim-registry.ts');
   const eventModule = load('src/systems/salvage/sector-salvage-event-service.ts');
@@ -99,6 +107,13 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
   };
 
   trackPhysicalRecovery(npcs, physical, stats);
+  const tickEvents = profile('fields.events', () => npcSalvageEvents.tick());
+  const tickMining = profile('fields.mining-world', (dt) =>
+    advanceControllerFieldWorld(context, dt)
+  );
+  const tickSalvage = profile('fields.salvage-world', (dt) =>
+    salvageWorld.advanceCareerSalvageDrones(context, dt, fields)
+  );
 
   return {
     stats,
@@ -114,12 +129,12 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
       balanceDailyAsteroids(context, fields, null);
     },
     tick(dt) {
-      npcSalvageEvents.tick();
+      tickEvents();
       const count = () =>
         world.locations.reduce((sum, location) => sum + fields.combatWrecks(location.id).length, 0);
       const before = count();
-      advanceControllerFieldWorld(context, dt);
-      salvageWorld.advanceCareerSalvageDrones(context, dt, fields);
+      tickMining(dt);
+      tickSalvage(dt);
       stats.combatWrecksExpired += Math.max(0, before - count());
     },
     combatEnded(snapshot, attacker) {
@@ -131,7 +146,7 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
       stats.combatWrecksCreated += created.length;
     },
     validate() {
-      validateFieldStocks(fields, physical, salvageLocations, context, load, stocks);
+      validateFieldStocks(fields, physical, salvageLocations, context, salvageStockId, stocks);
     },
   };
 }

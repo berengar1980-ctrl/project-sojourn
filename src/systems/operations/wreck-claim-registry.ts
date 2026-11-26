@@ -64,19 +64,21 @@ export class WreckClaimRegistry {
 
   rememberField(field: SalvageField, drone?: SecurityDroneCheckpoint): void {
     const previous = this.fields.get(field.sourceLocationId);
+    // These private snapshots are cloned on ingress and egress, never mutated.
+    // Reuse unchanged snapshots when refreshing only the wreck inventory.
     this.fields.set(field.sourceLocationId, {
       locationId: field.sourceLocationId,
       seed: field.seed,
       ...(drone
         ? { drone: structuredClone(drone) }
         : previous?.seed === field.seed && previous.drone
-          ? { drone: structuredClone(previous.drone) }
+          ? { drone: previous.drone }
           : {}),
       ...(previous?.seed === field.seed && previous.securityEscorts
-        ? { securityEscorts: structuredClone(previous.securityEscorts) }
+        ? { securityEscorts: previous.securityEscorts }
         : {}),
       ...(previous?.seed === field.seed && previous.workers
-        ? { workers: structuredClone(previous.workers) }
+        ? { workers: previous.workers }
         : {}),
       wrecks: field.wrecks.map((wreck) => ({
         id: wreck.id,

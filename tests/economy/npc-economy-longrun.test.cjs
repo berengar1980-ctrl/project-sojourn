@@ -2,7 +2,55 @@
 
 const assert = require('node:assert/strict');
 const path = require('node:path');
+const { performance } = require('node:perf_hooks');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
+
+const profiling = process.env.SOJOURN_PROFILE === '1';
+const profileStarted = performance.now();
+const profileCpu = process.cpuUsage();
+const timings = new Map();
+
+function profile(name, work) {
+  if (!profiling) return work;
+  return (...args) => {
+    const started = performance.now();
+    try {
+      return work(...args);
+    } finally {
+      const entry = timings.get(name) ?? { calls: 0, totalMs: 0, maxMs: 0 };
+      const elapsed = performance.now() - started;
+      entry.calls += 1;
+      entry.totalMs += elapsed;
+      entry.maxMs = Math.max(entry.maxMs, elapsed);
+      timings.set(name, entry);
+    }
+  };
+}
+
+function printProgress(day, days, setupMs) {
+  const cpu = process.cpuUsage(profileCpu);
+  const memory = process.memoryUsage();
+  console.error(
+    '[economy-profile] ' +
+      JSON.stringify({
+        day,
+        days,
+        setupMs: Math.round(setupMs),
+        wallMs: Math.round(performance.now() - profileStarted),
+        cpuMs: Math.round((cpu.user + cpu.system) / 1000),
+        rssMiB: Math.round(memory.rss / 1048576),
+        heapUsedMiB: Math.round(memory.heapUsed / 1048576),
+        timings: [...timings.entries()]
+          .map(([name, entry]) => ({
+            name,
+            calls: entry.calls,
+            totalMs: Math.round(entry.totalMs),
+            maxMs: Number(entry.maxMs.toFixed(2)),
+          }))
+          .sort((a, b) => b.totalMs - a.totalMs),
+      })
+  );
+}
 
 const root = path.resolve(__dirname, '../..');
 const load = (file, replacements) => loadStandaloneTypeScriptModule(root, file, replacements);
@@ -91,7 +139,7 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
 
 const { createIntegratedFieldAudit } = require('./integrated-field-audit.cjs');
 const fieldAudit = integrated
-  ? createIntegratedFieldAudit(load, narrowsSector, physical, economy, sector, player)
+  ? createIntegratedFieldAudit(load, narrowsSector, physical, economy, sector, player, profile)
   : null;
 
 const combatStats = {
@@ -251,6 +299,16 @@ function printReport(elapsedDays) {
   );
 }
 
+const tickEconomy = profile('economy.tick', (dt) => economy.tick(dt));
+const tickSector = profile('sector.tick', (dt) => sector.tick(dt));
+const tickSmuggling = profile('smuggling.tick', (dt) => smuggling.tick(dt));
+const tickCombat = profile('combat.tick', (dt) => engagements.tick(dt));
+const tickFields = profile('fields.tick', (dt) => fieldAudit?.tick(dt));
+const validateDay = profile('validate.day', validate);
+const validateFields = profile('validate.fields', () => fieldAudit?.validate());
+const setupMs = performance.now() - profileStarted;
+if (profiling) printProgress(0, days, setupMs);
+
 for (let day = 0; day < days; day += 1) {
   physical.advanceDay(day);
   fieldAudit?.beginDay(day);
@@ -258,15 +316,18 @@ for (let day = 0; day < days; day += 1) {
   sector.advanceDay(day);
   smuggling.advanceDay(day);
   fieldAudit?.balanceDay();
-  if (day > 0) fieldAudit?.validate();
+  if (day > 0) validateFields();
   for (let step = 0; step < secondsPerDay * 4; step += 1) {
-    economy.tick(0.25);
-    sector.tick(0.25);
-    smuggling.tick(0.25);
-    engagements.tick(0.25);
-    fieldAudit?.tick(0.25);
+    tickEconomy(0.25);
+    tickSector(0.25);
+    tickSmuggling(0.25);
+    tickCombat(0.25);
+    tickFields(0.25);
   }
-  validate(day);
+  validateDay(day);
+  if (profiling && ((day + 1) % 5 === 0 || day === 0 || day + 1 === days)) {
+    printProgress(day + 1, days, setupMs);
+  }
   if (integrated && [90, 180, 365].includes(day + 1) && day + 1 !== days) {
     printReport(day + 1);
   }
