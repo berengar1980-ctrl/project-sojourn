@@ -219,3 +219,23 @@ function createMiner() {
 }
 
 console.log('PASS timed bounded NPC side trade, dwell and work resumption');
+
+{
+  const markets = createMarkets();
+  const miner = createMiner();
+  const views = markets.markets.map((market) => ({ ...market, observedDay: 0 }));
+  views[0].observedDay = 42;
+  const context = { markets: views, resources, positions, day: 42 };
+  const before = JSON.stringify(views);
+  assert.equal(sideTradeModule.findNpcResourceSideTrade(miner, 'work', context), null);
+  assert.equal(JSON.stringify(views), before, 'planning must not mutate observed prices');
+  views[1].observedDay = 42;
+  const refreshed = sideTradeModule.findNpcResourceSideTrade(miner, 'work', context);
+  assert(refreshed, 'fresh profitable observation must restore side-trade eligibility');
+  assert.equal(refreshed.tradeLocationId, 'near-stop');
+  assert.equal(refreshed.expectedProfit, 270);
+  context.day = 49;
+  const older = sideTradeModule.findNpcResourceSideTrade(miner, 'work', context);
+  assert(older && older.expectedProfit < refreshed.expectedProfit);
+}
+console.log('PASS side-trade confidence affects profitability without changing market memory');
