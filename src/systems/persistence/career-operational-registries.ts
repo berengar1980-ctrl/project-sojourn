@@ -159,7 +159,8 @@ function verifyWreckRecord(wreck: unknown, ids: Set<string>): void {
 
 function verifyWreckCapacities(wreck: Record<string, unknown>): void {
   if (wreck.capacities === undefined) return;
-  if (!isRecord(wreck.capacities) || !isRecord(wreck.resources)) throw new Error('Ungültige Wrackkapazitäten.');
+  if (!isRecord(wreck.capacities) || !isRecord(wreck.resources))
+    throw new Error('Ungültige Wrackkapazitäten.');
   const capacities = wreck.capacities;
   for (const [id, amount] of Object.entries(wreck.resources)) {
     const capacity = capacities[id];

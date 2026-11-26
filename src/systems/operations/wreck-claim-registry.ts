@@ -83,7 +83,9 @@ export class WreckClaimRegistry {
         resources: Object.fromEntries(
           wreck.resources.map((resource) => [resource.resourceId, resource.remainingAmount])
         ),
-        capacities: Object.fromEntries(wreck.resources.map((resource) => [resource.resourceId, resource.initialAmount])),
+        capacities: Object.fromEntries(
+          wreck.resources.map((resource) => [resource.resourceId, resource.initialAmount])
+        ),
         componentStatus: wreck.componentStatus,
         inspected: wreck.inspected,
         scanLevel: wreck.scanLevel ?? 'unscanned',
@@ -211,7 +213,7 @@ export class WreckClaimRegistry {
           wrecks: field.wrecks.map((wreck) => ({
             ...wreck,
             resources: { ...wreck.resources },
-          ...(wreck.capacities ? { capacities: { ...wreck.capacities } } : {}),
+            ...(wreck.capacities ? { capacities: { ...wreck.capacities } } : {}),
           })),
         },
       ]),
@@ -249,11 +251,16 @@ function restoreWreckResources(wreck: SalvageWreck, previous: StoredWreck): void
     const capacity = previous.capacities?.[resource.resourceId];
     const amount = previous.resources[resource.resourceId];
     if (capacity !== undefined) resource.initialAmount = capacity;
-    if (amount !== undefined) resource.remainingAmount = Math.min(resource.initialAmount, Math.max(0, amount));
+    if (amount !== undefined)
+      resource.remainingAmount = Math.min(resource.initialAmount, Math.max(0, amount));
   }
   for (const [resourceId, amount] of Object.entries(previous.resources)) {
     if (known.has(resourceId)) continue;
     const initialAmount = previous.capacities?.[resourceId] ?? amount;
-    wreck.resources.push({ resourceId, initialAmount, remainingAmount: Math.min(initialAmount, amount) });
+    wreck.resources.push({
+      resourceId,
+      initialAmount,
+      remainingAmount: Math.min(initialAmount, amount),
+    });
   }
 }

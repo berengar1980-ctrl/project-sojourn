@@ -32,8 +32,16 @@ function makeShip(template, team, id) {
   // Optional trial-only durability deltas: do not mutate ship registry or the engine.
   const droneTrial = template.id.startsWith('security-drone:');
   const marauderTrial = template.pirateClass === 'marauder';
-  const hullDelta = droneTrial ? process.env.AUDIT_DRONE_HULL : marauderTrial ? process.env.AUDIT_MARAUDER_HULL : undefined;
-  const shieldDelta = droneTrial ? process.env.AUDIT_DRONE_SHIELD : marauderTrial ? process.env.AUDIT_MARAUDER_SHIELD : undefined;
+  const hullDelta = droneTrial
+    ? process.env.AUDIT_DRONE_HULL
+    : marauderTrial
+      ? process.env.AUDIT_MARAUDER_HULL
+      : undefined;
+  const shieldDelta = droneTrial
+    ? process.env.AUDIT_DRONE_SHIELD
+    : marauderTrial
+      ? process.env.AUDIT_MARAUDER_SHIELD
+      : undefined;
   return {
     id,
     team,

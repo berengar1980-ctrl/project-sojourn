@@ -9,7 +9,9 @@ const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { economyResources } = load('src/data/economy/economy-resources.ts');
 const { sectorPorts } = load('src/data/ports/sector-ports.ts');
 const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
-const { createEconomySimulationService } = load('src/systems/economy/economy-simulation-service.ts');
+const { createEconomySimulationService } = load(
+  'src/systems/economy/economy-simulation-service.ts'
+);
 const { reconcileSalvageEventStock } = load('src/systems/economy/salvage-economy-service.ts');
 const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
 
@@ -55,7 +57,16 @@ Object.assign(wreck, { componentStatus: 'none', inspected: true, scanLevel: 'ana
 claims.rememberField(field);
 const restored = new WreckClaimRegistry();
 restored.restoreState(JSON.parse(JSON.stringify(claims.exportState())));
-const regenerated = { ...field, wrecks: [{ ...wreck, resources: [{ resourceId: 'steel', initialAmount: 10, remainingAmount: 10 }] }] };
+const regenerated = {
+  ...field,
+  wrecks: [
+    { ...wreck, resources: [{ resourceId: 'steel', initialAmount: 10, remainingAmount: 10 }] },
+  ],
+};
 restored.restoreField(regenerated);
-assert.deepEqual(regenerated.wrecks[0].resources, wreck.resources, 'new resource types and capacities survive reload');
+assert.deepEqual(
+  regenerated.wrecks[0].resources,
+  wreck.resources,
+  'new resource types and capacities survive reload'
+);
 console.log('PASS physical salvage event discoveries and losses, including save/restore');
