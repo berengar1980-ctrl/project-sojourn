@@ -26,6 +26,12 @@ function validateFieldStocks(fields, physical, salvageLocations, context, load) 
   }
 }
 
+function recordWorkedSite(sites, npc, amount) {
+  if (amount <= 0) return;
+  const visited = (sites[npc.id] ??= []);
+  if (!visited.includes(npc.locationId)) visited.push(npc.locationId);
+}
+
 function createIntegratedFieldAudit(load, world, physical, npcs, sector, player) {
   const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
   const { WreckClaimRegistry } = load('src/systems/operations/wreck-claim-registry.ts');
@@ -67,6 +73,8 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
     recoveredUnits: 0,
     combatWrecksCreated: 0,
     combatWrecksExpired: 0,
+    miningSitesByNpc: {},
+    salvageSitesByNpc: {},
     miningFields: miningLocations.length,
     salvageFields: salvageLocations.length,
   };
@@ -76,6 +84,7 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
     assert(source && physical.getPhysicalStock(id, source) !== undefined);
     const accepted = mine(npc, id, amount, source);
     stats.minedUnits += accepted;
+    recordWorkedSite(stats.miningSitesByNpc, npc, accepted);
     return accepted;
   };
   const recover = npcs.salvageLocal.bind(npcs);
@@ -83,6 +92,7 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
     assert(source && physical.getPhysicalStock(id, source) !== undefined);
     const accepted = recover(npc, id, amount, source);
     stats.recoveredUnits += accepted;
+    recordWorkedSite(stats.salvageSitesByNpc, npc, accepted);
     return accepted;
   };
 
