@@ -286,3 +286,86 @@ console.log('PASS reserve-backed mining, cargo capacity and physical conservatio
   assert.equal(salvage.recover('ferrite', 1, 20, 'event', emptySource), 0);
   assert.equal(simulation.getResourceTotal('ferrite'), total);
 }
+
+{
+  const { combatBufferTarget, supplyDailyCombatBuffer, dailyProductionBudget } =
+    loadStandaloneTypeScriptModule(root, 'src/systems/economy/physical-reserve-policy.ts');
+  const pool = {
+    target: 1000,
+    reserve: 100,
+    externalImports: 0,
+    recordedLosses: 0,
+    physicalStocks: { '["field","wreck"]': 10 },
+  };
+  assert.equal(combatBufferTarget('steel'), 145);
+  assert.equal(combatBufferTarget('machine-parts'), 60);
+  assert.equal(combatBufferTarget('composite-plate'), 45);
+  assert.equal(combatBufferTarget('ferrite'), 0);
+  assert.equal(supplyDailyCombatBuffer('steel', pool), 20);
+  assert.equal(pool.reserve, 80);
+  assert.equal(pool.combatBuffer, 20);
+  assert.equal(dailyProductionBudget(pool), 52);
+  assert.equal(supplyDailyCombatBuffer('ferrite', pool), 0);
+  pool.combatBuffer = 140;
+  const total = pool.reserve + pool.combatBuffer;
+  assert.equal(supplyDailyCombatBuffer('steel', pool), 5);
+  assert.equal(supplyDailyCombatBuffer('steel', pool), 0);
+  assert.equal(pool.reserve + pool.combatBuffer, total);
+  assert.equal(pool.target, 1000);
+  assert.equal(pool.externalImports, 0);
+  assert.equal(
+    dailyProductionBudget({
+      ...pool,
+      physicalStocks: { '["sector-event-field-test","wreck"]': 10 },
+    }),
+    pool.reserve
+  );
+}
+
+{
+  const markets = createMarkets();
+  for (const market of markets.markets) {
+    market.entries.steel = { ...market.entries.ferrite, resourceId: 'steel', stock: 0 };
+    delete market.entries.ferrite;
+    if (market.produces.delete('ferrite')) market.produces.add('steel');
+    if (market.needs.delete('ferrite')) market.needs.add('steel');
+  }
+  markets.markets[0].entries.steel.stock = 100;
+  const trade = tradeModule.createPlayerTradeService(markets, 1000);
+  const definitions = [{ ...resources[0], id: 'steel' }];
+  const simulation = simulationModule.createEconomySimulationService(
+    markets,
+    trade.player,
+    definitions,
+    98
+  );
+  const source = JSON.stringify(['field', 'wreck']);
+  simulation.registerInitialPhysicalStock('steel', source, 10);
+  markets.markets[0].entries.steel.stock = 0;
+  simulation.pools.steel.reserve = 100;
+  const total = simulation.getResourceTotal('steel');
+  simulation.advanceDay(0);
+  assert.equal(simulation.pools.steel.combatBuffer, 20);
+  assert(simulation.pools.steel.reserve >= 28);
+  assert(markets.markets[1].entries.steel.stock > 0);
+  assert.equal(simulation.getResourceTotal('steel'), total);
+  assert.equal(simulation.fundPhysicalStock('steel', 'combat-wreck-test', 15, true), 15);
+  assert.equal(simulation.pools.steel.combatBuffer, 5);
+  simulation.releasePhysicalStock('combat-wreck-test');
+  assert.equal(simulation.getResourceTotal('steel'), total);
+  simulation.advanceDay(1);
+  assert(simulation.pools.steel.combatBuffer > 5);
+  assert.equal(simulation.getResourceTotal('steel'), total);
+  const checkpoint = simulation.exportState();
+  const restored = simulationModule.createEconomySimulationService(
+    markets,
+    trade.player,
+    definitions,
+    98,
+    [],
+    checkpoint
+  );
+  assert.deepEqual(restored.exportState(), checkpoint);
+  restored.advanceDay(1);
+  assert.deepEqual(restored.exportState(), checkpoint);
+}
