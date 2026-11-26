@@ -1,4 +1,4 @@
-import { fieldSecurityDroneCount, isSecurityDrone } from '../../core/security-drone';
+import { isSecurityDrone } from '../../core/security-drone';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { RouteThreatContact } from '../navigation/route-planner';
 import { pirateHuntAllowedAt, pirateThreatStrength } from './npc-pirate-classes';
@@ -111,7 +111,8 @@ function pirateTrafficAt(
   location: WorldPoint,
   npcs: readonly SectorNpcState[],
   livePosition: (entry: SectorNpcState) => WorldPoint,
-  pirateId: string
+  pirateId: string,
+  locationId: string
 ): { traffic: number; cargoUnits: number; rivals: number; patrols: number } {
   let traffic = 0;
   let cargoUnits = 0;
@@ -119,6 +120,11 @@ function pirateTrafficAt(
   let patrols = 0;
   for (const entry of npcs) {
     if (!activeContact(entry)) continue;
+    // Local drone combat poses are not sector coordinates. Count only the assigned field.
+    if (isSecurityDrone(entry.id)) {
+      if (entry.locationId === locationId) patrols += pirateThreatStrength(entry);
+      continue;
+    }
     const point = livePosition(entry);
     const distance = Math.hypot(point.x - location.x, point.y - location.y);
     const proximity = distance < 520 ? 1 : distance < 1000 ? 0.4 : 0;
@@ -178,21 +184,15 @@ export function pirateHuntDestination(
         location.position,
         npcs,
         livePosition,
-        npc.id
+        npc.id,
+        location.id
       );
       const estimatedOpportunity = traffic * 1400 + Math.min(cargoUnits, 100) * 80;
-      // Sector simulation may not instantiate local field drones until entry.
-      // Use configured coverage only when no actual field drone contacts exist.
-      const fieldDrones = npcs.filter(
-        (entry) => isSecurityDrone(entry.id) && entry.locationId === location.id
-      );
-      const configuredCoverage =
-        location.activities.mine || location.activities.salvage
-          ? fieldSecurityDroneCount(location.dangerLevel)
-          : 0;
-      const additionalCoverage = fieldDrones.length === 0 ? configuredCoverage : 0;
+      // All permanent field drones are sector NPCs from day zero. Only live
+      // contacts count, not nominal protection or destroyed replacements.
+      const relativeSecurity = patrols / Math.max(0.25, pirateThreatStrength(npc));
       const riskCost =
-        (patrols + additionalCoverage) * (1800 - npc.aggression * 9) +
+        relativeSecurity * (1800 - npc.aggression * 9) +
         rivals * 450 +
         (1 - hullFraction) * 1400;
       const homeDistance = home
