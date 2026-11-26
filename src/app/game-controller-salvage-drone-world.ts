@@ -7,6 +7,7 @@ import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { createSalvageSecurityDrone, salvageDroneBystanders } from './game-controller-salvage-drone';
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
 import { salvageFieldCombatArena, syncSalvageCombatField } from '../systems/combat/field-combat-arena';
+import { isSecurityDrone } from '../core/security-drone';
 import type { WorldPoint } from '../core/world-types';
 
 interface SalvagePatrolWorld {
@@ -146,8 +147,38 @@ export function advanceCareerSalvageDrones(
       locationId, world.field.seed,
       salvageDroneBystanders(null, [], world.drone, locationId, traffic.snapshot(npcs))
     );
-    context.economy.wreckClaims.rememberDrone(locationId, world.drone.exportState());
+    rememberSalvageSecurity(context, world.field, world.drone);
   }
+}
+
+/** Only physical drone poses belong to this checkpoint. Sector NPCs own hull and replacement timers. */
+function rememberSalvageSecurity(
+  context: ControllerRuntimeContext,
+  field: SalvageField,
+  drone: AsteroidSecurityDrone
+): void {
+  const { wreckClaims, localPirates, sectorNpcs } = context.economy;
+  wreckClaims.rememberDrone(field.sourceLocationId, drone.exportState());
+  const traffic = localPirates.get(field.sourceLocationId);
+  if (!traffic) return;
+  const saved = traffic.exportState();
+  if (saved.seed !== field.seed) return;
+  const active = new Set(sectorNpcs.npcs.filter((npc) =>
+    isSecurityDrone(npc.id) && npc.locationId === field.sourceLocationId &&
+    npc.hullHp > 0 && !npc.travel && (npc.combatRecoverySeconds ?? 0) <= 0
+  ).map((npc) => npc.id));
+  wreckClaims.rememberSecurityEscorts(field.sourceLocationId, {
+    ...saved,
+    ships: saved.ships.filter((ship) => active.has(ship.npcId) &&
+      ship.npcId === 'security-drone:' + field.sourceLocationId + ':escort-2'),
+    combatReturns: [],
+  });
+}
+
+/** Capture the live patrols immediately, not just the last background tick. */
+export function captureSalvageSecurity(context: ControllerRuntimeContext): void {
+  for (const world of worlds(context).values())
+    rememberSalvageSecurity(context, world.field, world.drone);
 }
 
 /** One traffic authority per wreck location across scene switches. */
@@ -156,8 +187,20 @@ export function careerSalvagePirates(
   field: SalvageField
 ): LocalPirateTraffic {
   const traffic = context.economy.localPirates.get(field.sourceLocationId);
-  if (traffic) return traffic;
-  const created = new LocalPirateTraffic(field.width, field.height, field.seed);
+  if (traffic?.exportState().seed === field.seed) return traffic;
+  const saved = context.economy.wreckClaims.securityEscortCheckpoint(field.sourceLocationId);
+  const npcs = context.economy.sectorNpcs.npcs;
+  const valid = saved && saved.seed === field.seed && saved.width === field.width &&
+    saved.height === field.height;
+  const created = valid
+    ? LocalPirateTraffic.fromCheckpoint(field.width, field.height, field.seed, npcs, {
+        ...saved,
+        ships: saved.ships.filter((ship) => npcs.some((npc) =>
+          npc.id === ship.npcId && npc.locationId === field.sourceLocationId &&
+          npc.hullHp > 0 && !npc.travel && (npc.combatRecoverySeconds ?? 0) <= 0
+        )),
+      })
+    : new LocalPirateTraffic(field.width, field.height, field.seed);
   context.economy.localPirates.set(field.sourceLocationId, created);
   return created;
 }
