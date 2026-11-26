@@ -2,7 +2,6 @@ import { recoverNpcEventField } from './game-controller-npc-event-stocks';
 import {
   balancePermanentSalvageStocks,
   permanentSalvageField,
-  recoverBackgroundSalvage,
   regionalSalvageResourceIds,
 } from './game-controller-salvage-stocks';
 import { installNpcWorkPlanning, reviewNpcMiningClaims } from './game-controller-npc-work-planning';
@@ -126,7 +125,10 @@ function balanceDailySalvage(context: ControllerRuntimeContext, day: number): vo
       continue;
     }
     const field = permanentSalvageField(context, location);
-    balancePermanentSalvageStocks(simulation, field, (id) => !wreckClaims.claim(field.id, id, day));
+    const workers = backgroundSalvagePatrol(context, location.id)?.salvagers.ships ?? [];
+    balancePermanentSalvageStocks(simulation, field, (id) =>
+      !workers.some((ship) => ship.targetWreckId === id) && !wreckClaims.claim(field.id, id, day)
+    );
     wreckClaims.rememberField(field);
   }
 }
@@ -140,14 +142,9 @@ function installPermanentSalvageEconomy(context: ControllerRuntimeContext): void
   for (const location of locations) {
     wreckClaims.rememberField(permanentSalvageField(context, location));
   }
-  npcs.setPhysicalSalvageWorker((npc, day) => {
-    const location = locations.find((entry) => entry.id === npc.locationId);
-    if (!location) return;
-    const mounted = context.state.salvageScene?.getField();
-    if (context.state.mode === 'salvage-space' && mounted?.sourceLocationId === location.id) return;
-    const field = permanentSalvageField(context, location);
-    recoverBackgroundSalvage(context, npc, field, day);
-  });
+  // The shared local salvage runtime owns extraction at all permanent sites.
+  // A registered callback suppresses the economy service's abstract extraction.
+  npcs.setPhysicalSalvageWorker(() => {});
 }
 
 function registerInitialAsteroidStocks(
@@ -484,6 +481,7 @@ function activeFieldContact(context: ControllerRuntimeContext | null, npc: Secto
     return true;
   }
   if (npc.id === 'security-drone:' + npc.locationId) return true;
+  if (backgroundSalvagePatrol(context, npc.locationId)) return true;
   if (context.state.mode !== 'local-space' && context.state.mode !== 'salvage-space') return false;
   return npc.locationId === context.navigation.getSnapshot().currentLocationId;
 }
