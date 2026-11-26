@@ -7,6 +7,7 @@ import type {
 
 import { npcWorkingCapital, type NpcTravelQuoteFn } from './npc-operating-decisions';
 import type { SectorNpcState } from '../../core/npc-types';
+import type { NpcTravelOperatingQuote } from './npc-economy-types';
 import { npcMarketConfidence } from './npc-market-knowledge';
 
 export interface EconomyPoint {
@@ -93,6 +94,23 @@ function quoteFromStop(
   return quote(shadow, workId, npc.credits);
 }
 
+function quoteDetour(
+  npc: NpcEconomyState,
+  stopId: string,
+  workId: string,
+  direct: NpcTravelOperatingQuote | null | undefined,
+  quote: NpcTravelQuoteFn
+): Detour | null {
+  if (!direct) return null;
+  const first = quote(npc, stopId, npc.credits);
+  const second = quoteFromStop(npc, stopId, workId, quote);
+  if (!first || !second) return null;
+  return {
+    extraDistance: Math.max(0, first.distance + second.distance - direct.distance),
+    extraExpense: Math.max(0, first.fuelExpense + second.fuelExpense - direct.fuelExpense),
+  };
+}
+
 function buildRouteGeometry(
   npc: NpcEconomyState,
   workId: string,
@@ -112,15 +130,12 @@ function buildRouteGeometry(
     if (!position) continue;
     const straight = distance(sourcePosition, position) + distance(position, workPosition);
     if (straight - directDistance > allowedExtraDistance) continue;
-    const first = quote?.(npc, market.locationId, npc.credits);
-    const second = quote ? quoteFromStop(npc, market.locationId, workId, quote) : null;
-    if (quote && (!first || !second)) continue;
-    const actualDistance = first && second ? first.distance + second.distance : straight;
-    const extraDistance = Math.max(0, actualDistance - directDistance);
-    if (extraDistance > allowedExtraDistance) continue;
-    const expense = (first?.fuelExpense ?? 0) + (second?.fuelExpense ?? 0);
-    const extraExpense = Math.max(0, expense - (direct?.fuelExpense ?? 0));
-    stops.set(market.locationId, { extraDistance, extraExpense });
+    const detour = quote
+      ? quoteDetour(npc, market.locationId, workId, direct, quote)
+      : { extraDistance: Math.max(0, straight - directDistance), extraExpense: 0 };
+    if (detour && detour.extraDistance <= allowedExtraDistance) {
+      stops.set(market.locationId, detour);
+    }
   }
   return { directDistance, allowedExtraDistance, stops };
 }
