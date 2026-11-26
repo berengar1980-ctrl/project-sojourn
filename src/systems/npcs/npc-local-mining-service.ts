@@ -111,7 +111,12 @@ function assignTarget(
       .filter((candidate) => candidate.npcId !== ship.npcId && candidate.targetAsteroidId)
       .map((candidate) => candidate.targetAsteroidId as string)
   );
-  const asteroid = chooseAsteroid(npc, runtime.options.getAsteroids(), occupied);
+  const asteroid = chooseAsteroid(
+    npc,
+    runtime.options.getAsteroids(),
+    occupied,
+    runtime.options.dynamicRoster
+  );
   if (!asteroid) {
     beginExit(runtime, ship);
     return false;
@@ -146,12 +151,11 @@ function mine(
   npc: SectorNpcState,
   asteroid: LocalAsteroid
 ): void {
+  const deposits = asteroid.deposits.filter((candidate) => candidate.oreRemaining > 0);
   const deposit =
-    asteroid.deposits.find(
-      (candidate) =>
-        candidate.oreRemaining > 0 &&
-        (npc.workResourceIds.length === 0 || npc.workResourceIds.includes(candidate.resourceId))
-    ) ?? asteroid.deposits.find((candidate) => candidate.oreRemaining > 0);
+    npc.workResourceIds
+      .map((id) => deposits.find((candidate) => candidate.resourceId === id))
+      .find((candidate) => candidate !== undefined) ?? deposits[0];
   if (!deposit) {
     assignTarget(runtime, ship, npc);
     return;
