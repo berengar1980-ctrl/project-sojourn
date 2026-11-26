@@ -322,15 +322,24 @@ function updateNpcChases(runtime: EngagementRuntime): void {
     const attacker = engagementNpc(runtime, attackerId);
     const target = engagementNpc(runtime, chase.targetId);
     if (
-      !attacker || !target || attacker.hullHp <= 0 || target.hullHp <= 0 ||
-      attacker.retiredUntilDay !== undefined || target.retiredUntilDay !== undefined ||
+      !attacker ||
+      !target ||
+      attacker.hullHp <= 0 ||
+      target.hullHp <= 0 ||
+      attacker.retiredUntilDay !== undefined ||
+      target.retiredUntilDay !== undefined ||
       attacker.combatMovement?.mode !== 'pursue' ||
       attacker.combatMovement.targetId !== chase.targetId ||
       target.combatMovement?.mode === 'engaged'
     ) {
-      for (const [npc, opponentId] of [[attacker, chase.targetId], [target, attackerId]] as const) {
+      for (const [npc, opponentId] of [
+        [attacker, chase.targetId],
+        [target, attackerId],
+      ] as const) {
         if (
-          npc && npc.hullHp > 0 && npc.retiredUntilDay === undefined &&
+          npc &&
+          npc.hullHp > 0 &&
+          npc.retiredUntilDay === undefined &&
           npc.combatMovement && npc.combatMovement.mode !== 'engaged' &&
           npc.combatMovement.targetId === opponentId
         ) {
