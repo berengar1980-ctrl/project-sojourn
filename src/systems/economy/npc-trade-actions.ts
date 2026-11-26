@@ -24,6 +24,7 @@ import { npcNeedsSafeReturn } from '../npcs/npc-operating-policy';
 import { observeNpcMarket, npcKnownMarketViews } from './npc-market-knowledge';
 
 import type { TradeRoute } from './npc-economy-types';
+import { chooseNpcWorksite, type NpcWorkPlanning } from './npc-work-planning';
 import {
   evaluateNpcPurchaseVoyage,
   evaluateNpcSaleVoyage,
@@ -402,12 +403,22 @@ export function chooseWorkerAction(
   resources: readonly EconomyResourceDefinition[],
   positions: Readonly<Record<string, EconomyPoint>>,
   day: number,
-  quoteTravel?: NpcTravelQuoteFn
+  quoteTravel?: NpcTravelQuoteFn,
+  planning?: NpcWorkPlanning
 ): void {
   ensureNpcAutonomy(npc);
   if (returnDamagedWorkerToPort(npc, quoteTravel)) return;
   if (handleWorkerSideTrade(npc)) return;
   if (handleWorkerCargo(npc, positions, day, quoteTravel)) return;
+  if (planning && !npc.workLocationId) {
+    const candidate = chooseNpcWorksite(npc, planning, resources, positions, quoteTravel);
+    if (!candidate) {
+      beginRest(npc);
+      return;
+    }
+    npc.workLocationId = candidate.site.id;
+    npc.workResourceIds = candidate.resourceIds;
+  }
   if (handleWorkerAtWorksite(npc)) return;
   arrangeWorkerJourney(npc, resources, positions, day, quoteTravel);
 }
