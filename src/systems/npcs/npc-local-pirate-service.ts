@@ -12,7 +12,12 @@ import {
   type LocalShieldShipBody,
   type ShipShieldCollision,
 } from '../local-space/ship-shield-collision';
-import { fieldInterceptRange, localArmedTraffic, rivalPirateGroups } from './npc-combat-ai';
+import {
+  fieldInterceptRange,
+  localArmedTraffic,
+  npcMayTargetNpc,
+  rivalPirateGroups,
+} from './npc-combat-ai';
 import { edgePoint, hashId } from './npc-mining-targets';
 import {
   moveFieldShip,
@@ -321,17 +326,21 @@ export class LocalPirateTraffic {
     player: WorldPoint | null
   ) {
     const rivals = this.snapshot(
-      npcs.filter((other) => rivalPirateGroups(npc, other) && !other.combatRecoverySeconds)
+      npcs.filter((other) => rivalPirateGroups(npc, other) && npcMayTargetNpc(npc, other))
     );
     const targets = [
       ...rivals.map((other) => ({ id: other.npcId, position: other.position })),
       ...this.snapshot(
         npcs.filter(
-          (other) => other.job === 'freighter' && !other.pirate && !other.combatRecoverySeconds
+          (other) =>
+            other.job === 'freighter' &&
+            npcMayTargetNpc(npc, other) &&
+            other.smugglingProtectionFaction !== npc.factionId &&
+            Object.values(other.cargo).some((amount) => amount > 0)
         )
       ).map((other) => ({ id: other.npcId, position: other.position })),
       ...miners
-        .filter((miner) => miner.npcId !== pirate.npcId)
+        .filter((miner) => !miner.inCombat && miner.npcId !== pirate.npcId)
         .map((miner) => ({
           id: miner.npcId,
           position: miner.position,
