@@ -2,6 +2,30 @@
 
 const assert = require('node:assert/strict');
 
+function validateFieldStocks(fields, physical, salvageLocations, context, load) {
+  const { permanentSalvageField } = load('src/app/game-controller-salvage-stocks.ts');
+  const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
+  fields.forEachField((field) => {
+    for (const asteroid of field.instance.asteroids) {
+      const source = JSON.stringify([field.locationId, asteroid.id]);
+      for (const deposit of asteroid.deposits) {
+        const stock = physical.getPhysicalStock(deposit.resourceId, source);
+        assert.equal(stock, Math.floor(deposit.oreRemaining), source + ' ore stock');
+      }
+    }
+  });
+  for (const location of salvageLocations) {
+    const field = permanentSalvageField(context, location);
+    for (const wreck of field.wrecks) {
+      for (const deposit of wreck.resources) {
+        const source = salvageStockId(field, wreck);
+        const stock = physical.getPhysicalStock(deposit.resourceId, source);
+        assert.equal(stock, deposit.remainingAmount);
+      }
+    }
+  }
+}
+
 function createIntegratedFieldAudit(load, world, physical, npcs, sector, player) {
   const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
   const { WreckClaimRegistry } = load('src/systems/operations/wreck-claim-registry.ts');
@@ -13,8 +37,6 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
   const bridge = load('src/app/game-controller-field-world-bridge.ts');
   const { fieldWorldFor, balanceDailyAsteroids } = bridge;
   const { recordCareerCombatWrecks } = load('src/app/game-controller-combat-wrecks.ts');
-  const { permanentSalvageField } = load('src/app/game-controller-salvage-stocks.ts');
-  const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
 
   const events = createSectorSalvageEventService(world, 0x50a7a9e);
   const research = createShipyardResearchService();
@@ -88,25 +110,7 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
       stats.combatWrecksCreated += created.length;
     },
     validate() {
-      fields.forEachField((field) => {
-        for (const asteroid of field.instance.asteroids) {
-          const source = JSON.stringify([field.locationId, asteroid.id]);
-          for (const deposit of asteroid.deposits) {
-            const stock = physical.getPhysicalStock(deposit.resourceId, source);
-            assert.equal(stock, Math.floor(deposit.oreRemaining), source + ' ore stock');
-          }
-        }
-      });
-      for (const location of salvageLocations) {
-        const field = permanentSalvageField(context, location);
-        for (const wreck of field.wrecks) {
-          for (const deposit of wreck.resources) {
-            const source = salvageStockId(field, wreck);
-            const stock = physical.getPhysicalStock(deposit.resourceId, source);
-            assert.equal(stock, deposit.remainingAmount);
-          }
-        }
-      }
+      validateFieldStocks(fields, physical, salvageLocations, context, load);
     },
   };
 }
