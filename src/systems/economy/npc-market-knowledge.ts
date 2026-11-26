@@ -71,6 +71,12 @@ export function npcMarketIntelAge(
   return Math.max(0, Math.floor(day) - observed.observedDay);
 }
 
+/** Conservative planning weight, never a mutation of the stored observation. */
+export function npcMarketConfidence(observedDay: number, day: number): number {
+  const age = Math.max(0, day - observedDay);
+  return Math.max(0.25, 14 / (14 + age));
+}
+
 export function npcKnownMarketIds(npc: NpcEconomyState): readonly string[] {
   return Object.keys(npc.marketIntel ?? {}).sort();
 }
@@ -78,6 +84,7 @@ export function npcKnownMarketIds(npc: NpcEconomyState): readonly string[] {
 export function npcKnownMarketViews(npc: NpcEconomyState): readonly NpcTradeMarketView[] {
   return Object.values(npc.marketIntel ?? {}).map((market) => ({
     locationId: market.locationId,
+    observedDay: market.observedDay,
     entries: market.entries,
   }));
 }
