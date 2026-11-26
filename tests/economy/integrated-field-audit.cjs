@@ -2,8 +2,8 @@
 
 const assert = require('node:assert/strict');
 
-function validateFieldStocks(fields, physical, salvageLocations, context, load) {
-  const { permanentSalvageField } = load('src/app/game-controller-salvage-stocks.ts');
+function validateFieldStocks(fields, physical, salvageLocations, context, load, stocks) {
+  const { permanentSalvageField } = stocks;
   const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
   fields.forEachField((field) => {
     for (const asteroid of field.instance.asteroids) {
@@ -32,17 +32,6 @@ function recordWorkedSite(sites, npc, amount) {
   if (!visited.includes(npc.locationId)) visited.push(npc.locationId);
 }
 
-function releaseExpiredWreck(fields, physical, locationId, id) {
-  assert(!fields.combatWrecks(locationId).some((wreck) => wreck.id === id));
-  const pools = Object.values(physical.pools);
-  const expectedReserves = pools.map((pool) => pool.reserve + (pool.physicalStocks?.[id] ?? 0));
-  physical.releasePhysicalStock(id);
-  for (const [index, pool] of pools.entries()) {
-    assert.equal(pool.physicalStocks?.[id], undefined, 'removed wreck must release its stock');
-    assert.equal(pool.reserve, expectedReserves[index], 'remaining goods must return to reserve');
-  }
-}
-
 function createIntegratedFieldAudit(load, world, physical, npcs, sector, player) {
   const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
   const { WreckClaimRegistry } = load('src/systems/operations/wreck-claim-registry.ts');
@@ -52,19 +41,28 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
   const { createShipyardResearchService } = load('src/systems/ships/index.ts');
   const { createSalvageEconomyService } = load('src/systems/economy/salvage-economy-service.ts');
   const bridgePath = 'src/app/game-controller-field-world-bridge.ts';
-  const bridge = load(bridgePath);
-  const { fieldWorldFor, balanceDailyAsteroids } = bridge;
+  const stocksPath = 'src/app/game-controller-salvage-stocks.ts';
+  const salvageWorldPath = 'src/app/game-controller-salvage-drone-world.ts';
+  const stocks = load(stocksPath);
+  const salvageWorld = load(salvageWorldPath, { [stocksPath]: stocks });
+  const bridge = load(bridgePath, { [stocksPath]: stocks, [salvageWorldPath]: salvageWorld });
+  const { fieldWorldFor, balanceDailyAsteroids, advanceControllerFieldWorld } = bridge;
   // The standalone loader otherwise creates another module-local WeakMap of field worlds.
   const { recordCareerCombatWrecks } = load('src/app/game-controller-combat-wrecks.ts', {
     [bridgePath]: bridge,
+    [salvageWorldPath]: salvageWorld,
   });
 
   const events = createSectorSalvageEventService(world, 0x50a7a9e);
   const research = createShipyardResearchService();
   const npcSalvageEvents = createNpcSalvageEventService({ world, sector, events, research });
+  const { SectorLegalRegistry } = load('src/systems/operations/sector-legal-registry.ts');
+  const { getShipDefinition } = load('src/systems/ships/ship-registry.ts');
   const context = {
     economy: {
       simulation: physical,
+      legal: new SectorLegalRegistry(),
+      trade: { player },
       npcs,
       sectorNpcs: sector,
       asteroidClaims: new AsteroidClaimRegistry(),
@@ -76,7 +74,8 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
       npcSalvageEvents,
       salvage: createSalvageEconomyService(physical, { player }),
     },
-    state: { mode: 'star-map', salvageEventFields: new Map() },
+    state: { mode: 'star-map', salvageEventFields: new Map(), activeShip: getShipDefinition(sector.npcs[0].shipId), combatReengageSeconds: 0 },
+    world: { world: () => world },
     systemLog: { write() {} },
   };
   const fields = fieldWorldFor(context);
@@ -113,6 +112,8 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
 
   return {
     stats,
+    hooks: bridge.fieldEngagementHooks(() => context),
+    bindEngagements(engagements) { context.engagements = engagements; },
     beginDay(day) {
       context.economy.situations.currentDay = day;
       events.advanceDay(day, { x: -99999, y: -99999 }, false);
@@ -122,13 +123,11 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
     },
     tick(dt) {
       npcSalvageEvents.tick();
-      fields.tick(dt, null, (field, seconds) => field.miners.tick(seconds));
-      fields.advanceCombatWreckLifetime(dt, (locationId, ids) => {
-        for (const id of ids) {
-          releaseExpiredWreck(fields, physical, locationId, id);
-          stats.combatWrecksExpired++;
-        }
-      });
+      const count = () => world.locations.reduce((sum, location) => sum + fields.combatWrecks(location.id).length, 0);
+      const before = count();
+      advanceControllerFieldWorld(context, dt);
+      salvageWorld.advanceCareerSalvageDrones(context, dt, fields);
+      stats.combatWrecksExpired += Math.max(0, before - count());
     },
     combatEnded(snapshot, attacker) {
       const created = recordCareerCombatWrecks(context, snapshot, attacker.locationId);
@@ -139,7 +138,7 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
       stats.combatWrecksCreated += created.length;
     },
     validate() {
-      validateFieldStocks(fields, physical, salvageLocations, context, load);
+      validateFieldStocks(fields, physical, salvageLocations, context, load, stocks);
     },
   };
 }

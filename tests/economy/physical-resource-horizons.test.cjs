@@ -17,7 +17,7 @@ const { createEconomySimulationService } = load(
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
 const { WreckClaimRegistry } = load('src/systems/operations/wreck-claim-registry.ts');
 const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
-const { permanentSalvageField, balancePermanentSalvageStocks, recoverBackgroundSalvage } = load(
+const { permanentSalvageField, balancePermanentSalvageStocks } = load(
   'src/app/game-controller-salvage-stocks.ts'
 );
 const { generateMiningSpace } = load('src/systems/local-space/local-space-generator.ts');
@@ -108,9 +108,18 @@ for (let day = 0; day < 365; day++) {
   npc.cargo[ore.resourceId] = (npc.cargo[ore.resourceId] ?? 0) + amount;
   returnNpcCargo();
   const field = permanentSalvageField(context, red[0]);
-  const before = Object.values(npc.cargo).reduce((sum, value) => sum + value, 0);
-  recoverBackgroundSalvage(context, npc, field, day);
-  extracted += Object.values(npc.cargo).reduce((sum, value) => sum + value, 0) - before;
+  // Scripted extraction isolates conservation from the worker's travel and scan timing.
+  const wreck = field.wrecks.find((entry) =>
+    entry.resources.some((deposit) => deposit.remainingAmount > 0)
+  );
+  const deposit = wreck?.resources.find((entry) => entry.remainingAmount > 0);
+  if (wreck && deposit) {
+    const recovered = npcs.salvageLocal(
+      npc, deposit.resourceId, Math.min(5, deposit.remainingAmount), salvageStockId(field, wreck)
+    );
+    deposit.remainingAmount -= recovered;
+    extracted += recovered;
+  }
   returnNpcCargo();
   for (const location of locations) {
     const current = permanentSalvageField(context, location);

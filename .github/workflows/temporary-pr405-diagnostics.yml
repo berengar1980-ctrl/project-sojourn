@@ -35,3 +35,12 @@ jobs:
       - name: Persistence architecture
         if: always()
         run: npm run persistence:check
+      - name: Physical ledger regression
+        if: always()
+        run: node tests/economy/physical-resource-horizons.test.cjs
+      - name: Integrated economy smoke (3 days)
+        if: always()
+        env:
+          SOJOURN_INTEGRATED_FIELDS: '1'
+          SOJOURN_LONGRUN_DAYS: '3'
+        run: node tests/economy/npc-economy-longrun.test.cjs

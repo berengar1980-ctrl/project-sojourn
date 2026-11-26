@@ -28,6 +28,8 @@ const days = Number(process.env.SOJOURN_LONGRUN_DAYS ?? 90);
 assert(Number.isInteger(days));
 assert(days >= 1 && days <= 365);
 const ships = createSectorNpcEconomyStates();
+const isDrone = (ship) => ship.id.startsWith('security-drone:');
+if (integrated) load('src/app/game-controller-economy.ts').registerSecurityDroneCombatants(ships);
 const markets = createEconomyMarketService(sectorPorts, economyResources);
 const player = { credits: 0, cargo: {} };
 const physical = simulationModule.createEconomySimulationService(
@@ -71,11 +73,11 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
   },
   positions,
   isManaged: (npc) =>
-    integrated &&
+    isDrone(npc) || (integrated &&
     npc.role === 'miner' &&
     npc.workLocationId === npc.locationId &&
     npc.autonomy?.phase === 'working' &&
-    narrowsSector.locations.some((entry) => entry.id === npc.locationId && entry.activities.mine),
+    narrowsSector.locations.some((entry) => entry.id === npc.locationId && entry.activities.mine)),
   travel: {
     requestTravel: (npc, destination, reason) => sector.requestTravel(npc, destination, reason),
     requestPatrol: (npc) => sector.requestPatrol(npc),
@@ -114,8 +116,10 @@ const engagements = createStarMapEngagementService({
     throw new Error('Player combat is excluded from this NPC-only audit');
   },
   log: combatLog,
-  ...(fieldAudit ? { onNpcCombatEnded: fieldAudit.combatEnded } : {}),
+  ...(fieldAudit ? { onNpcCombatEnded: fieldAudit.combatEnded, ...fieldAudit.hooks } : {}),
 });
+
+fieldAudit?.bindEngagements(engagements);
 
 const initial = {};
 const activity = {};
@@ -186,7 +190,7 @@ function printReport(elapsedDays) {
   const roles = ['freighter', 'miner', 'salvager', 'patrol', 'pirate'];
   const report = [];
   for (const role of roles) {
-    const members = ships.filter((ship) => ship.job === role);
+    const members = ships.filter((ship) => ship.job === role && !isDrone(ship));
     const sum = (fn) => members.reduce((total, ship) => total + fn(ship), 0);
     report.push({
       role,
@@ -214,7 +218,7 @@ function printReport(elapsedDays) {
       ),
     });
   }
-  assert.equal(ships.length, 33);
+  assert.equal(ships.filter((ship) => !isDrone(ship)).length, 33);
   assert.equal(report.find((group) => group.role === 'pirate').ships, 9);
   const workers = ships.filter((ship) => ship.job === 'miner' || ship.job === 'salvager');
   console.log(
@@ -233,6 +237,11 @@ function printReport(elapsedDays) {
         externalFunding: population.externalFunding,
       },
       report,
+      securityDrones: {
+        count: ships.filter(isDrone).length,
+        defeated: ships.filter(isDrone).reduce((sum, ship) => sum + (ship.combatDefeats ?? 0), 0),
+        recovering: ships.filter((ship) => isDrone(ship) && ship.hullHp <= 0).length,
+      },
       workerStatus: integrated ? workers.map(workerStatus) : [],
       resourceBalance: physical.getResourceBalance(),
     })

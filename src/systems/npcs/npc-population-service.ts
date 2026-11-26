@@ -1,3 +1,4 @@
+import { isSecurityDrone } from '../../core/security-drone';
 import {
   stageNpcPopulationCheckpoint,
   type NpcPopulationCheckpoint,
@@ -149,6 +150,7 @@ export function createNpcPopulationService(
     },
     advanceDay(day) {
       for (const npc of npcs) {
+        if (isSecurityDrone(npc.id)) continue;
         if (npc.retiredUntilDay !== undefined) {
           if (day >= npc.retiredUntilDay) restore(npc);
         } else {
