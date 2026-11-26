@@ -1,0 +1,37 @@
+name: Temporary Sojourn diagnostics PR 405
+on:
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  diagnostics:
+    if: github.head_ref == 'fix/npc-combat-logic'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Format changed files and show patch
+        run: |
+          git diff --name-only --diff-filter=ACM -z origin/main HEAD | xargs -0 -r npx prettier --write --ignore-unknown
+          git diff --no-ext-diff
+      - name: TypeScript
+        if: always()
+        run: npm run typecheck
+      - name: ESLint
+        if: always()
+        run: npm run lint
+      - name: Dependency architecture
+        if: always()
+        run: npm run deps:check
+      - name: Persistence architecture
+        if: always()
+        run: npm run persistence:check
