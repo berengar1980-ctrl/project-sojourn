@@ -143,7 +143,7 @@ function candidateTradeRoute(
     quantity: estimate.quantity,
     margin: unitSale - buyPrice,
     observedDay,
-    score: value / (1 + estimate.distance / 1000),
+    score: value,
   };
 }
 
@@ -211,14 +211,13 @@ function bestSaleLocation(
     );
     if (!quote) continue;
     const age = Math.max(0, day - market.observedDay);
-    const value = npcPersonalityTradeWeight(
+    const score = npcPersonalityTradeWeight(
       npc,
       quote.netRevenue,
       quote.distance,
       age,
       market.locationId
     );
-    const score = value / (1 + quote.distance / 1000);
     if (!best || score > best.score) {
       best = {
         locationId: market.locationId,
