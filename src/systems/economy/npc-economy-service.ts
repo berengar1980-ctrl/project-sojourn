@@ -27,6 +27,7 @@ import {
   sellToMarket,
   chooseTraderAction,
   chooseWorkerAction,
+  handleCargoSale,
   npcNetSaleUnitPrice,
 } from './npc-trade-actions';
 
@@ -129,6 +130,7 @@ function completeUnloading(
   }
 
   if (options.canTrade?.(npc, npc.locationId, resourceId) === false) {
+    delete npc.sideTradePlan;
     delete autonomy.pendingSaleResourceId;
     beginNpcAutonomyPhase(npc, 'thinking');
     return;
@@ -214,12 +216,22 @@ function chooseReadyAction(
     return;
   }
   if (npc.role === 'patrol') {
+    const pirate = 'pirate' in npc && npc.pirate;
+    if (!pirate && handleCargoSale(npc, positions, day, options.travel?.quoteTravel)) return;
     const accepted = options.travel?.requestPatrol?.(npc) ?? false;
     if (accepted) markNpcTravelStarted(npc);
     else beginNpcAutonomyPhase(npc, 'patrol-rest');
     return;
   }
   beginRest(npc);
+}
+
+function advanceWorkingPhase(npc: NpcEconomyState, options: NpcEconomyServiceOptions): void {
+  const misplaced = options.workPlanning && npc.workLocationId !== npc.locationId;
+  if (misplaced || npcCargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity))) {
+    if (options.workPlanning) finishNpcWorksite(npc);
+    beginNpcAutonomyPhase(npc, 'thinking');
+  }
 }
 
 function advanceNpcActivity(
@@ -239,24 +251,18 @@ function advanceNpcActivity(
     return;
   }
 
-  if (autonomy.wasTravelling || autonomy.phase === 'travel') {
-    markNpcArrival(npc);
-    observeNpcMarket(npc, markets, npc.locationId, day);
-    return;
-  }
-
-  if (autonomy.lastLocationId !== npc.locationId) {
+  if (
+    autonomy.wasTravelling ||
+    autonomy.phase === 'travel' ||
+    autonomy.lastLocationId !== npc.locationId
+  ) {
     markNpcArrival(npc);
     observeNpcMarket(npc, markets, npc.locationId, day);
     return;
   }
 
   if (autonomy.phase === 'working') {
-    const misplaced = options.workPlanning && npc.workLocationId !== npc.locationId;
-    if (misplaced || npcCargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity))) {
-      if (options.workPlanning) finishNpcWorksite(npc);
-      beginNpcAutonomyPhase(npc, 'thinking');
-    }
+    advanceWorkingPhase(npc, options);
     return;
   }
 
