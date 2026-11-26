@@ -74,7 +74,7 @@ export function fieldWitnessFor(
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
 const lastAsteroidBalanceDay = new WeakMap<ControllerRuntimeContext, number>();
 
-function balanceDailyAsteroids(
+export function balanceDailyAsteroids(
   context: ControllerRuntimeContext,
   fields: AsteroidFieldWorld,
   localId: string | null
