@@ -376,7 +376,11 @@ function processNpcEconomyDay(
   }
   if (!('pirate' in npc && npc.pirate)) chargeNpcDailyOperatingExpenses(npc, current);
   if (options.travel?.isTravelling(npc)) return;
-  observeNpcMarket(npc, markets, npc.locationId, current);
+  if (Object.keys(npc.marketIntel ?? {}).length === 0) {
+    initializeNpcMarketIntel(npc, markets, options.positions ?? {}, current);
+  } else {
+    observeNpcMarket(npc, markets, npc.locationId, current);
+  }
   if ((npc.role === 'miner' || npc.role === 'salvager') && !options.isManaged?.(npc)) {
     abstractWorkerDay(npc, allocator, current, options);
   }
