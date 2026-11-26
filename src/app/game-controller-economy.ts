@@ -270,9 +270,10 @@ function createControllerCustoms(
     const pool = simulation.pools[id];
     if (pool) pool.recordedLosses += amount;
   };
+  const npcs = sector.npcs;
   return {
-    smuggling: createSmugglingService(trade.player, sector.npcs, recordLoss),
-    npcSmuggling: createNpcSmugglingService(sector.npcs, sector, notice, Math.random, 0, recordLoss),
+    smuggling: createSmugglingService(trade.player, npcs, recordLoss),
+    npcSmuggling: createNpcSmugglingService(npcs, sector, notice, Math.random, 0, recordLoss),
   };
 }
 
