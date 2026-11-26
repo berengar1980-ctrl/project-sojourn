@@ -32,6 +32,17 @@ function recordWorkedSite(sites, npc, amount) {
   if (!visited.includes(npc.locationId)) visited.push(npc.locationId);
 }
 
+function releaseExpiredWreck(fields, physical, locationId, id) {
+  assert(!fields.combatWrecks(locationId).some((wreck) => wreck.id === id));
+  const pools = Object.values(physical.pools);
+  const expectedReserves = pools.map((pool) => pool.reserve + (pool.physicalStocks?.[id] ?? 0));
+  physical.releasePhysicalStock(id);
+  for (const [index, pool] of pools.entries()) {
+    assert.equal(pool.physicalStocks?.[id], undefined, 'removed wreck must release its stock');
+    assert.equal(pool.reserve, expectedReserves[index], 'remaining goods must return to reserve');
+  }
+}
+
 function createIntegratedFieldAudit(load, world, physical, npcs, sector, player) {
   const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
   const { WreckClaimRegistry } = load('src/systems/operations/wreck-claim-registry.ts');
@@ -40,9 +51,13 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
   const { createNpcSalvageEventService } = load('src/systems/npcs/npc-salvage-event-service.ts');
   const { createShipyardResearchService } = load('src/systems/ships/index.ts');
   const { createSalvageEconomyService } = load('src/systems/economy/salvage-economy-service.ts');
-  const bridge = load('src/app/game-controller-field-world-bridge.ts');
+  const bridgePath = 'src/app/game-controller-field-world-bridge.ts';
+  const bridge = load(bridgePath);
   const { fieldWorldFor, balanceDailyAsteroids } = bridge;
-  const { recordCareerCombatWrecks } = load('src/app/game-controller-combat-wrecks.ts');
+  // The standalone loader otherwise creates another module-local WeakMap of field worlds.
+  const { recordCareerCombatWrecks } = load('src/app/game-controller-combat-wrecks.ts', {
+    [bridgePath]: bridge,
+  });
 
   const events = createSectorSalvageEventService(world, 0x50a7a9e);
   const research = createShipyardResearchService();
@@ -108,15 +123,19 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
     tick(dt) {
       npcSalvageEvents.tick();
       fields.tick(dt, null, (field, seconds) => field.miners.tick(seconds));
-      fields.advanceCombatWreckLifetime(dt, (_locationId, ids) => {
+      fields.advanceCombatWreckLifetime(dt, (locationId, ids) => {
         for (const id of ids) {
-          physical.releasePhysicalStock(id);
+          releaseExpiredWreck(fields, physical, locationId, id);
           stats.combatWrecksExpired++;
         }
       });
     },
     combatEnded(snapshot, attacker) {
       const created = recordCareerCombatWrecks(context, snapshot, attacker.locationId);
+      for (const wreck of created) {
+        const registered = fields.combatWrecks(attacker.locationId);
+        assert(registered.includes(wreck), 'creation and expiry must share the same field world');
+      }
       stats.combatWrecksCreated += created.length;
     },
     validate() {
