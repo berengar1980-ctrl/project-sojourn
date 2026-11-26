@@ -141,6 +141,11 @@ for (let day = 0; day < 365; day++) {
     }
     assert.deepEqual(simulation.exportState(), saved);
     assertConservation();
+    const balance = simulation.getResourceBalance();
+    assert(balance.every((row) => row.discrepancy === 0 && row.unclassifiedStock === 0));
+    assert(balance.some((row) => row.asteroidStock > 0));
+    assert(balance.some((row) => row.salvageStock > 0));
+    console.log(JSON.stringify({ days: day + 1, physicalFields: true, resourceBalance: balance }));
     console.log('PASS physical resource circulation and reload at day ' + (day + 1));
   }
 }
