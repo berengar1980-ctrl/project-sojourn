@@ -20,6 +20,7 @@ import {
 import { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type {
+  SalvageEventResolution,
   SalvageLocalPhase,
   SalvageLocalSpaceSnapshot,
   SalvageWreck,
@@ -68,6 +69,7 @@ interface SalvageRuntimeOptions {
   readonly setup: ShipSalvageSetup;
   readonly crewSkill: number;
   readonly collect: SalvageResourceCollector;
+  readonly onWreckEventResolved?: (wreck: SalvageWreck, result: SalvageEventResolution) => SalvageEventResolution;
   readonly collectComponent?: SalvageComponentCollector;
   readonly approachSpeed: number;
   readonly turnRateMultiplier?: number;
@@ -259,8 +261,9 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     const pending = this.events.pending;
     const wreck = this.findWreck(pending?.wreckId ?? null);
     if (!pending || !wreck) return null;
-    const result = this.events.resolve(wreck, choiceId);
-    if (!result) return null;
+    const resolved = this.events.resolve(wreck, choiceId);
+    if (!resolved) return null;
+    const result = this.options.onWreckEventResolved?.(wreck, resolved) ?? resolved;
     this.lastEventResolution = result;
     this.eventResolutionSerial += 1;
     return result;
