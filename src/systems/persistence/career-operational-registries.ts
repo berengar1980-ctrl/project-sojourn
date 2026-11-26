@@ -205,6 +205,10 @@ function verifyClaims(value: unknown): void {
   verifyExtraction((value.extraction as unknown[] | undefined) ?? []);
   verifyFieldSeeds(value.fieldSeeds as unknown[]);
   verifyRemainingOre(value.remainingOre as unknown[]);
+  if (value.oreCapacities !== undefined) {
+    if (!Array.isArray(value.oreCapacities)) throw new Error('Ungültige Erzkapazitäten.');
+    verifyRemainingOre(value.oreCapacities);
+  }
   verifySurveyLevels(value.surveyLevels as unknown[]);
   verifyWreckClaims(value.wreckClaims);
 }
