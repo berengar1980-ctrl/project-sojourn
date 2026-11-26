@@ -132,14 +132,9 @@ export function advanceCareerSalvageDrones(
   }
 }
 
-/** Only physical drone poses belong to this checkpoint. Sector NPCs own hull and replacement timers. */
-function rememberSalvageSecurity(
-  context: ControllerRuntimeContext,
-  field: SalvageField,
-  drone: AsteroidSecurityDrone
-): void {
+/** The primary drone is already captured by rememberField; only capture its escorts here. */
+function rememberSalvageEscorts(context: ControllerRuntimeContext, field: SalvageField): void {
   const { wreckClaims, localPirates, sectorNpcs } = context.economy;
-  wreckClaims.rememberDrone(field.sourceLocationId, drone.exportState());
   const traffic = localPirates.get(field.sourceLocationId);
   if (!traffic) return;
   const saved = traffic.exportState();
@@ -172,7 +167,7 @@ export function captureSalvageSecurity(context: ControllerRuntimeContext): void 
   for (const world of worlds(context).values()) {
     context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
     context.economy.wreckClaims.rememberWorkers(world.field, world.salvagers.ships);
-    rememberSalvageSecurity(context, world.field, world.drone);
+    rememberSalvageEscorts(context, world.field);
   }
 }
 
@@ -275,7 +270,7 @@ function advanceSalvageField(
   wreckWorld.reconcileCombatWrecks(locationId, world.field.wrecks);
   context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
   context.economy.wreckClaims.rememberWorkers(world.field, world.salvagers.ships);
-  rememberSalvageSecurity(context, world.field, world.drone);
+  rememberSalvageEscorts(context, world.field);
 }
 
 function backgroundEngagement(

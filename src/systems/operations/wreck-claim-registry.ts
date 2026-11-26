@@ -49,6 +49,65 @@ function isCombatWreckId(id: string): boolean {
   return id.startsWith('combat-wreck-');
 }
 
+function matchesDeposits(
+  wreck: SalvageWreck,
+  stored: Record<string, number>,
+  amount: 'remainingAmount' | 'initialAmount'
+): boolean {
+  let index = 0;
+  for (const id in stored) {
+    if (!Object.hasOwn(stored, id)) continue;
+    const deposit = wreck.resources[index++];
+    if (deposit?.resourceId !== id || !Object.is(deposit[amount], stored[id])) return false;
+  }
+  return index === wreck.resources.length;
+}
+
+function matchesWreck(wreck: SalvageWreck, stored: StoredWreck): boolean {
+  return (
+    wreck.id === stored.id &&
+    wreck.componentStatus === stored.componentStatus &&
+    wreck.inspected === stored.inspected &&
+    (wreck.scanLevel ?? 'unscanned') === stored.scanLevel &&
+    stored.capacities !== undefined &&
+    matchesDeposits(wreck, stored.resources, 'remainingAmount') &&
+    matchesDeposits(wreck, stored.capacities, 'initialAmount')
+  );
+}
+
+function captureWreck(wreck: SalvageWreck): StoredWreck {
+  return {
+    id: wreck.id,
+    resources: Object.fromEntries(
+      wreck.resources.map((resource) => [resource.resourceId, resource.remainingAmount])
+    ),
+    capacities: Object.fromEntries(
+      wreck.resources.map((resource) => [resource.resourceId, resource.initialAmount])
+    ),
+    componentStatus: wreck.componentStatus,
+    inspected: wreck.inspected,
+    scanLevel: wreck.scanLevel ?? 'unscanned',
+  };
+}
+
+/** Compare live values, not object identity: resources mutate in place during play. */
+function captureWrecks(
+  wrecks: readonly SalvageWreck[],
+  previous: readonly StoredWreck[] = []
+): readonly StoredWreck[] {
+  let next: StoredWreck[] | undefined;
+  for (let index = 0; index < wrecks.length; index++) {
+    const wreck = wrecks[index]!;
+    const atIndex = previous[index];
+    const stored =
+      atIndex?.id === wreck.id ? atIndex : previous.find((entry) => entry.id === wreck.id);
+    const current = stored && matchesWreck(wreck, stored) ? stored : captureWreck(wreck);
+    if (next) next.push(current);
+    else if (current !== atIndex) next = [...previous.slice(0, index), current];
+  }
+  return next ?? (previous.length === wrecks.length ? previous : previous.slice(0, wrecks.length));
+}
+
 export class WreckClaimRegistry {
   private readonly claims = new Map<string, WreckClaim>();
   private readonly fields = new Map<string, StoredField>();
@@ -78,18 +137,7 @@ export class WreckClaimRegistry {
         ? { securityEscorts: previous.securityEscorts }
         : {}),
       ...(previous?.seed === field.seed && previous.workers ? { workers: previous.workers } : {}),
-      wrecks: field.wrecks.map((wreck) => ({
-        id: wreck.id,
-        resources: Object.fromEntries(
-          wreck.resources.map((resource) => [resource.resourceId, resource.remainingAmount])
-        ),
-        capacities: Object.fromEntries(
-          wreck.resources.map((resource) => [resource.resourceId, resource.initialAmount])
-        ),
-        componentStatus: wreck.componentStatus,
-        inspected: wreck.inspected,
-        scanLevel: wreck.scanLevel ?? 'unscanned',
-      })),
+      wrecks: captureWrecks(field.wrecks, previous?.seed === field.seed ? previous.wrecks : undefined),
     });
   }
 
