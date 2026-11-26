@@ -35,6 +35,7 @@ import { observeNpcMarket, initializeNpcMarketIntel } from './npc-market-knowled
 import { npcCargoUsed, cargoFree, quantity } from './npc-cargo';
 import { maxAffordableShipment } from './npc-operating-decisions';
 import { chargeNpcDailyOperatingExpenses } from './npc-operating-expenses';
+import { finishNpcWorksite } from './npc-work-planning';
 
 export { npcCargoUsed } from './npc-cargo';
 
@@ -200,7 +201,15 @@ function chooseReadyAction(
     return;
   }
   if (npc.role === 'miner' || npc.role === 'salvager') {
-    chooseWorkerAction(npc, markets, resources, positions, day, options.travel?.quoteTravel);
+    chooseWorkerAction(
+      npc,
+      markets,
+      resources,
+      positions,
+      day,
+      options.travel?.quoteTravel,
+      options.workPlanning
+    );
     return;
   }
   if (npc.role === 'patrol') {
@@ -242,7 +251,9 @@ function advanceNpcActivity(
   }
 
   if (autonomy.phase === 'working') {
-    if (npcCargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity))) {
+    const misplaced = options.workPlanning && npc.workLocationId !== npc.locationId;
+    if (misplaced || npcCargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity))) {
+      if (options.workPlanning) finishNpcWorksite(npc);
       beginNpcAutonomyPhase(npc, 'thinking');
     }
     return;
@@ -452,11 +463,16 @@ export function createNpcEconomyService(
       npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;
       return allocated;
     },
+    setWorkPlanning(planning) {
+      dailyOptions = { ...dailyOptions, workPlanning: planning };
+    },
     setPhysicalSalvageWorker(worker) {
-      dailyOptions = { ...options, physicalSalvageWorker: worker };
+      dailyOptions = { ...dailyOptions, physicalSalvageWorker: worker };
     },
     dispatchLoadedWorker(npc) {
-      if (npcCargoUsed(npc) <= 0) return false;
+      if (dailyOptions.workPlanning) finishNpcWorksite(npc);
+      else if (npcCargoUsed(npc) <= 0) return false;
+      clearNpcPendingTravel(npc);
       beginNpcAutonomyPhase(npc, 'thinking');
       return true;
     },
@@ -465,8 +481,9 @@ export function createNpcEconomyService(
       const dt = Math.min(deltaSeconds, 0.25);
       for (const npc of npcs) {
         if ('retiredUntilDay' in npc && npc.retiredUntilDay !== undefined) continue;
-        if (options.isManaged?.(npc)) continue;
-        advanceNpcActivity(npc, dt, markets, resources, positions, Math.max(0, lastDay), options);
+        if (dailyOptions.isManaged?.(npc)) continue;
+        const day = Math.max(0, lastDay);
+        advanceNpcActivity(npc, dt, markets, resources, positions, day, dailyOptions);
       }
     },
     advanceDay,
