@@ -22,6 +22,9 @@ export function balanceAsteroidStocks(
       if (stock > actual) {
         simulation.losePhysicalStock(deposit.resourceId, sourceId, stock - actual);
       }
+      if (stock < actual) {
+        deposit.oreRemaining = Math.max(0, Math.min(deposit.oreRemaining, stock - fragments));
+      }
       if (!canRefill(asteroid.id) || fragments > 0) continue;
       const deficit = Math.floor(deposit.oreCapacity - deposit.oreRemaining);
       if (deficit <= 0) continue;
