@@ -49,6 +49,7 @@ jobs:
         run: |
           node tests/combat/pirate-interception-policy.test.cjs
           node tests/local-space/local-pirate-background-continuity.test.cjs
+          node tests/local-space/combat-wreck-interaction.test.cjs
           node tests/operations/drone-patrol-routing-regression.test.cjs
           node tests/operations/security-drone-debris-shield-mk3.test.cjs
           node tests/quality/architecture.test.cjs
