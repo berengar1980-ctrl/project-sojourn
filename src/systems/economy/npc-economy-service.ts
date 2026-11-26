@@ -1,3 +1,4 @@
+import { measurePerformance } from '../../core/performance-diagnostics';
 import { validateNpcEconomyCheckpoint } from './npc-economy-checkpoint';
 import type { EconomyResourceDefinition, NpcEconomyState } from '../../core/economy-types';
 
@@ -265,7 +266,9 @@ function advanceNpcActivity(
   }
 
   if (autonomy.phase === 'ready') {
-    chooseReadyAction(npc, markets, resources, positions, day, options);
+    measurePerformance('sim.npcs.decision', () =>
+      chooseReadyAction(npc, markets, resources, positions, day, options)
+    );
     return;
   }
 
@@ -279,14 +282,18 @@ function advanceNpcActivity(
     beginNpcAutonomyPhase(npc, 'thinking');
   } else if (autonomy.phase === 'thinking') {
     beginNpcAutonomyPhase(npc, 'ready', 0);
-    chooseReadyAction(npc, markets, resources, positions, day, options);
+    measurePerformance('sim.npcs.decision', () =>
+      chooseReadyAction(npc, markets, resources, positions, day, options)
+    );
   } else if (autonomy.phase === 'loading') {
     completeLoading(npc, markets, day, options);
   } else if (autonomy.phase === 'launch-prep') {
     startPendingTravel(npc, options);
   } else if (autonomy.phase === 'patrol-rest') {
     beginNpcAutonomyPhase(npc, 'ready', 0);
-    chooseReadyAction(npc, markets, resources, positions, day, options);
+    measurePerformance('sim.npcs.decision', () =>
+      chooseReadyAction(npc, markets, resources, positions, day, options)
+    );
   }
 }
 

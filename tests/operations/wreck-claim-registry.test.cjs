@@ -147,7 +147,10 @@ function assertIncrementalWreckSnapshots() {
   assert.equal(cached()[1], updated[0]);
   live.wrecks.shift();
   claims.rememberField(live);
-  assert.deepEqual(read().wrecks.map((entry) => entry.id), [first.id]);
+  assert.deepEqual(
+    read().wrecks.map((entry) => entry.id),
+    [first.id]
+  );
 
   const saved = claims.exportState();
   const reloaded = new WreckClaimRegistry();

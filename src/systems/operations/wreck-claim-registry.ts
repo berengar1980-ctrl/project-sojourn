@@ -137,7 +137,10 @@ export class WreckClaimRegistry {
         ? { securityEscorts: previous.securityEscorts }
         : {}),
       ...(previous?.seed === field.seed && previous.workers ? { workers: previous.workers } : {}),
-      wrecks: captureWrecks(field.wrecks, previous?.seed === field.seed ? previous.wrecks : undefined),
+      wrecks: captureWrecks(
+        field.wrecks,
+        previous?.seed === field.seed ? previous.wrecks : undefined
+      ),
     });
   }
 

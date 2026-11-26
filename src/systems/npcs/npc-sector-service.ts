@@ -1,4 +1,5 @@
 import { isSecurityDrone, SECURITY_DRONE_SHIP_ID } from '../../core/security-drone';
+import { measurePerformance } from '../../core/performance-diagnostics';
 import type {
   NpcCombatMovementMode,
   NpcCombatTargetKind,
@@ -179,17 +180,19 @@ class SectorService implements NpcSectorService {
       locationPosition: (id: string) =>
         id === npc.locationId ? this.livePosition(npc) : npcOrbitDestination(this.world, npc, id),
     };
-    const planned = planFuelRoute(request);
+    const planned = measurePerformance('sim.npcs.route-plan', () => planFuelRoute(request));
     if (planned) return { planned, emergency: { units: 0, cost: 0 } };
     const location = this.world.locations.find((entry) => entry.id === npc.locationId);
     if (isServicedPort(location)) return null;
     const emergency = quoteEmergencyRefuel(npc.fuel, npc.fuelCapacity, availableCredits);
     if (emergency.units <= 0) return null;
-    const rescued = planFuelRoute({
-      ...request,
-      fuel: Math.min(npc.fuelCapacity, npc.fuel + emergency.units),
-      credits: availableCredits - emergency.cost,
-    });
+    const rescued = measurePerformance('sim.npcs.route-plan-emergency', () =>
+      planFuelRoute({
+        ...request,
+        fuel: Math.min(npc.fuelCapacity, npc.fuel + emergency.units),
+        credits: availableCredits - emergency.cost,
+      })
+    );
     return rescued ? { planned: rescued, emergency } : null;
   }
   quoteTravel = (npc: SectorNpcState, destinationId: string, availableCredits = npc.credits) => {
@@ -376,11 +379,8 @@ class SectorService implements NpcSectorService {
   };
   private advanceTravel = (npc: SectorNpcState, dt: number): void => {
     if (npc.travel)
-      replanNpcTravel(
-        this.world,
-        npc,
-        () => npcRouteThreats(npc, this.npcs, this.livePosition),
-        dt
+      measurePerformance('sim.npcs.route-replan', () =>
+        replanNpcTravel(this.world, npc, () => npcRouteThreats(npc, this.npcs, this.livePosition), dt)
       );
     const travel = npc.travel;
     if (!travel) {
@@ -442,7 +442,10 @@ class SectorService implements NpcSectorService {
   tick = (deltaSeconds: number): void => {
     if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
     const dt = Math.min(deltaSeconds, 0.25);
-    const npcPositions = new Map(this.npcs.map((npc) => [npc.id, this.livePosition(npc)]));
+    const npcPositions = measurePerformance(
+      'sim.npcs.positions',
+      () => new Map(this.npcs.map((npc) => [npc.id, this.livePosition(npc)]))
+    );
     const playerPosition = this.options.getPlayerPosition?.() ?? null;
 
     for (const npc of this.npcs) {
