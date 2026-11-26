@@ -17,6 +17,19 @@ function getOrCreateEventField(
   return field;
 }
 
+function regularField(
+  context: ControllerRuntimeContext,
+  location: WorldLocation,
+  seed: number
+): SalvageField {
+  if (!location.activities.salvage) {
+    return generateSalvageField(location.id, seed, location.dangerLevel);
+  }
+  const field = permanentSalvageField(context, location, seed);
+  context.economy.wreckClaims.rememberField(field);
+  return field;
+}
+
 /** Reuse the very same wreck objects in every visit; never re-roll combat salvage. */
 export function fieldWithCareerCombatWrecks(
   context: ControllerRuntimeContext,
@@ -42,10 +55,7 @@ export function fieldWithCareerCombatWrecks(
       wrecks: combatWrecks,
     };
   } else if (location.activities.salvage || combatWrecks.length) {
-    field = location.activities.salvage
-      ? permanentSalvageField(context, location, seed)
-      : generateSalvageField(location.id, seed, location.dangerLevel);
-    if (location.activities.salvage) context.economy.wreckClaims.rememberField(field);
+    field = regularField(context, location, seed);
   }
   if (field && field.wrecks !== combatWrecks) {
     const known = new Set(field.wrecks.map((wreck) => wreck.id));
