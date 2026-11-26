@@ -123,6 +123,7 @@ function npcOperationsPolicy(
       prisoners.has(npc.id) ||
       npc.id.startsWith('security-drone:') ||
       (npc.role === 'miner' &&
+        npc.workLocationId === npc.locationId &&
         npc.autonomy?.phase === 'working' &&
         narrowsSector.locations.some(
           (entry) => entry.id === npc.locationId && entry.activities.mine
