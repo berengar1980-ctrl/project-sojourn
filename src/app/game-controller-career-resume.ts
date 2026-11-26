@@ -59,7 +59,13 @@ function careerDependencies(
               (npc) => npc.job === 'miner' && npc.workLocationId === location.id
             ),
             getAsteroids: () => instance.asteroids,
-            mine: (npc, id, amount) => commerce.commerce.economy.npcs.mineLocal(npc, id, amount),
+            mine: (npc, id, amount, asteroidId) =>
+              commerce.commerce.economy.npcs.mineLocal(
+                npc,
+                id,
+                amount,
+                asteroidId ? JSON.stringify([location.id, asteroidId]) : undefined
+              ),
             onAsteroidScanned: (npc, asteroid) => {
               if (binding.context) {
                 registerNpcAsteroidClaim(binding.context, location, npc, asteroid);
