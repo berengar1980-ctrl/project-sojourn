@@ -64,6 +64,7 @@ export interface NpcLocalMiningOptions {
   readonly width: number;
   readonly height: number;
   readonly miners: readonly SectorNpcState[];
+  readonly dynamicRoster?: boolean;
   readonly initialPosition?: (id: string) => WorldPoint | undefined;
   /** Disable internal contact solving when a shared world handles all NPC collisions. */
   readonly resolveLocalCollisions?: boolean;
@@ -164,6 +165,7 @@ export function chooseAsteroid(
     (asteroid) =>
       asteroid.kind === 'resource' &&
       !occupied.has(asteroid.id) &&
+      asteroid.scanLevel === 'analyzed' &&
       asteroid.deposits.some(
         (deposit) =>
           deposit.oreRemaining > 0 &&
