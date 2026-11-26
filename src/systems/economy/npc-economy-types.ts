@@ -1,6 +1,7 @@
 import type { EconomyResourceId, NpcEconomyState } from '../../core/economy-types';
 
 import { type EconomyPoint } from './npc-resource-side-trade';
+import type { NpcWorkPlanning } from './npc-work-planning';
 
 export interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
@@ -39,6 +40,7 @@ export interface NpcEconomyService {
     requestedQuantity: number,
     sourceId?: string
   ): number;
+  setWorkPlanning(planning: NpcWorkPlanning): void;
   setPhysicalSalvageWorker(worker: (npc: NpcEconomyState, day: number) => void): void;
   dispatchLoadedWorker(npc: NpcEconomyState): boolean;
   tick(deltaSeconds: number): void;
@@ -55,6 +57,7 @@ export interface NpcTravelOperatingQuote {
 }
 
 export interface NpcEconomyServiceOptions {
+  readonly workPlanning?: NpcWorkPlanning;
   readonly isManaged?: (npc: NpcEconomyState) => boolean;
   readonly physicalSalvageWorker?: (npc: NpcEconomyState, day: number) => void;
   readonly canTrade?: (npc: NpcEconomyState, locationId: string, resourceId: string) => boolean;
