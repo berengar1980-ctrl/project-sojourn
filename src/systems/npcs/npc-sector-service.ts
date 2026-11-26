@@ -210,6 +210,7 @@ class SectorService implements NpcSectorService {
     reason: string | undefined = 'Flug'
   ): boolean => {
     if (
+      isSecurityDrone(npc.id) ||
       npc.travel ||
       npc.combatMovement ||
       destinationId === npc.locationId ||
@@ -245,6 +246,7 @@ class SectorService implements NpcSectorService {
   };
   requestPatrol = (npc: SectorNpcState): boolean => {
     if (
+      isSecurityDrone(npc.id) ||
       (npc.job !== 'patrol' && !npc.pirate) ||
       npc.travel ||
       npc.combatMovement ||
