@@ -76,6 +76,20 @@ export function recordPlayerCombatHull(
   context.shipOperations.recordHull(ship, snapshot.attacker.hullHp, runtime.hullMaxHp);
 }
 
+/** The captain explicitly calls a paid remote tanker while stationary on the map. */
+export function emergencyRefuelPlayer(context: ControllerRuntimeContext): void {
+  if (context.state.mode !== 'star-map' || context.navigation.getSnapshot().isTravelling) return;
+  const quote = context.shipOperations.emergencyRefuel(context.state.activeShip);
+  if (quote.units <= 0) {
+    context.systemLog.write('NOTBETANKUNG > KEINE BETANKUNG MÖGLICH · TANK ODER CREDITS');
+    return;
+  }
+  context.fuelJourney.cancel();
+  context.systemLog.write(
+    'NOTBETANKUNG > +' + quote.units.toFixed(1) + ' E · -' + quote.cost + ' CR'
+  );
+}
+
 /** Docking and docked market transactions share the same automatic top-up. */
 export function refuelAtPort(context: ControllerRuntimeContext): void {
   const locationId = context.navigation.getSnapshot().currentLocationId;
