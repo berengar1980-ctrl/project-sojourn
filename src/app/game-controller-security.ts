@@ -1,3 +1,5 @@
+import { pirateHuntAllowedAt } from '../systems/npcs/npc-pirate-classes';
+import { narrowsSector } from '../data/maps/narrows-sector';
 import { fieldBattleMotion } from './game-controller-field-combat-pose';
 import type { SectorNpcState } from '../core/npc-types';
 import { distance } from '../systems/local-space/local-space-motion';
@@ -88,8 +90,12 @@ export function tickFieldPirates(
   const space =
     state.localSpace?.getSnapshot().instance === field.instance ? state.localSpace : null;
   const traffic = field.pirates;
+  const location = narrowsSector.locations.find((entry) => entry.id === locationId);
   const pirates = economy.sectorNpcs.npcs.filter(
-    (npc) => localArmedTraffic(npc) && npc.locationId === locationId
+    (npc) =>
+      localArmedTraffic(npc) &&
+      npc.locationId === locationId &&
+      (!location || pirateHuntAllowedAt(npc, location))
   );
   // Keep the active duel defender rendered, even when strategic combat marks
   // it as combatMovement. Other combatants still use normal sector transitions.
