@@ -1,3 +1,5 @@
+import type { SalvageLocalSpaceService, SalvageRuntimeOptions } from './salvage-local-space-types';
+export type { SalvageLocalSpaceService } from './salvage-local-space-types';
 import {
   clampPoint,
   createInitialSalvageShip,
@@ -18,9 +20,7 @@ import {
   salvageOperationProgress,
 } from './salvage-operation-progress';
 import { createLocalSpaceShipSystems } from '../local-space/local-space-ship-systems';
-import type { ShipHardpoints } from '../../core/ship-types';
 import type {
-  SalvageEventResolution,
   SalvageLocalPhase,
   SalvageLocalSpaceSnapshot,
   SalvageWreck,
@@ -30,58 +30,16 @@ import type { EconomyResourceId } from '../../core/economy-types';
 import type { WorldPoint } from '../../core/world-types';
 import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
 import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
-import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import { createSalvageEventController } from './salvage-event-service';
 import {
   createSalvageFieldService,
-  type SalvageComponentCollector,
   type SalvageFieldService,
-  type SalvageResourceCollector,
 } from './salvage-field-service';
 
 export { DISTRESS_DIAGNOSIS_SECONDS } from './salvage-operation-progress';
 const COMPONENT_CYCLE_MULTIPLIER = 1.45;
 
 type ApproachPurpose = 'inspect' | 'diagnose' | 'strip' | 'component';
-
-export interface SalvageLocalSpaceService {
-  getSnapshot(): SalvageLocalSpaceSnapshot;
-  selectWreck(wreckId: string | null): SalvageLocalSpaceSnapshot;
-  startLongRangeScan(): SalvageLocalSpaceSnapshot;
-  recordShipShieldContact(normal: WorldPoint, overlap: number): void;
-  startNavigation(target: WorldPoint): SalvageLocalSpaceSnapshot;
-  startInspect(wreckId: string): SalvageLocalSpaceSnapshot;
-  startDistressDiagnosis(wreckId: string): SalvageLocalSpaceSnapshot;
-  startStrip(wreckId: string, resourceId: EconomyResourceId): SalvageLocalSpaceSnapshot;
-  startComponentRecovery(wreckId: string): SalvageLocalSpaceSnapshot;
-  resolveSalvageEvent(choiceId: string): SalvageLocalSpaceSnapshot['lastEventResolution'];
-  cancelOperation(): SalvageLocalSpaceSnapshot;
-  syncCombatPose(
-    position: WorldPoint,
-    headingRadians: number,
-    speed: number
-  ): SalvageLocalSpaceSnapshot;
-  tick(deltaSeconds: number, combatOwnsBodies?: boolean): SalvageLocalSpaceSnapshot;
-}
-
-interface SalvageRuntimeOptions {
-  readonly field: SalvageLocalSpaceSnapshot['field'];
-  readonly setup: ShipSalvageSetup;
-  readonly crewSkill: number;
-  readonly collect: SalvageResourceCollector;
-  readonly onWreckEventResolved?: (
-    wreck: SalvageWreck,
-    result: SalvageEventResolution
-  ) => SalvageEventResolution;
-  readonly collectComponent?: SalvageComponentCollector;
-  readonly approachSpeed: number;
-  readonly turnRateMultiplier?: number;
-  readonly hardpoints?: ShipHardpoints;
-  readonly shipLengthMeters?: number;
-  readonly scanAvailable?: boolean;
-  readonly sensorModifier?: number;
-  readonly sensorCrewSkill?: number;
-}
 
 class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private readonly salvage: SalvageFieldService;

@@ -1,3 +1,4 @@
+import { resolvePirateCollisions, separateCoincidentSpawn, type PirateRuntime } from './npc-local-pirate-geometry';
 import { DRONE_PATROL_SPEED, isSecurityDrone } from '../../core/security-drone';
 import { resolveFieldDebrisContacts } from '../local-space/field-debris-contact';
 import { createShieldWorldGeometry } from '../local-space/local-space-collision';
@@ -23,7 +24,6 @@ import { edgePoint, hashId } from './npc-mining-targets';
 import {
   moveFieldShip,
   type FieldRouteShip,
-  type FieldRouteState,
 } from '../navigation/field-ship-routing';
 import {
   stageLocalPirateCheckpoint,
@@ -40,67 +40,6 @@ export interface LocalPirateContact {
   readonly headingRadians: number;
   readonly speed: number;
 }
-interface PirateRuntime {
-  readonly npcId: string;
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
-  awaitingCombat: boolean;
-  routeState?: FieldRouteState;
-}
-
-/**
- * A pirate must physically arrive in the sector field before appearing here.
- * Player attacks use the existing local AI battle; miner raids use background
- * strategic combat with the same asteroid arena.
- */
-function resolvePirateCollisions(
-  position: WorldPoint,
-  asteroids: readonly LocalAsteroid[],
-  width: number,
-  height: number
-): WorldPoint {
-  let result = { ...position };
-  for (const rock of asteroids) {
-    if (!rock.routeBlocking) continue;
-    const dx = result.x - rock.position.x;
-    const dy = result.y - rock.position.y;
-    const gap = Math.hypot(dx, dy);
-    const minimum = rock.radius + 35;
-    if (gap >= minimum) continue;
-    const ux = gap > 0 ? dx / gap : 1;
-    const uy = gap > 0 ? dy / gap : 0;
-    result = {
-      x: rock.position.x + ux * minimum,
-      y: rock.position.y + uy * minimum,
-    };
-  }
-  return { x: Math.max(0, Math.min(width, result.x)), y: Math.max(0, Math.min(height, result.y)) };
-}
-
-/** Resolve only exact overlapping spawn poses. Ordinary traffic separation
- * remains with the shared route planner; this is never run on duel ships.
- */
-function separateCoincidentSpawn(
-  pirate: PirateRuntime,
-  others: ReadonlyMap<string, PirateRuntime>
-): void {
-  for (const other of others.values()) {
-    if (other.npcId === pirate.npcId || other.awaitingCombat) continue;
-    const gap = Math.hypot(
-      pirate.position.x - other.position.x,
-      pirate.position.y - other.position.y
-    );
-    if (gap > 1) continue;
-    const heading = (hashId(pirate.npcId + ':' + other.npcId) % 6283) / 1000;
-    pirate.position = {
-      x: other.position.x + Math.cos(heading) * 100,
-      y: other.position.y + Math.sin(heading) * 100,
-    };
-    delete pirate.routeState;
-  }
-}
-
 export class LocalPirateTraffic {
   private readonly ships = new Map<string, PirateRuntime>();
   private readonly combatReturnPositions = new Map<string, WorldPoint>();
