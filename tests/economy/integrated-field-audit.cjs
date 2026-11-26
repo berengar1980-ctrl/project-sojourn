@@ -5,15 +5,13 @@ const assert = require('node:assert/strict');
 function createIntegratedFieldAudit(load, world, physical, npcs, sector, player) {
   const { AsteroidClaimRegistry } = load('src/systems/operations/asteroid-claim-registry.ts');
   const { WreckClaimRegistry } = load('src/systems/operations/wreck-claim-registry.ts');
-  const { createSectorSalvageEventService } = load(
-    'src/systems/salvage/sector-salvage-event-service.ts'
-  );
+  const eventModule = load('src/systems/salvage/sector-salvage-event-service.ts');
+  const { createSectorSalvageEventService } = eventModule;
   const { createNpcSalvageEventService } = load('src/systems/npcs/npc-salvage-event-service.ts');
   const { createShipyardResearchService } = load('src/systems/ships/index.ts');
   const { createSalvageEconomyService } = load('src/systems/economy/salvage-economy-service.ts');
-  const { fieldWorldFor, balanceDailyAsteroids } = load(
-    'src/app/game-controller-field-world-bridge.ts'
-  );
+  const bridge = load('src/app/game-controller-field-world-bridge.ts');
+  const { fieldWorldFor, balanceDailyAsteroids } = bridge;
   const { recordCareerCombatWrecks } = load('src/app/game-controller-combat-wrecks.ts');
   const { permanentSalvageField } = load('src/app/game-controller-salvage-stocks.ts');
   const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
@@ -103,7 +101,8 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
         const field = permanentSalvageField(context, location);
         for (const wreck of field.wrecks) {
           for (const deposit of wreck.resources) {
-            const stock = physical.getPhysicalStock(deposit.resourceId, salvageStockId(field, wreck));
+            const source = salvageStockId(field, wreck);
+            const stock = physical.getPhysicalStock(deposit.resourceId, source);
             assert.equal(stock, deposit.remainingAmount);
           }
         }
