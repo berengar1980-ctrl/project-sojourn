@@ -215,6 +215,7 @@ function printReport(elapsedDays) {
   }
   assert.equal(ships.length, 33);
   assert.equal(report.find((group) => group.role === 'pirate').ships, 9);
+  const workers = ships.filter((ship) => ship.job === 'miner' || ship.job === 'salvager');
   console.log(
     JSON.stringify({
       days: elapsedDays,
@@ -231,9 +232,7 @@ function printReport(elapsedDays) {
         externalFunding: population.externalFunding,
       },
       report,
-      workerStatus: integrated
-        ? ships.filter((ship) => ship.job === 'miner' || ship.job === 'salvager').map(workerStatus)
-        : [],
+      workerStatus: integrated ? workers.map(workerStatus) : [],
       resourceBalance: physical.getResourceBalance(),
     })
   );
