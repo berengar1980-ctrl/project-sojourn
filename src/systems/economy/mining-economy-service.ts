@@ -2,6 +2,7 @@ import type { EconomyResourceId, PlayerEconomyState } from '../../core/economy-t
 
 interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
+  fundPhysicalStock?(resourceId: string, sourceId: string, amount: number): number;
   getPhysicalStock?(resourceId: string, sourceId: string): number | undefined;
   withdrawPhysicalStock?(resourceId: string, sourceId: string, amount: number): number;
 }
@@ -26,6 +27,7 @@ function cargoUsed(player: PlayerEconomyState): number {
 }
 
 export interface MiningEconomyService {
+  fundDiscoveredOre?(resourceId: string, sourceId: string, amount: number): number;
   collect(
     resourceId: EconomyResourceId,
     requestedQuantity: number,
@@ -44,6 +46,9 @@ export function createMiningEconomyService(
   } = {}
 ): MiningEconomyService {
   return {
+    fundDiscoveredOre(resourceId, sourceId, amount) {
+      return allocator.fundPhysicalStock?.(resourceId, sourceId, amount) ?? 0;
+    },
     collect(resourceId, requestedQuantity, cargoCapacityTons, originId, sourceId) {
       const requested = finiteInteger(requestedQuantity);
       const free = Math.max(0, finiteInteger(cargoCapacityTons) - cargoUsed(cargo.player));
