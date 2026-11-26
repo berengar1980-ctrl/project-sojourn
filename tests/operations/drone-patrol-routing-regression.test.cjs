@@ -57,11 +57,15 @@ const { sectorPorts } = load('src/data/ports/sector-ports.ts');
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 const { registerSecurityDroneCombatants } = load('src/app/game-controller-economy.ts');
 const { createEconomyMarketService } = load('src/systems/economy/market-service.ts');
-const { createEconomySimulationService } = load('src/systems/economy/economy-simulation-service.ts');
+const { createEconomySimulationService } = load(
+  'src/systems/economy/economy-simulation-service.ts'
+);
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
 const { createSalvageEconomyService } = load('src/systems/economy/salvage-economy-service.ts');
 const { permanentSalvageField } = load('src/app/game-controller-salvage-stocks.ts');
-const location = narrowsSector.locations.find((entry) => entry.activities.salvage && entry.dangerLevel <= 1);
+const location = narrowsSector.locations.find(
+  (entry) => entry.activities.salvage && entry.dangerLevel <= 1
+);
 assert(location);
 const roster = createSectorNpcEconomyStates();
 registerSecurityDroneCombatants(roster);

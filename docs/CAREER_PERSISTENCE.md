@@ -1408,3 +1408,9 @@ Wrackereignisse: zusätzlich gefundene Ressourcen werden aus dem bestehenden
 Pool finanziert; Verluste werden sofort gebucht. Optionale `capacities` je
 Wrack erhalten die tatsächlichen Lagerkapazitäten und neue Ressourcen-IDs beim
 Laden. Alte Spielstände ohne `capacities` bleiben lesbar.
+
+Die ausgelagerten Module für NPC-Verfolgung, NPC-Wirtschaftsvalidierung,
+Piratengeometrie und Bergungs-Serviceverträge besitzen keine eigenen
+Save-Register. Die bestehenden autoritativen NPC-, Kampf- und Feldzustände
+bleiben unverändert zuständig. Alle fünf neuen Domainmodule sind im
+Persistenz-Owner-Register einzeln klassifiziert.

@@ -1,5 +1,9 @@
 import type { ShipHardpoints } from '../../core/ship-types';
-import type { SalvageEventResolution, SalvageLocalSpaceSnapshot, SalvageWreck } from '../../core/salvage-types';
+import type {
+  SalvageEventResolution,
+  SalvageLocalSpaceSnapshot,
+  SalvageWreck,
+} from '../../core/salvage-types';
 import type { EconomyResourceId } from '../../core/economy-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
@@ -43,4 +47,3 @@ export interface SalvageRuntimeOptions {
   readonly sensorModifier?: number;
   readonly sensorCrewSkill?: number;
 }
-

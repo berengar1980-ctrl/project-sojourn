@@ -278,6 +278,26 @@
     "src/systems/economy/physical-reserve-policy.ts": {
       "mode": "derived",
       "reason": "Deterministic daily budget transfers operate on the persisted resource pools; the policy owns no independent state."
+    },
+    "src/systems/combat/star-map-npc-chases.ts": {
+      "mode": "transient",
+      "reason": "Updates the existing engagement runtime chase map and sector NPC combat movement; creates no independent state or checkpoint owner."
+    },
+    "src/systems/economy/npc-economy-checkpoint.ts": {
+      "mode": "derived",
+      "reason": "Validates the existing NPC economy checkpoint and identity set without owning or mutating runtime state."
+    },
+    "src/systems/npcs/npc-local-pirate-geometry.ts": {
+      "mode": "derived",
+      "reason": "Computes local collision and spawn separation using existing traffic poses; owns no independent saved state."
+    },
+    "src/systems/npcs/npc-local-salvage-types.ts": {
+      "mode": "derived",
+      "reason": "Type-only contracts for existing physical salvage worker state and options; the wreck claim registry retains checkpoint ownership."
+    },
+    "src/systems/salvage/salvage-local-space-types.ts": {
+      "mode": "derived",
+      "reason": "Type-only contracts for the existing salvage scene service and runtime options; no separate runtime or checkpoint authority."
     }
   }
 }

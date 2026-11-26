@@ -23,4 +23,3 @@ export function validateNpcEconomyCheckpoint(
     throw new Error('NPC economy checkpoint identity mismatch');
   }
 }
-

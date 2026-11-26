@@ -6,7 +6,10 @@ import {
 } from './game-controller-salvage-stocks';
 import { installNpcWorkPlanning, reviewNpcMiningClaims } from './game-controller-npc-work-planning';
 import { balanceAsteroidStocks } from './game-controller-asteroid-stocks';
-import { advanceFieldWreckLifetime, advanceRemainingWreckMotion } from './game-controller-field-wreck-lifecycle';
+import {
+  advanceFieldWreckLifetime,
+  advanceRemainingWreckMotion,
+} from './game-controller-field-wreck-lifecycle';
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { LocalSpaceInstance } from '../core/local-space-types';
 import type { SectorNpcState } from '../core/npc-types';
@@ -482,4 +485,3 @@ export function fieldEngagementHooks(get: () => ControllerRuntimeContext | null)
     fieldWitness: (...args: Parameters<FieldWitness>) => fieldWitnessFor(get(), ...args),
   };
 }
-

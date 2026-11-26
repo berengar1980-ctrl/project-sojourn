@@ -47,7 +47,6 @@ const PLAYER_ID = 'player';
 const NPC_ATTACK_SCAN_RANGE = 650;
 const FLEE_GAIN_REQUIRED = 520;
 
-
 function engagementNpc(runtime: EngagementRuntime, id: string): SectorNpcState | null {
   return runtime.options.sectorNpcs.npcs.find((npc) => npc.id === id) ?? null;
 }

@@ -35,7 +35,11 @@ function releaseAbandonedChase(
 
 export function updateNpcChases(
   runtime: EngagementRuntime,
-  beginBackgroundCombat: (runtime: EngagementRuntime, attacker: SectorNpcState, target: SectorNpcState) => void
+  beginBackgroundCombat: (
+    runtime: EngagementRuntime,
+    attacker: SectorNpcState,
+    target: SectorNpcState
+  ) => void
 ): void {
   for (const [attackerId, chase] of [...runtime.npcChases]) {
     const attacker = engagementNpc(runtime, attackerId);
@@ -75,4 +79,3 @@ export function updateNpcChases(
     }
   }
 }
-

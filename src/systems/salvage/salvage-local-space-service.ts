@@ -31,10 +31,7 @@ import type { WorldPoint } from '../../core/world-types';
 import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
 import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
 import { createSalvageEventController } from './salvage-event-service';
-import {
-  createSalvageFieldService,
-  type SalvageFieldService,
-} from './salvage-field-service';
+import { createSalvageFieldService, type SalvageFieldService } from './salvage-field-service';
 
 export { DISTRESS_DIAGNOSIS_SECONDS } from './salvage-operation-progress';
 const COMPONENT_CYCLE_MULTIPLIER = 1.45;

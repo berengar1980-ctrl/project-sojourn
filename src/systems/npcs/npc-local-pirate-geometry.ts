@@ -63,4 +63,3 @@ export function separateCoincidentSpawn(
     delete pirate.routeState;
   }
 }
-

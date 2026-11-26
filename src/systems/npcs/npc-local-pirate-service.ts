@@ -1,4 +1,8 @@
-import { resolvePirateCollisions, separateCoincidentSpawn, type PirateRuntime } from './npc-local-pirate-geometry';
+import {
+  resolvePirateCollisions,
+  separateCoincidentSpawn,
+  type PirateRuntime,
+} from './npc-local-pirate-geometry';
 import { DRONE_PATROL_SPEED, isSecurityDrone } from '../../core/security-drone';
 import { resolveFieldDebrisContacts } from '../local-space/field-debris-contact';
 import { createShieldWorldGeometry } from '../local-space/local-space-collision';
@@ -21,10 +25,7 @@ import {
   rivalPirateGroups,
 } from './npc-combat-ai';
 import { edgePoint, hashId } from './npc-mining-targets';
-import {
-  moveFieldShip,
-  type FieldRouteShip,
-} from '../navigation/field-ship-routing';
+import { moveFieldShip, type FieldRouteShip } from '../navigation/field-ship-routing';
 import {
   stageLocalPirateCheckpoint,
   type LocalPirateCheckpoint,
@@ -338,7 +339,9 @@ export class LocalPirateTraffic {
           : distance(contact.position) < 650
       )
       .sort((a, b) => distance(a.position) - distance(b.position));
-    const target = visible.find((contact) => !npcs.find((npc) => npc.id === contact.npcId)?.combatMovement) ?? visible[0];
+    const target =
+      visible.find((contact) => !npcs.find((npc) => npc.id === contact.npcId)?.combatMovement) ??
+      visible[0];
     if (target && distance(target.position) <= fieldInterceptRange(ship.npcId, false)) {
       // The fleet coordinator will join the existing fight from this live pose.
       if (npcs.find((npc) => npc.id === target.npcId)?.combatMovement?.mode === 'engaged') return;

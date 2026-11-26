@@ -56,4 +56,3 @@ export interface NpcLocalSalvageOptions {
   readonly getPlayerShipState?: () => LocalShipState | undefined;
   readonly onPlayerShieldContact?: (normal: WorldPoint, overlap: number) => void;
 }
-

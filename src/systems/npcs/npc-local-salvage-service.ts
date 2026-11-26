@@ -1,10 +1,17 @@
-import type { LocalNpcSalvagerState, NpcLocalSalvageService, NpcLocalSalvageOptions } from './npc-local-salvage-types';
-export type { LocalNpcSalvagePhase, LocalNpcSalvagerState, NpcLocalSalvageService, NpcLocalSalvageOptions } from './npc-local-salvage-types';
+import type {
+  LocalNpcSalvagerState,
+  NpcLocalSalvageService,
+  NpcLocalSalvageOptions,
+} from './npc-local-salvage-types';
+export type {
+  LocalNpcSalvagePhase,
+  LocalNpcSalvagerState,
+  NpcLocalSalvageService,
+  NpcLocalSalvageOptions,
+} from './npc-local-salvage-types';
 import { salvageStockId } from '../salvage/salvage-stock-id';
 import { salvageDroneObstacleAsteroids } from '../salvage/salvage-patrol-geometry';
-import {
-  moveFieldShip,
-} from '../navigation/field-ship-routing';
+import { moveFieldShip } from '../navigation/field-ship-routing';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
