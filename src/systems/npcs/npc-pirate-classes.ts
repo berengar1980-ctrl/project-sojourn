@@ -27,21 +27,9 @@ export function canPirateOperateAt(pirate: SectorNpcState, danger: number): bool
 }
 
 export function worldDangerAt(world: WorldMap, point: WorldPoint): 0 | 1 | 2 | 3 {
-  let danger: 0 | 1 | 2 | 3 = fixedDangerAtPoint(
-    world.regions,
-    point,
-    world.defaultDangerLevel ?? 0
-  );
-  // Location danger is authoritative near its real berth, even between region circles.
-  for (const location of world.locations) {
-    if (
-      Math.hypot(point.x - location.position.x, point.y - location.position.y) <
-      Math.max(125, location.radius * 2.5)
-    ) {
-      danger = location.dangerLevel;
-    }
-  }
-  return danger as 0 | 1 | 2 | 3;
+  // The map and route planner share this geographic authority. Location centres
+  // are validated against it by the sector consistency regression.
+  return fixedDangerAtPoint(world.regions, point, world.defaultDangerLevel ?? 0);
 }
 
 export function pirateHuntAllowedAt(
