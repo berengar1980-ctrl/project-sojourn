@@ -6,6 +6,7 @@ import {
 } from '../systems/persistence/career-full-session';
 import { captureControllerCustody } from './game-controller-law-enforcement';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
+import { captureSalvageSecurity } from './game-controller-salvage-drone-world';
 import { captureControllerDayElapsed } from './game-controller-events';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 
@@ -18,6 +19,7 @@ export function captureControllerCareer(context: ControllerRuntimeContext): Care
   const custody = captureControllerCustody(context);
   const mountedSalvage = state.salvageScene?.getField();
   if (mountedSalvage) economy.wreckClaims.rememberField(mountedSalvage);
+  captureSalvageSecurity(context);
   const session: StagedFullCareerSession = {
     profile: state.playerProfile,
     controllerSecondsIntoDay: captureControllerDayElapsed(context),
