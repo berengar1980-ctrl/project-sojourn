@@ -5,6 +5,8 @@ import type {
   StrategicCombatSnapshot,
 } from '../systems/combat/strategic-combat-types';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import { backgroundSalvagePatrol } from './game-controller-salvage-drone-world';
+import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { addDestroyedShipWreck } from '../systems/salvage/combat-destruction-wreck';
 import { combatBufferTarget } from '../systems/economy/physical-reserve-policy';
@@ -120,7 +122,8 @@ export function recordCareerCombatWrecks(
     }
   }
   world.registerCombatWrecks(locationId, created);
-  const liveField = context.state.salvageScene?.getField();
+  const mounted = context.state.salvageScene?.getField();
+  const liveField = mounted?.sourceLocationId === locationId ? mounted : backgroundSalvagePatrol(context, locationId)?.field;
   if (liveField?.sourceLocationId === locationId) {
     const ids = new Set(liveField.wrecks.map((wreck) => wreck.id));
     for (const wreck of created) {
@@ -128,6 +131,7 @@ export function recordCareerCombatWrecks(
       liveField.wrecks.push(wreck);
       ids.add(wreck.id);
     }
+    invalidateSalvagePhysics(liveField);
   }
   for (const wreck of created) {
     context.systemLog.write('BERGUNG > NEUES KAMPFWRACK: ' + wreck.name.toUpperCase());
