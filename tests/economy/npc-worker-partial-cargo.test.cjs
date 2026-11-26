@@ -12,7 +12,8 @@ const { economyResources } = load('src/data/economy/economy-resources.ts');
 const { sectorPorts } = load('src/data/ports/sector-ports.ts');
 const { createNpcEconomyService } = load('src/systems/economy/npc-economy-service.ts');
 const { observeNpcMarket } = load('src/systems/economy/npc-market-knowledge.ts');
-const { chooseWorkerAction } = load('src/systems/economy/npc-trade-actions.ts');
+const tradeActions = load('src/systems/economy/npc-trade-actions.ts');
+const { chooseWorkerAction, chooseTraderAction } = tradeActions;
 
 for (const role of ['miner', 'salvager']) {
   const npc = createSectorNpcEconomyStates().find((entry) => entry.job === role);
@@ -26,6 +27,7 @@ for (const role of ['miner', 'salvager']) {
   const economy = createNpcEconomyService(markets, allocator, economyResources, [npc]);
   npc.locationId = npc.workLocationId;
   npc.marketIntel = {};
+  markets.getEntry(port, 'ferrite').price = 100000;
   observeNpcMarket(npc, markets, port, 0);
   npc.cargo = { ferrite: 4, steel: 3 };
   assert(npc.cargoCapacity > 7);
@@ -49,3 +51,31 @@ for (const role of ['miner', 'salvager']) {
   assert.equal(npc.autonomy.phase, 'unloading');
 }
 console.log('PASS partial and mixed worker cargo is sold before starting another extraction trip');
+
+for (const role of ['miner', 'salvager', 'freighter', 'patrol']) {
+  const npc = createSectorNpcEconomyStates().find((entry) => entry.job === role);
+  assert(npc);
+  const markets = createEconomyMarketService(sectorPorts, economyResources);
+  const allocator = { createMinedResource: () => 0, allocatePhysicalResource: () => 0 };
+  const service = createNpcEconomyService(markets, allocator, economyResources, [npc]);
+  npc.cargo = { ferrite: 10, steel: 1 };
+  npc.locationId = 'haven';
+  npc.marketIntel = {
+    haven: {
+      locationId: 'haven',
+      observedDay: 0,
+      entries: {
+        ferrite: { resourceId: 'ferrite', stock: 0, price: 1 },
+        steel: { resourceId: 'steel', stock: 0, price: 10000 },
+      },
+    },
+  };
+  npc.autonomy.phase = 'ready';
+  npc.autonomy.lastLocationId = npc.locationId;
+  if (role === 'freighter') chooseTraderAction(npc, markets, economyResources, {}, 0);
+  else if (role === 'patrol') service.tick(0.25);
+  else chooseWorkerAction(npc, markets, economyResources, {}, 0);
+  assert.equal(npc.autonomy.phase, 'unloading', role);
+  assert.equal(npc.autonomy.pendingSaleResourceId, 'steel', role);
+}
+console.log('PASS all four civilian roles compare sale value across mixed cargo');
