@@ -35,7 +35,7 @@ export function careerSalvageDrone(
 ): AsteroidSecurityDrone {
   const active = worlds(context);
   const existing = active.get(field.sourceLocationId);
-  if (existing) {
+  if (existing?.field.seed === field.seed) {
     active.set(field.sourceLocationId, { field, drone: existing.drone });
     return existing.drone;
   }
@@ -187,7 +187,7 @@ export function careerSalvagePirates(
   field: SalvageField
 ): LocalPirateTraffic {
   const traffic = context.economy.localPirates.get(field.sourceLocationId);
-  if (traffic?.exportState().seed === field.seed) return traffic;
+  if (traffic?.matchesField(field.width, field.height, field.seed)) return traffic;
   const saved = context.economy.wreckClaims.securityEscortCheckpoint(field.sourceLocationId);
   const npcs = context.economy.sectorNpcs.npcs;
   const valid = saved && saved.seed === field.seed && saved.width === field.width &&
