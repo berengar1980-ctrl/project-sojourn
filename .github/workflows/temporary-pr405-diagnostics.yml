@@ -35,6 +35,9 @@ jobs:
       - name: Persistence architecture
         if: always()
         run: npm run persistence:check
+      - name: Campaign preset parity
+        if: always()
+        run: node tests/combat/combat-campaign-preset-parity.test.cjs
       - name: Physical ledger regression
         if: always()
         run: node tests/economy/physical-resource-horizons.test.cjs

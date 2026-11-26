@@ -265,7 +265,7 @@ function duelSetups(
   ships: ReturnType<typeof getAllShipDefinitions>
 ) {
   return drafts.map((draft, index) =>
-    duelCombatant(index, draft, ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!)
+    duelCombatant(index, draft, getShipDefinition(draft.shipId) ?? ships[0]!)
   );
 }
 
