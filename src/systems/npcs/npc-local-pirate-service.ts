@@ -111,6 +111,10 @@ export class LocalPirateTraffic {
     private readonly seed: number
   ) {}
 
+  matchesField(width: number, height: number, seed: number): boolean {
+    return this.width === width && this.height === height && this.seed === seed;
+  }
+
   /** Save authoritative local poses, pending engagements and combat return locations. */
   exportState(): LocalPirateCheckpoint {
     return {
