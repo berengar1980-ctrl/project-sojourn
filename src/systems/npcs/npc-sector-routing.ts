@@ -1,3 +1,4 @@
+import { fieldSecurityDroneCount, isSecurityDrone } from '../../core/security-drone';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { RouteThreatContact } from '../navigation/route-planner';
 import { pirateHuntAllowedAt, pirateThreatStrength } from './npc-pirate-classes';
@@ -37,8 +38,7 @@ export function npcRouteThreats(
 ): RouteThreatContact[] {
   if (self.pirate || self.job === 'patrol') return [];
   return npcs
-    .filter((npc) => npc.id !== self.id && npc.hullHp > 0 && (npc.pirate || npc.job === 'patrol'))
-    .slice(0, 12)
+    .filter((npc) => npc.id !== self.id && activeContact(npc) && (npc.pirate || npc.job === 'patrol'))
     .map((npc) => ({
       position: livePosition(npc),
       kind: npc.pirate ? ('pirate' as const) : ('patrol' as const),
@@ -99,6 +99,10 @@ function pirateHomeId(npc: SectorNpcState): string {
   return npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
 }
 
+function activeContact(npc: SectorNpcState): boolean {
+  return npc.hullHp > 0 && npc.retiredUntilDay === undefined && (npc.combatRecoverySeconds ?? 0) <= 0;
+}
+
 function pirateTrafficAt(
   location: WorldPoint,
   npcs: readonly SectorNpcState[],
@@ -110,6 +114,7 @@ function pirateTrafficAt(
   let rivals = 0;
   let patrols = 0;
   for (const entry of npcs) {
+    if (!activeContact(entry)) continue;
     const point = livePosition(entry);
     const distance = Math.hypot(point.x - location.x, point.y - location.y);
     const proximity = distance < 520 ? 1 : distance < 1000 ? 0.4 : 0;
@@ -117,7 +122,7 @@ function pirateTrafficAt(
     if (entry.pirate) {
       if (entry.id !== pirateId) rivals += proximity;
     } else if (entry.job === 'patrol') {
-      patrols += proximity;
+      patrols += proximity * pirateThreatStrength(entry);
     } else if (
       entry.hullHp > 0 &&
       !entry.combatMovement &&
@@ -155,7 +160,8 @@ export function pirateHuntDestination(
   const candidates = world.locations
     .filter(
       (location) =>
-        location.id !== npc.locationId &&
+        (location.id !== npc.locationId ||
+          (npc.pirateHuntZoneId === location.id && (npc.pirateHuntCycles ?? 0) > 0)) &&
         location.id !== homeId &&
         pirateHuntAllowedAt(npc, location) &&
         (location.activities.trade || location.activities.mine || location.activities.salvage)
@@ -171,8 +177,15 @@ export function pirateHuntDestination(
         npc.id
       );
       const estimatedOpportunity = traffic * 1400 + Math.min(cargoUnits, 100) * 80;
+      // Sector simulation may not instantiate local field drones until entry.
+      // Use configured coverage only when no actual field drone contacts exist.
+      const fieldDrones = npcs.filter((entry) => isSecurityDrone(entry.id) && entry.locationId === location.id);
+      const configuredCoverage = location.activities.mine || location.activities.salvage
+        ? fieldSecurityDroneCount(location.dangerLevel)
+        : 0;
+      const additionalCoverage = fieldDrones.length === 0 ? configuredCoverage : 0;
       const riskCost =
-        patrols * (1800 - npc.aggression * 9) + rivals * 450 + (1 - hullFraction) * 1400;
+        (patrols + additionalCoverage) * (1800 - npc.aggression * 9) + rivals * 450 + (1 - hullFraction) * 1400;
       const homeDistance = home
         ? Math.hypot(home.position.x - location.position.x, home.position.y - location.position.y)
         : 2000;
