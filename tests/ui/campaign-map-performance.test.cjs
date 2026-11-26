@@ -10,7 +10,7 @@ for (const [file, minInterval] of [
   ['src/ui/salvage/salvage-space-panel.ts', 100],
 ]) {
   const source = read(file);
-  const draw = source.indexOf('renderer.update(model);');
+  const draw = source.indexOf('renderer.update(model)');
   const timing = source.indexOf('performance.now();', draw);
   assert(draw >= 0 && timing > draw, file + ': canvas updates must precede HUD throttle');
   if (file.includes('star-map-panel.ts')) {
