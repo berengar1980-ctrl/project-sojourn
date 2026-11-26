@@ -1,4 +1,5 @@
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
+import type { LocalNpcSalvagerState } from '../npcs/npc-local-salvage-service';
 import type { LocalPirateCheckpoint } from '../npcs/npc-local-pirate-checkpoint';
 import type { SecurityDroneCheckpoint } from './asteroid-security-drone-checkpoint';
 
@@ -24,6 +25,7 @@ interface StoredField {
   readonly wrecks: readonly StoredWreck[];
   readonly drone?: SecurityDroneCheckpoint;
   readonly securityEscorts?: LocalPirateCheckpoint;
+  readonly workers?: readonly LocalNpcSalvagerState[];
 }
 
 export interface WreckClaimCheckpoint {
@@ -72,6 +74,9 @@ export class WreckClaimRegistry {
       ...(previous?.seed === field.seed && previous.securityEscorts
         ? { securityEscorts: structuredClone(previous.securityEscorts) }
         : {}),
+      ...(previous?.seed === field.seed && previous.workers
+        ? { workers: structuredClone(previous.workers) }
+        : {}),
       wrecks: field.wrecks.map((wreck) => ({
         id: wreck.id,
         resources: Object.fromEntries(
@@ -82,6 +87,17 @@ export class WreckClaimRegistry {
         scanLevel: wreck.scanLevel ?? 'unscanned',
       })),
     });
+  }
+
+  rememberWorkers(field: SalvageField, workers: readonly LocalNpcSalvagerState[]): void {
+    const stored = this.fields.get(field.sourceLocationId);
+    if (stored?.seed === field.seed)
+      this.fields.set(field.sourceLocationId, { ...stored, workers: structuredClone(workers) });
+  }
+
+  workerCheckpoint(field: SalvageField): readonly LocalNpcSalvagerState[] {
+    const stored = this.fields.get(field.sourceLocationId);
+    return stored?.seed === field.seed ? structuredClone(stored.workers ?? []) : [];
   }
 
   storedSeed(locationId: string): number | undefined {
@@ -192,6 +208,7 @@ export class WreckClaimRegistry {
           ...field,
           ...(field.drone ? { drone: structuredClone(field.drone) } : {}),
           ...(field.securityEscorts ? { securityEscorts: structuredClone(field.securityEscorts) } : {}),
+          ...(field.workers ? { workers: structuredClone(field.workers) } : {}),
           wrecks: field.wrecks.map((wreck) => ({
             ...wreck,
             resources: { ...wreck.resources },
@@ -213,6 +230,7 @@ export class WreckClaimRegistry {
         ...field,
         ...(field.drone ? { drone: structuredClone(field.drone) } : {}),
           ...(field.securityEscorts ? { securityEscorts: structuredClone(field.securityEscorts) } : {}),
+          ...(field.workers ? { workers: structuredClone(field.workers) } : {}),
         wrecks: field.wrecks.map((wreck) => ({
           ...wreck,
           resources: { ...wreck.resources },
