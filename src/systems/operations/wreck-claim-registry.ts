@@ -1,4 +1,5 @@
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
+import type { LocalPirateCheckpoint } from '../npcs/npc-local-pirate-checkpoint';
 import type { SecurityDroneCheckpoint } from './asteroid-security-drone-checkpoint';
 
 export interface WreckClaim {
@@ -22,6 +23,7 @@ interface StoredField {
   readonly seed: number;
   readonly wrecks: readonly StoredWreck[];
   readonly drone?: SecurityDroneCheckpoint;
+  readonly securityEscorts?: LocalPirateCheckpoint;
 }
 
 export interface WreckClaimCheckpoint {
@@ -64,9 +66,12 @@ export class WreckClaimRegistry {
       seed: field.seed,
       ...(drone
         ? { drone: structuredClone(drone) }
-        : previous?.drone
+        : previous?.seed === field.seed && previous.drone
           ? { drone: structuredClone(previous.drone) }
           : {}),
+      ...(previous?.seed === field.seed && previous.securityEscorts
+        ? { securityEscorts: structuredClone(previous.securityEscorts) }
+        : {}),
       wrecks: field.wrecks.map((wreck) => ({
         id: wreck.id,
         resources: Object.fromEntries(
@@ -92,6 +97,17 @@ export class WreckClaimRegistry {
   rememberDrone(locationId: string, checkpoint: SecurityDroneCheckpoint): void {
     const field = this.fields.get(locationId);
     if (field) this.fields.set(locationId, { ...field, drone: structuredClone(checkpoint) });
+  }
+
+  rememberSecurityEscorts(locationId: string, checkpoint: LocalPirateCheckpoint): void {
+    const field = this.fields.get(locationId);
+    if (field && field.seed === checkpoint.seed)
+      this.fields.set(locationId, { ...field, securityEscorts: structuredClone(checkpoint) });
+  }
+
+  securityEscortCheckpoint(locationId: string): LocalPirateCheckpoint | null {
+    const saved = this.fields.get(locationId)?.securityEscorts;
+    return saved ? structuredClone(saved) : null;
   }
 
   droneCheckpoint(locationId: string): SecurityDroneCheckpoint | null {
@@ -175,6 +191,7 @@ export class WreckClaimRegistry {
         {
           ...field,
           ...(field.drone ? { drone: structuredClone(field.drone) } : {}),
+          ...(field.securityEscorts ? { securityEscorts: structuredClone(field.securityEscorts) } : {}),
           wrecks: field.wrecks.map((wreck) => ({
             ...wreck,
             resources: { ...wreck.resources },
@@ -195,6 +212,7 @@ export class WreckClaimRegistry {
       this.fields.set(id, {
         ...field,
         ...(field.drone ? { drone: structuredClone(field.drone) } : {}),
+          ...(field.securityEscorts ? { securityEscorts: structuredClone(field.securityEscorts) } : {}),
         wrecks: field.wrecks.map((wreck) => ({
           ...wreck,
           resources: { ...wreck.resources },
