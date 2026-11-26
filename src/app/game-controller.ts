@@ -81,6 +81,7 @@ import {
   startPlayerFuelTravel,
   tickPlayerFuelJourney,
   refuelAtPort,
+  emergencyRefuelPlayer,
   servicedPlayerCombatant,
 } from './game-controller-ship-service';
 export type { GameController } from './game-controller-types';
@@ -141,6 +142,7 @@ function mountControllerStarMap(context: ControllerRuntimeContext): void {
       return started;
     },
     onRouteSelectionChanged: () => context.fuelJourney.cancel(),
+    onEmergencyRefuel: () => emergencyRefuelPlayer(context),
     eventById: (id) =>
       context.world.inForeignSystem()
         ? null
