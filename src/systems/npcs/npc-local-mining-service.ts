@@ -397,7 +397,12 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     const npc = runtime.byId.get(ship.npcId);
     // The duel owns this NPC's movement until its final pose is reconciled.
     if (ship.npcId === combatantId) continue;
-    if (!npc || npc.hullHp <= 0 || npc.locationId !== runtime.options.locationId) {
+    if (
+      !npc ||
+      npc.hullHp <= 0 ||
+      npc.locationId !== runtime.options.locationId ||
+      (runtime.options.dynamicRoster && (npc.travel || npc.workLocationId !== npc.locationId))
+    ) {
       runtime.combatReturnPositions.delete(ship.npcId);
       runtime.ships.splice(index, 1);
       continue;
