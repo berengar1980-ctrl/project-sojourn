@@ -4,10 +4,10 @@ import { permanentSalvageField } from './game-controller-salvage-stocks';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
-import {
-  createSalvageSecurityDrone,
-  tickSalvageSecurityDrone,
-} from './game-controller-salvage-drone';
+import { createSalvageSecurityDrone, salvageDroneBystanders } from './game-controller-salvage-drone';
+import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
+import { salvageFieldCombatArena, syncSalvageCombatField } from '../systems/combat/field-combat-arena';
+import type { WorldPoint } from '../core/world-types';
 
 interface SalvagePatrolWorld {
   readonly field: SalvageField;
@@ -47,9 +47,7 @@ export function careerSalvageDrone(
   return drone;
 }
 
-/** Restore only previously visited permanent wreck maps, not every possible
- * map at startup. Expired one-off event maps are restored on re-entry.
- */
+/** Restore known patrol poses and initialize all protected permanent salvage fields. */
 function restoreKnownPatrols(context: ControllerRuntimeContext): void {
   if (restoredWorlds.has(context)) return;
   restoredWorlds.add(context);
@@ -68,7 +66,14 @@ function restoreKnownPatrols(context: ControllerRuntimeContext): void {
   }
 }
 
-/** Offscreen patrols continue at 1Hz without rendering or route-grid work. */
+export function backgroundSalvagePatrol(
+  context: ControllerRuntimeContext,
+  locationId: string
+): SalvagePatrolWorld | undefined {
+  return worlds(context).get(locationId);
+}
+
+/** Offscreen security uses the same traffic, sensors, and combat arena as the mounted scene. */
 export function advanceCareerSalvageDrones(
   context: ControllerRuntimeContext,
   seconds: number
@@ -88,14 +93,59 @@ export function advanceCareerSalvageDrones(
   accumulators.set(context, accumulator);
   for (const [locationId, world] of worlds(context)) {
     if (locationId === activeLocation) continue;
-    const droneId = 'security-drone:' + locationId;
-    const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === droneId);
-    if (npc?.combatMovement) continue;
-    world.drone.syncAvailability(npc);
-    // Bounded steps preserve waypoint transitions and keep expensive route
-    // recalculations outside the rendering cadence.
-    for (let i = 0; i < elapsed * 5; i += 1)
-      tickSalvageSecurityDrone(world.drone, world.field, 0.2, []);
+    // One-off event maps retain their existing on-entry lifecycle.
+    const location = narrowsSector.locations.find((entry) => entry.id === locationId);
+    if (!location?.activities.salvage) continue;
+    const traffic = careerSalvagePirates(context, world.field);
+    const npcs = context.economy.sectorNpcs.npcs;
+    const duels = (context.engagements.activeNpcCombatSnapshots?.() ?? []).filter(
+      (duel) => duel.arena.backdropSeed === world.field.seed
+    );
+    const fieldCombat = context.engagements.fieldCombat?.(locationId, world.field.seed);
+    if (fieldCombat) syncSalvageCombatField(world.field, fieldCombat);
+    const engage = (attackerId: string, defenderId: string, attacker: WorldPoint, defender: WorldPoint) => {
+      const pose = (id: string) => id === 'security-drone:' + locationId ? world.drone : traffic.body(id);
+      const first = pose(attackerId);
+      const second = pose(defenderId);
+      return context.engagements.engageNpcsInArena(attackerId, defenderId, {
+        ...salvageFieldCombatArena(world.field),
+        attackerPosition: { ...attacker },
+        defenderPosition: { ...defender },
+        ...(first && {
+          attackerHeadingRadians: first.headingRadians,
+          attackerVelocity: { x: Math.cos(first.headingRadians) * first.speed, y: Math.sin(first.headingRadians) * first.speed },
+        }),
+        ...(second && {
+          defenderHeadingRadians: second.headingRadians,
+          defenderVelocity: { x: Math.cos(second.headingRadians) * second.speed, y: Math.sin(second.headingRadians) * second.speed },
+        }),
+      });
+    };
+    for (let i = 0; i < elapsed * 5; i += 1) {
+      advanceSalvagePirateResponse({
+        field: world.field,
+        drone: world.drone,
+        pirates: traffic,
+        sectorNpcs: npcs,
+        // The existing offscreen economic salvage worker owns resource extraction.
+        salvagers: [],
+        playerPosition: null,
+        playerRadius: 0,
+        dt: 0.2,
+        playerCombat: null,
+        npcCombats: duels,
+        onPirateAttack: engage,
+        onDroneAttack: (pirateId, position) =>
+          engage(pirateId, 'security-drone:' + locationId, position, world.drone.position),
+        onFreighterExit: (npc) => {
+          if (npc.homePortId) context.economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
+        },
+      });
+    }
+    context.engagements.fieldCombat?.(
+      locationId, world.field.seed,
+      salvageDroneBystanders(null, [], world.drone, locationId, traffic.snapshot(npcs))
+    );
     context.economy.wreckClaims.rememberDrone(locationId, world.drone.exportState());
   }
 }
