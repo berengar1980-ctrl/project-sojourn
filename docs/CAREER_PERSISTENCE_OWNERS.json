@@ -275,10 +275,6 @@
       "mode": "derived",
       "reason": "Scores public worksite profiles using existing NPC market observations and route quotes; active and last work IDs remain on the checkpointed sector NPC."
     },
-    "src/app/game-controller-npc-work-planning.ts": {
-      "mode": "derived",
-      "reason": "Connects current field and claim authorities to the NPC work planner; no independent persistent state."
-    },
     "src/systems/economy/physical-reserve-policy.ts": {
       "mode": "derived",
       "reason": "Deterministic daily budget transfers operate on the persisted resource pools; the policy owns no independent state."
