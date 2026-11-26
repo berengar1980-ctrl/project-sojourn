@@ -78,7 +78,7 @@ const directWithBerths = planFuelRoute({
   credits: 0,
   locationPosition(id) {
     requestedBerths.add(id);
-    return locations.find((location) => location.id === id).position;
+    return locations.find((entry) => entry.id === id).position;
   },
 });
 assert.deepEqual(directWithBerths.stopIds, []);

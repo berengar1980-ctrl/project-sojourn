@@ -14,8 +14,8 @@ const { createAsteroidSurface } = loadStandaloneTypeScriptModule(
 );
 
 let currentPath = [];
-let clips = [];
-let strokes = [];
+const clips = [];
+const strokes = [];
 let depth = 0;
 let clipActive = false;
 let gradientCount = 0;
