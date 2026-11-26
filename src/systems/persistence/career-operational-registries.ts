@@ -153,7 +153,21 @@ function verifyWreckRecord(wreck: unknown, ids: Set<string>): void {
   ) {
     throw new Error('Ungültiger Wrackzustand.');
   }
+  verifyWreckCapacities(wreck);
   ids.add(wreck.id);
+}
+
+function verifyWreckCapacities(wreck: Record<string, unknown>): void {
+  if (wreck.capacities === undefined) return;
+  if (!isRecord(wreck.capacities) || !isRecord(wreck.resources)) throw new Error('Ungültige Wrackkapazitäten.');
+  const capacities = wreck.capacities;
+  for (const [id, amount] of Object.entries(wreck.resources)) {
+    const capacity = capacities[id];
+    if (!validFinite(capacity) || !validFinite(amount) || amount > capacity)
+      throw new Error('Ungültige Wrackressourcenkapazität.');
+  }
+  if (Object.keys(capacities).length !== Object.keys(wreck.resources).length)
+    throw new Error('Ungültige Wrackressourcen-IDs.');
 }
 
 function verifySalvageWorkers(value: unknown): void {

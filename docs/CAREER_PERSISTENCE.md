@@ -1403,3 +1403,8 @@ Trade and sale ranking retain the existing personality-dependent distance penalt
 - Die vorhandene Versionsnummer bleibt unverändert. Die neuen optionalen
   Zustände werden bei der Validierung geprüft; Regressionstests müssen den
   neuen Save/Restore-Pfad bestätigen.
+
+Wrackereignisse: zusätzlich gefundene Ressourcen werden aus dem bestehenden
+Pool finanziert; Verluste werden sofort gebucht. Optionale `capacities` je
+Wrack erhalten die tatsächlichen Lagerkapazitäten und neue Ressourcen-IDs beim
+Laden. Alte Spielstände ohne `capacities` bleiben lesbar.

@@ -14,6 +14,7 @@ export interface WreckClaim {
 interface StoredWreck {
   readonly id: string;
   readonly resources: Record<string, number>;
+  readonly capacities?: Record<string, number>;
   readonly componentStatus: SalvageWreck['componentStatus'];
   readonly inspected: boolean;
   readonly scanLevel: NonNullable<SalvageWreck['scanLevel']>;
@@ -82,6 +83,7 @@ export class WreckClaimRegistry {
         resources: Object.fromEntries(
           wreck.resources.map((resource) => [resource.resourceId, resource.remainingAmount])
         ),
+        capacities: Object.fromEntries(wreck.resources.map((resource) => [resource.resourceId, resource.initialAmount])),
         componentStatus: wreck.componentStatus,
         inspected: wreck.inspected,
         scanLevel: wreck.scanLevel ?? 'unscanned',
@@ -138,12 +140,7 @@ export class WreckClaimRegistry {
     for (const wreck of field.wrecks) {
       const previous = wrecks.get(wreck.id);
       if (!previous) continue;
-      for (const resource of wreck.resources) {
-        const amount = previous.resources[resource.resourceId];
-        if (amount !== undefined) {
-          resource.remainingAmount = Math.min(resource.initialAmount, Math.max(0, amount));
-        }
-      }
+      restoreWreckResources(wreck, previous);
       wreck.componentStatus = previous.componentStatus;
       wreck.inspected = previous.inspected;
       wreck.scanLevel = previous.scanLevel;
@@ -214,6 +211,7 @@ export class WreckClaimRegistry {
           wrecks: field.wrecks.map((wreck) => ({
             ...wreck,
             resources: { ...wreck.resources },
+          ...(wreck.capacities ? { capacities: { ...wreck.capacities } } : {}),
           })),
         },
       ]),
@@ -238,8 +236,24 @@ export class WreckClaimRegistry {
         wrecks: field.wrecks.map((wreck) => ({
           ...wreck,
           resources: { ...wreck.resources },
+          ...(wreck.capacities ? { capacities: { ...wreck.capacities } } : {}),
         })),
       });
     }
+  }
+}
+
+function restoreWreckResources(wreck: SalvageWreck, previous: StoredWreck): void {
+  const known = new Set(wreck.resources.map((resource) => resource.resourceId));
+  for (const resource of wreck.resources) {
+    const capacity = previous.capacities?.[resource.resourceId];
+    const amount = previous.resources[resource.resourceId];
+    if (capacity !== undefined) resource.initialAmount = capacity;
+    if (amount !== undefined) resource.remainingAmount = Math.min(resource.initialAmount, Math.max(0, amount));
+  }
+  for (const [resourceId, amount] of Object.entries(previous.resources)) {
+    if (known.has(resourceId)) continue;
+    const initialAmount = previous.capacities?.[resourceId] ?? amount;
+    wreck.resources.push({ resourceId, initialAmount, remainingAmount: Math.min(initialAmount, amount) });
   }
 }
