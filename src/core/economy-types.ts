@@ -25,10 +25,14 @@ export interface EconomyCargoHold {
 }
 
 export interface EconomyResourcePool {
-  readonly target: number;
+  target: number;
   reserve: number;
   externalImports: number;
   recordedLosses: number;
+  /** Reserved combat material, separate from the general reserve. */
+  combatBuffer?: number;
+  /** Material committed to individual physical resource objects. */
+  physicalStocks?: Record<string, number>;
 }
 
 export interface ResourceCirculationState {
@@ -148,8 +152,9 @@ export interface NpcEconomyState {
   cargoCapacity: number;
   normalCargoCapacity?: number;
   readonly cargo: Record<EconomyResourceId, number>;
-  readonly workResourceIds: readonly EconomyResourceId[];
-  readonly workLocationId?: EconomyLocationId;
+  workResourceIds: readonly EconomyResourceId[];
+  workLocationId?: EconomyLocationId;
+  lastWorkLocationId?: EconomyLocationId;
   readonly homePortId?: EconomyLocationId;
   marketIntel?: Record<EconomyLocationId, NpcMarketIntelLocation>;
   personality?: NpcPersonality;

@@ -62,6 +62,9 @@ const { stageCareerFullSession, captureCareerFullSession } = load(
 );
 const { prepareControllerCareer } = load('src/app/game-controller-career-resume.ts');
 const { controllerEconomyFromCareer } = load('src/app/game-controller-career-economy.ts');
+const { bindCareerFieldWorld } = load('src/app/game-controller-field-world-bridge.ts');
+const { permanentSalvageField } = load('src/app/game-controller-salvage-stocks.ts');
+const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
 const { createCareerSessionManager } = load('src/systems/persistence/career-session-manager.ts');
 const { createCareerSaveStore, CAREER_SAVE_STORAGE_KEY } = load(
   'src/systems/persistence/career-save-store.ts'
@@ -336,3 +339,111 @@ assert.strictEqual(manager.current(), afterLoad);
 afterLoad.campaigns.campaigns.destroy();
 staged.campaigns.campaigns.destroy();
 console.log('PASS full Career Save: all 14 domains staged on shared authorities, atomic install');
+
+function bindPhysicalCareer(session) {
+  const context = {
+    economy: controllerEconomyFromCareer(session, () => {}),
+    state: { mode: 'star-map', salvageScene: null, salvageEventFields: new Map() },
+  };
+  bindCareerFieldWorld(context, session.fieldsLegal.fields);
+  return context;
+}
+
+function verifyPhysicalCareerRoundTrip() {
+  const originalSession = prepareControllerCareer(JSON.parse(JSON.stringify(snapshot))).session;
+  const originalContext = bindPhysicalCareer(originalSession);
+  const originalEconomy = originalContext.economy;
+  const location = world.locations.find((item) => item.id === 'greyrock-belt');
+  const red = world.locations.find((item) => item.activities.salvage && item.dangerLevel === 3);
+  assert(location && red);
+  const instance = originalSession.fieldsLegal.fields.field(location.id).instance;
+  const rock = instance.asteroids.find((item) => item.deposits.some((d) => d.oreRemaining >= 6));
+  assert(rock);
+  const ore = rock.deposits.find((item) => item.oreRemaining >= 6);
+  const rockSource = JSON.stringify([location.id, rock.id]);
+  const oreStock = originalEconomy.simulation.getPhysicalStock(ore.resourceId, rockSource);
+  assert.equal(oreStock, ore.oreRemaining);
+  ore.oreRemaining -= 6;
+  const chunk = {
+    id: 'chunk-' + instance.seed + '-1',
+    sourceAsteroidId: rock.id,
+    resourceId: ore.resourceId,
+    position: { x: 500, y: 500 },
+    velocity: { x: 1, y: 2 },
+    amount: 6,
+    ageSeconds: 0,
+    tractorActive: false,
+    tractorHardpointId: null,
+  };
+  instance.chunks.push(chunk);
+  const mined = originalEconomy.mining.collect(ore.resourceId, 2, 1000, location.id, rockSource);
+  assert.equal(mined, 2);
+  chunk.amount -= mined;
+  const field = permanentSalvageField(originalContext, red);
+  const wreck = field.wrecks.find((item) => item.resources.some((d) => d.remainingAmount >= 4));
+  assert(wreck);
+  const deposit = wreck.resources.find((item) => item.remainingAmount >= 4);
+  const source = salvageStockId(field, wreck);
+  const amount = originalEconomy.salvage.recover(deposit.resourceId, 3, 1000, red.id, source);
+  assert.equal(amount, 3);
+  deposit.remainingAmount -= amount;
+  originalEconomy.wreckClaims.rememberField(field);
+  const saved = captureCareerFullSession(originalSession, world);
+  const reloaded = prepareControllerCareer(JSON.parse(JSON.stringify(saved))).session;
+  const resumedContext = bindPhysicalCareer(reloaded);
+  const restoredEconomy = resumedContext.economy;
+  assert.deepEqual(
+    restoredEconomy.simulation.exportState(),
+    originalEconomy.simulation.exportState()
+  );
+  const restoredInstance = reloaded.fieldsLegal.fields.field(location.id).instance;
+  const restoredRock = restoredInstance.asteroids.find((item) => item.id === rock.id);
+  const restoredOre = restoredRock.deposits.find((item) => item.resourceId === ore.resourceId);
+  assert.equal(restoredOre.oreRemaining, ore.oreRemaining);
+  assert.equal(restoredInstance.chunks[0].amount, 4);
+  assert.equal(
+    restoredEconomy.simulation.getPhysicalStock(ore.resourceId, rockSource),
+    oreStock - 2
+  );
+  const restoredField = permanentSalvageField(resumedContext, red);
+  const restoredWreck = restoredField.wrecks.find((item) => item.id === wreck.id);
+  const restoredDeposit = restoredWreck.resources.find(
+    (item) => item.resourceId === deposit.resourceId
+  );
+  assert.equal(restoredDeposit.remainingAmount, deposit.remainingAmount);
+  assert.equal(
+    restoredEconomy.simulation.getPhysicalStock(deposit.resourceId, source),
+    deposit.remainingAmount
+  );
+  const timelines = [
+    { economy: originalEconomy, chunk, deposit, field },
+    {
+      economy: restoredEconomy,
+      chunk: restoredInstance.chunks[0],
+      deposit: restoredDeposit,
+      field: restoredField,
+    },
+  ];
+  for (const timeline of timelines) {
+    const { economy: timelineEconomy } = timeline;
+    assert.equal(
+      timelineEconomy.mining.collect(ore.resourceId, 1, 1000, location.id, rockSource),
+      1
+    );
+    timeline.chunk.amount -= 1;
+    assert.equal(timelineEconomy.salvage.recover(deposit.resourceId, 1, 1000, red.id, source), 1);
+    timeline.deposit.remainingAmount -= 1;
+    timelineEconomy.wreckClaims.rememberField(timeline.field);
+    timelineEconomy.simulation.advanceNextDay();
+  }
+  assert.deepEqual(restoredEconomy.trade.player.cargo, originalEconomy.trade.player.cargo);
+  assert.deepEqual(
+    restoredEconomy.simulation.exportState(),
+    originalEconomy.simulation.exportState()
+  );
+  originalSession.campaigns.campaigns.destroy();
+  reloaded.campaigns.campaigns.destroy();
+}
+
+verifyPhysicalCareerRoundTrip();
+console.log('PASS full Career Save: physical ore, chunks, wreck stock and continued transactions');

@@ -1,9 +1,34 @@
+import { permanentSalvageField } from './game-controller-salvage-stocks';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { WorldLocation } from '../core/world-types';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { generateSalvageField } from '../systems/salvage';
 import { generateSectorSalvageEventField } from '../systems/salvage/salvage-event-field-generator';
+
+function getOrCreateEventField(
+  context: ControllerRuntimeContext,
+  sectorEvent: SectorSalvageEvent
+): SalvageField {
+  const existing = context.state.salvageEventFields.get(sectorEvent.id);
+  if (existing) return existing;
+  const field = generateSectorSalvageEventField(sectorEvent);
+  context.state.salvageEventFields.set(sectorEvent.id, field);
+  return field;
+}
+
+function regularField(
+  context: ControllerRuntimeContext,
+  location: WorldLocation,
+  seed: number
+): SalvageField {
+  if (!location.activities.salvage) {
+    return generateSalvageField(location.id, seed, location.dangerLevel);
+  }
+  const field = permanentSalvageField(context, location, seed);
+  context.economy.wreckClaims.rememberField(field);
+  return field;
+}
 
 /** Reuse the very same wreck objects in every visit; never re-roll combat salvage. */
 export function fieldWithCareerCombatWrecks(
@@ -18,11 +43,7 @@ export function fieldWithCareerCombatWrecks(
   const combatWrecks = world.combatWrecks(location.id);
   let field: SalvageField | undefined;
   if (sectorEvent) {
-    field = context.state.salvageEventFields.get(sectorEvent.id);
-    if (!field) {
-      field = generateSectorSalvageEventField(sectorEvent);
-      context.state.salvageEventFields.set(sectorEvent.id, field);
-    }
+    field = getOrCreateEventField(context, sectorEvent);
   } else if (combatWrecks.length && location.activities.mine && !location.activities.salvage) {
     const miningField = world.field(location.id)?.instance;
     field = {
@@ -33,8 +54,8 @@ export function fieldWithCareerCombatWrecks(
       height: miningField?.height ?? 1800,
       wrecks: combatWrecks,
     };
-  } else if (combatWrecks.length) {
-    field = generateSalvageField(location.id, seed, location.dangerLevel);
+  } else if (location.activities.salvage || combatWrecks.length) {
+    field = regularField(context, location, seed);
   }
   if (field && field.wrecks !== combatWrecks) {
     const known = new Set(field.wrecks.map((wreck) => wreck.id));

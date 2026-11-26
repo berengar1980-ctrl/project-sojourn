@@ -24,7 +24,11 @@ export function controllerEconomyFromCareer(
     sector,
     notice,
     Math.random,
-    economy.situations.currentDay
+    economy.situations.currentDay,
+    (id, amount) => {
+      const pool = economy.simulation.pools[id];
+      if (pool) pool.recordedLosses += amount;
+    }
   );
   const npcSalvageEvents = createNpcSalvageEventService({
     world: narrowsSector,

@@ -24,6 +24,7 @@ import { npcNeedsSafeReturn } from '../npcs/npc-operating-policy';
 import { observeNpcMarket, npcKnownMarketViews } from './npc-market-knowledge';
 
 import type { TradeRoute } from './npc-economy-types';
+import { chooseNpcWorksite, finishNpcWorksite, type NpcWorkPlanning } from './npc-work-planning';
 import {
   evaluateNpcPurchaseVoyage,
   evaluateNpcSaleVoyage,
@@ -128,20 +129,21 @@ function candidateTradeRoute(
   );
   if (!estimate) return null;
   const age = Math.max(0, day - observedDay);
+  const riskCost = resource.legality === 'illegal' ? Math.round(maxUnits * buyPrice * 0.12) : 0;
+  const value = npcPersonalityTradeWeight(
+    npc,
+    estimate.netProfit - riskCost,
+    estimate.distance,
+    age,
+    destinationId
+  );
   return {
     resourceId: resource.id,
     destinationId,
     quantity: estimate.quantity,
     margin: unitSale - buyPrice,
     observedDay,
-    score: npcPersonalityTradeWeight(
-      npc,
-      estimate.netProfit -
-        (resource.legality === 'illegal' ? Math.round(maxUnits * buyPrice * 0.12) : 0),
-      estimate.distance,
-      age,
-      destinationId
-    ),
+    score: value,
   };
 }
 
@@ -260,23 +262,7 @@ export function chooseTraderAction(
   day: number,
   quoteTravel?: NpcTravelQuoteFn
 ): void {
-  const aboard = Object.entries(npc.cargo)
-    .filter(([, value]) => quantity(value) > 0)
-    .sort((first, second) => quantity(second[1]) - quantity(first[1]))[0];
-
-  if (aboard) {
-    const destination = bestSaleLocation(npc, aboard[0], positions, day, quoteTravel);
-    if (!destination) {
-      beginRest(npc);
-      return;
-    }
-    if (npc.locationId === destination.locationId) {
-      beginSale(npc, aboard[0]);
-      return;
-    }
-    scheduleNpcTravel(npc, destination.locationId, 'Verkaufsroute');
-    return;
-  }
+  if (handleCargoSale(npc, positions, day, quoteTravel)) return;
 
   const route = bestTradeRoute(npc, markets, resources, positions, day, quoteTravel);
   if (!route || route.score <= npcDecisionThreshold(npc)) {
@@ -323,28 +309,28 @@ function handleWorkerSideTrade(npc: NpcEconomyState): boolean {
   return false;
 }
 
-function handleWorkerFullCargo(
+/** Compare every cargo lot against every known reachable market before choosing a sale. */
+export function handleCargoSale(
   npc: NpcEconomyState,
   positions: Readonly<Record<string, EconomyPoint>>,
   day: number,
   quoteTravel?: NpcTravelQuoteFn
 ): boolean {
-  if (npcCargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity))) return false;
-  const cargo = Object.entries(npc.cargo)
-    .filter(([, value]) => quantity(value) > 0)
-    .sort((first, second) => quantity(second[1]) - quantity(first[1]));
-  const first = cargo[0];
-  if (!first) {
+  if (npcCargoUsed(npc) <= 0) return false;
+  let best: { resourceId: string; locationId: string; score: number } | null = null;
+  for (const [resourceId, amount] of Object.entries(npc.cargo)) {
+    if (quantity(amount) <= 0) continue;
+    const destination = bestSaleLocation(npc, resourceId, positions, day, quoteTravel);
+    if (destination && (!best || destination.score > best.score)) {
+      best = { resourceId, locationId: destination.locationId, score: destination.score };
+    }
+  }
+  if (!best) {
     beginRest(npc);
     return true;
   }
-  const destination = bestSaleLocation(npc, first[0], positions, day, quoteTravel);
-  if (!destination) {
-    beginRest(npc);
-    return true;
-  }
-  if (npc.locationId === destination.locationId) beginSale(npc, first[0]);
-  else scheduleNpcTravel(npc, destination.locationId, 'Rohstoffverkauf');
+  if (npc.locationId === best.locationId) beginSale(npc, best.resourceId);
+  else scheduleNpcTravel(npc, best.locationId, 'Verkaufsroute');
   return true;
 }
 
@@ -372,13 +358,15 @@ function arrangeWorkerJourney(
   }
   const plan = findNpcResourceSideTrade(npc, npc.workLocationId, {
     markets: npcKnownMarketViews(npc),
+    day,
     resources,
     positions,
+    ...(quoteTravel ? { quoteTravel } : {}),
   });
   const funded = plan
     ? quoteTravel?.(npc, plan.tradeLocationId, npc.credits - plan.costBasis)
     : null;
-  const netProfit = plan ? plan.expectedProfit - (funded?.fuelExpense ?? 0) : 0;
+  const netProfit = plan?.expectedProfit ?? 0;
   const viable = !quoteTravel || Boolean(funded);
   if (plan && viable && sideTradeWorthTaking(npc, netProfit, plan.costBasis)) {
     npc.sideTradePlan = plan;
@@ -402,12 +390,29 @@ export function chooseWorkerAction(
   resources: readonly EconomyResourceDefinition[],
   positions: Readonly<Record<string, EconomyPoint>>,
   day: number,
-  quoteTravel?: NpcTravelQuoteFn
+  quoteTravel?: NpcTravelQuoteFn,
+  planning?: NpcWorkPlanning
 ): void {
   ensureNpcAutonomy(npc);
   if (returnDamagedWorkerToPort(npc, quoteTravel)) return;
   if (handleWorkerSideTrade(npc)) return;
-  if (handleWorkerFullCargo(npc, positions, day, quoteTravel)) return;
+  if (handleCargoSale(npc, positions, day, quoteTravel)) return;
+  if (
+    planning &&
+    npc.workLocationId &&
+    !planning.sites.some((site) => site.id === npc.workLocationId && site.role === npc.role)
+  ) {
+    finishNpcWorksite(npc);
+  }
+  if (planning && !npc.workLocationId) {
+    const candidate = chooseNpcWorksite(npc, planning, resources, positions, quoteTravel, day);
+    if (!candidate) {
+      beginRest(npc);
+      return;
+    }
+    npc.workLocationId = candidate.site.id;
+    npc.workResourceIds = candidate.resourceIds;
+  }
   if (handleWorkerAtWorksite(npc)) return;
   arrangeWorkerJourney(npc, resources, positions, day, quoteTravel);
 }

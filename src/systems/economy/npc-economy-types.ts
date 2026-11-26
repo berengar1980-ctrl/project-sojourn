@@ -1,10 +1,42 @@
 import type { EconomyResourceId, NpcEconomyState } from '../../core/economy-types';
 
-import { type EconomyPoint } from './npc-resource-side-trade';
+export interface EconomyPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+export interface NpcTradeMarketEntry {
+  readonly resourceId: EconomyResourceId;
+  readonly stock: number;
+  readonly price: number;
+}
+
+export interface NpcTradeMarketView {
+  readonly locationId: string;
+  readonly observedDay?: number;
+  readonly entries: Readonly<Record<EconomyResourceId, NpcTradeMarketEntry>>;
+}
+
+export interface NpcWorksite {
+  readonly id: string;
+  readonly role: 'miner' | 'salvager';
+  readonly position: EconomyPoint;
+  readonly danger: number;
+  /** Public regional resource profile, not undiscovered asteroid contents. */
+  readonly resourceIds: readonly string[];
+}
+
+export interface NpcWorkPlanning {
+  readonly sites: readonly NpcWorksite[];
+  readonly fleet: readonly NpcEconomyState[];
+  readonly knownClaimValue?: (npc: NpcEconomyState, locationId: string) => number;
+}
 
 export interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+  getPhysicalStock?(resourceId: string, sourceId: string): number | undefined;
+  withdrawPhysicalStock?(resourceId: string, sourceId: string, amount: number): number;
 }
 
 export interface TradeRoute {
@@ -25,12 +57,20 @@ export interface NpcEconomyCheckpoint {
 export interface NpcEconomyService {
   exportState(): NpcEconomyCheckpoint;
   readonly npcs: readonly NpcEconomyState[];
-  mineLocal(npc: NpcEconomyState, resourceId: EconomyResourceId, requestedQuantity: number): number;
+  mineLocal(
+    npc: NpcEconomyState,
+    resourceId: EconomyResourceId,
+    requestedQuantity: number,
+    sourceId?: string
+  ): number;
   salvageLocal(
     npc: NpcEconomyState,
     resourceId: EconomyResourceId,
-    requestedQuantity: number
+    requestedQuantity: number,
+    sourceId?: string
   ): number;
+  setWorkPlanning(planning: NpcWorkPlanning): void;
+  setPhysicalSalvageWorker(worker: (npc: NpcEconomyState, day: number) => void): void;
   dispatchLoadedWorker(npc: NpcEconomyState): boolean;
   tick(deltaSeconds: number): void;
   advanceDay(day: number): void;
@@ -46,7 +86,9 @@ export interface NpcTravelOperatingQuote {
 }
 
 export interface NpcEconomyServiceOptions {
+  readonly workPlanning?: NpcWorkPlanning;
   readonly isManaged?: (npc: NpcEconomyState) => boolean;
+  readonly physicalSalvageWorker?: (npc: NpcEconomyState, day: number) => void;
   readonly canTrade?: (npc: NpcEconomyState, locationId: string, resourceId: string) => boolean;
   readonly miningAllowance?: (npc: NpcEconomyState, resourceId: string, amount: number) => number;
   readonly onMined?: (npc: NpcEconomyState, resourceId: string, amount: number) => void;

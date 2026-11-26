@@ -2,6 +2,9 @@ import type { EconomyResourceId, PlayerEconomyState } from '../../core/economy-t
 
 interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
+  fundPhysicalStock?(resourceId: string, sourceId: string, amount: number): number;
+  getPhysicalStock?(resourceId: string, sourceId: string): number | undefined;
+  withdrawPhysicalStock?(resourceId: string, sourceId: string, amount: number): number;
 }
 
 interface PlayerCargoReceiver {
@@ -24,11 +27,13 @@ function cargoUsed(player: PlayerEconomyState): number {
 }
 
 export interface MiningEconomyService {
+  fundDiscoveredOre?(resourceId: string, sourceId: string, amount: number): number;
   collect(
     resourceId: EconomyResourceId,
     requestedQuantity: number,
     cargoCapacityTons: number,
-    originId?: string
+    originId?: string,
+    sourceId?: string
   ): number;
 }
 
@@ -41,7 +46,10 @@ export function createMiningEconomyService(
   } = {}
 ): MiningEconomyService {
   return {
-    collect(resourceId, requestedQuantity, cargoCapacityTons, originId) {
+    fundDiscoveredOre(resourceId, sourceId, amount) {
+      return allocator.fundPhysicalStock?.(resourceId, sourceId, amount) ?? 0;
+    },
+    collect(resourceId, requestedQuantity, cargoCapacityTons, originId, sourceId) {
       const requested = finiteInteger(requestedQuantity);
       const free = Math.max(0, finiteInteger(cargoCapacityTons) - cargoUsed(cargo.player));
       const wanted = Math.min(
@@ -51,6 +59,18 @@ export function createMiningEconomyService(
       );
       if (wanted <= 0) return 0;
 
+      const stock = sourceId ? allocator.getPhysicalStock?.(resourceId, sourceId) : undefined;
+      if (sourceId && stock !== undefined && allocator.withdrawPhysicalStock) {
+        const collected = cargo.receiveCargo(
+          resourceId,
+          Math.min(wanted, stock),
+          cargoCapacityTons,
+          originId
+        );
+        allocator.withdrawPhysicalStock(resourceId, sourceId, collected);
+        options.onCollected?.(resourceId, collected, originId);
+        return collected;
+      }
       const allocated = allocator.createMinedResource(resourceId, wanted);
       if (allocated <= 0) return 0;
 

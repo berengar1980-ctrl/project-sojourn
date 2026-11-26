@@ -68,11 +68,24 @@ function assertPlayerCheckpoint(checkpoint: CareerPlayerCheckpoint): void {
   }
 }
 
+/** Physical cargo can originate outside a market, including an expired salvage event. */
+function validCargoOrigin(
+  originId: unknown,
+  markets: EconomyMarketService,
+  worldLocationIds?: ReadonlySet<string>
+): boolean {
+  if (typeof originId !== 'string') return false;
+  if (markets.getMarket(originId)) return true;
+  if (!worldLocationIds) return false;
+  return worldLocationIds.has(originId) || /^salvage-(special|distress)-\d+-\d+$/.test(originId);
+}
+
 function assertPlayerCargo(
   resourceId: string,
   value: CareerPlayerCargoCheckpoint,
   resourceIds: ReadonlySet<string>,
-  markets: EconomyMarketService
+  markets: EconomyMarketService,
+  worldLocationIds?: ReadonlySet<string>
 ): void {
   if (
     !resourceIds.has(resourceId) ||
@@ -85,7 +98,7 @@ function assertPlayerCargo(
     !Number.isFinite(value.totalCost) ||
     value.totalCost < 0 ||
     (value.lastOriginId !== undefined &&
-      (typeof value.lastOriginId !== 'string' || !markets.getMarket(value.lastOriginId))) ||
+      !validCargoOrigin(value.lastOriginId, markets, worldLocationIds)) ||
     Object.keys(value).some(
       (key) => !['qty', 'hiddenQty', 'totalCost', 'lastOriginId'].includes(key)
     )
@@ -98,14 +111,15 @@ function assertPlayerCargo(
 export function stageCareerPlayer(
   checkpoint: CareerPlayerCheckpoint,
   markets: EconomyMarketService,
-  resources: readonly EconomyResourceDefinition[]
+  resources: readonly EconomyResourceDefinition[],
+  worldLocationIds?: ReadonlySet<string>
 ): PlayerTradeService {
   assertPlayerCheckpoint(checkpoint);
   const resourceIds = new Set(resources.map((resource) => resource.id));
   if (resourceIds.size !== resources.length) throw new Error('Duplicate resource definitions');
   const cargo: PlayerEconomyState['cargo'] = Object.create(null) as PlayerEconomyState['cargo'];
   for (const [resourceId, value] of Object.entries(checkpoint.cargo)) {
-    assertPlayerCargo(resourceId, value, resourceIds, markets);
+    assertPlayerCargo(resourceId, value, resourceIds, markets, worldLocationIds);
     cargo[resourceId] = {
       qty: value.qty,
       totalCost: value.totalCost,

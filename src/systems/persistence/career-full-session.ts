@@ -237,6 +237,7 @@ function stageCareerCommerceOperations(
           prisoners.has(npc.id) ||
           npc.id.startsWith('security-drone:') ||
           (npc.role === 'miner' &&
+            npc.workLocationId === npc.locationId &&
             npc.autonomy?.phase === 'working' &&
             deps.baseWorld.locations.some(
               (location) => location.id === npc.locationId && location.activities.mine
@@ -284,6 +285,24 @@ function stageCareerCommerceOperations(
   return { commerce, operations };
 }
 
+function stageFullCareerSociety(
+  saved: CareerPlayerSocietyCheckpoint,
+  commerce: StagedCareerCommerceShipSession,
+  factionIds: readonly string[]
+): StagedCareerPlayerSociety {
+  return stageCareerPlayerSociety(
+    saved,
+    commerce.commerce.trade.player,
+    commerce.commerce.npcs,
+    commerce.ships.ownership.snapshot().ownedShipIds,
+    factionIds,
+    (id, amount) => {
+      const pool = commerce.commerce.economy.simulation.pools[id];
+      if (pool) pool.recordedLosses += amount;
+    }
+  );
+}
+
 function validateCareerDayClock(player: CareerPlayerDomainCheckpoint): void {
   const seconds = player.controllerSecondsIntoDay;
   if (seconds !== undefined && (!Number.isFinite(seconds) || seconds < 0 || seconds >= 180)) {
@@ -320,13 +339,7 @@ export function stageCareerFullSession(
     navigationWorld,
     prisoners
   );
-  const society = stageCareerPlayerSociety(
-    savedPlayer.society,
-    commerce.commerce.trade.player,
-    commerce.commerce.npcs,
-    commerce.ships.ownership.snapshot().ownedShipIds,
-    deps.factionIds
-  );
+  const society = stageFullCareerSociety(savedPlayer.society, commerce, deps.factionIds);
   const crew = createCrewRosterService(profile, section<CareerCrewCheckpoint>(sections.crew));
   validateCrewShips(crew, commerce);
   const fieldsLegal = stageCareerFieldLegalSession(

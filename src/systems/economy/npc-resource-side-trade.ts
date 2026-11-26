@@ -5,29 +5,27 @@ import type {
   NpcResourceSideTradePlan,
 } from '../../core/economy-types';
 
-export interface EconomyPoint {
-  readonly x: number;
-  readonly y: number;
-}
+import { npcWorkingCapital, type NpcTravelQuoteFn } from './npc-operating-decisions';
+import type { SectorNpcState } from '../../core/npc-types';
+import type {
+  EconomyPoint,
+  NpcTradeMarketView,
+  NpcTravelOperatingQuote,
+} from './npc-economy-types';
+import { npcMarketConfidence } from './npc-market-knowledge';
 
-export interface NpcTradeMarketEntry {
-  readonly resourceId: EconomyResourceId;
-  readonly stock: number;
-  readonly price: number;
-}
-
-export interface NpcTradeMarketView {
-  readonly locationId: string;
-  readonly entries: Readonly<Record<EconomyResourceId, NpcTradeMarketEntry>>;
-}
+export type { EconomyPoint, NpcTradeMarketEntry, NpcTradeMarketView } from './npc-economy-types';
 
 export interface NpcSideTradeContext {
+  readonly day?: number;
+  readonly quoteTravel?: NpcTravelQuoteFn;
   readonly markets: readonly NpcTradeMarketView[];
   readonly resources: readonly EconomyResourceDefinition[];
   readonly positions: Readonly<Record<string, EconomyPoint>>;
 }
 
 const MAX_DETOUR_RATIO = 0.25;
+const MAX_DETOUR_DISTANCE = 600;
 const MIN_ROI = 0.06;
 const MIN_PROFIT = 35;
 
@@ -60,10 +58,75 @@ function sourcePricePercentile(
 }
 
 interface RouteGeometry {
-  readonly sourcePosition: EconomyPoint;
-  readonly workPosition: EconomyPoint;
   readonly directDistance: number;
   readonly allowedExtraDistance: number;
+  readonly stops: ReadonlyMap<string, Detour>;
+}
+
+interface Detour {
+  readonly extraDistance: number;
+  readonly extraExpense: number;
+}
+
+/** Quote the second leg from the planned market, conservatively with an empty tank. */
+function quoteFromStop(
+  npc: NpcEconomyState,
+  stopId: string,
+  workId: string,
+  quote: NpcTravelQuoteFn
+) {
+  const shadow: NpcEconomyState & Partial<SectorNpcState> = { ...npc, locationId: stopId };
+  delete shadow.orbit;
+  delete shadow.travel;
+  delete shadow.combatMovement;
+  if (shadow.fuel !== undefined) shadow.fuel = 0;
+  return quote(shadow, workId, npc.credits);
+}
+
+function quoteDetour(
+  npc: NpcEconomyState,
+  stopId: string,
+  workId: string,
+  direct: NpcTravelOperatingQuote | null | undefined,
+  quote: NpcTravelQuoteFn
+): Detour | null {
+  if (!direct) return null;
+  const first = quote(npc, stopId, npc.credits);
+  const second = quoteFromStop(npc, stopId, workId, quote);
+  if (!first || !second) return null;
+  return {
+    extraDistance: Math.max(0, first.distance + second.distance - direct.distance),
+    extraExpense: Math.max(0, first.fuelExpense + second.fuelExpense - direct.fuelExpense),
+  };
+}
+
+function buildRouteGeometry(
+  npc: NpcEconomyState,
+  workId: string,
+  sourcePosition: EconomyPoint,
+  workPosition: EconomyPoint,
+  context: NpcSideTradeContext
+): RouteGeometry | null {
+  const quote = context.quoteTravel;
+  const direct = quote?.(npc, workId, npc.credits);
+  if (quote && !direct) return null;
+  const directDistance = Math.max(1, direct?.distance ?? distance(sourcePosition, workPosition));
+  const allowedExtraDistance = Math.min(MAX_DETOUR_DISTANCE, directDistance * MAX_DETOUR_RATIO);
+  const stops = new Map<string, Detour>();
+  for (const market of context.markets) {
+    if (market.locationId === npc.locationId) continue;
+    const position = context.positions[market.locationId];
+    if (!position) continue;
+    const straight = distance(sourcePosition, position) + distance(position, workPosition);
+    if (straight - directDistance > allowedExtraDistance) continue;
+    const detour = quote
+      ? quoteDetour(npc, market.locationId, workId, direct, quote)
+      : { extraDistance: Math.max(0, straight - directDistance), extraExpense: 0 };
+    if (detour && detour.extraDistance <= allowedExtraDistance) {
+      stops.set(market.locationId, detour);
+    }
+  }
+  return { directDistance, allowedExtraDistance, stops };
 }
 
 interface ScoredPlan {
@@ -82,22 +145,17 @@ function destinationCandidate(
 ): ScoredPlan | null {
   if (destination.locationId === source.locationId) return null;
 
-  const stopPosition = context.positions[destination.locationId];
+  const detour = geometry.stops.get(destination.locationId);
   const buy = source.entries[resource.id];
   const sell = destination.entries[resource.id];
-  if (!stopPosition || !buy || !sell || sell.price <= buy.price) return null;
+  if (!detour || !buy || !sell || sell.price <= buy.price) return null;
 
-  const extraDistance = Math.max(
-    0,
-    distance(geometry.sourcePosition, stopPosition) +
-      distance(stopPosition, geometry.workPosition) -
-      geometry.directDistance
-  );
-  if (extraDistance > geometry.allowedExtraDistance) return null;
-
-  const sellUnitPrice = Math.max(1, Math.round(sell.price * 0.94));
+  const { extraDistance, extraExpense } = detour;
+  const day = context.day ?? 0;
+  const confidence = npcMarketConfidence(destination.observedDay ?? day, day);
+  const sellUnitPrice = Math.max(1, Math.floor(sell.price * 0.94 * confidence));
   const costBasis = maxQuantity * buy.price;
-  const expectedProfit = maxQuantity * sellUnitPrice - costBasis;
+  const expectedProfit = maxQuantity * sellUnitPrice - costBasis - extraExpense;
   const roi = expectedProfit / Math.max(1, costBasis);
   if (expectedProfit < MIN_PROFIT || roi < MIN_ROI) return null;
 
@@ -135,7 +193,7 @@ function bestResourceCandidate(
   const maxQuantity = Math.min(
     free,
     quantity(buy.stock),
-    Math.floor(Math.max(0, npc.credits) / buy.price)
+    Math.floor(Math.max(0, npc.credits - npcWorkingCapital(npc)) / buy.price)
   );
   if (maxQuantity <= 0) return null;
 
@@ -171,13 +229,8 @@ export function findNpcResourceSideTrade(
   const free = Math.max(0, normalCapacity - cargoUsed(npc));
   if (free <= 0 || npc.credits <= 0) return null;
 
-  const directDistance = Math.max(1, distance(sourcePosition, workPosition));
-  const geometry: RouteGeometry = {
-    sourcePosition,
-    workPosition,
-    directDistance,
-    allowedExtraDistance: directDistance * MAX_DETOUR_RATIO,
-  };
+  const geometry = buildRouteGeometry(npc, workLocationId, sourcePosition, workPosition, context);
+  if (!geometry) return null;
 
   let best: ScoredPlan | null = null;
   for (const resource of context.resources) {

@@ -39,7 +39,7 @@ import { isServicedPort, payNpcPatrolContract } from './npc-port-servicing';
 import { serviceNpcAtLocation, serviceIdleNpc } from './npc-port-economy';
 import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
-import { FUEL_PRICE_PER_UNIT } from '../ships/ship-operating-costs';
+import { FUEL_PRICE_PER_UNIT, quoteEmergencyRefuel } from '../ships/ship-operating-costs';
 import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-types';
 export type { NpcSectorServiceOptions } from './npc-sector-types';
 export type { NpcSectorService } from './npc-sector-types';
@@ -58,18 +58,14 @@ class SectorService implements NpcSectorService {
     this.options.population?.advanceDay(this.currentDay);
   };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
-    const base = planRouteWithProfile(
-      this.world,
-      fromId,
-      toId,
-      routeProfile(npc),
-      npcRouteThreats(npc, this.npcs, this.livePosition)
-    );
-    return repointRouteEndpoints(
-      base,
-      this.livePosition(npc),
-      npcOrbitDestination(this.world, npc, toId)
-    );
+    const from = this.livePosition(npc);
+    const profile = routeProfile(npc);
+    const threats = npcRouteThreats(npc, this.npcs, this.livePosition);
+    const knownOrigin = this.world.locations.some((location) => location.id === fromId);
+    const base = knownOrigin
+      ? planRouteWithProfile(this.world, fromId, toId, profile, threats)
+      : planRouteFromPoint(this.world, from, toId, profile, threats);
+    return repointRouteEndpoints(base, from, npcOrbitDestination(this.world, npc, toId));
   };
   private startLeg = (
     npc: SectorNpcState,
@@ -167,11 +163,8 @@ class SectorService implements NpcSectorService {
     if (movement.targetKind === 'player') return playerPosition;
     return npcPositions.get(movement.targetId) ?? null;
   };
-  quoteTravel = (npc: SectorNpcState, destinationId: string, availableCredits = npc.credits) => {
-    if (npc.locationId === destinationId) {
-      return { distance: 0, refuelCost: 0, fuelExpense: 0 };
-    }
-    const planned = planFuelRoute({
+  private planJourney(npc: SectorNpcState, destinationId: string, availableCredits: number) {
+    const request = {
       world: this.world,
       fromId: npc.locationId,
       fromPosition: this.livePosition(npc),
@@ -182,14 +175,33 @@ class SectorService implements NpcSectorService {
       capacity: npc.fuelCapacity,
       credits: availableCredits,
       fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
-      locationPosition: (id) =>
+      locationPosition: (id: string) =>
         id === npc.locationId ? this.livePosition(npc) : npcOrbitDestination(this.world, npc, id),
+    };
+    const planned = planFuelRoute(request);
+    if (planned) return { planned, emergency: { units: 0, cost: 0 } };
+    const location = this.world.locations.find((entry) => entry.id === npc.locationId);
+    if (isServicedPort(location)) return null;
+    const emergency = quoteEmergencyRefuel(npc.fuel, npc.fuelCapacity, availableCredits);
+    if (emergency.units <= 0) return null;
+    const rescued = planFuelRoute({
+      ...request,
+      fuel: Math.min(npc.fuelCapacity, npc.fuel + emergency.units),
+      credits: availableCredits - emergency.cost,
     });
-    if (!planned) return null;
+    return rescued ? { planned: rescued, emergency } : null;
+  }
+  quoteTravel = (npc: SectorNpcState, destinationId: string, availableCredits = npc.credits) => {
+    if (npc.locationId === destinationId) {
+      return { distance: 0, refuelCost: 0, fuelExpense: 0 };
+    }
+    const journey = this.planJourney(npc, destinationId, availableCredits);
+    if (!journey) return null;
+    const { planned, emergency } = journey;
     return {
       distance: planned.totalDistance,
-      refuelCost: planned.fuelCost,
-      fuelExpense: Math.ceil(planned.totalFuel * FUEL_PRICE_PER_UNIT),
+      refuelCost: planned.fuelCost + emergency.cost,
+      fuelExpense: Math.ceil(planned.totalFuel * FUEL_PRICE_PER_UNIT) + emergency.cost,
     };
   };
   requestTravel = (
@@ -214,26 +226,22 @@ class SectorService implements NpcSectorService {
       return false;
     }
     if (!this.world.locations.some((location) => location.id === destinationId)) return false;
-    const itinerary = planFuelRoute({
-      world: this.world,
-      fromId: npc.locationId,
-      fromPosition: this.livePosition(npc),
-      destinationId,
-      profile: routeProfile(npc),
-      threatContacts: npcRouteThreats(npc, this.npcs, this.livePosition),
-      fuel: npc.fuel,
-      capacity: npc.fuelCapacity,
-      credits: npc.credits,
-      fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
-      locationPosition: (id) =>
-        id === npc.locationId ? this.livePosition(npc) : npcOrbitDestination(this.world, npc, id),
-    });
-    if (!itinerary) return false;
+    const journey = this.planJourney(npc, destinationId, npc.credits);
+    if (!journey) return false;
+    const { planned: itinerary, emergency } = journey;
     const stops = itinerary.stopIds;
     const next = itinerary.legs[0]?.destinationId;
     if (!next) return false;
     const activity = stops.length > 0 ? reason + ' · Tankstopp' : reason;
-    return this.startLeg(npc, next, destinationId, stops, activity);
+    const originalFuel = npc.fuel;
+    npc.fuel = Math.min(npc.fuelCapacity, originalFuel + emergency.units);
+    if (!this.startLeg(npc, next, destinationId, stops, activity)) {
+      npc.fuel = originalFuel;
+      return false;
+    }
+    npc.credits -= emergency.cost;
+    if (emergency.cost > 0) npc.activity += ' · Notbetankung';
+    return true;
   };
   requestPatrol = (npc: SectorNpcState): boolean => {
     if (
@@ -321,6 +329,7 @@ class SectorService implements NpcSectorService {
     npc.activity = reason;
   };
   recoverFromCombat = (npc: SectorNpcState, reason = 'Rückzug', remainInField = false): boolean => {
+    if (npc.retiredUntilDay !== undefined) return true;
     const movement = npc.combatMovement;
     const position = movement ? { ...movement.position } : this.livePosition(npc);
     if (npc.hullHp <= 0)

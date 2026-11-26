@@ -7,6 +7,8 @@ import type {
   PlayerEconomyState,
 } from '../../core/economy-types';
 import type { EconomyMarketService } from './market-service';
+import { resourceBalanceReport, type ResourceBalanceReport } from './resource-balance-report';
+import { dailyProductionBudget, supplyDailyCombatBuffer } from './physical-reserve-policy';
 import {
   captureCareerResourcePools,
   stageCareerResourcePools,
@@ -75,6 +77,8 @@ function totalResource(
   let total =
     quantity(pool.reserve) + playerQuantity(player, resourceId) + npcQuantity(npcs, resourceId);
   for (const market of markets) total += marketQuantity(market, resourceId);
+  total += quantity(pool.combatBuffer ?? 0);
+  for (const amount of Object.values(pool.physicalStocks ?? {})) total += quantity(amount);
   return total;
 }
 
@@ -124,25 +128,35 @@ function consumeToReserve(
   return consumed;
 }
 
+/** Recycle the day's consumption and gradually return accumulated reserve. */
 function produceFromReserve(
   resourceId: EconomyResourceId,
   markets: readonly EconomyMarketState[],
   pool: EconomyResourcePool,
-  random: () => number
+  random: () => number,
+  consumed: number
 ): number {
-  let produced = 0;
-  for (const market of markets) {
-    if (!market.produces.has(resourceId)) continue;
-    const entry = market.entries[resourceId];
-    if (!entry || pool.reserve <= 0) continue;
+  const backlog = Math.max(0, pool.reserve - consumed);
+  const wanted = consumed + Math.ceil(backlog / 20);
+  const budget = Math.min(dailyProductionBudget(pool), wanted);
+  if (budget <= 0) return 0;
 
-    const wanted = Math.max(1, Math.floor(4 + random() * 8 + entry.production * 5));
-    const quantityToMove = Math.min(quantity(pool.reserve), wanted);
-    pool.reserve -= quantityToMove;
-    entry.stock += quantityToMove;
-    produced += quantityToMove;
+  const producers = markets.flatMap((market) => {
+    const entry = market.entries[resourceId];
+    if (!entry || !market.produces.has(resourceId)) return [];
+    const weight = Math.max(1, Math.floor(4 + random() * 8 + entry.production * 5));
+    return [{ entry, weight }];
+  });
+  let remainingWeight = producers.reduce((sum, producer) => sum + producer.weight, 0);
+  let remaining = budget;
+  for (const { entry, weight } of producers) {
+    const moved = Math.min(remaining, Math.ceil((remaining * weight) / remainingWeight));
+    pool.reserve -= moved;
+    entry.stock += moved;
+    remaining -= moved;
+    remainingWeight -= weight;
   }
-  return produced;
+  return budget - remaining;
 }
 
 function legalStabilization(
@@ -210,12 +224,116 @@ function driftDemand(
 
 export interface EconomySimulationService {
   exportState(): CareerResourcePoolCheckpoint;
+  readonly currentDay: number;
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
+  getResourceBalance(): readonly ResourceBalanceReport[];
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+  fundPhysicalStock(
+    resourceId: EconomyResourceId,
+    sourceId: string,
+    amount: number,
+    combat?: boolean
+  ): number;
+  withdrawPhysicalStock(resourceId: EconomyResourceId, sourceId: string, amount: number): number;
+  getPhysicalStock(resourceId: EconomyResourceId, sourceId: string): number | undefined;
+  registerInitialPhysicalStock(resourceId: string, sourceId: string, amount: number): number;
+  releasePhysicalStock(sourceId: string): void;
+  losePhysicalStock(resourceId: string, sourceId: string, amount: number): number;
+  refillCombatBuffer(resourceId: EconomyResourceId, target: number): number;
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
   advanceDay(day: number): void;
   advanceNextDay(): void;
+}
+
+function createPhysicalStockTransactions(pools: Record<EconomyResourceId, EconomyResourcePool>) {
+  // These transactions never trigger artificial market consumption. Field objects
+  // are funded before collection; only actual collected cargo leaves their stock.
+  const fundPhysicalStock: EconomySimulationService['fundPhysicalStock'] = (
+    resourceId,
+    sourceId,
+    amount,
+    combat = false
+  ) => {
+    const pool = pools[resourceId];
+    if (!pool || !sourceId) return 0;
+    const stocks = (pool.physicalStocks ??= {});
+    const available = combat ? quantity(pool.combatBuffer ?? 0) : quantity(pool.reserve);
+    const moved = Math.min(quantity(amount), available);
+    if (!moved) {
+      if (!Object.hasOwn(stocks, sourceId)) stocks[sourceId] = 0;
+      return 0;
+    }
+    if (combat) pool.combatBuffer = available - moved;
+    else pool.reserve -= moved;
+    stocks[sourceId] = quantity(Object.hasOwn(stocks, sourceId) ? stocks[sourceId]! : 0) + moved;
+    return moved;
+  };
+  const withdrawPhysicalStock: EconomySimulationService['withdrawPhysicalStock'] = (
+    resourceId,
+    sourceId,
+    amount
+  ) => {
+    const stocks = pools[resourceId]?.physicalStocks;
+    if (!stocks || !Object.hasOwn(stocks, sourceId)) return 0;
+    const moved = Math.min(quantity(amount), quantity(stocks[sourceId]!));
+    stocks[sourceId]! -= moved;
+    return moved;
+  };
+  const releasePhysicalStock = (sourceId: string): void => {
+    for (const pool of Object.values(pools)) {
+      const stocks = pool.physicalStocks;
+      if (!stocks || !Object.hasOwn(stocks, sourceId)) continue;
+      pool.reserve += quantity(stocks[sourceId]!);
+      delete stocks[sourceId];
+    }
+  };
+  const refillCombatBuffer = (resourceId: string, target: number): number => {
+    const pool = pools[resourceId];
+    if (!pool) return 0;
+    const current = quantity(pool.combatBuffer ?? 0);
+    const moved = Math.min(quantity(pool.reserve), Math.max(0, quantity(target) - current));
+    pool.reserve -= moved;
+    pool.combatBuffer = current + moved;
+    return moved;
+  };
+
+  const getPhysicalStock = (resourceId: string, sourceId: string): number | undefined => {
+    const stocks = pools[resourceId]?.physicalStocks;
+    return stocks && Object.hasOwn(stocks, sourceId) ? stocks[sourceId] : undefined;
+  };
+
+  const registerInitialPhysicalStock = (
+    resourceId: string,
+    sourceId: string,
+    amount: number
+  ): number => {
+    const pool = pools[resourceId];
+    if (!pool || !sourceId) return 0;
+    const existing = getPhysicalStock(resourceId, sourceId);
+    if (existing !== undefined) return existing;
+    const initial = quantity(amount);
+    (pool.physicalStocks ??= {})[sourceId] = initial;
+    pool.target += initial;
+    return initial;
+  };
+
+  const losePhysicalStock = (resourceId: string, sourceId: string, amount: number): number => {
+    const lost = withdrawPhysicalStock(resourceId, sourceId, amount);
+    const pool = pools[resourceId];
+    if (pool) pool.recordedLosses += lost;
+    return lost;
+  };
+
+  return {
+    losePhysicalStock,
+    registerInitialPhysicalStock,
+    fundPhysicalStock,
+    withdrawPhysicalStock,
+    releasePhysicalStock,
+    refillCombatBuffer,
+    getPhysicalStock,
+  };
 }
 
 export function createEconomySimulationService(
@@ -257,6 +375,8 @@ export function createEconomySimulationService(
   };
   const createMinedResource = allocatePhysicalResource;
 
+  const physicalStocks = createPhysicalStockTransactions(pools);
+
   const advanceDay = (day: number): void => {
     const targetDay = Math.max(0, Math.floor(day));
     if (targetDay <= lastDay) return;
@@ -276,8 +396,9 @@ export function createEconomySimulationService(
           );
         }
 
-        consumeToReserve(resource.id, desiredConsumption, markets, pool, random);
-        produceFromReserve(resource.id, markets, pool, random);
+        const consumed = consumeToReserve(resource.id, desiredConsumption, markets, pool, random);
+        supplyDailyCombatBuffer(resource.id, pool);
+        produceFromReserve(resource.id, markets, pool, random, consumed);
 
         for (const market of markets) {
           driftDemand(market, resource.id, random);
@@ -297,6 +418,9 @@ export function createEconomySimulationService(
 
   return {
     pools,
+    get currentDay() {
+      return lastDay;
+    },
     exportState() {
       return captureCareerResourcePools(pools, seed, lastDay, physicalAllocationCounter);
     },
@@ -304,7 +428,13 @@ export function createEconomySimulationService(
       const pool = pools[resourceId];
       return pool ? totalResource(resourceId, markets, player, npcs, pool) : 0;
     },
+    getResourceBalance() {
+      return resources.map((resource) =>
+        resourceBalanceReport(resource.id, markets, player, npcs, pools[resource.id]!)
+      );
+    },
     allocatePhysicalResource,
+    ...physicalStocks,
     createMinedResource,
     advanceDay,
     advanceNextDay() {

@@ -36,7 +36,8 @@ function pirateBase(locationId: string): PirateFaction | null {
 
 export function createSmugglingService(
   player: PlayerEconomyState,
-  sectorNpcs: readonly SectorNpcState[] = []
+  sectorNpcs: readonly SectorNpcState[] = [],
+  recordLoss: (resourceId: string, amount: number) => void = () => {}
 ): SmugglingService {
   const state: SmugglingState = {
     hiddenHoldIntel: false,
@@ -60,6 +61,17 @@ export function createSmugglingService(
     state,
     ...cargo,
     ...customs,
+    decide(action, shipId, normalCapacity, rng) {
+      const before = Object.entries(player.cargo).map(([id, lot]) => [id, lot.qty] as const);
+      const result = customs.decide(action, shipId, normalCapacity, rng);
+      if (result?.outcome === 'seized') {
+        for (const [id, amount] of before) {
+          const lost = amount - (player.cargo[id]?.qty ?? 0);
+          if (lost > 0) recordLoss(id, lost);
+        }
+      }
+      return result;
+    },
     protect(faction, locationId) {
       if (pirateBase(locationId) !== faction) return false;
       state.protectionFaction = faction;

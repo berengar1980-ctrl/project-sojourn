@@ -64,13 +64,20 @@ export interface NpcLocalMiningOptions {
   readonly width: number;
   readonly height: number;
   readonly miners: readonly SectorNpcState[];
+  readonly dynamicRoster?: boolean;
   readonly initialPosition?: (id: string) => WorldPoint | undefined;
   /** Disable internal contact solving when a shared world handles all NPC collisions. */
   readonly resolveLocalCollisions?: boolean;
   /** Optional live ships to include in the same route planner as asteroid obstacles. */
   readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
   readonly getAsteroids: () => readonly LocalAsteroid[];
-  readonly mine: (npc: SectorNpcState, resourceId: string, requested: number) => number;
+  readonly mine: (
+    npc: SectorNpcState,
+    resourceId: string,
+    requested: number,
+    asteroidId?: string
+  ) => number;
+  readonly fundMiningBonus?: (asteroidId: string, resourceId: string, amount: number) => number;
   readonly onAsteroidScanned?: (npc: SectorNpcState, asteroid: LocalAsteroid) => void;
   readonly onAsteroidMined?: (
     npc: SectorNpcState,
@@ -152,12 +159,14 @@ export function cargoUsed(npc: SectorNpcState): number {
 export function chooseAsteroid(
   npc: SectorNpcState,
   asteroids: readonly LocalAsteroid[],
-  occupied: ReadonlySet<string>
+  occupied: ReadonlySet<string>,
+  knownOnly = false
 ): LocalAsteroid | null {
   const preferred = asteroids.filter(
     (asteroid) =>
       asteroid.kind === 'resource' &&
       !occupied.has(asteroid.id) &&
+      (!knownOnly || asteroid.scanLevel === 'analyzed') &&
       asteroid.deposits.some(
         (deposit) =>
           deposit.oreRemaining > 0 &&

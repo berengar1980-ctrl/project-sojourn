@@ -79,6 +79,10 @@ export class WreckClaimRegistry {
     });
   }
 
+  storedSeed(locationId: string): number | undefined {
+    return this.fields.get(locationId)?.seed;
+  }
+
   droneLocations(): readonly { readonly locationId: string; readonly seed: number }[] {
     return [...this.fields.values()]
       .filter((field) => field.drone)

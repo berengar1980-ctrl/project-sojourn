@@ -72,8 +72,16 @@ export function createMiningLocalSpace(
       reactorContinuousUsed: runtime.energy.baseUsed,
       shieldRegenMultiplier: runtime.crewEffects.engineering.shieldRegenMultiplier,
     },
+    fundMiningBonus: (asteroidId, id, amount) =>
+      mining.fundDiscoveredOre?.(id, JSON.stringify([location.id, asteroidId]), amount) ?? 0,
     onMiningChunkCollected: (resourceId, amount, asteroidId) => {
-      const accepted = mining.collect(resourceId, amount, runtime.cargoCapacityTons, location.id);
+      const accepted = mining.collect(
+        resourceId,
+        amount,
+        runtime.cargoCapacityTons,
+        location.id,
+        asteroidId ? JSON.stringify([location.id, asteroidId]) : undefined
+      );
       if (accepted > 0 && asteroidId && claims) {
         const rock = instance.asteroids.find((candidate) => candidate.id === asteroidId);
         const owner = rock ? claims.claim(location.id, rock) : null;

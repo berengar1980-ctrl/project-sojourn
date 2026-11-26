@@ -116,3 +116,27 @@ assert(notice.includes('NACHRICHT SPEICHERN'));
 console.log(
   'PASS actual NPC contraband sales, inspections, cargo seizure and underworld notice wiring'
 );
+
+const losses = [];
+const inspectedNpc = createSectorNpcEconomyStates().find((item) => item.smuggler);
+assert(inspectedNpc);
+inspectedNpc.locationId = 'haven';
+delete inspectedNpc.travel;
+delete inspectedNpc.combatMovement;
+delete inspectedNpc.smugglingLastArrivalId;
+inspectedNpc.smugglingInspectionCooldownSeconds = 0;
+inspectedNpc.cargo.narcotics = 9;
+inspectedNpc.smugglingConcealment = 0;
+const customs = createNpcSmugglingService(
+  [inspectedNpc],
+  { livePosition: () => ({ x: 0, y: 0 }) },
+  () => {},
+  () => 0,
+  0,
+  (id, amount) => losses.push([id, amount])
+);
+customs.tick(0.25);
+assert.equal(inspectedNpc.cargo.narcotics, undefined);
+assert.deepEqual(losses, [['narcotics', 9]]);
+customs.tick(0.25);
+assert.deepEqual(losses, [['narcotics', 9]], 'confiscation must be booked once');

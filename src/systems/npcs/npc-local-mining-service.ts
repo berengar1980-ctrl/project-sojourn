@@ -111,7 +111,12 @@ function assignTarget(
       .filter((candidate) => candidate.npcId !== ship.npcId && candidate.targetAsteroidId)
       .map((candidate) => candidate.targetAsteroidId as string)
   );
-  const asteroid = chooseAsteroid(npc, runtime.options.getAsteroids(), occupied);
+  const asteroid = chooseAsteroid(
+    npc,
+    runtime.options.getAsteroids(),
+    occupied,
+    runtime.options.dynamicRoster
+  );
   if (!asteroid) {
     beginExit(runtime, ship);
     return false;
@@ -146,19 +151,18 @@ function mine(
   npc: SectorNpcState,
   asteroid: LocalAsteroid
 ): void {
+  const deposits = asteroid.deposits.filter((candidate) => candidate.oreRemaining > 0);
   const deposit =
-    asteroid.deposits.find(
-      (candidate) =>
-        candidate.oreRemaining > 0 &&
-        (npc.workResourceIds.length === 0 || npc.workResourceIds.includes(candidate.resourceId))
-    ) ?? asteroid.deposits.find((candidate) => candidate.oreRemaining > 0);
+    npc.workResourceIds
+      .map((id) => deposits.find((candidate) => candidate.resourceId === id))
+      .find((candidate) => candidate !== undefined) ?? deposits[0];
   if (!deposit) {
     assignTarget(runtime, ship, npc);
     return;
   }
 
   const requested = Math.min(MINING_AMOUNT, deposit.oreRemaining);
-  const accepted = runtime.options.mine(npc, deposit.resourceId, requested);
+  const accepted = runtime.options.mine(npc, deposit.resourceId, requested, asteroid.id);
   if (accepted > 0) {
     // A real successful mining cycle spawns one collecting ore fragment.
     // The existing player chunk/tractor visualizer renders its travel.
@@ -188,11 +192,13 @@ function resolvePendingEvent(
   if (!controller || !pending) return false;
   const choice = chooseEventChoice(npc, pending.choices);
   if (!choice) return false;
-  const result = controller.resolve(asteroid, choice.id, (fraction) => {
+  const fund = runtime.options.fundMiningBonus;
+  const damageHull = (fraction: number): number => {
     const damage = Math.max(0, Math.round(npc.hullMaxHp * fraction));
     npc.hullHp = Math.max(0, npc.hullHp - damage);
     return damage;
-  });
+  };
+  const result = controller.resolve(asteroid, choice.id, damageHull, fund);
   if (!result) return false;
   npc.lastWorkEvent = {
     kind: 'mining',
@@ -395,7 +401,13 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     const npc = runtime.byId.get(ship.npcId);
     // The duel owns this NPC's movement until its final pose is reconciled.
     if (ship.npcId === combatantId) continue;
-    if (!npc || npc.hullHp <= 0 || npc.locationId !== runtime.options.locationId) {
+    if (
+      !npc ||
+      npc.hullHp <= 0 ||
+      npc.locationId !== runtime.options.locationId ||
+      (runtime.options.dynamicRoster &&
+        (npc.travel || npc.workLocationId !== npc.locationId || ship.name !== npc.name))
+    ) {
       runtime.combatReturnPositions.delete(ship.npcId);
       runtime.ships.splice(index, 1);
       continue;

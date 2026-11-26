@@ -6,6 +6,8 @@ import { getShipDefinition } from './ship-registry';
 
 export const FUEL_PRICE_PER_UNIT = 10;
 export const REPAIR_PRICE_PER_HULL_HP = 100;
+export const EMERGENCY_FUEL_PRICE_PER_UNIT = 30;
+export const EMERGENCY_FUEL_CALL_OUT = 500;
 export const SHIPYARD_REPAIR_MULTIPLIER = 0.8;
 
 export interface FuelQuote {
@@ -35,6 +37,18 @@ export function quoteRefuel(fuel: number, capacity: number, credits: number): Fu
   const missingTenths = Math.max(0, Math.ceil((capacity - fuel) * FUEL_PRICE_PER_UNIT - 1e-8));
   const payable = Math.min(missingTenths, Math.max(0, Math.floor(credits)));
   return { units: payable / FUEL_PRICE_PER_UNIT, cost: payable };
+}
+
+/** Remote tanker service: pay a call-out fee and triple the normal fuel price. */
+export function quoteEmergencyRefuel(fuel: number, capacity: number, credits: number): FuelQuote {
+  const missing = Math.max(0, capacity - fuel);
+  const budget = Math.max(0, Math.floor(credits) - EMERGENCY_FUEL_CALL_OUT);
+  const units = Math.min(missing, Math.floor(budget / 3) / 10);
+  if (units <= 0) return { units: 0, cost: 0 };
+  return {
+    units,
+    cost: EMERGENCY_FUEL_CALL_OUT + Math.ceil(units * EMERGENCY_FUEL_PRICE_PER_UNIT - 1e-8),
+  };
 }
 
 export function repairCost(points: number, shipyard: boolean, engineeringMultiplier = 1): number {
@@ -94,6 +108,7 @@ export interface ShipOperatingService {
     engineeringMultiplier?: number
   ): number;
   refuel(ship: ShipDefinition): FuelQuote;
+  emergencyRefuel(ship: ShipDefinition): FuelQuote;
   repair(
     ship: ShipDefinition,
     hullMaxHp: number,
@@ -172,6 +187,16 @@ export function createShipOperatingService(
       const state = ensure(ship);
       const capacity = getShipRoleProfile(ship.role).fuelCapacity;
       const quote = quoteRefuel(state.fuel, capacity, wallet.player.credits);
+      if (quote.cost > 0 && wallet.takeCredits(quote.cost)) {
+        state.fuel = Math.min(capacity, state.fuel + quote.units);
+        return quote;
+      }
+      return { units: 0, cost: 0 };
+    },
+    emergencyRefuel(ship) {
+      const state = ensure(ship);
+      const capacity = getShipRoleProfile(ship.role).fuelCapacity;
+      const quote = quoteEmergencyRefuel(state.fuel, capacity, wallet.player.credits);
       if (quote.cost > 0 && wallet.takeCredits(quote.cost)) {
         state.fuel = Math.min(capacity, state.fuel + quote.units);
         return quote;

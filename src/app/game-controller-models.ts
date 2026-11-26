@@ -19,6 +19,7 @@ import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { fieldNpcCombatViews } from './local-npc-combat-contacts';
 import { forecastPlayerFuelRoute, fuelPerTravelUnit } from './game-controller-fuel-forecast';
 import { assessRouteRisk } from '../systems/navigation/route-safety';
+import { quoteEmergencyRefuel } from '../systems/ships/ship-operating-costs';
 import { pirateThreatStrength } from '../systems/npcs/npc-pirate-classes';
 import { visibleFuelJourneyRoute } from './fuel-journey-route-view';
 
@@ -137,6 +138,11 @@ export function controllerStarModel(context: ControllerRuntimeContext) {
     ...(route ? { route } : {}),
     fuelStatus: {
       fuel: tank.fuel,
+      emergencyQuote: quoteEmergencyRefuel(
+        tank.fuel,
+        tank.fuelCapacity,
+        context.economy.trade.player.credits
+      ),
       capacity: tank.fuelCapacity,
       fuelPerHundred: fuelPerTravelUnit(context) * 100,
       planned,

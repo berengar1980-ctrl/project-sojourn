@@ -218,8 +218,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
   resolveMiningEvent(choiceId: string): MiningEventResolution | null {
     const asteroid = this.findAsteroid(this.miningTargetId);
     if (!asteroid) return null;
-    const result = this.miningEvents.resolve(asteroid, choiceId, (fraction) =>
-      this.shipSystems.damageHullFraction(fraction)
+    const result = this.miningEvents.resolve(
+      asteroid,
+      choiceId,
+      (fraction) => this.shipSystems.damageHullFraction(fraction),
+      this.options.fundMiningBonus
     );
     if (
       result?.aborted ||

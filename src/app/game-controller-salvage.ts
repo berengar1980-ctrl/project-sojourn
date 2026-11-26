@@ -372,6 +372,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     options.field ??
     generateSalvageField(options.location.id, options.seed, options.location.dangerLevel);
   options.wreckClaims.restoreField(field);
+  if (options.sectorEvent) options.economy.prepareEventField?.(field);
   const service = createSalvageLocalSpaceService({
     field,
     setup: runtime.salvage,
@@ -458,6 +459,7 @@ function sceneController(context: SalvageSceneRuntime): SalvageSceneController {
       context.state.activeSectorEvent = event;
       if (event?.salvageRights && context.field.wrecks[0]?.resources.length === 0) {
         grantDistressSalvageRights(context.field, event);
+        options.economy.prepareEventField?.(context.field);
       }
       refreshSalvageScene(context);
     },

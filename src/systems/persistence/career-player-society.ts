@@ -89,7 +89,8 @@ export function stageCareerPlayerSociety(
   player: PlayerEconomyState,
   npcs: readonly SectorNpcState[],
   shipIds: readonly string[],
-  factionIds: readonly string[]
+  factionIds: readonly string[],
+  recordLoss?: (resourceId: string, amount: number) => void
 ): StagedCareerPlayerSociety {
   const saved = cloneCareerJson(candidate);
   if (
@@ -101,7 +102,7 @@ export function stageCareerPlayerSociety(
     throw new Error('Invalid career smuggling or trade charter checkpoint');
   }
   const charter = createTradeCharterService(player, saved.charter as TradeCharterId | null);
-  const smuggling = createSmugglingService(player, npcs);
+  const smuggling = createSmugglingService(player, npcs, recordLoss);
   Object.assign(smuggling.state, saved.smuggling as SmugglingState);
   const reputation = createFactionReputationService(
     factionIds,

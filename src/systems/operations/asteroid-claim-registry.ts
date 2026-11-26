@@ -1,4 +1,5 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
+import { miningResourceById } from '../../data/resources/mining-resources';
 
 /**
  * A claim concerns one physically scanned rock, not an entire mining location.
@@ -34,11 +35,34 @@ export type ClaimResult =
   | { readonly ok: true; readonly fee: number }
   | { readonly ok: false; readonly reason: 'unscanned' | 'empty' | 'occupied' | 'unaffordable' };
 
+function restoreDepositCapacities(
+  asteroid: LocalAsteroid,
+  capacities: Readonly<Record<string, number>>
+): void {
+  for (const [id, capacity] of Object.entries(capacities)) {
+    const deposit = asteroid.deposits.find((entry) => entry.resourceId === id);
+    if (deposit) {
+      deposit.oreCapacity = capacity;
+      continue;
+    }
+    const resource = miningResourceById(id);
+    if (!resource || capacity <= 0) continue;
+    asteroid.deposits.push({
+      resourceId: id,
+      oreType: resource.name,
+      oreRemaining: 0,
+      oreCapacity: capacity,
+      identified: asteroid.scanLevel === 'analyzed',
+    });
+  }
+}
+
 export class AsteroidClaimRegistry {
   private readonly claims = new Map<string, AsteroidClaim>();
   private readonly disputes = new Map<string, AsteroidClaimConflict>();
   private readonly extraction = new Map<string, UnauthorizedExtraction>();
   private readonly remainingOre = new Map<string, Record<string, number>>();
+  private readonly oreCapacities = new Map<string, Record<string, number>>();
   private readonly surveyLevels = new Map<string, LocalAsteroid['scanLevel']>();
   private readonly fieldSeeds = new Map<string, number>();
 
@@ -67,6 +91,10 @@ export class AsteroidClaimRegistry {
         key,
         Object.fromEntries(asteroid.deposits.map((d) => [d.resourceId, d.oreRemaining]))
       );
+      this.oreCapacities.set(
+        key,
+        Object.fromEntries(asteroid.deposits.map((d) => [d.resourceId, d.oreCapacity]))
+      );
       this.surveyLevels.set(key, asteroid.scanLevel);
     }
   }
@@ -75,7 +103,11 @@ export class AsteroidClaimRegistry {
   restoreField(locationId: string, asteroids: LocalAsteroid[]): void {
     for (const asteroid of asteroids) {
       const key = this.key(locationId, asteroid.id);
+      const scanLevel = this.surveyLevels.get(key);
+      if (scanLevel) asteroid.scanLevel = scanLevel;
       const remaining = this.remainingOre.get(key);
+      const capacities = this.oreCapacities.get(key);
+      if (capacities) restoreDepositCapacities(asteroid, capacities);
       if (remaining) {
         for (const deposit of asteroid.deposits) {
           if (remaining[deposit.resourceId] !== undefined) {
@@ -86,8 +118,6 @@ export class AsteroidClaimRegistry {
           }
         }
       }
-      const scanLevel = this.surveyLevels.get(key);
-      if (scanLevel) asteroid.scanLevel = scanLevel;
     }
   }
 
@@ -234,6 +264,13 @@ export class AsteroidClaimRegistry {
       remainingOre: [...this.remainingOre.entries()].map(
         ([key, ore]) => [key, { ...ore }] as const
       ),
+      ...(this.oreCapacities.size > 0
+        ? {
+            oreCapacities: [...this.oreCapacities.entries()].map(
+              ([key, ore]) => [key, { ...ore }] as const
+            ),
+          }
+        : {}),
       surveyLevels: [...this.surveyLevels.entries()],
       fieldSeeds: [...this.fieldSeeds.entries()],
       extraction: [...this.extraction.values()].map((entry) => ({ ...entry })),
@@ -245,6 +282,7 @@ export class AsteroidClaimRegistry {
     this.claims.clear();
     this.disputes.clear();
     this.remainingOre.clear();
+    this.oreCapacities.clear();
     this.surveyLevels.clear();
     this.fieldSeeds.clear();
     this.extraction.clear();
@@ -261,6 +299,7 @@ export class AsteroidClaimRegistry {
       );
     }
     for (const [key, ore] of saved.remainingOre) this.remainingOre.set(key, { ...ore });
+    for (const [key, ore] of saved.oreCapacities ?? []) this.oreCapacities.set(key, { ...ore });
     for (const [key, level] of saved.surveyLevels) this.surveyLevels.set(key, level);
     for (const [key, seed] of saved.fieldSeeds) this.fieldSeeds.set(key, seed);
     for (const evidence of saved.extraction ?? [])

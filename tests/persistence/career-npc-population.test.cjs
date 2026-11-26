@@ -45,3 +45,46 @@ for (const bad of [
 }
 assert.equal(population.fundCredits, initial + 230);
 console.log('PASS population checkpoint: funds, pending retirements and validation');
+
+const { npcWorkingCapital } = load('src/systems/economy/npc-operating-decisions.ts');
+const poorMiner = createSectorNpcEconomyStates().find((entry) => entry.job === 'miner');
+poorMiner.credits = 0;
+const emptyFund = { version: 1, fundCredits: 0, replacementCount: 0 };
+const continuity = createNpcPopulationService([poorMiner], markets, () => {}, emptyFund);
+continuity.advanceDay(1);
+continuity.advanceDay(3);
+assert.equal(poorMiner.credits, 0);
+continuity.advanceDay(4);
+assert.equal(poorMiner.credits, npcWorkingCapital(poorMiner) * 3);
+assert.equal(continuity.externalFunding, poorMiner.credits);
+const funding = continuity.externalFunding;
+continuity.advanceDay(4);
+assert.equal(continuity.externalFunding, funding);
+assert(continuity.scheduleDefeated(poorMiner, 4));
+const due = poorMiner.retiredUntilDay;
+assert(due >= 9 && due <= 19);
+continuity.advanceDay(due - 1);
+assert.equal(continuity.outstanding, 1);
+continuity.advanceDay(due);
+assert.equal(continuity.outstanding, 0);
+assert.equal(poorMiner.hullHp, poorMiner.hullMaxHp);
+assert.equal(poorMiner.replacementGeneration, 1);
+assert.equal(continuity.fundCredits, 0);
+assert(continuity.externalFunding > funding);
+assert.deepEqual(
+  stageNpcPopulationCheckpoint(JSON.parse(JSON.stringify(continuity.exportState()))),
+  continuity.exportState()
+);
+for (const [job, min, max] of [
+  ['patrol', 3, 10],
+  ['pirate', 1, 4],
+]) {
+  const ship = createSectorNpcEconomyStates().find((entry) => entry.job === job);
+  const service = createNpcPopulationService([ship], markets, () => {}, emptyFund);
+  assert(service.scheduleDefeated(ship, 20));
+  assert(ship.retiredUntilDay >= 20 + min && ship.retiredUntilDay <= 20 + max);
+  service.advanceDay(ship.retiredUntilDay);
+  assert.equal(ship.replacementGeneration, 1);
+  assert.equal(service.outstanding, 0);
+}
+console.log('PASS guaranteed replacement, refinancing and persisted external funding');

@@ -55,11 +55,22 @@ function careerDependencies(
             seed: instance.seed,
             width: instance.width,
             height: instance.height,
-            miners: operations.sector.npcs.filter(
-              (npc) => npc.job === 'miner' && npc.workLocationId === location.id
-            ),
+            miners: operations.sector.npcs.filter((npc) => npc.job === 'miner'),
+            dynamicRoster: true,
             getAsteroids: () => instance.asteroids,
-            mine: (npc, id, amount) => commerce.commerce.economy.npcs.mineLocal(npc, id, amount),
+            mine: (npc, id, amount, asteroidId) =>
+              commerce.commerce.economy.npcs.mineLocal(
+                npc,
+                id,
+                amount,
+                asteroidId ? JSON.stringify([location.id, asteroidId]) : undefined
+              ),
+            fundMiningBonus: (asteroidId, id, amount) =>
+              commerce.commerce.economy.simulation.fundPhysicalStock(
+                id,
+                JSON.stringify([location.id, asteroidId]),
+                amount
+              ),
             onAsteroidScanned: (npc, asteroid) => {
               if (binding.context) {
                 registerNpcAsteroidClaim(binding.context, location, npc, asteroid);

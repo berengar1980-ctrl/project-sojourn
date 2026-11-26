@@ -1,3 +1,4 @@
+import { salvageStockId } from './salvage-stock-id';
 import type {
   SalvageComponentRecoveryResult,
   SalvageField,
@@ -14,7 +15,8 @@ export interface SalvageResourceCollector {
     resourceId: string,
     requestedQuantity: number,
     cargoCapacityTons: number,
-    originId?: string
+    originId?: string,
+    sourceId?: string
   ): number;
 }
 
@@ -161,7 +163,8 @@ export function createSalvageFieldService(options: {
         deposit.resourceId,
         Math.min(wanted, deposit.remainingAmount),
         setup.cargoCapacityTons,
-        field.sourceLocationId
+        field.sourceLocationId,
+        salvageStockId(field, wreck)
       );
       if (recovered <= 0) return null;
 

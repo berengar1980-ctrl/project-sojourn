@@ -2,7 +2,10 @@ import type { ShipComponentDefinition } from '../../data/ships/ship-component-ca
 import type { NpcInstalledComponents, SectorNpcState } from '../../core/npc-types';
 import type { ShipComponentType } from '../../core/ship-types';
 import { repairCost, FUEL_PRICE_PER_UNIT } from '../ships/ship-operating-costs';
-import { npcCanInvestAfterMaintenance } from '../economy/npc-operating-decisions';
+import {
+  npcCanInvestAfterMaintenance,
+  npcWorkingCapital,
+} from '../economy/npc-operating-decisions';
 import {
   defaultInstalledShipComponents,
   engineSpeedMultiplier,
@@ -199,7 +202,7 @@ export function tryNpcComponentUpgrade(
 ): boolean {
   const lastUpgradeRun = npc.lastComponentUpgradeRun ?? 0;
   if (npc.successfulRuns < 8 || npc.successfulRuns - lastUpgradeRun < 8) return false;
-  const reserve = 300000;
+  const reserve = Math.max(300000, npcWorkingCapital(npc));
   const maintenance = repairCost(npc.hullMaxHp - npc.hullHp, true);
   const fuelReserve = Math.ceil((npc.fuelCapacity - npc.fuel) * FUEL_PRICE_PER_UNIT);
   const candidates = UPGRADE_TYPES.map((type) => {
@@ -258,9 +261,10 @@ export function tryNpcHullUpgrade(npc: SectorNpcState): boolean {
   const ship = getShipDefinition(targetId);
   if (!ship || npc.shipId === ship.id) return false;
   const price = shipPurchasePrice(ship);
-  const reserve = 350000 + repairCost(npc.hullMaxHp - npc.hullHp, true);
+  const reserve = Math.max(350000, npcWorkingCapital(npc));
+  const maintenance = repairCost(npc.hullMaxHp - npc.hullHp, true);
   const fuelReserve = Math.ceil((npc.fuelCapacity - npc.fuel) * FUEL_PRICE_PER_UNIT);
-  if (price <= 0 || npc.credits < price + reserve + fuelReserve) return false;
+  if (price <= 0 || npc.credits < price + reserve + maintenance + fuelReserve) return false;
   const capacityUsed = Object.values(npc.cargo).reduce((sum, units) => sum + Math.max(0, units), 0);
   if (capacityUsed > ship.cargoCapacityTons) return false;
   const stats = resolveShipGameplayStats(ship);

@@ -101,3 +101,22 @@ for (const mutate of [
   assert.deepEqual(copy(captureCareerPlayer(live.player)), copy(snapshot));
 }
 console.log('PASS career player checkpoint: credits, cargo, hidden tons, isolated restore');
+
+const worldLocations = new Set(['a', 'mining-field', 'wreck-field']);
+for (const originId of [
+  'mining-field',
+  'wreck-field',
+  'salvage-special-7-2',
+  'salvage-distress-8-3',
+]) {
+  const physical = copy(snapshot);
+  physical.cargo.ore.lastOriginId = originId;
+  const restored = stageCareerPlayer(physical, markets, resources, worldLocations);
+  assert.equal(restored.player.cargo.ore.lastOriginId, originId);
+  assert.deepEqual(copy(captureCareerPlayer(restored.player)), physical);
+}
+for (const originId of ['missing', 'salvage-special-fake', 'salvage-distress-8']) {
+  const invalid = copy(snapshot);
+  invalid.cargo.ore.lastOriginId = originId;
+  assert.throws(() => stageCareerPlayer(invalid, markets, resources, worldLocations));
+}

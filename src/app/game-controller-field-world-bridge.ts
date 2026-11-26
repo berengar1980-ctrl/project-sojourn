@@ -1,3 +1,12 @@
+import { recoverNpcEventField } from './game-controller-npc-event-stocks';
+import {
+  balancePermanentSalvageStocks,
+  permanentSalvageField,
+  recoverBackgroundSalvage,
+  regionalSalvageResourceIds,
+} from './game-controller-salvage-stocks';
+import { installNpcWorkPlanning, reviewNpcMiningClaims } from './game-controller-npc-work-planning';
+import { balanceAsteroidStocks } from './game-controller-asteroid-stocks';
 import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { LocalSpaceInstance } from '../core/local-space-types';
@@ -65,6 +74,103 @@ export function fieldWitnessFor(
 }
 
 const fieldWorlds = new WeakMap<ControllerRuntimeContext, AsteroidFieldWorld>();
+const lastAsteroidBalanceDay = new WeakMap<ControllerRuntimeContext, number>();
+
+export function balanceDailyAsteroids(
+  context: ControllerRuntimeContext,
+  fields: AsteroidFieldWorld,
+  localId: string | null
+): void {
+  const simulation = context.economy.simulation;
+  const day = simulation.currentDay;
+  const previous = lastAsteroidBalanceDay.get(context);
+  if (previous !== undefined && day <= previous) return;
+  lastAsteroidBalanceDay.set(context, day);
+  reviewNpcMiningClaims(context, fields);
+  balanceDailySalvage(context, day);
+  releaseExpiredEventStocks(context);
+  fields.forEachField((field) => {
+    const activeTargets = new Set(field.miners.ships.map((ship) => ship.targetAsteroidId));
+    balanceAsteroidStocks(simulation, field.instance, (id) => {
+      if (field.locationId === localId || activeTargets.has(id)) return false;
+      const asteroid = field.instance.asteroids.find((entry) => entry.id === id);
+      return !!asteroid && !context.economy.asteroidClaims.claim(field.locationId, asteroid);
+    });
+  });
+}
+
+function releaseExpiredEventStocks(context: ControllerRuntimeContext): void {
+  const { simulation, salvageEvents } = context.economy;
+  const active = new Set(salvageEvents.active.map((event) => event.id));
+  const expired = new Set<string>();
+  for (const pool of Object.values(simulation.pools)) {
+    for (const sourceId of Object.keys(pool.physicalStocks ?? {})) {
+      if (!sourceId.startsWith('["sector-event-field-')) continue;
+      const [fieldId] = JSON.parse(sourceId) as [string, string];
+      const eventId = fieldId.slice('sector-event-field-'.length);
+      if (!active.has(eventId)) expired.add(sourceId);
+    }
+  }
+  for (const sourceId of expired) simulation.releasePhysicalStock(sourceId);
+}
+
+function balanceDailySalvage(context: ControllerRuntimeContext, day: number): void {
+  const { simulation, wreckClaims } = context.economy;
+  const mounted = context.state.salvageScene?.getField();
+  for (const location of narrowsSector.locations) {
+    if (!location.activities.salvage) continue;
+    if (mounted?.sourceLocationId === location.id) {
+      balancePermanentSalvageStocks(simulation, mounted, () => false);
+      continue;
+    }
+    const field = permanentSalvageField(context, location);
+    balancePermanentSalvageStocks(simulation, field, (id) => !wreckClaims.claim(field.id, id, day));
+    wreckClaims.rememberField(field);
+  }
+}
+
+function installPermanentSalvageEconomy(context: ControllerRuntimeContext): void {
+  const { wreckClaims, npcs, npcSalvageEvents } = context.economy;
+  npcSalvageEvents.setPhysicalEventRecovery?.((npc, event) =>
+    recoverNpcEventField(context, npc, event)
+  );
+  const locations = narrowsSector.locations.filter((location) => location.activities.salvage);
+  for (const location of locations) {
+    wreckClaims.rememberField(permanentSalvageField(context, location));
+  }
+  npcs.setPhysicalSalvageWorker((npc, day) => {
+    const location = locations.find((entry) => entry.id === npc.locationId);
+    if (!location) return;
+    const mounted = context.state.salvageScene?.getField();
+    if (context.state.mode === 'salvage-space' && mounted?.sourceLocationId === location.id) return;
+    const field = permanentSalvageField(context, location);
+    recoverBackgroundSalvage(context, npc, field, day);
+  });
+}
+
+function registerInitialAsteroidStocks(
+  context: ControllerRuntimeContext,
+  fields: AsteroidFieldWorld
+): void {
+  fields.forEachField((field) => {
+    const pending = new Map<string, number>();
+    for (const chunk of field.instance.chunks) {
+      const key = JSON.stringify([chunk.sourceAsteroidId, chunk.resourceId]);
+      pending.set(key, (pending.get(key) ?? 0) + chunk.amount);
+    }
+    for (const asteroid of field.instance.asteroids) {
+      const sourceId = JSON.stringify([field.locationId, asteroid.id]);
+      for (const deposit of asteroid.deposits) {
+        const key = JSON.stringify([asteroid.id, deposit.resourceId]);
+        context.economy.simulation.registerInitialPhysicalStock(
+          deposit.resourceId,
+          sourceId,
+          deposit.oreRemaining + (pending.get(key) ?? 0)
+        );
+      }
+    }
+  });
+}
 
 /** Install the already staged field authority instead of generating new ore/NPCs. */
 export function bindCareerFieldWorld(
@@ -72,6 +178,13 @@ export function bindCareerFieldWorld(
   fields: AsteroidFieldWorld
 ): void {
   if (fieldWorlds.has(context)) throw new Error('Field world already installed');
+  installPermanentSalvageEconomy(context);
+  installNpcWorkPlanning(context, fields, regionalSalvageResourceIds);
+  registerInitialAsteroidStocks(context, fields);
+  fields.forEachField((field) =>
+    balanceAsteroidStocks(context.economy.simulation, field.instance, () => false)
+  );
+  lastAsteroidBalanceDay.set(context, context.economy.simulation.currentDay);
   fieldWorlds.set(context, fields);
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
@@ -102,13 +215,24 @@ export function fieldWorldFor(
         width: instance.width,
         height: instance.height,
         get miners() {
-          return economy.sectorNpcs.npcs.filter(
-            (npc) => npc.job === 'miner' && npc.workLocationId === location.id
-          );
+          return economy.sectorNpcs.npcs.filter((npc) => npc.job === 'miner');
         },
+        dynamicRoster: true,
         getAsteroids: () => instance.asteroids,
         initialPosition: (id) => context.fieldExerciseSpawns?.get(id),
-        mine: (npc, resourceId, requested) => economy.npcs.mineLocal(npc, resourceId, requested),
+        mine: (npc, resourceId, requested, asteroidId) =>
+          economy.npcs.mineLocal(
+            npc,
+            resourceId,
+            requested,
+            asteroidId ? JSON.stringify([location.id, asteroidId]) : undefined
+          ),
+        fundMiningBonus: (asteroidId, id, amount) =>
+          economy.simulation.fundPhysicalStock(
+            id,
+            JSON.stringify([location.id, asteroidId]),
+            amount
+          ),
         onAsteroidScanned: (npc, asteroid) =>
           registerNpcAsteroidClaim(context, location, npc, asteroid),
         onAsteroidMined: (npc, asteroid, resourceId, amount) =>
@@ -126,6 +250,12 @@ export function fieldWorldFor(
     undefined,
     initial
   );
+  if (!exerciseLocationId) {
+    installPermanentSalvageEconomy(context);
+    installNpcWorkPlanning(context, fields, regionalSalvageResourceIds);
+  }
+  registerInitialAsteroidStocks(context, fields);
+  lastAsteroidBalanceDay.set(context, context.economy.simulation.currentDay);
   fieldWorlds.set(context, fields);
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
@@ -262,7 +392,9 @@ export function advanceControllerFieldWorld(
   const localDuels = localFieldDuels(background, fleet);
   const fieldWorld = fieldWorldFor(context);
   syncFinishedFieldPoses(context, fieldWorld, finished);
+  balanceDailyAsteroids(context, fieldWorld, localId);
   fieldWorld.advanceCombatWreckLifetime(deltaSeconds, (locationId, ids) => {
+    for (const id of ids) context.economy.simulation.releasePhysicalStock(id);
     context.engagements.removeFieldCombatWrecks(ids);
     const sceneField = context.state.salvageScene?.getField();
     const fields = new Set([sceneField, ...context.state.salvageEventFields.values()]);

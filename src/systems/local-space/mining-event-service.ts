@@ -130,6 +130,9 @@ function eventChoices(type: MiningEventType): readonly MiningEventChoice[] {
   }[type];
 }
 
+export type MiningBonusFunding = (resourceId: string, amount: number) => number;
+type AsteroidBonusFunding = (asteroidId: string, resourceId: string, amount: number) => number;
+
 interface AppliedMiningEventResult {
   readonly resolution: MiningEventResolution;
   readonly cycleMultiplier: number;
@@ -139,9 +142,13 @@ interface AppliedMiningEventResult {
 function applyMiningEventResult(
   asteroid: LocalAsteroid,
   effect: MiningEventEffect,
-  damageHullFraction: (fraction: number) => number
+  damageHullFraction: (fraction: number) => number,
+  fundBonus?: AsteroidBonusFunding
 ): AppliedMiningEventResult {
-  const deposit = applyMiningEventDepositEffects(asteroid, effect);
+  const funding = fundBonus
+    ? (id: string, amount: number) => fundBonus(asteroid.id, id, amount)
+    : undefined;
+  const deposit = applyMiningEventDepositEffects(asteroid, effect, funding);
   const hullDamage = damageHullFraction(effect.hullDamageFraction);
   const consequences = [
     hullDamage > 0 ? `Hülle -${hullDamage}.` : '',
@@ -277,7 +284,8 @@ export function createMiningEventController(
     resolve(
       asteroid: LocalAsteroid,
       choiceId: string,
-      damageHullFraction: (fraction: number) => number
+      damageHullFraction: (fraction: number) => number,
+      fundBonus?: AsteroidBonusFunding
     ): MiningEventResolution | null {
       if (!session || !pending) return null;
       const effect = resolveMiningEventEffect(
@@ -288,7 +296,7 @@ export function createMiningEventController(
       );
       if (!effect) return null;
       pending = null;
-      const applied = applyMiningEventResult(asteroid, effect, damageHullFraction);
+      const applied = applyMiningEventResult(asteroid, effect, damageHullFraction, fundBonus);
       cycleModifier = Math.max(0.5, Math.min(1.8, cycleModifier * applied.cycleMultiplier));
       recoverySeconds = Math.max(recoverySeconds, applied.recoverySeconds);
       return applied.resolution;
@@ -337,12 +345,14 @@ function addBonusDeposit(asteroid: LocalAsteroid, resourceId: string, amount: nu
 
 export function applyMiningEventDepositEffects(
   asteroid: LocalAsteroid,
-  effect: MiningEventEffect
+  effect: MiningEventEffect,
+  fundBonus?: MiningBonusFunding
 ): MiningEventDepositResult {
   const lostTons = loseDeposit(asteroid, effect.depositLossFraction);
-  const bonusTons = effect.bonusResourceId
-    ? addBonusDeposit(asteroid, effect.bonusResourceId, effect.bonusAmount)
-    : 0;
+  const requested = Math.max(0, Math.round(effect.bonusAmount));
+  const id = effect.bonusResourceId;
+  const funded = id && fundBonus ? fundBonus(id, requested) : requested;
+  const bonusTons = id ? addBonusDeposit(asteroid, id, funded) : 0;
   return {
     lostTons,
     bonusTons,

@@ -16,6 +16,8 @@ import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 export function captureControllerCareer(context: ControllerRuntimeContext): CareerSnapshot {
   const { economy, state } = context;
   const custody = captureControllerCustody(context);
+  const mountedSalvage = state.salvageScene?.getField();
+  if (mountedSalvage) economy.wreckClaims.rememberField(mountedSalvage);
   const session: StagedFullCareerSession = {
     profile: state.playerProfile,
     controllerSecondsIntoDay: captureControllerDayElapsed(context),

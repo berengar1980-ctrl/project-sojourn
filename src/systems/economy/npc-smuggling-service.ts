@@ -29,6 +29,7 @@ interface Runtime {
   readonly log: (message: string) => void;
   readonly random: () => number;
   readonly stats: NpcSmugglingStats;
+  readonly recordLoss: (resourceId: string, amount: number) => void;
   day: number;
 }
 
@@ -47,7 +48,14 @@ function inspect(
 ): void {
   const beforeSeized = target.smugglingConfiscated ?? 0;
   const beforeFines = target.smugglingFinesPaid ?? 0;
+  const cargoBefore = { ...target.cargo };
   const result = resolveNpcSmugglingInspection(target, patrol, strength, ctx.random);
+  if (result === 'seized') {
+    for (const [id, amount] of Object.entries(cargoBefore)) {
+      const lost = amount - (target.cargo[id] ?? 0);
+      if (lost > 0) ctx.recordLoss(id, lost);
+    }
+  }
   target.smugglingInspectionCooldownSeconds = result === 'clear' ? 12 : 24;
   ctx.stats.inspections++;
   ctx.stats.confiscatedUnits += (target.smugglingConfiscated ?? 0) - beforeSeized;
@@ -158,13 +166,15 @@ export function createNpcSmugglingService(
   sector: Pick<NpcSectorService, 'livePosition'>,
   log: (message: string) => void = () => {},
   random: () => number = Math.random,
-  initialDay = 0
+  initialDay = 0,
+  recordLoss: (resourceId: string, amount: number) => void = () => {}
 ): NpcSmugglingService {
   const ctx: Runtime = {
     npcs,
     sector,
     log,
     random,
+    recordLoss,
     stats: {
       inspections: 0,
       cleanInspections: 0,

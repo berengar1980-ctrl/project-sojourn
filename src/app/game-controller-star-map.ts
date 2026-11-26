@@ -40,6 +40,7 @@ export function createControllerStarPanel(options: {
   readonly onAttackNpc: (id: string) => void;
   readonly onDock: () => void;
   readonly canStartTravel?: () => boolean;
+  readonly onEmergencyRefuel?: () => void;
   readonly startFuelTravel?: () => boolean;
   readonly onRouteSelectionChanged?: () => void;
   readonly onAcceptEvent?: (id: string) => void;
@@ -125,6 +126,7 @@ export function createControllerStarPanel(options: {
         panel?.update(options.getModel());
       }),
     onDock: options.onDock,
+    ...(options.onEmergencyRefuel ? { onEmergencyRefuel: options.onEmergencyRefuel } : {}),
   });
   return panel;
 }

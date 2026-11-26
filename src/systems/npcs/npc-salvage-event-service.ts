@@ -20,8 +20,11 @@ import { tryNpcComponentUpgrade } from './npc-upgrade-service';
 
 const FUEL_DISTANCE_SCALE = 0.025;
 
+type EventRecovery = (npc: SectorNpcState, event: SectorSalvageEvent) => boolean;
+
 export interface NpcSalvageEventService {
   tick(): void;
+  setPhysicalEventRecovery?(recover: EventRecovery): void;
 }
 
 interface NpcSalvageEventOptions {
@@ -144,6 +147,12 @@ function sellRecoveredComponents(npc: SectorNpcState, research: ShipyardResearch
 }
 
 class NpcSalvageEventRuntime implements NpcSalvageEventService {
+  private recoverEvent: EventRecovery = recoverEventComponent;
+
+  setPhysicalEventRecovery(recover: EventRecovery): void {
+    this.recoverEvent = recover;
+  }
+
   constructor(private readonly options: NpcSalvageEventOptions) {}
 
   tick(): void {
@@ -235,7 +244,7 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
   }
 
   private resolveSpecialWreck(npc: SectorNpcState, event: SectorSalvageEvent): boolean {
-    const recovered = recoverEventComponent(npc, event);
+    const recovered = this.recoverEvent(npc, event);
     this.options.events.resolveForNpc(event.id, npc);
     return recovered;
   }
@@ -260,7 +269,7 @@ class NpcSalvageEventRuntime implements NpcSalvageEventService {
     if (!evacuation?.salvageRights) return false;
 
     const rightsEvent = this.options.events.event(event.id);
-    const recovered = rightsEvent ? recoverEventComponent(npc, rightsEvent) : false;
+    const recovered = rightsEvent ? this.recoverEvent(npc, rightsEvent) : false;
     this.options.events.resolve(event.id);
     return recovered;
   }

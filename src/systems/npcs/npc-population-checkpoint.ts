@@ -3,6 +3,7 @@ export interface NpcPopulationCheckpoint {
   readonly version: 1;
   readonly fundCredits: number;
   readonly replacementCount: number;
+  readonly externalFunding?: number;
 }
 
 function validCount(value: unknown): value is number {
@@ -19,7 +20,10 @@ export function stageNpcPopulationCheckpoint(candidate: unknown): NpcPopulationC
     record.version !== 1 ||
     !validCount(record.fundCredits) ||
     !validCount(record.replacementCount) ||
-    Object.keys(record).some((key) => !['version', 'fundCredits', 'replacementCount'].includes(key))
+    (record.externalFunding !== undefined && !validCount(record.externalFunding)) ||
+    Object.keys(record).some(
+      (key) => !['version', 'fundCredits', 'replacementCount', 'externalFunding'].includes(key)
+    )
   ) {
     throw new Error('Beschädigter NPC-Populationsspielstand.');
   }
@@ -27,5 +31,6 @@ export function stageNpcPopulationCheckpoint(candidate: unknown): NpcPopulationC
     version: 1,
     fundCredits: record.fundCredits,
     replacementCount: record.replacementCount,
+    ...(record.externalFunding === undefined ? {} : { externalFunding: record.externalFunding }),
   };
 }

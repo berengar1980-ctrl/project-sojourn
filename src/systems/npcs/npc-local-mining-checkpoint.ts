@@ -84,7 +84,7 @@ function validEvents(entries: unknown[], options: NpcLocalMiningOptions): boolea
     stageMiningEventCheckpoint(entry[1], hashId(options.locationId + ':' + entry[0]));
     seen.add(entry[0]);
   }
-  return seen.size === options.miners.length;
+  return options.dynamicRoster === true || seen.size === options.miners.length;
 }
 
 /** Validate all local mining owners before allocating any restored runtime. */

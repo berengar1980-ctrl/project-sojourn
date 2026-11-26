@@ -176,6 +176,22 @@ body {
   z-index: 3;
 }
 
+.map-emergency-fuel {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border: 1px solid #826a51;
+  background: #18130d;
+  color: #e6b8a2;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.map-emergency-fuel:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .map-fuel-status.is-unreachable {
   border-left-color: #d79976;
   color: #e6b8a2;

@@ -123,6 +123,7 @@ function npcOperationsPolicy(
       prisoners.has(npc.id) ||
       npc.id.startsWith('security-drone:') ||
       (npc.role === 'miner' &&
+        npc.workLocationId === npc.locationId &&
         npc.autonomy?.phase === 'working' &&
         narrowsSector.locations.some(
           (entry) => entry.id === npc.locationId && entry.activities.mine
@@ -260,6 +261,23 @@ function createSectorPopulation(
   });
   return { simulation, population };
 }
+function createControllerCustoms(
+  trade: PlayerTradeService,
+  sector: NpcSectorService,
+  simulation: EconomySimulationService,
+  notice: (message: string) => void
+) {
+  const recordLoss = (id: string, amount: number): void => {
+    const pool = simulation.pools[id];
+    if (pool) pool.recordedLosses += amount;
+  };
+  const npcs = sector.npcs;
+  return {
+    smuggling: createSmugglingService(trade.player, npcs, recordLoss),
+    npcSmuggling: createNpcSmugglingService(npcs, sector, notice, Math.random, 0, recordLoss),
+  };
+}
+
 export function createControllerEconomy(
   navigation: NavigationService,
   onSmugglingNotice: (message: string) => void = () => {},
@@ -276,7 +294,6 @@ export function createControllerEconomy(
   const marketIntel = createMarketIntelService(markets);
   marketIntel.recordHistory(0);
   const npcStates: SectorNpcState[] = initialPopulation ?? createSectorNpcEconomyStates();
-  const smuggling = createSmugglingService(trade.player, npcStates);
   const shipyardResearch = createShipyardResearchService();
   const { simulation, population } = createSectorPopulation(markets, trade, npcStates);
   const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
@@ -291,7 +308,12 @@ export function createControllerEconomy(
     simulation,
     onSmugglingNotice
   );
-  const npcSmuggling = createNpcSmugglingService(npcStates, sectorNpcs, onSmugglingNotice);
+  const { smuggling, npcSmuggling } = createControllerCustoms(
+    trade,
+    sectorNpcs,
+    simulation,
+    onSmugglingNotice
+  );
 
   const npcPrisoners = new Set<string>();
   const npcEconomy = createNpcEconomyService(markets, simulation, economyResources, npcStates, {

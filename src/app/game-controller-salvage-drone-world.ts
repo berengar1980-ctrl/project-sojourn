@@ -1,6 +1,6 @@
 import type { SalvageField } from '../core/salvage-types';
 import { narrowsSector } from '../data/maps/narrows-sector';
-import { generateSalvageField } from '../systems/salvage';
+import { permanentSalvageField } from './game-controller-salvage-stocks';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -57,8 +57,7 @@ function restoreKnownPatrols(context: ControllerRuntimeContext): void {
     if (worlds(context).has(saved.locationId)) continue;
     const location = narrowsSector.locations.find((entry) => entry.id === saved.locationId);
     if (!location?.activities.salvage) continue;
-    const field = generateSalvageField(location.id, saved.seed, location.dangerLevel);
-    context.economy.wreckClaims.restoreField(field);
+    const field = permanentSalvageField(context, location, saved.seed);
     careerSalvageDrone(context, field);
   }
 }

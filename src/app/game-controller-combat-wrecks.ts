@@ -7,6 +7,7 @@ import type {
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { addDestroyedShipWreck } from '../systems/salvage/combat-destruction-wreck';
+import { combatBufferTarget } from '../systems/economy/physical-reserve-policy';
 
 const recordedByArena = new WeakMap<
   NonNullable<StrategicCombatSnapshot['arena']['asteroids']>,
@@ -49,6 +50,27 @@ export function controllerCombatWreckHooks(getContext: () => ControllerRuntimeCo
   };
 }
 
+function fundCombatWreck(context: ControllerRuntimeContext, wreck: SalvageWreck): void {
+  const simulation = context.economy.simulation;
+  for (const deposit of wreck.resources) {
+    // Bootstrap legacy/new pools once from existing market stock. Subsequent
+    // wrecks only use the protected buffer and normal returned consumption.
+    const pool = simulation.pools[deposit.resourceId];
+    const target = combatBufferTarget(deposit.resourceId);
+    if (pool && pool.combatBuffer === undefined) {
+      pool.combatBuffer = simulation.allocatePhysicalResource(deposit.resourceId, target);
+    }
+    const funded = simulation.fundPhysicalStock(
+      deposit.resourceId,
+      wreck.id,
+      deposit.initialAmount,
+      true
+    );
+    deposit.initialAmount = funded;
+    deposit.remainingAmount = funded;
+  }
+}
+
 /** Store defeated ships in the authoritative career field, not in a disposable combat scene. */
 export function recordCareerCombatWrecks(
   context: ControllerRuntimeContext,
@@ -80,11 +102,12 @@ export function recordCareerCombatWrecks(
   for (const ship of losses) {
     if (ship.hullHp > 0) continue;
     const nativeWreck = bodies?.find((body) => body.id === 'fleet-wreck:' + ship.id);
-    if (!nativeWreck && recorded.has(ship.id)) continue;
+    if (recorded.has(ship.id)) continue;
     const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
     if (wreck) {
       if (nativeWreck) adoptNativeWreckPose(wreck, nativeWreck);
       recorded.add(ship.id);
+      fundCombatWreck(context, wreck);
       created.push(wreck);
       if (snapshot.arena.backdropSeed !== undefined) {
         context.engagements?.registerFieldCombatWreck?.(
