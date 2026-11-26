@@ -79,7 +79,11 @@ function validCombatReturn(entry: unknown, width: number, height: number): boole
   return typeof entry[0] === 'string' && validPosition(entry[1], width, height);
 }
 
-export function validLocalTrafficSceneData(value: Record<string, unknown>, width: number, height: number): boolean {
+export function validLocalTrafficSceneData(
+  value: Record<string, unknown>,
+  width: number,
+  height: number
+): boolean {
   if (!Array.isArray(value.ships) || !Array.isArray(value.combatReturns)) return false;
   if (value.ships.length > 1000 || value.combatReturns.length > 1000) return false;
   if (!value.ships.every((ship) => validShip(ship, width, height))) return false;

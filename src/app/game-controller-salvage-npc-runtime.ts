@@ -84,9 +84,12 @@ export function createNpcSalvageRuntime(
     recover: (npc, resourceId, requested, sourceId) =>
       options.npcEconomy.salvageLocal(npc, resourceId, requested, sourceId),
     depart: (npc) => options.npcEconomy.dispatchLoadedWorker(npc),
-    get playerShip() { return binding?.player?.ship; },
+    get playerShip() {
+      return binding?.player?.ship;
+    },
     getPlayerShipState: () => binding?.player?.service.getSnapshot().ship,
-    onPlayerShieldContact: (normal, overlap) => binding?.player?.service.recordShipShieldContact(normal, overlap),
+    onPlayerShieldContact: (normal, overlap) =>
+      binding?.player?.service.recordShipShieldContact(normal, overlap),
   });
   binding = { runtime, ...(player ? { player } : {}) };
   runtimes.set(field, binding);

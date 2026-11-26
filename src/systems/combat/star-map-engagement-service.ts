@@ -340,7 +340,8 @@ function updateNpcChases(runtime: EngagementRuntime): void {
           npc &&
           npc.hullHp > 0 &&
           npc.retiredUntilDay === undefined &&
-          npc.combatMovement && npc.combatMovement.mode !== 'engaged' &&
+          npc.combatMovement &&
+          npc.combatMovement.mode !== 'engaged' &&
           npc.combatMovement.targetId === opponentId
         ) {
           runtime.options.sectorNpcs.recoverFromCombat(npc, 'Abfangversuch beendet');

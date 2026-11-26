@@ -123,7 +123,10 @@ export function recordCareerCombatWrecks(
   }
   world.registerCombatWrecks(locationId, created);
   const mounted = context.state.salvageScene?.getField();
-  const liveField = mounted?.sourceLocationId === locationId ? mounted : backgroundSalvagePatrol(context, locationId)?.field;
+  const liveField =
+    mounted?.sourceLocationId === locationId
+      ? mounted
+      : backgroundSalvagePatrol(context, locationId)?.field;
   if (liveField?.sourceLocationId === locationId) {
     const ids = new Set(liveField.wrecks.map((wreck) => wreck.id));
     for (const wreck of created) {

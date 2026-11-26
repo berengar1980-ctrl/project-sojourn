@@ -105,4 +105,3 @@ export function permanentSalvageField(
   fields.set(location.id, field);
   return field;
 }
-

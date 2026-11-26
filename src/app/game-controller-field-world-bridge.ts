@@ -44,7 +44,10 @@ function escortWitness(
   target: Parameters<FieldWitness>[2]
 ) {
   const mounted = context.state.salvageScene?.getField();
-  const salvage = mounted?.sourceLocationId === locationId ? mounted : backgroundSalvagePatrol(context, locationId)?.field;
+  const salvage =
+    mounted?.sourceLocationId === locationId
+      ? mounted
+      : backgroundSalvagePatrol(context, locationId)?.field;
   const field = fieldWorldFor(context).field(locationId);
   const body = context.economy.localPirates.get(locationId)?.body(id);
   const rocks =
@@ -59,7 +62,10 @@ export function fieldWitnessFor(
 ): ReturnType<FieldWitness> {
   if (!context || npc.locationId !== locationId || npc.travel) return null;
   const mounted = context.state.salvageScene?.getField();
-  const salvage = mounted?.sourceLocationId === locationId ? mounted : backgroundSalvagePatrol(context, locationId)?.field;
+  const salvage =
+    mounted?.sourceLocationId === locationId
+      ? mounted
+      : backgroundSalvagePatrol(context, locationId)?.field;
   const field = fieldWorldFor(context).field(locationId);
   if (npc.id.startsWith('security-drone:')) {
     if (npc.id !== 'security-drone:' + locationId) {
@@ -126,8 +132,11 @@ function balanceDailySalvage(context: ControllerRuntimeContext, day: number): vo
     }
     const field = permanentSalvageField(context, location);
     const workers = backgroundSalvagePatrol(context, location.id)?.salvagers.ships ?? [];
-    balancePermanentSalvageStocks(simulation, field, (id) =>
-      !workers.some((ship) => ship.targetWreckId === id) && !wreckClaims.claim(field.id, id, day)
+    balancePermanentSalvageStocks(
+      simulation,
+      field,
+      (id) =>
+        !workers.some((ship) => ship.targetWreckId === id) && !wreckClaims.claim(field.id, id, day)
     );
     wreckClaims.rememberField(field);
   }
@@ -396,7 +405,11 @@ export function advanceControllerFieldWorld(
     for (const id of ids) context.economy.simulation.releasePhysicalStock(id);
     context.engagements.removeFieldCombatWrecks(ids);
     const sceneField = context.state.salvageScene?.getField();
-    const fields = new Set([sceneField, backgroundSalvagePatrol(context, locationId)?.field, ...context.state.salvageEventFields.values()]);
+    const fields = new Set([
+      sceneField,
+      backgroundSalvagePatrol(context, locationId)?.field,
+      ...context.state.salvageEventFields.values(),
+    ]);
     for (const field of fields) {
       if (field?.sourceLocationId !== locationId) continue;
       for (let i = field.wrecks.length - 1; i >= 0; i--) {
@@ -478,7 +491,8 @@ function activeFieldContact(context: ControllerRuntimeContext | null, npc: Secto
   if (
     npc.id.startsWith('security-drone:') &&
     narrowsSector.locations.some(
-      (location) => location.id === npc.locationId && (location.activities.mine || location.activities.salvage)
+      (location) =>
+        location.id === npc.locationId && (location.activities.mine || location.activities.salvage)
     )
   ) {
     return true;

@@ -20,9 +20,10 @@ export function createSalvageSecurityDrone(
   claims: WreckClaimRegistry
 ): AsteroidSecurityDrone {
   const markers = salvagePatrolMarkers(field);
-  const checkpoint = claims.storedSeed(field.sourceLocationId) === field.seed
-    ? claims.droneCheckpoint(field.sourceLocationId)
-    : null;
+  const checkpoint =
+    claims.storedSeed(field.sourceLocationId) === field.seed
+      ? claims.droneCheckpoint(field.sourceLocationId)
+      : null;
   return checkpoint
     ? AsteroidSecurityDrone.fromCheckpoint(field.width, field.height, markers, checkpoint)
     : new AsteroidSecurityDrone(field.width, field.height, markers);

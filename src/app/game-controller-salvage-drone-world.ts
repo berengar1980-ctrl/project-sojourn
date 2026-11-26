@@ -4,11 +4,21 @@ import { permanentSalvageField } from './game-controller-salvage-stocks';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
-import { createSalvageSecurityDrone, salvageDroneBystanders } from './game-controller-salvage-drone';
+import {
+  createSalvageSecurityDrone,
+  salvageDroneBystanders,
+} from './game-controller-salvage-drone';
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
-import { salvageFieldCombatArena, syncSalvageCombatField } from '../systems/combat/field-combat-arena';
+import {
+  salvageFieldCombatArena,
+  syncSalvageCombatField,
+} from '../systems/combat/field-combat-arena';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
-import { advanceSalvageContainerDrift, invalidateSalvagePhysics, salvageFieldPhysicsBodies } from '../systems/salvage/salvage-container-motion';
+import {
+  advanceSalvageContainerDrift,
+  invalidateSalvagePhysics,
+  salvageFieldPhysicsBodies,
+} from '../systems/salvage/salvage-container-motion';
 import { syncFieldTrafficImpulses } from '../systems/combat/field-combat-arena';
 import { isSecurityDrone } from '../core/security-drone';
 import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
@@ -51,13 +61,16 @@ export function careerSalvageDrone(
   if (!npc?.combatMovement) drone.syncAvailability(npc);
   const location = narrowsSector.locations.find((entry) => entry.id === field.sourceLocationId);
   if (location?.activities.salvage) {
-    const salvagers = createNpcSalvageRuntime({
-      location,
-      sectorNpcs: context.economy.sectorNpcs.npcs,
-      npcEconomy: context.economy.npcs,
-      wreckClaims: context.economy.wreckClaims,
-      getCurrentDay: () => context.economy.situations.currentDay,
-    }, field);
+    const salvagers = createNpcSalvageRuntime(
+      {
+        location,
+        sectorNpcs: context.economy.sectorNpcs.npcs,
+        npcEconomy: context.economy.npcs,
+        wreckClaims: context.economy.wreckClaims,
+        getCurrentDay: () => context.economy.situations.currentDay,
+      },
+      field
+    );
     active.set(field.sourceLocationId, { field, drone, salvagers });
   }
   context.economy.wreckClaims.rememberField(field, drone.exportState());
@@ -128,8 +141,16 @@ export function advanceCareerSalvageDrones(
     );
     const fieldCombat = context.engagements.fieldCombat?.(locationId, world.field.seed);
     if (fieldCombat) syncSalvageCombatField(world.field, fieldCombat);
-    const engage = (attackerId: string, defenderId: string, attacker: WorldPoint, defender: WorldPoint) => {
-      const pose = (id: string) => id === 'security-drone:' + locationId ? world.drone : traffic.body(id) ?? world.salvagers.ships.find((ship) => ship.npcId === id);
+    const engage = (
+      attackerId: string,
+      defenderId: string,
+      attacker: WorldPoint,
+      defender: WorldPoint
+    ) => {
+      const pose = (id: string) =>
+        id === 'security-drone:' + locationId
+          ? world.drone
+          : (traffic.body(id) ?? world.salvagers.ships.find((ship) => ship.npcId === id));
       const first = pose(attackerId);
       const second = pose(defenderId);
       return context.engagements.engageNpcsInArena(attackerId, defenderId, {
@@ -138,11 +159,17 @@ export function advanceCareerSalvageDrones(
         defenderPosition: { ...defender },
         ...(first && {
           attackerHeadingRadians: first.headingRadians,
-          attackerVelocity: { x: Math.cos(first.headingRadians) * first.speed, y: Math.sin(first.headingRadians) * first.speed },
+          attackerVelocity: {
+            x: Math.cos(first.headingRadians) * first.speed,
+            y: Math.sin(first.headingRadians) * first.speed,
+          },
         }),
         ...(second && {
           defenderHeadingRadians: second.headingRadians,
-          defenderVelocity: { x: Math.cos(second.headingRadians) * second.speed, y: Math.sin(second.headingRadians) * second.speed },
+          defenderVelocity: {
+            x: Math.cos(second.headingRadians) * second.speed,
+            y: Math.sin(second.headingRadians) * second.speed,
+          },
         }),
       });
     };
@@ -162,7 +189,12 @@ export function advanceCareerSalvageDrones(
         onDroneAttack: (pirateId, position) =>
           engage(pirateId, 'security-drone:' + locationId, position, world.drone.position),
         onFreighterExit: (npc) => {
-          if (npc.homePortId) context.economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
+          if (npc.homePortId)
+            context.economy.sectorNpcs.requestTravel(
+              npc,
+              npc.homePortId,
+              'Rückflug zum Heimathafen'
+            );
         },
       });
       // The local worker caps each integration step at 80 ms.
@@ -173,11 +205,19 @@ export function advanceCareerSalvageDrones(
       }
     }
     context.engagements.fieldCombat?.(
-      locationId, world.field.seed,
-      salvageDroneBystanders(null, world.salvagers.ships, world.drone, locationId, traffic.snapshot(npcs))
+      locationId,
+      world.field.seed,
+      salvageDroneBystanders(
+        null,
+        world.salvagers.ships,
+        world.drone,
+        locationId,
+        traffic.snapshot(npcs)
+      )
     );
     const currentCombat = context.engagements.fieldCombat?.(locationId, world.field.seed);
-    if (currentCombat) syncFieldTrafficImpulses(salvageFieldPhysicsBodies(world.field), currentCombat.arena);
+    if (currentCombat)
+      syncFieldTrafficImpulses(salvageFieldPhysicsBodies(world.field), currentCombat.arena);
     wreckWorld.reconcileCombatWrecks(locationId, world.field.wrecks);
     context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
     context.economy.wreckClaims.rememberWorkers(world.field, world.salvagers.ships);
@@ -197,14 +237,25 @@ function rememberSalvageSecurity(
   if (!traffic) return;
   const saved = traffic.exportState();
   if (saved.seed !== field.seed) return;
-  const active = new Set(sectorNpcs.npcs.filter((npc) =>
-    isSecurityDrone(npc.id) && npc.locationId === field.sourceLocationId &&
-    npc.hullHp > 0 && !npc.travel && (npc.combatRecoverySeconds ?? 0) <= 0
-  ).map((npc) => npc.id));
+  const active = new Set(
+    sectorNpcs.npcs
+      .filter(
+        (npc) =>
+          isSecurityDrone(npc.id) &&
+          npc.locationId === field.sourceLocationId &&
+          npc.hullHp > 0 &&
+          !npc.travel &&
+          (npc.combatRecoverySeconds ?? 0) <= 0
+      )
+      .map((npc) => npc.id)
+  );
   wreckClaims.rememberSecurityEscorts(field.sourceLocationId, {
     ...saved,
-    ships: saved.ships.filter((ship) => active.has(ship.npcId) &&
-      ship.npcId === 'security-drone:' + field.sourceLocationId + ':escort-2'),
+    ships: saved.ships.filter(
+      (ship) =>
+        active.has(ship.npcId) &&
+        ship.npcId === 'security-drone:' + field.sourceLocationId + ':escort-2'
+    ),
     combatReturns: [],
   });
 }
@@ -227,15 +278,24 @@ export function careerSalvagePirates(
   if (traffic?.matchesField(field.width, field.height, field.seed)) return traffic;
   const saved = context.economy.wreckClaims.securityEscortCheckpoint(field.sourceLocationId);
   const npcs = context.economy.sectorNpcs.npcs;
-  const valid = saved && saved.seed === field.seed && saved.width === field.width &&
+  const valid =
+    saved &&
+    saved.seed === field.seed &&
+    saved.width === field.width &&
     saved.height === field.height;
   const created = valid
     ? LocalPirateTraffic.fromCheckpoint(field.width, field.height, field.seed, npcs, {
         ...saved,
-        ships: saved.ships.filter((ship) => npcs.some((npc) =>
-          npc.id === ship.npcId && npc.locationId === field.sourceLocationId &&
-          npc.hullHp > 0 && !npc.travel && (npc.combatRecoverySeconds ?? 0) <= 0
-        )),
+        ships: saved.ships.filter((ship) =>
+          npcs.some(
+            (npc) =>
+              npc.id === ship.npcId &&
+              npc.locationId === field.sourceLocationId &&
+              npc.hullHp > 0 &&
+              !npc.travel &&
+              (npc.combatRecoverySeconds ?? 0) <= 0
+          )
+        ),
       })
     : new LocalPirateTraffic(field.width, field.height, field.seed);
   context.economy.localPirates.set(field.sourceLocationId, created);

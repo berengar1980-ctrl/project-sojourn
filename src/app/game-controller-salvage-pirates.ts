@@ -47,7 +47,10 @@ export interface SalvagePirateResponseOptions {
 function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> {
   const { field, drone, pirates, salvagers, sectorNpcs } = options;
   const combatants = new Set<string>();
-  for (const duel of [...(options.npcCombats ?? []), ...(options.playerCombat ? [options.playerCombat] : [])]) {
+  for (const duel of [
+    ...(options.npcCombats ?? []),
+    ...(options.playerCombat ? [options.playerCombat] : []),
+  ]) {
     for (const ship of [duel.attacker, duel.defender]) {
       const npc = sectorNpcs.find((entry) => entry.id === ship.id);
       if (npc?.locationId !== field.sourceLocationId) continue;
@@ -79,8 +82,12 @@ function closestVisiblePirate(
     pirateShips
       .filter((pirate) => {
         const npc = options.sectorNpcs.find((entry) => entry.id === pirate.npcId);
-        return Boolean(npc && !npc.combatMovement && (npc.combatRecoverySeconds ?? 0) <= 0 &&
-          salvageDroneCanSee(options.drone, options.field, pirate.position));
+        return Boolean(
+          npc &&
+          !npc.combatMovement &&
+          (npc.combatRecoverySeconds ?? 0) <= 0 &&
+          salvageDroneCanSee(options.drone, options.field, pirate.position)
+        );
       })
       .sort(
         (a, b) =>
@@ -107,7 +114,9 @@ function advanceDroneInterception(
   const obstacles = salvageDroneShipObstacles(
     [
       ...salvagers.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
-      ...options.pirates.snapshot(sectorNpcs).map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
+      ...options.pirates
+        .snapshot(sectorNpcs)
+        .map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
     ],
     options.playerPosition,
     options.playerRadius
@@ -173,9 +182,16 @@ function advancePirateTraffic(
     salvagers.map((ship) => ({
       npcId: ship.npcId,
       position: ship.position,
-      inCombat: combatants.has(ship.npcId) || options.sectorNpcs.some((npc) =>
-        npc.id === ship.npcId && (npc.hullHp <= 0 || Boolean(npc.travel) || Boolean(npc.combatMovement) || (npc.combatRecoverySeconds ?? 0) > 0)
-      ),
+      inCombat:
+        combatants.has(ship.npcId) ||
+        options.sectorNpcs.some(
+          (npc) =>
+            npc.id === ship.npcId &&
+            (npc.hullHp <= 0 ||
+              Boolean(npc.travel) ||
+              Boolean(npc.combatMovement) ||
+              (npc.combatRecoverySeconds ?? 0) > 0)
+        ),
     })),
     rocks,
     (pirateId, targetId, position) => {

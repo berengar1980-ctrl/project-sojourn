@@ -41,7 +41,11 @@ import {
 } from './game-controller-salvage-combat-return';
 import { returnToStarMapFromSalvage } from './game-controller-salvage-exit';
 import { createWreckClaimActions, wreckClaimOwners } from './game-controller-salvage-claims';
-import { createNpcSalvageRuntime, detachNpcSalvagePlayer, hasNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
+import {
+  createNpcSalvageRuntime,
+  detachNpcSalvagePlayer,
+  hasNpcSalvageRuntime,
+} from './game-controller-salvage-npc-runtime';
 import {
   requestDistressDiagnosis,
   tickDistressDiagnosis,
