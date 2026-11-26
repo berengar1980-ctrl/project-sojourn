@@ -66,3 +66,19 @@ assert.equal(service.snapshot(miner, 100).hullHp, 100);
 assert.equal(service.repair(miner, 100, false).cost, 0);
 
 console.log('PASS ship fuel, tariffs, affordability, crew modifiers and hull persistence');
+
+player.credits = 800;
+service.burn(miner, 100000);
+const emergency = service.emergencyRefuel(miner);
+assert.equal(emergency.units, 10);
+assert.equal(emergency.cost, 800);
+assert.equal(player.credits, 0);
+assert.equal(service.snapshot(miner, 100).fuel, 10);
+assert.equal(service.emergencyRefuel(miner).units, 0);
+player.credits = 10000;
+const full = service.emergencyRefuel(miner);
+assert.equal(full.units, 135);
+assert.equal(full.cost, 4550);
+assert.equal(service.snapshot(miner, 100).fuel, 145);
+assert.equal(service.emergencyRefuel(miner).cost, 0);
+console.log('PASS paid player emergency refuel, partial purchase and no duplicate charge');
