@@ -1424,3 +1424,9 @@ Wrack-, Fragment- und Abschnittslisten einschließlich dynamischer Mitgliedschaf
 Unveränderte Körper und deren IDs werden wiederverwendet; beim Laden wird der
 Cache aus den autoritativen Feldobjekten neu aufgebaut. Das Save-Format,
 Integrationsschritte und die physische Kollisionsreaktion bleiben unverändert.
+
+Die räumliche Vorauswahl der gemeinsamen Asteroiden-/Wrackkollisionen
+verwendet numerische Zeilen- und Spaltenindizes statt String-Schlüsseln.
+Kandidatenreihenfolge, Radien, Kontaktformeln und Integrationsschritte bleiben
+unverändert. Nicht erreichbare Schildkontakte werden vor der Rotation
+verworfen. Die temporären Indizes sind nicht Teil des Spielstands.

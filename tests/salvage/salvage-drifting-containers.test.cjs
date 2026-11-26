@@ -143,7 +143,10 @@ assert.deepEqual(stationaryDistress.position, { x: 600, y: 600 }, 'distress ship
 
 // The cache must preserve the old membership/rebuild semantics, even when the
 // field arrays are edited in place or a stationary wreck becomes dynamic.
-const patrol = loadStandaloneTypeScriptModule(root, 'src/systems/salvage/salvage-patrol-geometry.ts');
+const patrol = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/salvage/salvage-patrol-geometry.ts'
+);
 const cached = motion.salvageFieldPhysicsBodies(field);
 assert.strictEqual(motion.salvageFieldPhysicsBodies(field), cached);
 const stationary = { ...stationaryDistress, id: 'another-fixed-wreck' };
