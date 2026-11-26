@@ -129,21 +129,21 @@ function candidateTradeRoute(
   );
   if (!estimate) return null;
   const age = Math.max(0, day - observedDay);
+  const riskCost = resource.legality === 'illegal' ? Math.round(maxUnits * buyPrice * 0.12) : 0;
+  const value = npcPersonalityTradeWeight(
+    npc,
+    estimate.netProfit - riskCost,
+    estimate.distance,
+    age,
+    destinationId
+  );
   return {
     resourceId: resource.id,
     destinationId,
     quantity: estimate.quantity,
     margin: unitSale - buyPrice,
     observedDay,
-    score:
-      npcPersonalityTradeWeight(
-        npc,
-        estimate.netProfit -
-          (resource.legality === 'illegal' ? Math.round(maxUnits * buyPrice * 0.12) : 0),
-        estimate.distance,
-        age,
-        destinationId
-      ) / (1 + estimate.distance / 1000),
+    score: value / (1 + estimate.distance / 1000),
   };
 }
 
