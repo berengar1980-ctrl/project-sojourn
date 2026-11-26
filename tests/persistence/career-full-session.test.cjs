@@ -426,7 +426,10 @@ function verifyPhysicalCareerRoundTrip() {
   ];
   for (const timeline of timelines) {
     const { economy: timelineEconomy } = timeline;
-    assert.equal(timelineEconomy.mining.collect(ore.resourceId, 1, 1000, location.id, rockSource), 1);
+    assert.equal(
+      timelineEconomy.mining.collect(ore.resourceId, 1, 1000, location.id, rockSource),
+      1
+    );
     timeline.chunk.amount -= 1;
     assert.equal(timelineEconomy.salvage.recover(deposit.resourceId, 1, 1000, red.id, source), 1);
     timeline.deposit.remainingAmount -= 1;
