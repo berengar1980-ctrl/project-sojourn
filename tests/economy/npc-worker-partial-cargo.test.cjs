@@ -35,6 +35,7 @@ for (const role of ['miner', 'salvager']) {
   assert.equal(npc.autonomy.phase, 'launch-prep');
 
   npc.locationId = port;
+  npc.autonomy.lastLocationId = port;
   const originalStock = markets.getEntry(port, 'ferrite').stock;
   chooseWorkerAction(npc, markets, economyResources, {}, 0);
   assert.equal(npc.autonomy.phase, 'unloading');
