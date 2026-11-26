@@ -58,18 +58,14 @@ class SectorService implements NpcSectorService {
     this.options.population?.advanceDay(this.currentDay);
   };
   private buildRoute = (npc: SectorNpcState, fromId: string, toId: string): RoutePlan => {
-    const base = planRouteWithProfile(
-      this.world,
-      fromId,
-      toId,
-      routeProfile(npc),
-      npcRouteThreats(npc, this.npcs, this.livePosition)
-    );
-    return repointRouteEndpoints(
-      base,
-      this.livePosition(npc),
-      npcOrbitDestination(this.world, npc, toId)
-    );
+    const from = this.livePosition(npc);
+    const profile = routeProfile(npc);
+    const threats = npcRouteThreats(npc, this.npcs, this.livePosition);
+    const knownOrigin = this.world.locations.some((location) => location.id === fromId);
+    const base = knownOrigin
+      ? planRouteWithProfile(this.world, fromId, toId, profile, threats)
+      : planRouteFromPoint(this.world, from, toId, profile, threats);
+    return repointRouteEndpoints(base, from, npcOrbitDestination(this.world, npc, toId));
   };
   private startLeg = (
     npc: SectorNpcState,
