@@ -51,6 +51,12 @@ const MID = ['industrial-ceramics', 'electronics', 'armor-plate', 'plasma-fuel']
 const PREMIUM = ['processor-modules', 'reactor-parts', 'ship-parts', 'rare-tech', 'antiquities'];
 const ILLEGAL = ['narcotics', 'stolen-data', 'alien-artifacts'];
 
+export function regionalSalvageResourceIds(danger: number): readonly string[] {
+  if (danger <= 1) return COMMON;
+  if (danger >= 3) return [...PREMIUM, ...ILLEGAL];
+  return [...COMMON, ...MID, ...PREMIUM, ...ILLEGAL];
+}
+
 function regionalResourcePool(danger: number, index: number, roll: number): readonly string[] {
   if (danger <= 1) return COMMON;
   if (danger >= 3) return index % 3 === 1 ? ILLEGAL : PREMIUM;
