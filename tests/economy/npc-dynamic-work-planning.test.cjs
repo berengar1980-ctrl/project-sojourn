@@ -30,7 +30,13 @@ const positions = {
 const sites = [
   { id: a, role: 'miner', position: positions[a], danger: 1, resourceIds: ['ferrite'] },
   { id: b, role: 'miner', position: positions[b], danger: 1, resourceIds: ['cuprium'] },
-  { id: 'drift-wreck', role: 'salvager', position: positions[b], danger: 1, resourceIds: ['cuprium'] },
+  {
+    id: 'drift-wreck',
+    role: 'salvager',
+    position: positions[b],
+    danger: 1,
+    resourceIds: ['cuprium'],
+  },
 ];
 const quote = () => ({ distance: 100, refuelCost: 0, fuelExpense: 25 });
 
