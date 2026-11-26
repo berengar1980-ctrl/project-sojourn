@@ -1,4 +1,4 @@
-import { registerPermanentSalvageStocks } from './game-controller-salvage-stocks';
+import { permanentSalvageField } from './game-controller-salvage-stocks';
 import type { SalvageField, SectorSalvageEvent } from '../core/salvage-types';
 import type { WorldLocation } from '../core/world-types';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -42,12 +42,10 @@ export function fieldWithCareerCombatWrecks(
       wrecks: combatWrecks,
     };
   } else if (location.activities.salvage || combatWrecks.length) {
-    field = generateSalvageField(location.id, seed, location.dangerLevel);
-    if (location.activities.salvage) {
-      context.economy.wreckClaims.restoreField(field);
-      registerPermanentSalvageStocks(context.economy.simulation, field);
-      context.economy.wreckClaims.rememberField(field);
-    }
+    field = location.activities.salvage
+      ? permanentSalvageField(context, location, seed)
+      : generateSalvageField(location.id, seed, location.dangerLevel);
+    if (location.activities.salvage) context.economy.wreckClaims.rememberField(field);
   }
   if (field && field.wrecks !== combatWrecks) {
     const known = new Set(field.wrecks.map((wreck) => wreck.id));
