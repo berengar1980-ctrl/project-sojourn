@@ -69,10 +69,7 @@ const physicalReports = physicalRun.stdout
   .filter((line) => line.startsWith('{'))
   .map((line) => JSON.parse(line))
   .filter((report) => report.physicalFields);
-assert.deepEqual(
-  physicalReports.map((report) => report.days),
-  horizons
-);
+assert.deepEqual(physicalReports.map((report) => report.days), horizons);
 for (const report of physicalReports) {
   assert(report.resourceBalance.every((row) => row.discrepancy === 0));
   console.log(JSON.stringify(report));
