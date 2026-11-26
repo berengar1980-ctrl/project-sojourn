@@ -115,6 +115,42 @@ function createIntegratedFieldAudit(
     salvageWorld.advanceCareerSalvageDrones(context, dt, fields)
   );
 
+  return createFieldAuditCallbacks({
+    stats,
+    bridge,
+    context,
+    events,
+    balanceDailyAsteroids,
+    fields,
+    world,
+    tickEvents,
+    tickMining,
+    tickSalvage,
+    recordCareerCombatWrecks,
+    physical,
+    salvageLocations,
+    salvageStockId,
+    stocks,
+  });
+}
+
+function createFieldAuditCallbacks({
+  stats,
+  bridge,
+  context,
+  events,
+  balanceDailyAsteroids,
+  fields,
+  world,
+  tickEvents,
+  tickMining,
+  tickSalvage,
+  recordCareerCombatWrecks,
+  physical,
+  salvageLocations,
+  salvageStockId,
+  stocks,
+}) {
   return {
     stats,
     hooks: bridge.fieldEngagementHooks(() => context),

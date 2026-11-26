@@ -2,7 +2,6 @@
 
 const assert = require('node:assert/strict');
 const path = require('node:path');
-const { performance } = require('node:perf_hooks');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const profiling = process.env.SOJOURN_PROFILE === '1';

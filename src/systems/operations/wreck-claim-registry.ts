@@ -77,9 +77,7 @@ export class WreckClaimRegistry {
       ...(previous?.seed === field.seed && previous.securityEscorts
         ? { securityEscorts: previous.securityEscorts }
         : {}),
-      ...(previous?.seed === field.seed && previous.workers
-        ? { workers: previous.workers }
-        : {}),
+      ...(previous?.seed === field.seed && previous.workers ? { workers: previous.workers } : {}),
       wrecks: field.wrecks.map((wreck) => ({
         id: wreck.id,
         resources: Object.fromEntries(
