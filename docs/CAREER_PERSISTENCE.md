@@ -1451,3 +1451,10 @@ für Beleuchtung und Rand; der Clip wird vor dem Rand aufgehoben. Fertige
 Asteroidensprites behalten keine zweite, unbenutzte Rohtextur. Die Änderung
 betrifft ausschließlich flüchtige Darstellung, keine Geometrie der Physik,
 Spielzustände oder Save-Daten.
+
+Die gemeinsame Asteroidenintegration vermeidet temporäre Achsenobjekte bei
+identischen Rand- und Impulsformeln. Der strategische Routenplaner verwendet
+numerische Besuchsmarkierungen und unveränderte Gefahrenprüfungen. Die
+Texturgenerierung berechnet dieselben Lattice-Werte pro Raster einmal.
+Die Zeitverteilung autoritativer Feld-Ticks bleibt bis zu einer sicheren
+modulübergreifenden Lösung unverändert. Keine neuen Save-Daten.

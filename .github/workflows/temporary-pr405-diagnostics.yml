@@ -95,8 +95,8 @@ jobs:
   performance-benchmark:
     if: >-
       github.head_ref == 'fix/npc-combat-logic' &&
-      github.event.action == 'labeled' &&
-      github.event.label.name == 'performance-benchmark'
+      (github.event.action == 'synchronize' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'performance-benchmark'))
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
@@ -117,24 +117,35 @@ jobs:
         run: |
           npm ci --prefix baseline
           npm ci --prefix candidate
-      - name: Baseline 3/10/30-day benchmark
-        working-directory: baseline
-        continue-on-error: true
+      - name: Paired Main and candidate benchmark (three repetitions)
         run: |
-          for days in 3 10 30; do
-            echo "BASELINE days=$days"
-            /usr/bin/time -v env SOJOURN_INTEGRATED_FIELDS=1 SOJOURN_LONGRUN_DAYS="$days" node tests/economy/npc-economy-longrun.test.cjs
+          set -uo pipefail
+          mkdir -p benchmark-results
+          failed=0
+          for round in 1 2 3; do
+            if [ "$round" = 2 ]; then order="candidate baseline"; else order="baseline candidate"; fi
+            for checkout in $order; do
+              echo "BENCHMARK round=$round checkout=$checkout"
+              (
+                cd "$checkout"
+                /usr/bin/time -f 'BENCHMARK wall=%e cpu_user=%U cpu_system=%S rss_kib=%M' \
+                  env SOJOURN_INTEGRATED_FIELDS=1 SOJOURN_LONGRUN_DAYS=3 \
+                  node tests/economy/npc-economy-longrun.test.cjs
+              ) 2>&1 | tee "benchmark-results/$checkout-$round.log" || failed=1
+            done
           done
-      - name: Candidate 3/10/30-day benchmark and CPU profile
+          exit "$failed"
+      - name: Candidate CPU profile (separate from timed comparison)
+        if: always()
         working-directory: candidate
         run: |
           mkdir -p profiles
-          for days in 3 10 30; do
-            echo "CANDIDATE days=$days"
-            /usr/bin/time -v env SOJOURN_INTEGRATED_FIELDS=1 SOJOURN_LONGRUN_DAYS="$days" SOJOURN_PROFILE=1 node --cpu-prof --cpu-prof-dir=profiles tests/economy/npc-economy-longrun.test.cjs
-          done
+          SOJOURN_INTEGRATED_FIELDS=1 SOJOURN_LONGRUN_DAYS=3 SOJOURN_PROFILE=1 \
+            node --cpu-prof --cpu-prof-dir=profiles tests/economy/npc-economy-longrun.test.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: sojourn-pr405-cpu-profiles
-          path: candidate/profiles
+          name: sojourn-pr405-performance-comparison
+          path: |
+            benchmark-results
+            candidate/profiles

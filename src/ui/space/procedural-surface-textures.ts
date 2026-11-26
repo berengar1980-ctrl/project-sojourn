@@ -136,6 +136,63 @@ export function createAsteroidSurface(id: string, kind: 'resource' | 'debris'): 
   return { outline, craters, fractures };
 }
 
+/** Exact FBM on a regular raster: reuse lattice samples and axis interpolation weights. */
+function asteroidNoiseRaster(
+  seed: number,
+  size: number,
+  octaves: number,
+  baseX: (normalized: number) => number,
+  baseY: (normalized: number) => number
+): Float64Array {
+  const values = new Float64Array(size * size);
+  let amplitude = 0.58;
+  let frequency = 1;
+  let normalization = 0;
+  for (let octave = 0; octave < octaves; octave++) {
+    const xs = Array.from({ length: size }, (_, index) => {
+      const x = baseX((index / (size - 1)) * 2 - 1) * frequency;
+      return { cell: Math.floor(x), weight: smooth(x - Math.floor(x)) };
+    });
+    const ys = Array.from({ length: size }, (_, index) => {
+      const y = baseY((index / (size - 1)) * 2 - 1) * frequency;
+      return { cell: Math.floor(y), weight: smooth(y - Math.floor(y)) };
+    });
+    const minX = xs[0]!.cell;
+    const minY = ys[0]!.cell;
+    const columns = xs[size - 1]!.cell - minX + 2;
+    const rows = ys[size - 1]!.cell - minY + 2;
+    const latticeValues = new Float64Array(columns * rows);
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        latticeValues[y * columns + x] = lattice(seed + octave * 1013, x + minX, y + minY);
+      }
+    }
+    for (let y = 0; y < size; y++) {
+      const py = ys[y]!;
+      const row = (py.cell - minY) * columns;
+      for (let x = 0; x < size; x++) {
+        const px = xs[x]!;
+        const cell = row + px.cell - minX;
+        const a = latticeValues[cell]!;
+        const b = latticeValues[cell + 1]!;
+        const c = latticeValues[cell + columns]!;
+        const d = latticeValues[cell + columns + 1]!;
+        const top = a + (b - a) * px.weight;
+        const bottom = c + (d - c) * px.weight;
+        const index = y * size + x;
+        values[index] = values[index]! + (top + (bottom - top) * py.weight) * amplitude;
+      }
+    }
+    normalization += amplitude;
+    amplitude *= 0.5;
+    frequency *= 2.07;
+  }
+  for (let index = 0; index < values.length; index++) {
+    values[index] = values[index]! / normalization;
+  }
+  return values;
+}
+
 function asteroidTextureSize(kind: 'resource' | 'debris', detail: AsteroidTextureDetail): number {
   if (detail === 'far') return kind === 'debris' ? 48 : 64;
   if (detail === 'near') return kind === 'debris' ? 160 : 320;
@@ -161,14 +218,37 @@ export function createAsteroidTexture(
   const coarseOctaves = detail === 'near' ? 6 : detail === 'far' ? 4 : 5;
   const fineFrequency = detail === 'near' ? 10.5 : detail === 'far' ? 5.4 : 7.5;
 
+  const coarseRaster = asteroidNoiseRaster(
+    seed,
+    size,
+    coarseOctaves,
+    (n) => n * 2.4 + 11,
+    (n) => n * 2.4 - 7
+  );
+  const fineRaster = asteroidNoiseRaster(
+    seed + 701,
+    size,
+    3,
+    (n) => n * fineFrequency,
+    (n) => n * fineFrequency
+  );
+  const microRaster =
+    detail === 'near'
+      ? asteroidNoiseRaster(
+          seed + 1301,
+          size,
+          2,
+          (n) => n * 22,
+          (n) => n * 22
+        )
+      : null;
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
-      const nx = (x / (size - 1)) * 2 - 1;
-      const ny = (y / (size - 1)) * 2 - 1;
-      const index = (y * size + x) * 4;
-      const coarse = fbm(seed, nx * 2.4 + 11, ny * 2.4 - 7, coarseOctaves);
-      const fine = fbm(seed + 701, nx * fineFrequency, ny * fineFrequency, 3);
-      const micro = detail === 'near' ? fbm(seed + 1301, nx * 22, ny * 22, 2) : 0.5;
+      const pixel = y * size + x;
+      const index = pixel * 4;
+      const coarse = coarseRaster[pixel]!;
+      const fine = fineRaster[pixel]!;
+      const micro = microRaster?.[pixel] ?? 0.5;
       const ridge = Math.abs(fine - 0.5) * 2;
       const material = Math.max(0, Math.min(1, coarse * 0.72 + fine * 0.22 + micro * 0.06));
       const brightness = 0.79 + ridge * 0.17 + (micro - 0.5) * 0.12;

@@ -1,4 +1,5 @@
 import type { PlanetBiome, WorldPoint } from '../../core/world-types';
+import { measurePerformance } from '../../core/performance-diagnostics';
 import {
   createAsteroidSurface,
   createAsteroidTexture,
@@ -171,7 +172,9 @@ export class ProceduralSpaceBodyRenderer {
 
     const surface = this.asteroidSurface(id, kind);
     // The finished sprite owns the baked texture. Do not retain a second canvas.
-    const texture = createAsteroidTexture(id, kind, detail);
+    const texture = measurePerformance('canvas.asteroid.texture-build', () =>
+      createAsteroidTexture(id, kind, detail)
+    );
     const radius = size * 0.5;
     context.save();
     context.translate(radius, radius);
