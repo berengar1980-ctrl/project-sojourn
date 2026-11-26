@@ -401,7 +401,8 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
       !npc ||
       npc.hullHp <= 0 ||
       npc.locationId !== runtime.options.locationId ||
-      (runtime.options.dynamicRoster && (npc.travel || npc.workLocationId !== npc.locationId))
+      (runtime.options.dynamicRoster &&
+        (npc.travel || npc.workLocationId !== npc.locationId || ship.name !== npc.name))
     ) {
       runtime.combatReturnPositions.delete(ship.npcId);
       runtime.ships.splice(index, 1);
