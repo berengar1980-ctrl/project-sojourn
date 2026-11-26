@@ -1,3 +1,4 @@
+import { DRONE_PATROL_SPEED, isSecurityDrone } from '../../core/security-drone';
 import { resolveFieldDebrisContacts } from '../local-space/field-debris-contact';
 import { createShieldWorldGeometry } from '../local-space/local-space-collision';
 import { droneSeesTarget, securityPirateApproach } from '../operations/asteroid-security-drone';
@@ -184,7 +185,11 @@ export class LocalPirateTraffic {
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set<string>();
     for (const npc of pirates) {
-      if (localArmedTraffic(npc) && npc.hullHp > 0 && (!npc.travel || npc.combatMovement)) {
+      if (
+        localArmedTraffic(npc) && npc.hullHp > 0 &&
+        (npc.combatRecoverySeconds ?? 0) <= 0 &&
+        npc.retiredUntilDay === undefined && (!npc.travel || npc.combatMovement)
+      ) {
         active.add(npc.id);
       }
     }
@@ -212,11 +217,13 @@ export class LocalPirateTraffic {
         }
         continue;
       }
+      const npc = pirates.find((entry) => entry.id === id);
+      const spawnKey = isSecurityDrone(id) ? id + ':' + (npc?.combatDefeats ?? 0) : id;
       this.ships.set(id, {
         npcId: id,
         position:
           this.combatReturnPositions.get(id) ??
-          edgePoint(id + ':' + this.seed, this.width, this.height),
+          edgePoint(spawnKey + ':' + this.seed, this.width, this.height),
         headingRadians: 0,
         speed: 0,
         awaitingCombat: false,
@@ -381,13 +388,14 @@ export class LocalPirateTraffic {
     dt: number,
     intercept: (attacker: string, target: string, position: WorldPoint) => boolean
   ): void {
-    const drone = ship.npcId.startsWith('security-drone:');
+    const drone = isSecurityDrone(ship.npcId);
     const hostiles = this.snapshot(
       npcs.filter(
         (npc) =>
           npc.pirate &&
           npc.hullHp > 0 &&
-          (!npc.combatMovement || (drone && npc.combatMovement.mode === 'engaged'))
+          (npc.combatRecoverySeconds ?? 0) <= 0 &&
+          !npc.combatMovement
       )
     );
     const distance = (p: WorldPoint) => Math.hypot(p.x - ship.position.x, p.y - ship.position.y);
@@ -416,7 +424,7 @@ export class LocalPirateTraffic {
         x: this.width * (0.5 + 0.3 * Math.cos(angle)),
         y: this.height * (0.5 + 0.3 * Math.sin(angle)),
       };
-      const arrived = moveFieldShip(ship, point, 118, dt, blockers, 40, 'patrol');
+      const arrived = moveFieldShip(ship, point, drone ? DRONE_PATROL_SPEED : 118, dt, blockers, 40, 'patrol');
       if (arrived || ship.routeState) return;
     }
   }
