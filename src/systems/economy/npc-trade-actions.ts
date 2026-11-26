@@ -323,13 +323,13 @@ function handleWorkerSideTrade(npc: NpcEconomyState): boolean {
   return false;
 }
 
-function handleWorkerFullCargo(
+function handleWorkerCargo(
   npc: NpcEconomyState,
   positions: Readonly<Record<string, EconomyPoint>>,
   day: number,
   quoteTravel?: NpcTravelQuoteFn
 ): boolean {
-  if (npcCargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity))) return false;
+  if (npcCargoUsed(npc) <= 0) return false;
   const cargo = Object.entries(npc.cargo)
     .filter(([, value]) => quantity(value) > 0)
     .sort((first, second) => quantity(second[1]) - quantity(first[1]));
@@ -407,7 +407,7 @@ export function chooseWorkerAction(
   ensureNpcAutonomy(npc);
   if (returnDamagedWorkerToPort(npc, quoteTravel)) return;
   if (handleWorkerSideTrade(npc)) return;
-  if (handleWorkerFullCargo(npc, positions, day, quoteTravel)) return;
+  if (handleWorkerCargo(npc, positions, day, quoteTravel)) return;
   if (handleWorkerAtWorksite(npc)) return;
   arrangeWorkerJourney(npc, resources, positions, day, quoteTravel);
 }
