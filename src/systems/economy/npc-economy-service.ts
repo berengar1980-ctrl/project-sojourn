@@ -222,6 +222,9 @@ function chooseReadyAction(
 
 function advanceWorkingPhase(npc: NpcEconomyState, options: NpcEconomyServiceOptions): void {
   const misplaced = options.workPlanning && npc.workLocationId !== npc.locationId;
+  // A physical salvager must fly to the field exit before the economy may
+  // dispatch its loaded cargo. The local service calls dispatchLoadedWorker.
+  if (!misplaced && npc.role === 'salvager' && options.physicalSalvageWorker) return;
   if (misplaced || npcCargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity))) {
     if (options.workPlanning) finishNpcWorksite(npc);
     beginNpcAutonomyPhase(npc, 'thinking');
