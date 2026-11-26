@@ -53,10 +53,8 @@ for (const days of horizons) {
 }
 console.log('PASS 90/180/365-day NPC economic progression, customs and insurance audit');
 
-const physicalTest = path.resolve(
-  __dirname,
-  '../tests/economy/physical-resource-horizons.test.cjs'
-);
+const physicalTestPath = '../tests/economy/physical-resource-horizons.test.cjs';
+const physicalTest = path.resolve(__dirname, physicalTestPath);
 const physicalRun = spawnSync(process.execPath, [physicalTest], {
   cwd: path.resolve(__dirname, '..'),
   encoding: 'utf8',
@@ -72,7 +70,8 @@ const physicalReports = physicalRun.stdout
   .filter((line) => line.startsWith('{'))
   .map((line) => JSON.parse(line))
   .filter((report) => report.physicalFields);
-assert.deepEqual(physicalReports.map((report) => report.days), horizons);
+const physicalDays = physicalReports.map((report) => report.days);
+assert.deepEqual(physicalDays, horizons);
 for (const report of physicalReports) {
   assert(report.resourceBalance.every((row) => row.discrepancy === 0));
   console.log(JSON.stringify(report));
