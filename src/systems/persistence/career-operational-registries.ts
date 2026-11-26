@@ -156,6 +156,36 @@ function verifyWreckRecord(wreck: unknown, ids: Set<string>): void {
   ids.add(wreck.id);
 }
 
+function verifySalvageWorkers(value: unknown): void {
+  if (value === undefined) return;
+  if (!Array.isArray(value) || value.length > 1000)
+    throw new Error('Ungültige Bergungsschiff-Liste.');
+  const seen = new Set<string>();
+  const point = (candidate: unknown) => isRecord(candidate) &&
+    validFinite(candidate.x, -Infinity) && validFinite(candidate.y, -Infinity);
+  for (const ship of value) {
+    if (
+      !isRecord(ship) || !validIdentity(ship, ['npcId', 'shipId', 'name']) ||
+      typeof ship.npcId !== 'string' || seen.has(ship.npcId) ||
+      !point(ship.position) || !point(ship.exitPoint) ||
+      !validFinite(ship.headingRadians, -Infinity) || !validFinite(ship.speed) ||
+      !['entering', 'approaching', 'scanning', 'salvaging', 'exiting'].includes(ship.phase as string) ||
+      (ship.targetWreckId !== null && typeof ship.targetWreckId !== 'string') ||
+      typeof ship.salvageActive !== 'boolean' ||
+      !validFinite(ship.scanProgress) || ship.scanProgress > 1 ||
+      !validFinite(ship.workAccumulator, -Infinity)
+    ) throw new Error('Ungültiger physischer Bergungsschiff-Zustand.');
+    const route = ship.routeState;
+    if (route !== undefined && (
+      !isRecord(route) || !point(route.target) || !Array.isArray(route.points) ||
+      !route.points.length || route.points.length > 1000 ||
+      !route.points.every(point) || !validFinite(route.index) ||
+      !Number.isInteger(route.index) || route.index >= route.points.length
+    )) throw new Error('Ungültige gespeicherte Bergungsroute.');
+    seen.add(ship.npcId);
+  }
+}
+
 function verifyWreckField(pair: unknown, fields: Set<string>): void {
   if (
     !Array.isArray(pair) ||
@@ -173,6 +203,7 @@ function verifyWreckField(pair: unknown, fields: Set<string>): void {
   if (pair[1].drone !== undefined) {
     stageSecurityDroneCheckpoint(pair[1].drone, 460, 8);
   }
+  verifySalvageWorkers(pair[1].workers);
   const escorts = pair[1].securityEscorts;
   if (escorts !== undefined) {
     if (
