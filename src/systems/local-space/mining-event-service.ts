@@ -131,6 +131,7 @@ function eventChoices(type: MiningEventType): readonly MiningEventChoice[] {
 }
 
 export type MiningBonusFunding = (resourceId: string, amount: number) => number;
+type AsteroidBonusFunding = (asteroidId: string, resourceId: string, amount: number) => number;
 
 interface AppliedMiningEventResult {
   readonly resolution: MiningEventResolution;
@@ -281,7 +282,7 @@ export function createMiningEventController(
       asteroid: LocalAsteroid,
       choiceId: string,
       damageHullFraction: (fraction: number) => number,
-      fundBonus?: MiningBonusFunding
+      fundBonus?: AsteroidBonusFunding
     ): MiningEventResolution | null {
       if (!session || !pending) return null;
       const effect = resolveMiningEventEffect(
@@ -292,7 +293,10 @@ export function createMiningEventController(
       );
       if (!effect) return null;
       pending = null;
-      const applied = applyMiningEventResult(asteroid, effect, damageHullFraction, fundBonus);
+      const funding = fundBonus
+        ? (id: string, amount: number) => fundBonus(asteroid.id, id, amount)
+        : undefined;
+      const applied = applyMiningEventResult(asteroid, effect, damageHullFraction, funding);
       cycleModifier = Math.max(0.5, Math.min(1.8, cycleModifier * applied.cycleMultiplier));
       recoverySeconds = Math.max(recoverySeconds, applied.recoverySeconds);
       return applied.resolution;
