@@ -69,7 +69,10 @@ interface SalvageRuntimeOptions {
   readonly setup: ShipSalvageSetup;
   readonly crewSkill: number;
   readonly collect: SalvageResourceCollector;
-  readonly onWreckEventResolved?: (wreck: SalvageWreck, result: SalvageEventResolution) => SalvageEventResolution;
+  readonly onWreckEventResolved?: (
+    wreck: SalvageWreck,
+    result: SalvageEventResolution
+  ) => SalvageEventResolution;
   readonly collectComponent?: SalvageComponentCollector;
   readonly approachSpeed: number;
   readonly turnRateMultiplier?: number;

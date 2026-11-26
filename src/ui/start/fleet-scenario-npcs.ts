@@ -67,7 +67,11 @@ function jobFor(ship: FleetScenarioShip): NpcJob {
   return 'patrol';
 }
 
-function scenarioTemplate(ship: FleetScenarioShip, job: NpcJob, templates: readonly SectorNpcState[]) {
+function scenarioTemplate(
+  ship: FleetScenarioShip,
+  job: NpcJob,
+  templates: readonly SectorNpcState[]
+) {
   const preset = ship.draft.campaignNpcId ? campaignCombatPreset(ship.draft.campaignNpcId) : null;
   const template =
     preset ??

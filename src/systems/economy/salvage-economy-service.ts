@@ -32,7 +32,11 @@ function cargoUsed(player: PlayerEconomyState): number {
 
 export interface SalvageEconomyService {
   prepareEventField?(field: SalvageField): void;
-  reconcileWreckEvent?(field: SalvageField, wreck: SalvageWreck, result: SalvageEventResolution): SalvageEventResolution;
+  reconcileWreckEvent?(
+    field: SalvageField,
+    wreck: SalvageWreck,
+    result: SalvageEventResolution
+  ): SalvageEventResolution;
   recover(
     resourceId: EconomyResourceId,
     requestedQuantity: number,
@@ -78,7 +82,8 @@ export function createSalvageEconomyService(
   cargo: PlayerCargoReceiver
 ): SalvageEconomyService {
   return {
-    reconcileWreckEvent: (field, wreck, result) => reconcileSalvageEventStock(allocator, field, wreck, result),
+    reconcileWreckEvent: (field, wreck, result) =>
+      reconcileSalvageEventStock(allocator, field, wreck, result),
     prepareEventField(field) {
       if (!allocator.fundPhysicalStock || !allocator.getPhysicalStock) return;
       for (const wreck of field.wrecks) {

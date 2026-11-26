@@ -155,5 +155,4 @@ function trackPhysicalRecovery(npcs, physical, stats) {
     recordWorkedSite(stats.salvageSitesByNpc, npc, accepted);
     return accepted;
   };
-
 }

@@ -66,7 +66,10 @@ export interface NpcLocalSalvageOptions {
   readonly salvagers: readonly SectorNpcState[];
   readonly initialPosition?: (id: string) => WorldPoint | undefined;
   readonly initialWorkers?: readonly LocalNpcSalvagerState[];
-  readonly onWreckEventResolved?: (wreck: SalvageWreck, result: SalvageEventResolution) => SalvageEventResolution;
+  readonly onWreckEventResolved?: (
+    wreck: SalvageWreck,
+    result: SalvageEventResolution
+  ) => SalvageEventResolution;
   /** Disable internal contacts when the shared world solves all physical ships once. */
   readonly resolveLocalCollisions?: boolean;
   readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
