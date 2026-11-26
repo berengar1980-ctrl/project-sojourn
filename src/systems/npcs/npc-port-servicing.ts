@@ -43,7 +43,7 @@ export function serviceNpcAtPort(npc: SectorNpcState, location?: WorldLocation):
 /** Contracted system patrols earn operating funds for completed patrol runs. */
 export function payNpcPatrolContract(npc: SectorNpcState): number {
   if (npc.job !== 'patrol' || npc.pirate) return 0;
-  const reward = 500;
+  const reward = 2800;
   npc.credits += reward;
   return reward;
 }
