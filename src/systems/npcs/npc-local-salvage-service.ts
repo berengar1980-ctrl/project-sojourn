@@ -65,6 +65,7 @@ export interface NpcLocalSalvageOptions {
   readonly field: SalvageField;
   readonly salvagers: readonly SectorNpcState[];
   readonly initialPosition?: (id: string) => WorldPoint | undefined;
+  readonly initialWorkers?: readonly LocalNpcSalvagerState[];
   /** Disable internal contacts when the shared world solves all physical ships once. */
   readonly resolveLocalCollisions?: boolean;
   readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
@@ -99,6 +100,18 @@ class LocalSalvageService implements NpcLocalSalvageService {
         createSalvageEventController(hashId(options.locationId + ':' + npc.id)),
       ])
     );
+    for (const saved of options.initialWorkers ?? []) {
+      const npc = this.byId.get(saved.npcId);
+      if (!npc || !eligible(npc, options.locationId) || npc.shipId !== saved.shipId) continue;
+      const ship = structuredClone(saved);
+      if (ship.targetWreckId && !options.field.wrecks.some((wreck) => wreck.id === ship.targetWreckId)) {
+        ship.phase = 'approaching';
+        ship.targetWreckId = null;
+        ship.salvageActive = false;
+        delete ship.routeState;
+      }
+      this.ships.push(ship);
+    }
     this.syncArrivals();
   }
   private beginExit = (ship: LocalNpcSalvagerState): void => {
