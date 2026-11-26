@@ -126,7 +126,7 @@ function restoreMiningChunks(
       !chunk.id.startsWith('chunk-' + instance.seed + '-') ||
       ids.has(chunk.id) ||
       !asteroid?.deposits.some((entry) => entry.resourceId === chunk.resourceId) ||
-      !Number.isSafeInteger(chunk.amount) ||
+      !Number.isFinite(chunk.amount) ||
       chunk.amount <= 0 ||
       !Number.isFinite(chunk.ageSeconds) ||
       chunk.ageSeconds < 0 ||
