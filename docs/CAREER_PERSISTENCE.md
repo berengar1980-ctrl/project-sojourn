@@ -1440,3 +1440,8 @@ einer Anfrage und prüft einen finanzierbaren Direktflug vor der optimistischen
 Tankstellensuche. Der A*-Routenplaner berechnet die identische untere Schranke
 zum Ziel pro Knoten einmal. Suchreihenfolge, Kostenformeln, Gefahrenprofile,
 Tankregeln und persistierte Routen bleiben unverändert. Keine neuen Save-Daten.
+
+Die lokale Frachtanzeige hält ihre DOM-Zeilen bei gleicher Ressourcen-ID und
+Reihenfolge montiert und schreibt nur geänderte Anzeigewerte. Diese rein
+visuellen Referenzen besitzen keinen Spielzustand und werden nicht gespeichert.
+Die zusätzlichen Messpunkte ändern keine Aktualisierungsintervalle.

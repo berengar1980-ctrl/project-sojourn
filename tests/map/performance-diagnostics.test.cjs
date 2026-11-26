@@ -50,4 +50,7 @@ for (const section of ['field', 'traffic', 'workers', 'drift', 'checkpoint']) {
 }
 assert(has('src/app/game-controller-scene-tick.ts', 'scene.local.physics'));
 assert(has('src/app/game-controller-scene-tick.ts', 'scene.local.panel'));
+for (const section of ['renderer', 'hud', 'overlay']) {
+  assert(has('src/ui/local-space/local-space-panel.ts', 'scene.local.' + section));
+}
 console.log('PASS opt-in browser performance diagnostics');

@@ -69,27 +69,54 @@ function asteroidStatus(model: LocalSpaceViewModel): string {
     .join(' / ');
 }
 
-function renderCargo(model: LocalSpaceViewModel, total: HTMLElement, list: HTMLElement): void {
-  total.textContent = Math.round(model.collectedOre).toString();
-  list.replaceChildren();
+interface CargoRow {
+  readonly resourceId: string;
+  readonly name: HTMLElement;
+  readonly amount: HTMLElement;
+}
 
-  if (model.cargoResources.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'local-cargo-empty';
-    empty.textContent = 'LEER';
-    list.append(empty);
-    return;
+const cargoRows = new WeakMap<HTMLElement, readonly CargoRow[]>();
+
+/** Keep the existing DOM when the cargo layout or displayed quantities are unchanged. */
+export function renderCargo(
+  model: Pick<LocalSpaceViewModel, 'collectedOre' | 'cargoResources'>,
+  total: HTMLElement,
+  list: HTMLElement
+): void {
+  const totalText = Math.round(model.collectedOre).toString();
+  if (total.textContent !== totalText) total.textContent = totalText;
+  let rows = cargoRows.get(list);
+  const resources = model.cargoResources;
+  if (
+    !rows ||
+    rows.length !== resources.length ||
+    rows.some((row, index) => row.resourceId !== resources[index]!.resourceId)
+  ) {
+    list.replaceChildren();
+    rows = resources.map((resource) => {
+      const row = document.createElement('div');
+      row.className = 'local-cargo-row';
+      const name = document.createElement('span');
+      const amount = document.createElement('strong');
+      row.append(name, amount);
+      list.append(row);
+      return { resourceId: resource.resourceId, name, amount };
+    });
+    if (!rows.length) {
+      const empty = document.createElement('div');
+      empty.className = 'local-cargo-empty';
+      empty.textContent = 'LEER';
+      list.append(empty);
+    }
+    cargoRows.set(list, rows);
   }
-
-  for (const resource of model.cargoResources) {
-    const row = document.createElement('div');
-    row.className = 'local-cargo-row';
-    const name = document.createElement('span');
-    const amount = document.createElement('strong');
-    name.textContent = resource.name.toUpperCase();
-    amount.textContent = Math.round(resource.amount).toString();
-    row.append(name, amount);
-    list.append(row);
+  for (let index = 0; index < rows.length; index++) {
+    const row = rows[index]!;
+    const resource = resources[index]!;
+    const name = resource.name.toUpperCase();
+    const amount = Math.round(resource.amount).toString();
+    if (row.name.textContent !== name) row.name.textContent = name;
+    if (row.amount.textContent !== amount) row.amount.textContent = amount;
   }
 }
 

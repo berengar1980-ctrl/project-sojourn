@@ -1,3 +1,4 @@
+import { measurePerformance } from '../../core/performance-diagnostics';
 import type { CombatTactic } from '../../systems/combat/strategic-combat-service';
 
 import type { LocalSpaceViewModel } from '../../features/local-space/local-space-view-model';
@@ -217,7 +218,7 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   );
 
   const updateOverlay = (): void => {
-    display.update(model.combat);
+    measurePerformance('scene.local.hud', () => display.update(model.combat));
     updateLocalOverlay({
       model,
       controls,
@@ -261,12 +262,13 @@ export function createLocalSpacePanel(options: LocalSpacePanelOptions): LocalSpa
   return {
     update(nextModel): void {
       model = nextModel;
-      renderer.update(model);
-      if (model.combat) display.update(model.combat);
+      measurePerformance('scene.local.renderer', () => renderer.update(model));
+      if (model.combat)
+        measurePerformance('scene.local.hud', () => display.update(model.combat));
       const now = performance.now();
       if (now - lastOverlayUpdate >= 100) {
         lastOverlayUpdate = now;
-        updateOverlay();
+        measurePerformance('scene.local.overlay', updateOverlay);
       }
     },
     destroy(): void {
