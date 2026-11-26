@@ -455,18 +455,7 @@ export function advanceControllerFieldWorld(
       );
     }
   });
-  const salvageLocation =
-    context.state.mode === 'salvage-space'
-      ? context.state.salvageScene?.getField().sourceLocationId
-      : null;
-  // Permanent salvage runtimes own their own wreck drift and combat poses.
-  for (const location of narrowsSector.locations)
-    if (backgroundSalvagePatrol(context, location.id)) combatLocations.add(location.id);
-  fieldWorld.advanceCombatWreckMotion(
-    deltaSeconds,
-    context.state.embeddedCombat === 'local-space' ? localId : salvageLocation,
-    combatLocations
-  );
+  advanceRemainingWreckMotion(context, fieldWorld, deltaSeconds, localId, combatLocations);
 }
 
 function activeFieldContact(context: ControllerRuntimeContext | null, npc: SectorNpcState) {
@@ -516,4 +505,25 @@ function advanceFieldWreckLifetime(
       invalidateSalvagePhysics(field);
     }
   });
+}
+
+function advanceRemainingWreckMotion(
+  context: ControllerRuntimeContext,
+  fieldWorld: AsteroidFieldWorld,
+  deltaSeconds: number,
+  localId: string | null,
+  combatLocations: Set<string>
+): void {
+  const salvageLocation =
+    context.state.mode === 'salvage-space'
+      ? context.state.salvageScene?.getField().sourceLocationId
+      : null;
+  // Permanent salvage runtimes own their own wreck drift and combat poses.
+  for (const location of narrowsSector.locations)
+    if (backgroundSalvagePatrol(context, location.id)) combatLocations.add(location.id);
+  fieldWorld.advanceCombatWreckMotion(
+    deltaSeconds,
+    context.state.embeddedCombat === 'local-space' ? localId : salvageLocation,
+    combatLocations
+  );
 }

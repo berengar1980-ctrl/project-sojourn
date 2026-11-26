@@ -420,44 +420,44 @@ class LocalSalvageService implements NpcLocalSalvageService {
       this.resolveLocalCollisions(combatantId, skipPlayer);
   };
   private advanceWorker(ship: LocalNpcSalvagerState, npc: SectorNpcState, dt: number): boolean {
-  if (ship.phase === 'entering') {
-    if (!this.assignTarget(ship, npc)) return false;
-  }
+    if (ship.phase === 'entering') {
+      if (!this.assignTarget(ship, npc)) return false;
+    }
 
-  if (ship.phase === 'approaching') {
-    this.advanceApproaching(ship, npc, dt);
-    return false;
-  }
+    if (ship.phase === 'approaching') {
+      this.advanceApproaching(ship, npc, dt);
+      return false;
+    }
 
-  if (ship.phase === 'scanning') {
-    this.advanceScanning(ship, npc, dt);
-    return false;
-  }
+    if (ship.phase === 'scanning') {
+      this.advanceScanning(ship, npc, dt);
+      return false;
+    }
 
-  if (ship.phase === 'salvaging') {
-    this.advanceSalvaging(ship, npc, dt);
-    return false;
-  }
+    if (ship.phase === 'salvaging') {
+      this.advanceSalvaging(ship, npc, dt);
+      return false;
+    }
 
-  ship.salvageActive = false;
-  if (
-    moveFieldShip(
-      ship,
-      ship.exitPoint,
-      localCruiseSpeed(npc),
-      dt,
-      [
-        ...salvageDroneObstacleAsteroids(this.options.field).filter(
-          (entry) => entry.routeBlocking
-        ),
-        ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
-      ],
-      65
-    )
-  ) {
-    this.options.depart(npc);
-    return true;
-  }
+    ship.salvageActive = false;
+    if (
+      moveFieldShip(
+        ship,
+        ship.exitPoint,
+        localCruiseSpeed(npc),
+        dt,
+        [
+          ...salvageDroneObstacleAsteroids(this.options.field).filter(
+            (entry) => entry.routeBlocking
+          ),
+          ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
+        ],
+        65
+      )
+    ) {
+      this.options.depart(npc);
+      return true;
+    }
     return false;
   }
   private resolveLocalCollisions = (combatantId?: string, skipPlayer = false): void => {

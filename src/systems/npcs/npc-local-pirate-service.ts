@@ -526,5 +526,7 @@ function availableLocalTraffic(npc: SectorNpcState): boolean {
 }
 
 function keepCombatReturn(id: string, npc: SectorNpcState | undefined): boolean {
-  return !isSecurityDrone(id) && Boolean(npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0);
+  return (
+    !isSecurityDrone(id) && Boolean(npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0)
+  );
 }

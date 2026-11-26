@@ -247,11 +247,7 @@ function advanceSalvageField(
         engage(pirateId, 'security-drone:' + locationId, position, world.drone.position),
       onFreighterExit: (npc) => {
         if (npc.homePortId)
-          context.economy.sectorNpcs.requestTravel(
-            npc,
-            npc.homePortId,
-            'Rückflug zum Heimathafen'
-          );
+          context.economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
       },
     });
     // The local worker caps each integration step at 80 ms.
@@ -287,12 +283,7 @@ function backgroundEngagement(
   traffic: LocalPirateTraffic,
   locationId: string
 ) {
-  return (
-    attackerId: string,
-    defenderId: string,
-    attacker: WorldPoint,
-    defender: WorldPoint
-  ) => {
+  return (attackerId: string, defenderId: string, attacker: WorldPoint, defender: WorldPoint) => {
     const pose = (id: string) =>
       id === 'security-drone:' + locationId
         ? world.drone

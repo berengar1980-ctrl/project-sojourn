@@ -379,9 +379,7 @@ export function stageCareerLegalAndClaims(candidate: unknown): {
 }
 
 const salvagePoint = (candidate: unknown) =>
-    isRecord(candidate) &&
-    validFinite(candidate.x, -Infinity) &&
-    validFinite(candidate.y, -Infinity);
+  isRecord(candidate) && validFinite(candidate.x, -Infinity) && validFinite(candidate.y, -Infinity);
 
 function verifySalvageRoute(route: unknown): void {
   if (

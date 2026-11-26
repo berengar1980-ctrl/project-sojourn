@@ -23,7 +23,9 @@ interface SalvageNpcRuntimeOptions {
 
 interface SharedSalvageRuntime {
   readonly runtime: NpcLocalSalvageService;
-  readonly binding: { player: { ship: ShipDefinition; service: SalvageLocalSpaceService } | undefined };
+  readonly binding: {
+    player: { ship: ShipDefinition; service: SalvageLocalSpaceService } | undefined;
+  };
 }
 
 const runtimes = new WeakMap<SalvageField, SharedSalvageRuntime>();
