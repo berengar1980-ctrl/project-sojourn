@@ -136,7 +136,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
         position: { ...(this.options.initialPosition?.(npc.id) ?? entry) },
         headingRadians: 0,
         speed: localCruiseSpeed(npc),
-        phase: 'entering',
+        phase: cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) ? 'exiting' : 'entering',
         targetWreckId: null,
         salvageActive: false,
         scanProgress: 0,
@@ -162,6 +162,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       return false;
     }
     ship.targetWreckId = wreck.id;
+    delete ship.routeState;
     ship.phase = 'approaching';
     ship.salvageActive = false;
     ship.scanProgress = 0;
