@@ -1,7 +1,36 @@
 import type { EconomyResourceId, NpcEconomyState } from '../../core/economy-types';
 
-import { type EconomyPoint } from './npc-resource-side-trade';
-import type { NpcWorkPlanning } from './npc-work-planning';
+export interface EconomyPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
+export interface NpcTradeMarketEntry {
+  readonly resourceId: EconomyResourceId;
+  readonly stock: number;
+  readonly price: number;
+}
+
+export interface NpcTradeMarketView {
+  readonly locationId: string;
+  readonly observedDay?: number;
+  readonly entries: Readonly<Record<EconomyResourceId, NpcTradeMarketEntry>>;
+}
+
+export interface NpcWorksite {
+  readonly id: string;
+  readonly role: 'miner' | 'salvager';
+  readonly position: EconomyPoint;
+  readonly danger: number;
+  /** Public regional resource profile, not undiscovered asteroid contents. */
+  readonly resourceIds: readonly string[];
+}
+
+export interface NpcWorkPlanning {
+  readonly sites: readonly NpcWorksite[];
+  readonly fleet: readonly NpcEconomyState[];
+  readonly knownClaimValue?: (npc: NpcEconomyState, locationId: string) => number;
+}
 
 export interface PhysicalResourceAllocator {
   createMinedResource(resourceId: EconomyResourceId, amount: number): number;
