@@ -260,6 +260,22 @@ function createSectorPopulation(
   });
   return { simulation, population };
 }
+function createControllerCustoms(
+  trade: PlayerTradeService,
+  sector: NpcSectorService,
+  simulation: EconomySimulationService,
+  notice: (message: string) => void
+) {
+  const recordLoss = (id: string, amount: number): void => {
+    const pool = simulation.pools[id];
+    if (pool) pool.recordedLosses += amount;
+  };
+  return {
+    smuggling: createSmugglingService(trade.player, sector.npcs, recordLoss),
+    npcSmuggling: createNpcSmugglingService(sector.npcs, sector, notice, Math.random, 0, recordLoss),
+  };
+}
+
 export function createControllerEconomy(
   navigation: NavigationService,
   onSmugglingNotice: (message: string) => void = () => {},
@@ -278,10 +294,6 @@ export function createControllerEconomy(
   const npcStates: SectorNpcState[] = initialPopulation ?? createSectorNpcEconomyStates();
   const shipyardResearch = createShipyardResearchService();
   const { simulation, population } = createSectorPopulation(markets, trade, npcStates);
-  const smuggling = createSmugglingService(trade.player, npcStates, (id, amount) => {
-    const pool = simulation.pools[id];
-    if (pool) pool.recordedLosses += amount;
-  });
   const sectorNpcs = createNpcSectorService(narrowsSector, npcStates, {
     getPlayerPosition: () => navigation.getSnapshot().currentPosition,
     markets,
@@ -294,16 +306,11 @@ export function createControllerEconomy(
     simulation,
     onSmugglingNotice
   );
-  const npcSmuggling = createNpcSmugglingService(
-    npcStates,
+  const { smuggling, npcSmuggling } = createControllerCustoms(
+    trade,
     sectorNpcs,
-    onSmugglingNotice,
-    Math.random,
-    0,
-    (id, amount) => {
-      const pool = simulation.pools[id];
-      if (pool) pool.recordedLosses += amount;
-    }
+    simulation,
+    onSmugglingNotice
   );
 
   const npcPrisoners = new Set<string>();
