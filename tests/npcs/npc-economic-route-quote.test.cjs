@@ -75,3 +75,29 @@ assert.equal(
 assert.equal(npc.travel?.finalTargetId, 'fuel-a');
 
 console.log('PASS NPC fuel route quote, liquidity and critical-damage homeward flight');
+
+const field = {
+  id: 'field',
+  name: 'field',
+  kind: 'asteroid-field',
+  position: { x: 200, y: 0 },
+  activities: { mine: true },
+  dangerLevel: 0,
+};
+const stranded = createSectorNpcEconomyStates().find((ship) => ship.job === 'miner');
+stranded.locationId = field.id;
+stranded.fuel = 0;
+stranded.fuelCapacity = 50;
+stranded.fuelUse = 4;
+stranded.credits = 5000;
+const rescueWorld = { ...world, locations: [...world.locations, field] };
+const rescue = createNpcSectorService(rescueWorld, [stranded]);
+const quoteRescue = rescue.quoteTravel(stranded, 'origin');
+assert(quoteRescue && quoteRescue.refuelCost >= 2000);
+assert.equal(stranded.fuel, 0);
+assert.equal(stranded.credits, 5000);
+assert(rescue.requestTravel(stranded, 'origin'));
+assert.equal(stranded.fuel, 50);
+assert.equal(stranded.credits, 3000);
+assert.equal(stranded.travel.finalTargetId, 'origin');
+console.log('PASS NPC paid emergency departure from an unserviced field');
