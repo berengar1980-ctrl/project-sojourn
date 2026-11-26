@@ -159,13 +159,14 @@ export function cargoUsed(npc: SectorNpcState): number {
 export function chooseAsteroid(
   npc: SectorNpcState,
   asteroids: readonly LocalAsteroid[],
-  occupied: ReadonlySet<string>
+  occupied: ReadonlySet<string>,
+  knownOnly = false
 ): LocalAsteroid | null {
   const preferred = asteroids.filter(
     (asteroid) =>
       asteroid.kind === 'resource' &&
       !occupied.has(asteroid.id) &&
-      asteroid.scanLevel === 'analyzed' &&
+      (!knownOnly || asteroid.scanLevel === 'analyzed') &&
       asteroid.deposits.some(
         (deposit) =>
           deposit.oreRemaining > 0 &&
