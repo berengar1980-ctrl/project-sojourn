@@ -228,12 +228,11 @@ function printReport(elapsedDays) {
         replacementCount: population.replacementCount,
         outstanding: population.outstanding,
         insuranceFundCredits: population.fundCredits,
+        externalFunding: population.externalFunding,
       },
       report,
       workerStatus: integrated
-        ? ships
-            .filter((ship) => ship.job === 'miner' || ship.job === 'salvager')
-            .map(workerStatus)
+        ? ships.filter((ship) => ship.job === 'miner' || ship.job === 'salvager').map(workerStatus)
         : [],
       resourceBalance: physical.getResourceBalance(),
     })
