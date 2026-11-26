@@ -1,23 +1,10 @@
 import type { EconomyResourceDefinition, NpcEconomyState } from '../../core/economy-types';
 import { ensureNpcPersonality } from '../npcs/npc-autonomy';
-import type { EconomyPoint } from './npc-resource-side-trade';
+import type { EconomyPoint, NpcWorkPlanning, NpcWorksite } from './npc-economy-types';
 import type { NpcTravelQuoteFn } from './npc-operating-decisions';
 import { npcMarketConfidence } from './npc-market-knowledge';
 
-export interface NpcWorksite {
-  readonly id: string;
-  readonly role: 'miner' | 'salvager';
-  readonly position: EconomyPoint;
-  readonly danger: number;
-  /** Public regional resource profile, not undiscovered asteroid contents. */
-  readonly resourceIds: readonly string[];
-}
-
-export interface NpcWorkPlanning {
-  readonly sites: readonly NpcWorksite[];
-  readonly fleet: readonly NpcEconomyState[];
-  readonly knownClaimValue?: (npc: NpcEconomyState, locationId: string) => number;
-}
+export type { NpcWorkPlanning, NpcWorksite } from './npc-economy-types';
 
 interface WorkCandidate {
   readonly site: NpcWorksite;
