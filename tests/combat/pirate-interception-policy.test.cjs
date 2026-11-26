@@ -27,7 +27,12 @@ const pirateStation = {
   dangerLevel: 3,
   activities: { dock: true, refuel: true },
 };
-const world = { regions: [], locations: [haven, pirateStation] };
+// The geographic map, not the station metadata, is the danger authority.
+const world = {
+  regions: [{ id: 'pirate-pocket', center: pirateStation.position, radius: 125, dangerLevel: 3 }],
+  locations: [haven, pirateStation],
+  defaultDangerLevel: 0,
+};
 const raider = { pirate: true, pirateClass: 'raider', factionId: 'pirates' };
 const marauder = { pirate: true, pirateClass: 'marauder', factionId: 'pirates' };
 const loadedCivilian = {

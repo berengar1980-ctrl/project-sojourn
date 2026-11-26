@@ -64,13 +64,17 @@ assert.deepEqual(npc.installedComponents.shield, ['shield3']);
 assert(npc.hullMaxHp > 0 && npc.hullHp > 0);
 const energy = calculateShipModeEnergy(npc.installedComponents);
 assert(energy.output >= energy.combat, 'All Mk III weapons and shield must have sufficient power');
-const mounts = ship.sprite.hardpoints.weaponMounts ?? [];
+const droneShip = getShipDefinition(npc.shipId);
+assert.equal(droneShip.id, '24m-security-drone', 'legacy patrol is migrated to GC-87');
+assert.equal(npc.hullHp, Math.round(npc.hullMaxHp * 0.75), 'migration preserves hull condition');
+const mounts = droneShip.sprite.hardpoints.weaponMounts ?? [];
+assert.equal(mounts.length, 3);
 for (const mount of mounts) {
-  if (!isShipCombatWeaponSlotActive(ship, mount.slotIndex)) continue;
+  if (!isShipCombatWeaponSlotActive(droneShip, mount.slotIndex)) continue;
   const weaponId = npc.installedComponents.weapon[mount.slotIndex];
   assert(weaponId, 'Every active mount must be armed');
   const weapon = getShipComponent('weapon', weaponId);
   assert.equal(weapon?.tier, 3, 'Every installed weapon is Mk III');
-  assert(fitsWeaponHardpoint(ship, mount.slotIndex, weapon.weapon));
+  assert(fitsWeaponHardpoint(droneShip, mount.slotIndex, weapon.weapon));
 }
 console.log('PASS drone debris collision, shield flash, and Mk III weapon/hull/shield loadout');

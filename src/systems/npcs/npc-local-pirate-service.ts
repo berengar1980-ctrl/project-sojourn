@@ -388,17 +388,18 @@ export class LocalPirateTraffic {
           npc.pirate &&
           npc.hullHp > 0 &&
           (npc.combatRecoverySeconds ?? 0) <= 0 &&
-          !npc.combatMovement
+          (!npc.combatMovement || (drone && npc.combatMovement.mode === 'engaged'))
       )
     );
     const distance = (p: WorldPoint) => Math.hypot(p.x - ship.position.x, p.y - ship.position.y);
-    const target = hostiles
+    const visible = hostiles
       .filter((contact) =>
         drone
           ? droneSeesTarget(ship.position, contact.position, rocks)
           : distance(contact.position) < 650
       )
-      .sort((a, b) => distance(a.position) - distance(b.position))[0];
+      .sort((a, b) => distance(a.position) - distance(b.position));
+    const target = visible.find((contact) => !npcs.find((npc) => npc.id === contact.npcId)?.combatMovement) ?? visible[0];
     if (target && distance(target.position) <= fieldInterceptRange(ship.npcId, false)) {
       // The fleet coordinator will join the existing fight from this live pose.
       if (npcs.find((npc) => npc.id === target.npcId)?.combatMovement?.mode === 'engaged') return;
@@ -519,7 +520,7 @@ function availableLocalTraffic(npc: SectorNpcState): boolean {
   return Boolean(
     localArmedTraffic(npc) &&
     npc.hullHp > 0 &&
-    (npc.combatRecoverySeconds ?? 0) <= 0 &&
+    (!isSecurityDrone(npc.id) || (npc.combatRecoverySeconds ?? 0) <= 0) &&
     npc.retiredUntilDay === undefined &&
     (!npc.travel || npc.combatMovement)
   );

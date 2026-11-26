@@ -2045,3 +2045,20 @@ bestehenden Starts.
 ## Review-Log (2026-11-25) – Kampfwracks halb so groß
 
 **Keine Statusänderung** der bestehenden Sojourn-Feature-IDs. Die fünf Kampfwracks und ihre unabhängigen Trümmerteile werden nun rein visuell mit 50 % der ursprünglichen Größe dargestellt statt mit 66,7 %. Die vorhandene 1vs1-Kampfphysik, Kollisionskörper, Routenplanung, Bergungsressourcen und Speicherstruktur bleiben unverändert.
+
+## Review-Log (2026-11-26) – NPC-Verluste, GC-87 und permanente Wrackfelder (PR #405)
+
+**Keine Statusänderung** der historischen Feature-IDs. PvP 1vs1 und
+FleetCombat bieten die originalen Kampagnen-Kampfprofile; der native
+Kampftick und die manuelle PvP-Ausrüstung bleiben erhalten. Die GC-87
+verwendet überall denselben Rumpf und dieselbe Mk-III-Ausrüstung.
+Gefahrenzonen und reale lokale Sicherheitskräfte bestimmen die Piratenjagd.
+Überlebende lokale Schiffe bleiben während der Gefechtserholung sichtbar;
+zerstörte Drohnen werden separat nach 180 Sekunden ersetzt. Permanente
+Wrackfelder besitzen eine gemeinsame physische Bergungslaufzeit für
+Spieleranwesenheit und Hintergrund. Ressourcenereignisse werden unmittelbar
+mit dem Ressourcenpool abgeglichen. Optionale Spielstanddaten erhalten
+Drohnen-, Arbeiter- und Wrackressourcenzustände. Temporäre Ereignisfelder
+behalten ihre Sonderlogik. Der Dreitagestest und die Kampfprofil-Parität
+sind bestätigt; Langzeitprüfung, Kampfbalance und vollständiger Quality Gate
+bleiben vor dem Merge zu verifizieren.
