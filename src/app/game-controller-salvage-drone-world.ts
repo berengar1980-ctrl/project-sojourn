@@ -8,11 +8,14 @@ import { createSalvageSecurityDrone, salvageDroneBystanders } from './game-contr
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
 import { salvageFieldCombatArena, syncSalvageCombatField } from '../systems/combat/field-combat-arena';
 import { isSecurityDrone } from '../core/security-drone';
+import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
+import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
 import type { WorldPoint } from '../core/world-types';
 
 interface SalvagePatrolWorld {
   readonly field: SalvageField;
   readonly drone: AsteroidSecurityDrone;
+  readonly salvagers: NpcLocalSalvageService;
 }
 
 const patrolWorlds = new WeakMap<ControllerRuntimeContext, Map<string, SalvagePatrolWorld>>();
@@ -36,14 +39,24 @@ export function careerSalvageDrone(
   const active = worlds(context);
   const existing = active.get(field.sourceLocationId);
   if (existing?.field.seed === field.seed) {
-    active.set(field.sourceLocationId, { field, drone: existing.drone });
+    active.set(field.sourceLocationId, existing);
     return existing.drone;
   }
   const drone = createSalvageSecurityDrone(field, context.economy.wreckClaims);
   const id = 'security-drone:' + field.sourceLocationId;
   const npc = context.economy.sectorNpcs.npcs.find((entry) => entry.id === id);
   if (!npc?.combatMovement) drone.syncAvailability(npc);
-  active.set(field.sourceLocationId, { field, drone });
+  const location = narrowsSector.locations.find((entry) => entry.id === field.sourceLocationId);
+  if (location?.activities.salvage) {
+    const salvagers = createNpcSalvageRuntime({
+      location,
+      sectorNpcs: context.economy.sectorNpcs.npcs,
+      npcEconomy: context.economy.npcs,
+      wreckClaims: context.economy.wreckClaims,
+      getCurrentDay: () => context.economy.situations.currentDay,
+    }, field);
+    active.set(field.sourceLocationId, { field, drone, salvagers });
+  }
   context.economy.wreckClaims.rememberField(field, drone.exportState());
   return drone;
 }
@@ -61,7 +74,7 @@ function restoreKnownPatrols(context: ControllerRuntimeContext): void {
   }
   // Permanent salvage security exists before the player visits a field.
   for (const location of narrowsSector.locations) {
-    if (!location.activities.salvage || location.dangerLevel >= 3) continue;
+    if (!location.activities.salvage) continue;
     if (worlds(context).has(location.id)) continue;
     careerSalvageDrone(context, permanentSalvageField(context, location));
   }
@@ -105,7 +118,7 @@ export function advanceCareerSalvageDrones(
     const fieldCombat = context.engagements.fieldCombat?.(locationId, world.field.seed);
     if (fieldCombat) syncSalvageCombatField(world.field, fieldCombat);
     const engage = (attackerId: string, defenderId: string, attacker: WorldPoint, defender: WorldPoint) => {
-      const pose = (id: string) => id === 'security-drone:' + locationId ? world.drone : traffic.body(id);
+      const pose = (id: string) => id === 'security-drone:' + locationId ? world.drone : traffic.body(id) ?? world.salvagers.ships.find((ship) => ship.npcId === id);
       const first = pose(attackerId);
       const second = pose(defenderId);
       return context.engagements.engageNpcsInArena(attackerId, defenderId, {
@@ -128,8 +141,7 @@ export function advanceCareerSalvageDrones(
         drone: world.drone,
         pirates: traffic,
         sectorNpcs: npcs,
-        // The existing offscreen economic salvage worker owns resource extraction.
-        salvagers: [],
+        salvagers: world.salvagers.ships,
         playerPosition: null,
         playerRadius: 0,
         dt: 0.2,
@@ -142,11 +154,14 @@ export function advanceCareerSalvageDrones(
           if (npc.homePortId) context.economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
         },
       });
+      // The local worker caps each integration step at 80 ms.
+      for (let step = 0; step < 4; step++) world.salvagers.tick(0.05, undefined, true);
     }
     context.engagements.fieldCombat?.(
       locationId, world.field.seed,
-      salvageDroneBystanders(null, [], world.drone, locationId, traffic.snapshot(npcs))
+      salvageDroneBystanders(null, world.salvagers.ships, world.drone, locationId, traffic.snapshot(npcs))
     );
+    context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
     rememberSalvageSecurity(context, world.field, world.drone);
   }
 }
