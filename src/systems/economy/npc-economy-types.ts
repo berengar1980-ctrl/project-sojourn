@@ -39,6 +39,7 @@ export interface NpcEconomyService {
     requestedQuantity: number,
     sourceId?: string
   ): number;
+  setPhysicalSalvageWorker(worker: (npc: NpcEconomyState, day: number) => void): void;
   dispatchLoadedWorker(npc: NpcEconomyState): boolean;
   tick(deltaSeconds: number): void;
   advanceDay(day: number): void;
@@ -55,6 +56,7 @@ export interface NpcTravelOperatingQuote {
 
 export interface NpcEconomyServiceOptions {
   readonly isManaged?: (npc: NpcEconomyState) => boolean;
+  readonly physicalSalvageWorker?: (npc: NpcEconomyState, day: number) => void;
   readonly canTrade?: (npc: NpcEconomyState, locationId: string, resourceId: string) => boolean;
   readonly miningAllowance?: (npc: NpcEconomyState, resourceId: string, amount: number) => number;
   readonly onMined?: (npc: NpcEconomyState, resourceId: string, amount: number) => void;
