@@ -141,6 +141,44 @@ assert.notDeepEqual(
 assert.notDeepEqual(target.rotation3d, angle, '3D tumble angles must advance with simulation time');
 assert.deepEqual(stationaryDistress.position, { x: 600, y: 600 }, 'distress ship must not drift');
 
+// The cache must preserve the old membership/rebuild semantics, even when the
+// field arrays are edited in place or a stationary wreck becomes dynamic.
+const patrol = loadStandaloneTypeScriptModule(root, 'src/systems/salvage/salvage-patrol-geometry.ts');
+const cached = motion.salvageFieldPhysicsBodies(field);
+assert.strictEqual(motion.salvageFieldPhysicsBodies(field), cached);
+const stationary = { ...stationaryDistress, id: 'another-fixed-wreck' };
+field.wrecks.push(stationary);
+assert.strictEqual(motion.salvageFieldPhysicsBodies(field), cached);
+assert(patrol.salvageDroneObstacleAsteroids(field).some((body) => body.id === stationary.id));
+stationary.position = { x: 900, y: 700 };
+assert.deepEqual(
+  patrol.salvageDroneObstacleAsteroids(field).find((body) => body.id === stationary.id).position,
+  stationary.position
+);
+stationary.containerVariant = target.containerVariant;
+stationary.rotation3d = { ...target.rotation3d };
+stationary.spin3d = { ...target.spin3d };
+stationary.driftVelocity = { ...target.driftVelocity };
+const added = motion.salvageFieldPhysicsBodies(field);
+assert.notStrictEqual(added, cached);
+assert.equal(added.filter((body) => body.id === stationary.id).length, 1);
+assert.equal(
+  patrol.salvageDroneObstacleAsteroids(field).filter((body) => body.id === stationary.id).length,
+  1
+);
+delete stationary.rotation3d;
+assert(!motion.salvageFieldPhysicsBodies(field).some((body) => body.id === stationary.id));
+const beforeRemoval = motion.salvageFieldPhysicsBodies(field);
+const removed = field.debris.shift();
+const afterRemoval = motion.salvageFieldPhysicsBodies(field);
+assert.notStrictEqual(afterRemoval, beforeRemoval);
+assert(!afterRemoval.some((body) => body.id === removed.id));
+field.debris.unshift({ ...removed });
+assert(motion.salvageFieldPhysicsBodies(field).some((body) => body.id === removed.id));
+const beforeInvalidate = motion.salvageFieldPhysicsBodies(field);
+motion.invalidateSalvagePhysics(field);
+assert.notStrictEqual(motion.salvageFieldPhysicsBodies(field), beforeInvalidate);
+
 const renderer = readModuleSource(root, 'src/ui/salvage/salvage-space-renderer.ts');
 const mesh = readModuleSource(root, 'src/ui/salvage/salvage-container-mesh.ts');
 const fragments = readModuleSource(root, 'src/ui/salvage/salvage-debris-mesh.ts');

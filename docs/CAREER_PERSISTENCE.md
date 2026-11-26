@@ -1414,3 +1414,13 @@ Piratengeometrie und Bergungs-Serviceverträge besitzen keine eigenen
 Save-Register. Die bestehenden autoritativen NPC-, Kampf- und Feldzustände
 bleiben unverändert zuständig. Alle fünf neuen Domainmodule sind im
 Persistenz-Owner-Register einzeln klassifiziert.
+
+## Laufzeitoptimierung und Mining-Verkehr (PR #405)
+
+Die Navigationshindernisse sind aus vorhandenen Schiffspositionen und
+Schildgeometrien abgeleitet und besitzen keinen eigenen Save-Zustand. Die
+Bergungsphysik prüft ihren flüchtigen Körpercache anhand der aktuellen
+Wrack-, Fragment- und Abschnittslisten einschließlich dynamischer Mitgliedschaft.
+Unveränderte Körper und deren IDs werden wiederverwendet; beim Laden wird der
+Cache aus den autoritativen Feldobjekten neu aufgebaut. Das Save-Format,
+Integrationsschritte und die physische Kollisionsreaktion bleiben unverändert.

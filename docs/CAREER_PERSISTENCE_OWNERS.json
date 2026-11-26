@@ -13,6 +13,10 @@
       "mode": "derived",
       "reason": "Pure physical hull contact solver for transient civilian ships passed into native PvP; stores no checkpoint state."
     },
+    "src/systems/navigation/field-traffic-obstacles.ts": {
+      "mode": "derived",
+      "reason": "Navigation-only ship footprints derived from existing live poses and ship hardpoints; no independent checkpoint state."
+    },
     "src/systems/navigation/field-ship-routing.ts": {
       "mode": "transient",
       "reason": "Shared non-persistent NPC and drone field-route waypoints live in a WeakMap and are reconstructed from checkpointed positions and obstacles after loading."

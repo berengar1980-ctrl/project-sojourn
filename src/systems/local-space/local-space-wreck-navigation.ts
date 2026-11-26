@@ -15,7 +15,10 @@ function navigationBodies(
 }
 
 export function selectedWreckAwareRouteOptions(
-  options: Pick<LocalSpaceServiceOptions, 'instance' | 'additionalObstacles' | 'getTrafficObstacles'>,
+  options: Pick<
+    LocalSpaceServiceOptions,
+    'instance' | 'additionalObstacles' | 'getTrafficObstacles'
+  >,
   selectedId: string | null,
   shield: ShieldWorldGeometry
 ): RoutePlanningOptions | null {
@@ -29,7 +32,10 @@ export function selectedWreckAwareRouteOptions(
 }
 
 export function pointWreckAwareRouteOptions(
-  options: Pick<LocalSpaceServiceOptions, 'instance' | 'additionalObstacles' | 'getTrafficObstacles'>,
+  options: Pick<
+    LocalSpaceServiceOptions,
+    'instance' | 'additionalObstacles' | 'getTrafficObstacles'
+  >,
   target: WorldPoint,
   shield: ShieldWorldGeometry
 ): PointRoutePlanningOptions {

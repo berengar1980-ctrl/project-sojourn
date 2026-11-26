@@ -53,4 +53,6 @@ const bodies = trafficRouteBodies([obstacle]);
 obstacle.position.y = 600;
 assert.equal(bodies[0].position.y, 410, 'worker route input must be a detached snapshot');
 
-console.log('PASS mining navigation accounts for real ship footprints without adding physics bodies');
+console.log(
+  'PASS mining navigation accounts for real ship footprints without adding physics bodies'
+);

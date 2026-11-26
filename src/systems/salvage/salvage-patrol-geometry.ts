@@ -19,14 +19,22 @@ export function salvagePatrolMarkers(field: SalvageField): readonly LocalAsteroi
   });
 }
 
+// Physics body IDs are immutable; membership changes produce a new body array.
+const movingIdsByBodies = new WeakMap<readonly LocalAsteroid[], ReadonlySet<string>>();
+
 /** Adapt genuine physical wreck geometry to the shared local-route planner. */
 export function salvageDroneObstacleAsteroids(field: SalvageField): readonly LocalAsteroid[] {
   const moving = salvageFieldPhysicsBodies(field);
-  const movingIds = new Set(moving.map((body) => body.id));
+  let movingIds = movingIdsByBodies.get(moving);
+  if (!movingIds) {
+    movingIds = new Set(moving.map((body) => body.id));
+    movingIdsByBodies.set(moving, movingIds);
+  }
+  const ids = movingIds;
   return [
     ...moving,
     ...field.wrecks
-      .filter((wreck) => !movingIds.has(wreck.id))
+      .filter((wreck) => !ids.has(wreck.id))
       .map((wreck) => ({
         id: wreck.id,
         position: wreck.position,
