@@ -66,6 +66,12 @@ function careerDependencies(
                 amount,
                 asteroidId ? JSON.stringify([location.id, asteroidId]) : undefined
               ),
+            fundMiningBonus: (asteroidId, id, amount) =>
+              commerce.commerce.economy.simulation.fundPhysicalStock(
+                id,
+                JSON.stringify([location.id, asteroidId]),
+                amount
+              ),
             onAsteroidScanned: (npc, asteroid) => {
               if (binding.context) {
                 registerNpcAsteroidClaim(binding.context, location, npc, asteroid);
