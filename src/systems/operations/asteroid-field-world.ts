@@ -1,5 +1,5 @@
 import { isCombatWreckVariant } from '../../core/combat-wreck-variant';
-import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
+import type { LocalAsteroid, LocalSpaceInstance, MiningChunk } from '../../core/local-space-types';
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
 import {
   advanceSalvageContainerDrift,
@@ -48,6 +48,7 @@ export interface CareerAsteroidFieldCheckpoint {
         readonly miners: LocalMinerCheckpoint;
         readonly pirates: LocalPirateCheckpoint;
         readonly drone: SecurityDroneCheckpoint;
+        readonly chunks?: readonly MiningChunk[];
       }
     >
   >;
@@ -109,6 +110,40 @@ function createFieldInstance(
       : generateMiningSpace(location.id, seed, location.minedResourceIds);
   return instance;
 }
+function restoreMiningChunks(
+  instance: LocalSpaceInstance,
+  chunks: readonly MiningChunk[] | undefined
+): void {
+  if (chunks === undefined) return;
+  if (!Array.isArray(chunks) || chunks.length > 10000) {
+    throw new Error('Invalid saved mining chunks');
+  }
+  const ids = new Set<string>();
+  for (const chunk of chunks) {
+    const asteroid = instance.asteroids.find((entry) => entry.id === chunk.sourceAsteroidId);
+    if (
+      typeof chunk.id !== 'string' ||
+      !chunk.id.startsWith('chunk-' + instance.seed + '-') ||
+      ids.has(chunk.id) ||
+      !asteroid?.deposits.some((entry) => entry.resourceId === chunk.resourceId) ||
+      !Number.isSafeInteger(chunk.amount) ||
+      chunk.amount <= 0 ||
+      !Number.isFinite(chunk.ageSeconds) ||
+      chunk.ageSeconds < 0 ||
+      !Number.isFinite(chunk.position?.x) ||
+      !Number.isFinite(chunk.position?.y) ||
+      !Number.isFinite(chunk.velocity?.x) ||
+      !Number.isFinite(chunk.velocity?.y) ||
+      typeof chunk.tractorActive !== 'boolean' ||
+      (chunk.tractorHardpointId !== null && typeof chunk.tractorHardpointId !== 'string')
+    ) {
+      throw new Error('Invalid saved mining chunk');
+    }
+    ids.add(chunk.id);
+  }
+  instance.chunks.splice(0, instance.chunks.length, ...cloneCareerJson([...chunks]));
+}
+
 export class AsteroidFieldWorld {
   private readonly fields = new Map<string, AsteroidFieldRuntime>();
   private backgroundAccumulator = 0;
@@ -156,6 +191,7 @@ export class AsteroidFieldWorld {
       const seed = instance.seed;
       claims.restoreField(location.id, instance.asteroids);
       const saved = checkpoint?.fields[location.id];
+      restoreMiningChunks(instance, saved?.chunks);
       if (!this.combatWrecksByLocation.has(location.id))
         this.combatWrecksByLocation.set(location.id, []);
       this.fields.set(location.id, {
@@ -192,6 +228,7 @@ export class AsteroidFieldWorld {
         miners: field.miners.exportState(),
         pirates: field.pirates.exportState(),
         drone: field.drone.exportState(),
+        ...(field.instance.chunks.length ? { chunks: field.instance.chunks } : {}),
       };
     }
     return cloneCareerJson({
