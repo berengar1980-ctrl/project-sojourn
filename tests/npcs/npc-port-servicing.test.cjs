@@ -44,8 +44,8 @@ service.serviceNpcAtPort(npc, port);
 assert.equal(npc.fuel, 0, 'broke NPC cannot refuel free');
 assert.equal(service.payNpcPatrolContract(npc), 0);
 npc.job = 'patrol';
-assert.equal(service.payNpcPatrolContract(npc), 500);
-assert.equal(npc.credits, 500);
+assert.equal(service.payNpcPatrolContract(npc), 2800);
+assert.equal(npc.credits, 2800);
 npc.pirate = true;
 assert.equal(service.payNpcPatrolContract(npc), 0, 'pirates have no patrol subsidy');
 
