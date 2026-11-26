@@ -40,10 +40,12 @@ function reference() {
   const targets = [
     ...rivals.map((npc) => ({ id: npc.npcId, position: npc.position })),
     ...freighters.map((npc) => ({ id: npc.npcId, position: npc.position })),
-    ...miners.filter((miner) => !miner.inCombat).map((miner) => ({
-      id: miner.npcId,
-      position: miner.position,
-    })),
+    ...miners
+      .filter((miner) => !miner.inCombat)
+      .map((miner) => ({
+        id: miner.npcId,
+        position: miner.position,
+      })),
     { id: 'player', position: player },
   ];
   const distance = (target) =>
