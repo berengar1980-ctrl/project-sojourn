@@ -1,3 +1,4 @@
+import { SECURITY_DRONE_SHIP_ID } from '../core/security-drone';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-service';
 import type { StrategicCombatBystander } from '../systems/combat/strategic-combat-bystander-types';
 import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
@@ -46,7 +47,7 @@ export function salvageDroneCanSee(
 
 export function salvageDroneShipObstacles(
   ships: readonly { readonly id: string; readonly position: WorldPoint; readonly radius: number }[],
-  playerPosition: WorldPoint,
+  playerPosition: WorldPoint | null,
   playerRadius: number
 ): readonly FieldRouteObstacle[] {
   return [
@@ -55,7 +56,7 @@ export function salvageDroneShipObstacles(
       position: ship.position,
       radius: ship.radius,
     })),
-    { id: 'player', position: playerPosition, radius: playerRadius },
+    ...(playerPosition ? [{ id: 'player', position: playerPosition, radius: playerRadius }] : []),
   ];
 }
 
@@ -90,7 +91,7 @@ export function salvageDroneBystanders(
       : [
           {
             id: 'security-drone:' + locationId,
-            shipId: '24m-security-drone',
+            shipId: SECURITY_DRONE_SHIP_ID,
             position: drone.snapshot().position,
             headingRadians: drone.headingRadians,
           },
