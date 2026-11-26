@@ -16,7 +16,8 @@ export function registerPermanentSalvageStocks(
     const sourceId = salvageStockId(field, wreck);
     for (const deposit of wreck.resources) {
       const { resourceId, remainingAmount } = deposit;
-      simulation.registerInitialPhysicalStock(resourceId, sourceId, remainingAmount);
+      const stock = simulation.registerInitialPhysicalStock(resourceId, sourceId, remainingAmount);
+      deposit.remainingAmount = Math.min(remainingAmount, stock);
     }
   }
 }
