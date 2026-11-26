@@ -1,3 +1,4 @@
+import { recoverNpcEventField } from './game-controller-npc-event-stocks';
 import {
   balancePermanentSalvageStocks,
   permanentSalvageField,
@@ -126,7 +127,10 @@ function balanceDailySalvage(context: ControllerRuntimeContext, day: number): vo
 }
 
 function installPermanentSalvageEconomy(context: ControllerRuntimeContext): void {
-  const { wreckClaims, npcs } = context.economy;
+  const { wreckClaims, npcs, npcSalvageEvents } = context.economy;
+  npcSalvageEvents.setPhysicalEventRecovery?.((npc, event) =>
+    recoverNpcEventField(context, npc, event)
+  );
   const locations = narrowsSector.locations.filter((location) => location.activities.salvage);
   for (const location of locations) {
     wreckClaims.rememberField(permanentSalvageField(context, location));
