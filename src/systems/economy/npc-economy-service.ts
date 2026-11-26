@@ -170,6 +170,7 @@ function startPendingTravel(npc: NpcEconomyState, options: NpcEconomyServiceOpti
 
   const accepted = requestNpcTravel(npc, destinationId, options, reason);
   if (!accepted) {
+    if (options.workPlanning && destinationId === npc.workLocationId) finishNpcWorksite(npc);
     clearNpcPendingTravel(npc);
     beginNpcAutonomyPhase(npc, 'thinking');
     return;
