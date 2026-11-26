@@ -2,6 +2,7 @@ import type { EconomyResourceDefinition, NpcEconomyState } from '../../core/econ
 import { ensureNpcPersonality } from '../npcs/npc-autonomy';
 import type { EconomyPoint } from './npc-resource-side-trade';
 import type { NpcTravelQuoteFn } from './npc-operating-decisions';
+import { npcMarketConfidence } from './npc-market-knowledge';
 
 export interface NpcWorksite {
   readonly id: string;
@@ -33,11 +34,12 @@ function distance(a: EconomyPoint, b: EconomyPoint): number {
 export function knownWorkPrice(
   npc: NpcEconomyState,
   id: string,
-  resources: readonly EconomyResourceDefinition[]
+  resources: readonly EconomyResourceDefinition[],
+  day = 0
 ): number {
   const prices = Object.values(npc.marketIntel ?? {}).flatMap((market) => {
     const entry = market.entries[id];
-    return entry ? [entry.price] : [];
+    return entry ? [entry.price * npcMarketConfidence(market.observedDay, day)] : [];
   });
   return prices.length
     ? Math.max(...prices)
@@ -63,10 +65,11 @@ function scoreSite(
   site: NpcWorksite,
   planning: NpcWorkPlanning,
   resources: readonly EconomyResourceDefinition[],
-  positions: Readonly<Record<string, EconomyPoint>>
+  positions: Readonly<Record<string, EconomyPoint>>,
+  day: number
 ): WorkCandidate | null {
   const priced = site.resourceIds
-    .map((id) => ({ id, price: knownWorkPrice(npc, id, resources) }))
+    .map((id) => ({ id, price: knownWorkPrice(npc, id, resources, day) }))
     .filter((entry) => entry.price > 0)
     .sort((a, b) => b.price - a.price || a.id.localeCompare(b.id));
   if (!priced.length) return null;
@@ -105,12 +108,13 @@ export function chooseNpcWorksite(
   planning: NpcWorkPlanning,
   resources: readonly EconomyResourceDefinition[],
   positions: Readonly<Record<string, EconomyPoint>>,
-  quoteTravel?: NpcTravelQuoteFn
+  quoteTravel?: NpcTravelQuoteFn,
+  day = 0
 ): WorkCandidate | null {
   const ranked = planning.sites
     .filter((site) => site.role === npc.role)
     .flatMap((site) => {
-      const candidate = scoreSite(npc, site, planning, resources, positions);
+      const candidate = scoreSite(npc, site, planning, resources, positions, day);
       return candidate && candidate.score > 0 ? [candidate] : [];
     })
     .sort((a, b) => b.score - a.score || a.site.id.localeCompare(b.site.id));
