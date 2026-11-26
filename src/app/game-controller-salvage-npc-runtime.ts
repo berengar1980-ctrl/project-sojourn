@@ -23,7 +23,7 @@ interface SalvageNpcRuntimeOptions {
 
 interface SharedSalvageRuntime {
   readonly runtime: NpcLocalSalvageService;
-  player?: { ship: ShipDefinition; service: SalvageLocalSpaceService };
+  readonly binding: { player: { ship: ShipDefinition; service: SalvageLocalSpaceService } | undefined };
 }
 
 const runtimes = new WeakMap<SalvageField, SharedSalvageRuntime>();
@@ -34,7 +34,7 @@ export function hasNpcSalvageRuntime(field: SalvageField): boolean {
 
 export function detachNpcSalvagePlayer(field: SalvageField): void {
   const entry = runtimes.get(field);
-  if (entry) delete entry.player;
+  if (entry) entry.binding.player = undefined;
 }
 
 /** Reuse worker positions, targets and timers across scene entry and exit. */
@@ -46,10 +46,10 @@ export function createNpcSalvageRuntime(
   const existing = runtimes.get(field);
   const player = service && options.ship ? { ship: options.ship, service } : undefined;
   if (existing) {
-    if (player) existing.player = player;
+    if (player) existing.binding.player = player;
     return existing.runtime;
   }
-  let binding: SharedSalvageRuntime | undefined;
+  const binding = { player };
   const runtime = createNpcLocalSalvageService({
     locationId: options.location.id,
     field,
@@ -85,13 +85,12 @@ export function createNpcSalvageRuntime(
       options.npcEconomy.salvageLocal(npc, resourceId, requested, sourceId),
     depart: (npc) => options.npcEconomy.dispatchLoadedWorker(npc),
     get playerShip() {
-      return binding?.player?.ship;
+      return binding.player?.ship;
     },
-    getPlayerShipState: () => binding?.player?.service.getSnapshot().ship,
+    getPlayerShipState: () => binding.player?.service.getSnapshot().ship,
     onPlayerShieldContact: (normal, overlap) =>
-      binding?.player?.service.recordShipShieldContact(normal, overlap),
+      binding.player?.service.recordShipShieldContact(normal, overlap),
   });
-  binding = { runtime, ...(player ? { player } : {}) };
-  runtimes.set(field, binding);
+  runtimes.set(field, { runtime, binding });
   return runtime;
 }

@@ -1388,3 +1388,18 @@ Worksite and concession valuation and worker side-trade forecasts now use the sa
 All civilian cargo carriers (freighters, miners, salvagers and patrols) now compare every cargo lot against known reachable sales markets. Route ranking accounts for estimated travel distance as well as net value and information age; freighters retain purchase-route evaluation. Resource workers retain one fixed work destination per side-trade decision, use ordinary cargo space only, and compare the actual fuel-aware outbound and onward route quotations with the direct work route. The detour is capped at 25% of the direct distance and 600 map-distance units, whichever is smaller; incremental fuel expense is deducted from the age-adjusted profit forecast. The onward quote conservatively assumes an empty tank and available refueling. Patrols sell existing cargo but do not buy goods speculatively (matching VOIDBOUND's resource-worker restriction); pirates retain their separate loot policy. No new saved state is introduced.
 
 Trade and sale ranking retain the existing personality-dependent distance penalty; applying an additional universal distance divisor would suppress risk-tolerant long-distance trading. The scripted pirate resale regression uses a separate live pirate and fresh market fixture after the long-run audit, so retirement of simulated ships does not invalidate the transaction test. No checkpoint changes.
+
+## Permanente Wrackfelder und Sicherheitsdrohnen (PR #405)
+
+- Der bestehende `claims.wreckClaims`-Checkpoint erhält optionale `workers`- und
+  `securityEscorts`-Daten pro Feld und Seed. Gespeichert werden lokale Position,
+  Ausrichtung, Route und Arbeitsfortschritt; Hülle und Ersatzzeit verbleiben
+  ausschließlich im sektorweiten NPC-Zustand.
+- Ältere Spielstände ohne diese optionalen Daten initialisieren die lokalen
+  Arbeits- und Patrouillenpositionen aus den vorhandenen NPC-Zuständen. Die
+  GC-87-Ausrüstung wird außerhalb laufender Gefechte migriert.
+- Permanente Wrackfelder teilen ihre Laufzeit beim Szenenwechsel; die abstrakte
+  Ressourcenentnahme ist deaktiviert. Temporäre Ereignisfelder bleiben separat.
+- Die vorhandene Versionsnummer bleibt unverändert. Die neuen optionalen
+  Zustände werden bei der Validierung geprüft; Regressionstests müssen den
+  neuen Save/Restore-Pfad bestätigen.

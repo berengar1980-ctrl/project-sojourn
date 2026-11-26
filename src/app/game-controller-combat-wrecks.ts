@@ -122,6 +122,18 @@ export function recordCareerCombatWrecks(
     }
   }
   world.registerCombatWrecks(locationId, created);
+  publishLiveWrecks(context, locationId, created);
+  for (const wreck of created) {
+    context.systemLog.write('BERGUNG > NEUES KAMPFWRACK: ' + wreck.name.toUpperCase());
+  }
+  return created;
+}
+
+function publishLiveWrecks(
+  context: ControllerRuntimeContext,
+  locationId: string,
+  created: readonly SalvageWreck[]
+): void {
   const mounted = context.state.salvageScene?.getField();
   const liveField =
     mounted?.sourceLocationId === locationId
@@ -136,8 +148,4 @@ export function recordCareerCombatWrecks(
     }
     invalidateSalvagePhysics(liveField);
   }
-  for (const wreck of created) {
-    context.systemLog.write('BERGUNG > NEUES KAMPFWRACK: ' + wreck.name.toUpperCase());
-  }
-  return created;
 }

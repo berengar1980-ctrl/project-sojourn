@@ -401,23 +401,7 @@ export function advanceControllerFieldWorld(
   const fieldWorld = fieldWorldFor(context);
   syncFinishedFieldPoses(context, fieldWorld, finished);
   balanceDailyAsteroids(context, fieldWorld, localId);
-  fieldWorld.advanceCombatWreckLifetime(deltaSeconds, (locationId, ids) => {
-    for (const id of ids) context.economy.simulation.releasePhysicalStock(id);
-    context.engagements.removeFieldCombatWrecks(ids);
-    const sceneField = context.state.salvageScene?.getField();
-    const fields = new Set([
-      sceneField,
-      backgroundSalvagePatrol(context, locationId)?.field,
-      ...context.state.salvageEventFields.values(),
-    ]);
-    for (const field of fields) {
-      if (field?.sourceLocationId !== locationId) continue;
-      for (let i = field.wrecks.length - 1; i >= 0; i--) {
-        if (ids.has(field.wrecks[i]!.id)) field.wrecks.splice(i, 1);
-      }
-      invalidateSalvagePhysics(field);
-    }
-  });
+  advanceFieldWreckLifetime(context, fieldWorld, deltaSeconds);
   const combatLocations = new Set<string>();
   for (const duel of background) {
     if (duel.arena.backdropSeed === undefined) continue;
@@ -508,4 +492,28 @@ export function fieldEngagementHooks(get: () => ControllerRuntimeContext | null)
     fieldOwnsContact: (npc: SectorNpcState) => activeFieldContact(get(), npc),
     fieldWitness: (...args: Parameters<FieldWitness>) => fieldWitnessFor(get(), ...args),
   };
+}
+
+function advanceFieldWreckLifetime(
+  context: ControllerRuntimeContext,
+  fieldWorld: AsteroidFieldWorld,
+  deltaSeconds: number
+): void {
+  fieldWorld.advanceCombatWreckLifetime(deltaSeconds, (locationId, ids) => {
+    for (const id of ids) context.economy.simulation.releasePhysicalStock(id);
+    context.engagements.removeFieldCombatWrecks(ids);
+    const sceneField = context.state.salvageScene?.getField();
+    const fields = new Set([
+      sceneField,
+      backgroundSalvagePatrol(context, locationId)?.field,
+      ...context.state.salvageEventFields.values(),
+    ]);
+    for (const field of fields) {
+      if (field?.sourceLocationId !== locationId) continue;
+      for (let i = field.wrecks.length - 1; i >= 0; i--) {
+        if (ids.has(field.wrecks[i]!.id)) field.wrecks.splice(i, 1);
+      }
+      invalidateSalvagePhysics(field);
+    }
+  });
 }

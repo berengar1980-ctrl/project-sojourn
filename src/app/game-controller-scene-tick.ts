@@ -2,6 +2,7 @@ import { syncFieldTrafficImpulses } from '../systems/combat/field-combat-arena';
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerLocalModel, controllerStarModel } from './game-controller-models';
+import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { advanceCareerSalvageDrones } from './game-controller-salvage-drone-world';
 
 // The simulation still runs every animation frame. The full-resolution canvas
@@ -27,7 +28,7 @@ function shouldUpdate(
 /** Presentation tick: the campaign engine never owns or mutates these scene services. */
 export function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state } = context;
-  advanceCareerSalvageDrones(context, deltaSeconds);
+  advanceCareerSalvageDrones(context, deltaSeconds, fieldWorldFor(context));
   if (state.mode === 'combat') {
     if (shouldUpdate(lastCombatUpdate, context, COMBAT_MAP_MIN_FRAME_MS))
       measurePerformance('scene.combat.update', () => state.combatPanel?.update());

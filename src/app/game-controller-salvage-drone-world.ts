@@ -13,7 +13,7 @@ import {
   salvageFieldCombatArena,
   syncSalvageCombatField,
 } from '../systems/combat/field-combat-arena';
-import { fieldWorldFor } from './game-controller-field-world-bridge';
+import type { AsteroidFieldWorld } from '../systems/operations/asteroid-field-world';
 import {
   advanceSalvageContainerDrift,
   invalidateSalvagePhysics,
@@ -106,7 +106,8 @@ export function backgroundSalvagePatrol(
 /** Offscreen security uses the same traffic, sensors, and combat arena as the mounted scene. */
 export function advanceCareerSalvageDrones(
   context: ControllerRuntimeContext,
-  seconds: number
+  seconds: number,
+  wreckWorld: AsteroidFieldWorld
 ): void {
   restoreKnownPatrols(context);
   let accumulator = (accumulators.get(context) ?? 0) + Math.max(0, Math.min(0.25, seconds));
@@ -126,102 +127,7 @@ export function advanceCareerSalvageDrones(
     // One-off event maps retain their existing on-entry lifecycle.
     const location = narrowsSector.locations.find((entry) => entry.id === locationId);
     if (!location?.activities.salvage) continue;
-    const wreckWorld = fieldWorldFor(context);
-    const combatWrecks = wreckWorld.combatWrecks(locationId);
-    const known = new Set(world.field.wrecks.map((wreck) => wreck.id));
-    for (const wreck of combatWrecks) {
-      if (known.has(wreck.id)) continue;
-      world.field.wrecks.push(wreck);
-      invalidateSalvagePhysics(world.field);
-    }
-    const traffic = careerSalvagePirates(context, world.field);
-    const npcs = context.economy.sectorNpcs.npcs;
-    const duels = (context.engagements.activeNpcCombatSnapshots?.() ?? []).filter(
-      (duel) => duel.arena.backdropSeed === world.field.seed
-    );
-    const fieldCombat = context.engagements.fieldCombat?.(locationId, world.field.seed);
-    if (fieldCombat) syncSalvageCombatField(world.field, fieldCombat);
-    const engage = (
-      attackerId: string,
-      defenderId: string,
-      attacker: WorldPoint,
-      defender: WorldPoint
-    ) => {
-      const pose = (id: string) =>
-        id === 'security-drone:' + locationId
-          ? world.drone
-          : (traffic.body(id) ?? world.salvagers.ships.find((ship) => ship.npcId === id));
-      const first = pose(attackerId);
-      const second = pose(defenderId);
-      return context.engagements.engageNpcsInArena(attackerId, defenderId, {
-        ...salvageFieldCombatArena(world.field),
-        attackerPosition: { ...attacker },
-        defenderPosition: { ...defender },
-        ...(first && {
-          attackerHeadingRadians: first.headingRadians,
-          attackerVelocity: {
-            x: Math.cos(first.headingRadians) * first.speed,
-            y: Math.sin(first.headingRadians) * first.speed,
-          },
-        }),
-        ...(second && {
-          defenderHeadingRadians: second.headingRadians,
-          defenderVelocity: {
-            x: Math.cos(second.headingRadians) * second.speed,
-            y: Math.sin(second.headingRadians) * second.speed,
-          },
-        }),
-      });
-    };
-    for (let i = 0; i < elapsed * 5; i += 1) {
-      advanceSalvagePirateResponse({
-        field: world.field,
-        drone: world.drone,
-        pirates: traffic,
-        sectorNpcs: npcs,
-        salvagers: world.salvagers.ships,
-        playerPosition: null,
-        playerRadius: 0,
-        dt: 0.2,
-        playerCombat: null,
-        npcCombats: duels,
-        onPirateAttack: engage,
-        onDroneAttack: (pirateId, position) =>
-          engage(pirateId, 'security-drone:' + locationId, position, world.drone.position),
-        onFreighterExit: (npc) => {
-          if (npc.homePortId)
-            context.economy.sectorNpcs.requestTravel(
-              npc,
-              npc.homePortId,
-              'Rückflug zum Heimathafen'
-            );
-        },
-      });
-      // The local worker caps each integration step at 80 ms.
-      for (let step = 0; step < 4; step++) {
-        world.salvagers.tick(0.05, undefined, true);
-        if (!context.engagements.fieldCombat?.(locationId, world.field.seed))
-          advanceSalvageContainerDrift(world.field, 0.05);
-      }
-    }
-    context.engagements.fieldCombat?.(
-      locationId,
-      world.field.seed,
-      salvageDroneBystanders(
-        null,
-        world.salvagers.ships,
-        world.drone,
-        locationId,
-        traffic.snapshot(npcs)
-      )
-    );
-    const currentCombat = context.engagements.fieldCombat?.(locationId, world.field.seed);
-    if (currentCombat)
-      syncFieldTrafficImpulses(salvageFieldPhysicsBodies(world.field), currentCombat.arena);
-    wreckWorld.reconcileCombatWrecks(locationId, world.field.wrecks);
-    context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
-    context.economy.wreckClaims.rememberWorkers(world.field, world.salvagers.ships);
-    rememberSalvageSecurity(context, world.field, world.drone);
+    advanceSalvageField(context, world, wreckWorld, locationId, elapsed);
   }
 }
 
@@ -300,4 +206,117 @@ export function careerSalvagePirates(
     : new LocalPirateTraffic(field.width, field.height, field.seed);
   context.economy.localPirates.set(field.sourceLocationId, created);
   return created;
+}
+
+function advanceSalvageField(
+  context: ControllerRuntimeContext,
+  world: SalvagePatrolWorld,
+  wreckWorld: AsteroidFieldWorld,
+  locationId: string,
+  elapsed: number
+): void {
+  const combatWrecks = wreckWorld.combatWrecks(locationId);
+  const known = new Set(world.field.wrecks.map((wreck) => wreck.id));
+  for (const wreck of combatWrecks) {
+    if (known.has(wreck.id)) continue;
+    world.field.wrecks.push(wreck);
+    invalidateSalvagePhysics(world.field);
+  }
+  const traffic = careerSalvagePirates(context, world.field);
+  const npcs = context.economy.sectorNpcs.npcs;
+  const duels = (context.engagements.activeNpcCombatSnapshots?.() ?? []).filter(
+    (duel) => duel.arena.backdropSeed === world.field.seed
+  );
+  const fieldCombat = context.engagements.fieldCombat?.(locationId, world.field.seed);
+  if (fieldCombat) syncSalvageCombatField(world.field, fieldCombat);
+  const engage = backgroundEngagement(context, world, traffic, locationId);
+  for (let i = 0; i < elapsed * 5; i += 1) {
+    advanceSalvagePirateResponse({
+      field: world.field,
+      drone: world.drone,
+      pirates: traffic,
+      sectorNpcs: npcs,
+      salvagers: world.salvagers.ships,
+      playerPosition: null,
+      playerRadius: 0,
+      dt: 0.2,
+      playerCombat: null,
+      npcCombats: duels,
+      onPirateAttack: engage,
+      onDroneAttack: (pirateId, position) =>
+        engage(pirateId, 'security-drone:' + locationId, position, world.drone.position),
+      onFreighterExit: (npc) => {
+        if (npc.homePortId)
+          context.economy.sectorNpcs.requestTravel(
+            npc,
+            npc.homePortId,
+            'Rückflug zum Heimathafen'
+          );
+      },
+    });
+    // The local worker caps each integration step at 80 ms.
+    for (let step = 0; step < 4; step++) {
+      world.salvagers.tick(0.05, undefined, true);
+      if (!context.engagements.fieldCombat?.(locationId, world.field.seed))
+        advanceSalvageContainerDrift(world.field, 0.05);
+    }
+  }
+  context.engagements.fieldCombat?.(
+    locationId,
+    world.field.seed,
+    salvageDroneBystanders(
+      null,
+      world.salvagers.ships,
+      world.drone,
+      locationId,
+      traffic.snapshot(npcs)
+    )
+  );
+  const currentCombat = context.engagements.fieldCombat?.(locationId, world.field.seed);
+  if (currentCombat)
+    syncFieldTrafficImpulses(salvageFieldPhysicsBodies(world.field), currentCombat.arena);
+  wreckWorld.reconcileCombatWrecks(locationId, world.field.wrecks);
+  context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
+  context.economy.wreckClaims.rememberWorkers(world.field, world.salvagers.ships);
+  rememberSalvageSecurity(context, world.field, world.drone);
+}
+
+function backgroundEngagement(
+  context: ControllerRuntimeContext,
+  world: SalvagePatrolWorld,
+  traffic: LocalPirateTraffic,
+  locationId: string
+) {
+  return (
+    attackerId: string,
+    defenderId: string,
+    attacker: WorldPoint,
+    defender: WorldPoint
+  ) => {
+    const pose = (id: string) =>
+      id === 'security-drone:' + locationId
+        ? world.drone
+        : (traffic.body(id) ?? world.salvagers.ships.find((ship) => ship.npcId === id));
+    const first = pose(attackerId);
+    const second = pose(defenderId);
+    return context.engagements.engageNpcsInArena(attackerId, defenderId, {
+      ...salvageFieldCombatArena(world.field),
+      attackerPosition: { ...attacker },
+      defenderPosition: { ...defender },
+      ...(first && {
+        attackerHeadingRadians: first.headingRadians,
+        attackerVelocity: {
+          x: Math.cos(first.headingRadians) * first.speed,
+          y: Math.sin(first.headingRadians) * first.speed,
+        },
+      }),
+      ...(second && {
+        defenderHeadingRadians: second.headingRadians,
+        defenderVelocity: {
+          x: Math.cos(second.headingRadians) * second.speed,
+          y: Math.sin(second.headingRadians) * second.speed,
+        },
+      }),
+    });
+  };
 }
