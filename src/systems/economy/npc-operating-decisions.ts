@@ -3,7 +3,9 @@ import type { NpcTravelOperatingQuote } from './npc-economy-types';
 
 /** Operating reserves are retained for wages, repairs and fuel, not speculative purchases. */
 export function npcWorkingCapital(npc: NpcEconomyState): number {
-  const large = npc.cargoCapacity >= 200;
+  // Abstract economy-only actors have no registered hull or capital obligation.
+  if (!('shipId' in npc)) return 0;
+  const large = (npc.normalCargoCapacity ?? npc.cargoCapacity) >= 200;
   if (npc.role === 'miner') return large ? 450000 : 220000;
   if (npc.role === 'salvager') return large ? 500000 : 250000;
   if (npc.role === 'freighter' || npc.role === 'trader') return large ? 650000 : 300000;
