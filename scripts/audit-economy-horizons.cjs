@@ -77,3 +77,32 @@ for (const report of physicalReports) {
   console.log(JSON.stringify(report));
 }
 console.log('PASS 90/180/365-day physical resource balance audit');
+
+const integratedRun = spawnSync(process.execPath, [test], {
+  cwd: path.resolve(__dirname, '..'),
+  env: { ...process.env, SOJOURN_LONGRUN_DAYS: '365', SOJOURN_INTEGRATED_FIELDS: '1' },
+  encoding: 'utf8',
+  maxBuffer: 8 * 1024 * 1024,
+});
+if (integratedRun.status !== 0) {
+  process.stderr.write(integratedRun.stdout ?? '');
+  process.stderr.write(integratedRun.stderr ?? '');
+  process.exit(integratedRun.status ?? 1);
+}
+const integratedReports = integratedRun.stdout
+  .split('\n')
+  .filter((line) => line.startsWith('{'))
+  .map((line) => JSON.parse(line))
+  .filter((report) => report.integratedFields);
+const integratedDays = integratedReports.map((report) => report.days);
+assert.deepEqual(integratedDays, horizons);
+for (const report of integratedReports) {
+  assert.equal(report.secondsPerDay, 180);
+  const populationSize = report.report.reduce((sum, group) => sum + group.ships, 0);
+  assert.equal(populationSize, 33);
+  const discrepancies = report.resourceBalance.filter((row) => row.discrepancy !== 0);
+  console.log(JSON.stringify({ ...report, unexplainedResources: discrepancies }));
+}
+assert(integratedReports[2].fieldActivity.minedUnits > 0);
+assert(integratedReports[2].fieldActivity.recoveredUnits > 0);
+console.log('PASS 90/180/365-day integrated NPC and physical field audit');
