@@ -8,7 +8,7 @@ import { ensureNpcPersonality } from '../npcs/npc-autonomy';
 
 import type { EconomyMarketService } from './market-service';
 
-import { type EconomyPoint, type NpcTradeMarketView } from './npc-resource-side-trade';
+import type { EconomyPoint, NpcTradeMarketView } from './npc-economy-types';
 
 import { quantity } from './npc-cargo';
 
