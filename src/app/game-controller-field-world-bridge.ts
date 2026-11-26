@@ -1,5 +1,8 @@
-import { balancePermanentSalvageStocks } from './game-controller-salvage-stocks';
-import { generateSalvageField } from '../systems/salvage';
+import {
+  balancePermanentSalvageStocks,
+  permanentSalvageField,
+  recoverBackgroundSalvage,
+} from './game-controller-salvage-stocks';
 import { balanceAsteroidStocks } from './game-controller-asteroid-stocks';
 import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import { measurePerformance } from '../core/performance-diagnostics';
@@ -100,13 +103,26 @@ function balanceDailySalvage(context: ControllerRuntimeContext, day: number): vo
       balancePermanentSalvageStocks(simulation, mounted, () => false);
       continue;
     }
-    const seed = wreckClaims.storedSeed(location.id);
-    if (seed === undefined) continue;
-    const field = generateSalvageField(location.id, seed, location.dangerLevel);
-    wreckClaims.restoreField(field);
+    const field = permanentSalvageField(context, location);
     balancePermanentSalvageStocks(simulation, field, (id) => !wreckClaims.claim(field.id, id, day));
     wreckClaims.rememberField(field);
   }
+}
+
+function installPermanentSalvageEconomy(context: ControllerRuntimeContext): void {
+  const { wreckClaims, npcs } = context.economy;
+  const locations = narrowsSector.locations.filter((location) => location.activities.salvage);
+  for (const location of locations) {
+    wreckClaims.rememberField(permanentSalvageField(context, location));
+  }
+  npcs.setPhysicalSalvageWorker((npc, day) => {
+    const location = locations.find((entry) => entry.id === npc.locationId);
+    if (!location) return;
+    const mounted = context.state.salvageScene?.getField();
+    if (context.state.mode === 'salvage-space' && mounted?.sourceLocationId === location.id) return;
+    const field = permanentSalvageField(context, location);
+    recoverBackgroundSalvage(context, npc, field, day);
+  });
 }
 
 function registerInitialAsteroidStocks(
@@ -139,6 +155,7 @@ export function bindCareerFieldWorld(
   fields: AsteroidFieldWorld
 ): void {
   if (fieldWorlds.has(context)) throw new Error('Field world already installed');
+  installPermanentSalvageEconomy(context);
   registerInitialAsteroidStocks(context, fields);
   lastAsteroidBalanceDay.set(context, context.economy.simulation.currentDay);
   fieldWorlds.set(context, fields);
@@ -201,6 +218,7 @@ export function fieldWorldFor(
     undefined,
     initial
   );
+  if (!exerciseLocationId) installPermanentSalvageEconomy(context);
   registerInitialAsteroidStocks(context, fields);
   lastAsteroidBalanceDay.set(context, context.economy.simulation.currentDay);
   fieldWorlds.set(context, fields);
