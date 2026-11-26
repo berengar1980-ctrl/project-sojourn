@@ -1,7 +1,10 @@
 import type { EconomyResourceId, PlayerEconomyState } from '../../core/economy-types';
+import type { SalvageField } from '../../core/salvage-types';
+import { salvageStockId } from '../salvage/salvage-stock-id';
 
 interface PhysicalResourceAllocator {
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+  fundPhysicalStock?(resourceId: string, sourceId: string, amount: number): number;
   getPhysicalStock?(resourceId: string, sourceId: string): number | undefined;
   withdrawPhysicalStock?(resourceId: string, sourceId: string, amount: number): number;
 }
@@ -27,6 +30,7 @@ function cargoUsed(player: PlayerEconomyState): number {
 }
 
 export interface SalvageEconomyService {
+  prepareEventField?(field: SalvageField): void;
   recover(
     resourceId: EconomyResourceId,
     requestedQuantity: number,
@@ -41,6 +45,20 @@ export function createSalvageEconomyService(
   cargo: PlayerCargoReceiver
 ): SalvageEconomyService {
   return {
+    prepareEventField(field) {
+      if (!allocator.fundPhysicalStock || !allocator.getPhysicalStock) return;
+      for (const wreck of field.wrecks) {
+        if (wreck.combatWreckVariant) continue;
+        const sourceId = salvageStockId(field, wreck);
+        for (const deposit of wreck.resources) {
+          const stock = allocator.getPhysicalStock(deposit.resourceId, sourceId);
+          const requested = deposit.remainingAmount;
+          const available =
+            stock ?? allocator.fundPhysicalStock(deposit.resourceId, sourceId, requested);
+          deposit.remainingAmount = Math.min(deposit.remainingAmount, available);
+        }
+      }
+    },
     recover(resourceId, requestedQuantity, cargoCapacityTons, originId, sourceId) {
       const requested = quantity(requestedQuantity);
       const free = Math.max(0, quantity(cargoCapacityTons) - cargoUsed(cargo.player));
