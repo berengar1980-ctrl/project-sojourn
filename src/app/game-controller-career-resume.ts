@@ -55,9 +55,8 @@ function careerDependencies(
             seed: instance.seed,
             width: instance.width,
             height: instance.height,
-            miners: operations.sector.npcs.filter(
-              (npc) => npc.job === 'miner' && npc.workLocationId === location.id
-            ),
+            miners: operations.sector.npcs.filter((npc) => npc.job === 'miner'),
+            dynamicRoster: true,
             getAsteroids: () => instance.asteroids,
             mine: (npc, id, amount, asteroidId) =>
               commerce.commerce.economy.npcs.mineLocal(
