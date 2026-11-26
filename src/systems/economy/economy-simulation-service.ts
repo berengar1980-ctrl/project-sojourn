@@ -7,6 +7,7 @@ import type {
   PlayerEconomyState,
 } from '../../core/economy-types';
 import type { EconomyMarketService } from './market-service';
+import { dailyProductionBudget, supplyDailyCombatBuffer } from './physical-reserve-policy';
 import {
   captureCareerResourcePools,
   stageCareerResourcePools,
@@ -133,13 +134,14 @@ function produceFromReserve(
   random: () => number
 ): number {
   let produced = 0;
+  const budget = dailyProductionBudget(pool);
   for (const market of markets) {
     if (!market.produces.has(resourceId)) continue;
     const entry = market.entries[resourceId];
-    if (!entry || pool.reserve <= 0) continue;
+    if (!entry || produced >= budget) continue;
 
     const wanted = Math.max(1, Math.floor(4 + random() * 8 + entry.production * 5));
-    const quantityToMove = Math.min(quantity(pool.reserve), wanted);
+    const quantityToMove = Math.min(quantity(pool.reserve), budget - produced, wanted);
     pool.reserve -= quantityToMove;
     entry.stock += quantityToMove;
     produced += quantityToMove;
@@ -384,6 +386,7 @@ export function createEconomySimulationService(
         }
 
         consumeToReserve(resource.id, desiredConsumption, markets, pool, random);
+        supplyDailyCombatBuffer(resource.id, pool);
         produceFromReserve(resource.id, markets, pool, random);
 
         for (const market of markets) {
