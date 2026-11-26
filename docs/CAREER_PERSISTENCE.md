@@ -1356,3 +1356,5 @@ Permanent salvage fields register existing material on first visit. Stored regul
 New permanent career salvage fields use a deterministic regional-v1 seed and resource profile; previously stored seeds retain their old resource layout. All regular salvage fields are registered before background recovery. Daily NPC salvage reads the persistent field, respects claims, and skips the mounted scene to avoid double extraction. No new checkpoint owner is introduced.
 
 Mounted sector salvage events and granted distress salvage rights commit their material from the existing reserve, including zero-stock entries. The daily balance returns remaining material from resolved or expired event stock IDs; event wrecks are never refilled by the permanent-field balance.
+
+NPC event recovery uses the same event field, finite resource stock identifiers and funding path as player salvage. Existing component recovery is recorded on the shared wreck so it cannot be recovered twice. Remaining event material is returned on the daily expiry balance.
