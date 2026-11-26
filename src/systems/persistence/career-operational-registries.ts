@@ -1,3 +1,4 @@
+import { validLocalTrafficSceneData } from '../npcs/npc-local-pirate-checkpoint';
 import { AsteroidClaimRegistry } from '../operations/asteroid-claim-registry';
 import { stageSecurityDroneCheckpoint } from '../operations/asteroid-security-drone-checkpoint';
 import { WreckClaimRegistry, type WreckClaimCheckpoint } from '../operations/wreck-claim-registry';
@@ -171,6 +172,17 @@ function verifyWreckField(pair: unknown, fields: Set<string>): void {
   fields.add(pair[0]);
   if (pair[1].drone !== undefined) {
     stageSecurityDroneCheckpoint(pair[1].drone, 460, 8);
+  }
+  const escorts = pair[1].securityEscorts;
+  if (escorts !== undefined) {
+    if (
+      !isRecord(escorts) || escorts.version !== 1 || escorts.seed !== pair[1].seed ||
+      !validFinite(escorts.width, 1) || !validFinite(escorts.height, 1) ||
+      !validLocalTrafficSceneData(escorts, escorts.width, escorts.height) ||
+      !Array.isArray(escorts.ships) || escorts.ships.length > 1 ||
+      !Array.isArray(escorts.combatReturns) || escorts.combatReturns.length !== 0 ||
+      !escorts.ships.every((ship) => isRecord(ship) && ship.npcId === 'security-drone:' + pair[0] + ':escort-2')
+    ) throw new Error('Ungültiger Sicherheitsdrohnen-Spielstand.');
   }
   const ids = new Set<string>();
   for (const wreck of pair[1].wrecks) verifyWreckRecord(wreck, ids);
