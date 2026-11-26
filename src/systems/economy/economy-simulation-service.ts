@@ -128,26 +128,35 @@ function consumeToReserve(
   return consumed;
 }
 
+/** Recycle the day's consumption and gradually return accumulated reserve. */
 function produceFromReserve(
   resourceId: EconomyResourceId,
   markets: readonly EconomyMarketState[],
   pool: EconomyResourcePool,
-  random: () => number
+  random: () => number,
+  consumed: number
 ): number {
-  let produced = 0;
-  const budget = dailyProductionBudget(pool);
-  for (const market of markets) {
-    if (!market.produces.has(resourceId)) continue;
-    const entry = market.entries[resourceId];
-    if (!entry || produced >= budget) continue;
+  const backlog = Math.max(0, pool.reserve - consumed);
+  const wanted = consumed + Math.ceil(backlog / 20);
+  const budget = Math.min(dailyProductionBudget(pool), wanted);
+  if (budget <= 0) return 0;
 
-    const wanted = Math.max(1, Math.floor(4 + random() * 8 + entry.production * 5));
-    const quantityToMove = Math.min(quantity(pool.reserve), budget - produced, wanted);
-    pool.reserve -= quantityToMove;
-    entry.stock += quantityToMove;
-    produced += quantityToMove;
+  const producers = markets.flatMap((market) => {
+    const entry = market.entries[resourceId];
+    if (!entry || !market.produces.has(resourceId)) return [];
+    const weight = Math.max(1, Math.floor(4 + random() * 8 + entry.production * 5));
+    return [{ entry, weight }];
+  });
+  let remainingWeight = producers.reduce((sum, producer) => sum + producer.weight, 0);
+  let remaining = budget;
+  for (const { entry, weight } of producers) {
+    const moved = Math.min(remaining, Math.ceil((remaining * weight) / remainingWeight));
+    pool.reserve -= moved;
+    entry.stock += moved;
+    remaining -= moved;
+    remainingWeight -= weight;
   }
-  return produced;
+  return budget - remaining;
 }
 
 function legalStabilization(
@@ -387,9 +396,9 @@ export function createEconomySimulationService(
           );
         }
 
-        consumeToReserve(resource.id, desiredConsumption, markets, pool, random);
+        const consumed = consumeToReserve(resource.id, desiredConsumption, markets, pool, random);
         supplyDailyCombatBuffer(resource.id, pool);
-        produceFromReserve(resource.id, markets, pool, random);
+        produceFromReserve(resource.id, markets, pool, random, consumed);
 
         for (const market of markets) {
           driftDemand(market, resource.id, random);
