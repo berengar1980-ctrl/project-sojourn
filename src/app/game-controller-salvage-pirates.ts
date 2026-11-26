@@ -1,3 +1,5 @@
+import { pirateHuntAllowedAt } from '../systems/npcs/npc-pirate-classes';
+import { narrowsSector } from '../data/maps/narrows-sector';
 import type { LocalShieldShipBody } from '../systems/local-space/ship-shield-collision';
 import { getShipDefinition } from '../systems/ships';
 import { syncSalvagePhysicsContacts } from '../systems/salvage/salvage-container-motion';
@@ -184,9 +186,15 @@ function advancePirateTraffic(
 
 /** Combat owns fighting ship poses; regular traffic owns everyone else. */
 export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptions): void {
+  const location = narrowsSector.locations.find(
+    (entry) => entry.id === options.field.sourceLocationId
+  );
   const livePirates = options.sectorNpcs.filter(
     (npc) =>
-      localArmedTraffic(npc) && npc.locationId === options.field.sourceLocationId && npc.hullHp > 0
+      localArmedTraffic(npc) &&
+      npc.locationId === options.field.sourceLocationId &&
+      npc.hullHp > 0 &&
+      (!location || pirateHuntAllowedAt(npc, location))
   );
   options.pirates.reconcile(livePirates);
   const combatants = mirrorSalvageDuels(options);
