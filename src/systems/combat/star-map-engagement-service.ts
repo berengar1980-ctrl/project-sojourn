@@ -317,6 +317,30 @@ function beginBackgroundCombat(
   );
 }
 
+function releaseAbandonedChase(
+  runtime: EngagementRuntime,
+  attacker: ReturnType<typeof engagementNpc>,
+  target: ReturnType<typeof engagementNpc>,
+  attackerId: string,
+  targetId: string
+): void {
+  for (const [npc, opponentId] of [
+    [attacker, targetId],
+    [target, attackerId],
+  ] as const) {
+    if (
+      npc &&
+      npc.hullHp > 0 &&
+      npc.retiredUntilDay === undefined &&
+      npc.combatMovement &&
+      npc.combatMovement.mode !== 'engaged' &&
+      npc.combatMovement.targetId === opponentId
+    ) {
+      runtime.options.sectorNpcs.recoverFromCombat(npc, 'Abfangversuch beendet');
+    }
+  }
+}
+
 function updateNpcChases(runtime: EngagementRuntime): void {
   for (const [attackerId, chase] of [...runtime.npcChases]) {
     const attacker = engagementNpc(runtime, attackerId);
@@ -332,21 +356,7 @@ function updateNpcChases(runtime: EngagementRuntime): void {
       attacker.combatMovement.targetId !== chase.targetId ||
       target.combatMovement?.mode === 'engaged'
     ) {
-      for (const [npc, opponentId] of [
-        [attacker, chase.targetId],
-        [target, attackerId],
-      ] as const) {
-        if (
-          npc &&
-          npc.hullHp > 0 &&
-          npc.retiredUntilDay === undefined &&
-          npc.combatMovement &&
-          npc.combatMovement.mode !== 'engaged' &&
-          npc.combatMovement.targetId === opponentId
-        ) {
-          runtime.options.sectorNpcs.recoverFromCombat(npc, 'Abfangversuch beendet');
-        }
-      }
+      releaseAbandonedChase(runtime, attacker, target, attackerId, chase.targetId);
       runtime.npcChases.delete(attackerId);
       continue;
     }

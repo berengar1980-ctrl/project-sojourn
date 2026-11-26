@@ -50,11 +50,7 @@ export function stageSecurityDroneCheckpoint(
   if (!record(point) || !validNumber(point.x, -Infinity) || !validNumber(point.y, -Infinity)) {
     throw new Error('Ungültige Drohnenposition.');
   }
-  if (
-    (value.headingRadians !== undefined && !validNumber(value.headingRadians, -Infinity)) ||
-    (value.speed !== undefined && !validNumber(value.speed))
-  )
-    throw new Error('Ungültige gespeicherte Drohnenbewegung.');
+  verifyDroneMotion(value);
   if (value.routeState !== undefined && !validRouteState(value.routeState)) {
     throw new Error('Ungültige gespeicherte Drohnenroute.');
   }
@@ -77,4 +73,12 @@ export function stageSecurityDroneCheckpoint(
     throw new Error('Doppelte Drohnen-Beobachtung.');
   }
   return value as unknown as SecurityDroneCheckpoint;
+}
+
+function verifyDroneMotion(value: Record<string, unknown>): void {
+  if (
+    (value.headingRadians !== undefined && !validNumber(value.headingRadians, -Infinity)) ||
+    (value.speed !== undefined && !validNumber(value.speed))
+  )
+    throw new Error('Ungültige gespeicherte Drohnenbewegung.');
 }

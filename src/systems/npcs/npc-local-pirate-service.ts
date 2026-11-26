@@ -188,24 +188,11 @@ export class LocalPirateTraffic {
 
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set<string>();
-    for (const npc of pirates) {
-      if (
-        localArmedTraffic(npc) &&
-        npc.hullHp > 0 &&
-        (npc.combatRecoverySeconds ?? 0) <= 0 &&
-        npc.retiredUntilDay === undefined &&
-        (!npc.travel || npc.combatMovement)
-      ) {
-        active.add(npc.id);
-      }
-    }
+    for (const npc of pirates) if (availableLocalTraffic(npc)) active.add(npc.id);
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
       const npc = pirates.find((candidate) => candidate.id === id);
-      if (
-        !id.startsWith('security-drone:') &&
-        (npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0)
-      ) {
+      if (keepCombatReturn(id, npc)) {
         this.combatReturnPositions.set(id, { ...ship.position });
       } else {
         this.combatReturnPositions.delete(id);
@@ -526,4 +513,18 @@ export class LocalPirateTraffic {
     delete ship.routeState;
     // Keep the interception latch until the engagement has recovered.
   }
+}
+
+function availableLocalTraffic(npc: SectorNpcState): boolean {
+  return Boolean(
+    localArmedTraffic(npc) &&
+    npc.hullHp > 0 &&
+    (npc.combatRecoverySeconds ?? 0) <= 0 &&
+    npc.retiredUntilDay === undefined &&
+    (!npc.travel || npc.combatMovement)
+  );
+}
+
+function keepCombatReturn(id: string, npc: SectorNpcState | undefined): boolean {
+  return !isSecurityDrone(id) && Boolean(npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0);
 }

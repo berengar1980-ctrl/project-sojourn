@@ -413,49 +413,53 @@ class LocalSalvageService implements NpcLocalSalvageService {
       if (cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) && ship.phase !== 'exiting')
         this.beginExit(ship);
 
-      if (ship.phase === 'entering') {
-        if (!this.assignTarget(ship, npc)) continue;
-      }
-
-      if (ship.phase === 'approaching') {
-        this.advanceApproaching(ship, npc, dt);
-        continue;
-      }
-
-      if (ship.phase === 'scanning') {
-        this.advanceScanning(ship, npc, dt);
-        continue;
-      }
-
-      if (ship.phase === 'salvaging') {
-        this.advanceSalvaging(ship, npc, dt);
-        continue;
-      }
-
-      ship.salvageActive = false;
-      if (
-        moveFieldShip(
-          ship,
-          ship.exitPoint,
-          localCruiseSpeed(npc),
-          dt,
-          [
-            ...salvageDroneObstacleAsteroids(this.options.field).filter(
-              (entry) => entry.routeBlocking
-            ),
-            ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
-          ],
-          65
-        )
-      ) {
-        this.ships.splice(index, 1);
-        this.options.depart(npc);
-      }
+      if (this.advanceWorker(ship, npc, dt)) this.ships.splice(index, 1);
     }
 
     if (this.options.resolveLocalCollisions !== false)
       this.resolveLocalCollisions(combatantId, skipPlayer);
   };
+  private advanceWorker(ship: LocalNpcSalvagerState, npc: SectorNpcState, dt: number): boolean {
+  if (ship.phase === 'entering') {
+    if (!this.assignTarget(ship, npc)) return false;
+  }
+
+  if (ship.phase === 'approaching') {
+    this.advanceApproaching(ship, npc, dt);
+    return false;
+  }
+
+  if (ship.phase === 'scanning') {
+    this.advanceScanning(ship, npc, dt);
+    return false;
+  }
+
+  if (ship.phase === 'salvaging') {
+    this.advanceSalvaging(ship, npc, dt);
+    return false;
+  }
+
+  ship.salvageActive = false;
+  if (
+    moveFieldShip(
+      ship,
+      ship.exitPoint,
+      localCruiseSpeed(npc),
+      dt,
+      [
+        ...salvageDroneObstacleAsteroids(this.options.field).filter(
+          (entry) => entry.routeBlocking
+        ),
+        ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
+      ],
+      65
+    )
+  ) {
+    this.options.depart(npc);
+    return true;
+  }
+    return false;
+  }
   private resolveLocalCollisions = (combatantId?: string, skipPlayer = false): void => {
     const playerState = skipPlayer ? undefined : this.options.getPlayerShipState?.();
     const bodies: LocalShieldShipBody[] = this.ships.flatMap((local) => {

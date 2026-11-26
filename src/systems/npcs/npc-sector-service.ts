@@ -257,47 +257,48 @@ class SectorService implements NpcSectorService {
     ) {
       return false;
     }
-    if (npc.pirate) {
-      const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
-      const lootUnits = Object.values(npc.cargo).reduce(
-        (sum, amount) => sum + Math.max(0, Math.floor(amount)),
-        0
-      );
-      if (lootUnits > 0 && npc.locationId !== homeId) {
-        return this.requestTravel(npc, homeId, 'Rückflug · Beute verkaufen');
-      }
-      const target = pirateHuntDestination(
-        this.world,
-        npc,
-        this.npcs,
-        this.livePosition,
-        (destinationId) => this.quoteTravel(npc, destinationId)
-      );
-      if (!target) {
-        if (npc.pirateHuntZoneId === npc.locationId && npc.locationId !== homeId) {
-          npc.activityId = 'raiding';
-          npc.activity = 'Auf Beutezug · Jagdrevier halten';
-          return false;
-        }
-        npc.activityId = 'dock';
-        npc.activity = 'Kein wirtschaftlich tragfähiges Jagdrevier';
-        return false;
-      }
-      const retreating = target === homeId;
-      const accepted = this.requestTravel(
-        npc,
-        target,
-        retreating ? 'Rückzug · Betriebsmittel sichern' : 'Auf Beutezug · Jagdrevier'
-      );
-      if (!accepted && retreating) {
-        npc.activityId = 'maintenance';
-        npc.activity = 'Rückzug nicht finanzierbar';
-      }
-      return accepted;
-    }
+    if (npc.pirate) return this.requestPirateHunt(npc);
     const target = patrolDestination(this.world, npc);
     return target ? this.requestTravel(npc, target, 'Sicherheitspatrouille') : false;
   };
+  private requestPirateHunt(npc: SectorNpcState): boolean {
+    const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+    const lootUnits = Object.values(npc.cargo).reduce(
+      (sum, amount) => sum + Math.max(0, Math.floor(amount)),
+      0
+    );
+    if (lootUnits > 0 && npc.locationId !== homeId) {
+      return this.requestTravel(npc, homeId, 'Rückflug · Beute verkaufen');
+    }
+    const target = pirateHuntDestination(
+      this.world,
+      npc,
+      this.npcs,
+      this.livePosition,
+      (destinationId) => this.quoteTravel(npc, destinationId)
+    );
+    if (!target) {
+      if (npc.pirateHuntZoneId === npc.locationId && npc.locationId !== homeId) {
+        npc.activityId = 'raiding';
+        npc.activity = 'Auf Beutezug · Jagdrevier halten';
+        return false;
+      }
+      npc.activityId = 'dock';
+      npc.activity = 'Kein wirtschaftlich tragfähiges Jagdrevier';
+      return false;
+    }
+    const retreating = target === homeId;
+    const accepted = this.requestTravel(
+      npc,
+      target,
+      retreating ? 'Rückzug · Betriebsmittel sichern' : 'Auf Beutezug · Jagdrevier'
+    );
+    if (!accepted && retreating) {
+      npc.activityId = 'maintenance';
+      npc.activity = 'Rückzug nicht finanzierbar';
+    }
+    return accepted;
+  }
   startPursuit = (
     npc: SectorNpcState,
     targetKind: NpcCombatTargetKind,
