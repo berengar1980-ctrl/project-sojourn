@@ -271,6 +271,11 @@ class SectorService implements NpcSectorService {
         (destinationId) => this.quoteTravel(npc, destinationId)
       );
       if (!target) {
+        if (npc.pirateHuntZoneId === npc.locationId && npc.locationId !== homeId) {
+          npc.activityId = 'raiding';
+          npc.activity = 'Auf Beutezug · Jagdrevier halten';
+          return false;
+        }
         npc.activityId = 'dock';
         npc.activity = 'Kein wirtschaftlich tragfähiges Jagdrevier';
         return false;
