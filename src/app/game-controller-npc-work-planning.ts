@@ -7,12 +7,10 @@ import type { AsteroidFieldWorld } from '../systems/operations/asteroid-field-wo
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 
 function ownDepositValue(npc: NpcEconomyState, asteroid: LocalAsteroid): number {
-  return asteroid.deposits.reduce(
-    (sum, deposit) =>
-      sum +
-      Math.floor(deposit.oreRemaining) * knownWorkPrice(npc, deposit.resourceId, economyResources),
-    0
-  );
+  return asteroid.deposits.reduce((sum, deposit) => {
+    const price = knownWorkPrice(npc, deposit.resourceId, economyResources);
+    return sum + Math.floor(deposit.oreRemaining) * price;
+  }, 0);
 }
 
 export function installNpcWorkPlanning(
