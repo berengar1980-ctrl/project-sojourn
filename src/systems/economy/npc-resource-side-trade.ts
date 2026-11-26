@@ -6,6 +6,7 @@ import type {
 } from '../../core/economy-types';
 
 import { npcWorkingCapital } from './npc-operating-decisions';
+import { npcMarketConfidence } from './npc-market-knowledge';
 
 export interface EconomyPoint {
   readonly x: number;
@@ -20,10 +21,12 @@ export interface NpcTradeMarketEntry {
 
 export interface NpcTradeMarketView {
   readonly locationId: string;
+  readonly observedDay?: number;
   readonly entries: Readonly<Record<EconomyResourceId, NpcTradeMarketEntry>>;
 }
 
 export interface NpcSideTradeContext {
+  readonly day?: number;
   readonly markets: readonly NpcTradeMarketView[];
   readonly resources: readonly EconomyResourceDefinition[];
   readonly positions: Readonly<Record<string, EconomyPoint>>;
@@ -97,7 +100,9 @@ function destinationCandidate(
   );
   if (extraDistance > geometry.allowedExtraDistance) return null;
 
-  const sellUnitPrice = Math.max(1, Math.round(sell.price * 0.94));
+  const day = context.day ?? 0;
+  const confidence = npcMarketConfidence(destination.observedDay ?? day, day);
+  const sellUnitPrice = Math.max(1, Math.floor(sell.price * 0.94 * confidence));
   const costBasis = maxQuantity * buy.price;
   const expectedProfit = maxQuantity * sellUnitPrice - costBasis;
   const roi = expectedProfit / Math.max(1, costBasis);
