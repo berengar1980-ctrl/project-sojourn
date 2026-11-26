@@ -41,9 +41,8 @@ export function knownWorkPrice(
     const entry = market.entries[id];
     return entry ? [entry.price * npcMarketConfidence(market.observedDay, day)] : [];
   });
-  return prices.length
-    ? Math.max(...prices)
-    : (resources.find((resource) => resource.id === id)?.basePrice ?? 0);
+  if (prices.length) return Math.max(...prices);
+  return resources.find((resource) => resource.id === id)?.basePrice ?? 0;
 }
 
 function marketDistance(
@@ -82,7 +81,8 @@ function scoreSite(
       ? Number(npc.hullHp) / Math.max(1, Number(npc.hullMaxHp))
       : 1;
   const risk = Math.max(0, site.danger - 1);
-  const riskPenalty = 1 + risk * (1.9 - personality.riskTolerance) / Math.max(0.3, condition);
+  const riskFactor = risk * (1.9 - personality.riskTolerance);
+  const riskPenalty = 1 + riskFactor / Math.max(0.3, condition);
   const rivals = planning.fleet.filter(
     (other) =>
       other.id !== npc.id &&
@@ -96,9 +96,9 @@ function scoreSite(
   const net = revenue - roundTrip * fuelRate - 150;
   const claim = planning.knownClaimValue?.(npc, site.id) ?? 0;
   const repeat = npc.lastWorkLocationId === site.id ? 0.15 : 1;
-  const score =
-    ((net + Math.min(revenue, claim) * 0.25) * repeat) /
-    ((600 + roundTrip) * riskPenalty * (1 + rivals * 0.5));
+  const benefit = (net + Math.min(revenue, claim) * 0.25) * repeat;
+  const cost = (600 + roundTrip) * riskPenalty * (1 + rivals * 0.5);
+  const score = benefit / cost;
   return { site, resourceIds: priced.map((entry) => entry.id), score, revenue };
 }
 
