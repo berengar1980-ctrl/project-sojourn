@@ -40,15 +40,9 @@ import { finishNpcWorksite } from './npc-work-planning';
 
 export { npcCargoUsed } from './npc-cargo';
 
-export { observeNpcMarket } from './npc-market-knowledge';
+export { observeNpcMarket, npcMarketIntelAge, npcKnownMarketIds } from './npc-market-knowledge';
 
-export { npcMarketIntelAge } from './npc-market-knowledge';
-
-export { npcKnownMarketIds } from './npc-market-knowledge';
-
-export type { NpcEconomyService } from './npc-economy-types';
-
-export type { NpcEconomyServiceOptions } from './npc-economy-types';
+export type { NpcEconomyService, NpcEconomyServiceOptions } from './npc-economy-types';
 
 function requestNpcTravel(
   npc: NpcEconomyState,
