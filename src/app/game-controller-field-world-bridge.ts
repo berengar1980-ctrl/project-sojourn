@@ -36,7 +36,7 @@ import type {
 import type { FieldWitness } from '../systems/combat/career-fleet-encounter';
 import { droneSeesTarget } from '../systems/operations/asteroid-security-drone';
 import { salvageDroneObstacleAsteroids, salvageDroneCanSee } from './game-controller-salvage-drone';
-import { careerSalvageDrone } from './game-controller-salvage-drone-world';
+import { backgroundSalvagePatrol, careerSalvageDrone } from './game-controller-salvage-drone-world';
 
 function escortWitness(
   context: ControllerRuntimeContext,
@@ -44,7 +44,8 @@ function escortWitness(
   id: string,
   target: Parameters<FieldWitness>[2]
 ) {
-  const salvage = context.state.salvageScene?.getField();
+  const mounted = context.state.salvageScene?.getField();
+  const salvage = mounted?.sourceLocationId === locationId ? mounted : backgroundSalvagePatrol(context, locationId)?.field;
   const field = fieldWorldFor(context).field(locationId);
   const body = context.economy.localPirates.get(locationId)?.body(id);
   const rocks =
@@ -58,7 +59,8 @@ export function fieldWitnessFor(
   ...[locationId, npc, target]: Parameters<FieldWitness>
 ): ReturnType<FieldWitness> {
   if (!context || npc.locationId !== locationId || npc.travel) return null;
-  const salvage = context.state.salvageScene?.getField();
+  const mounted = context.state.salvageScene?.getField();
+  const salvage = mounted?.sourceLocationId === locationId ? mounted : backgroundSalvagePatrol(context, locationId)?.field;
   const field = fieldWorldFor(context).field(locationId);
   if (npc.id.startsWith('security-drone:')) {
     if (npc.id !== 'security-drone:' + locationId) {
@@ -476,7 +478,7 @@ function activeFieldContact(context: ControllerRuntimeContext | null, npc: Secto
   if (
     npc.id.startsWith('security-drone:') &&
     narrowsSector.locations.some(
-      (location) => location.id === npc.locationId && location.activities.mine
+      (location) => location.id === npc.locationId && (location.activities.mine || location.activities.salvage)
     )
   ) {
     return true;
