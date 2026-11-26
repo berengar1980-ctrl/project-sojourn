@@ -84,6 +84,7 @@ function balanceDailyAsteroids(
   if (previous !== undefined && day <= previous) return;
   lastAsteroidBalanceDay.set(context, day);
   balanceDailySalvage(context, day);
+  releaseExpiredEventStocks(context);
   fields.forEachField((field) => {
     const activeTargets = new Set(field.miners.ships.map((ship) => ship.targetAsteroidId));
     balanceAsteroidStocks(simulation, field.instance, (id) => {
@@ -92,6 +93,21 @@ function balanceDailyAsteroids(
       return !!asteroid && !context.economy.asteroidClaims.claim(field.locationId, asteroid);
     });
   });
+}
+
+function releaseExpiredEventStocks(context: ControllerRuntimeContext): void {
+  const { simulation, salvageEvents } = context.economy;
+  const active = new Set(salvageEvents.active.map((event) => event.id));
+  const expired = new Set<string>();
+  for (const pool of Object.values(simulation.pools)) {
+    for (const sourceId of Object.keys(pool.physicalStocks ?? {})) {
+      if (!sourceId.startsWith('["sector-event-field-')) continue;
+      const [fieldId] = JSON.parse(sourceId) as [string, string];
+      const eventId = fieldId.slice('sector-event-field-'.length);
+      if (!active.has(eventId)) expired.add(sourceId);
+    }
+  }
+  for (const sourceId of expired) simulation.releasePhysicalStock(sourceId);
 }
 
 function balanceDailySalvage(context: ControllerRuntimeContext, day: number): void {
