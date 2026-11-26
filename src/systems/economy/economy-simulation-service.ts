@@ -247,7 +247,10 @@ function createPhysicalStockTransactions(pools: Record<EconomyResourceId, Econom
     const stocks = (pool.physicalStocks ??= {});
     const available = combat ? quantity(pool.combatBuffer ?? 0) : quantity(pool.reserve);
     const moved = Math.min(quantity(amount), available);
-    if (!moved) return 0;
+    if (!moved) {
+      if (!Object.hasOwn(stocks, sourceId)) stocks[sourceId] = 0;
+      return 0;
+    }
     if (combat) pool.combatBuffer = available - moved;
     else pool.reserve -= moved;
     stocks[sourceId] = quantity(Object.hasOwn(stocks, sourceId) ? stocks[sourceId]! : 0) + moved;
