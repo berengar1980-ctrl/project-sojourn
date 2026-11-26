@@ -91,6 +91,10 @@ function orbit(value: unknown, world: WorldMap, npc: Record<string, unknown>): b
 function validNpcIdentity(value: Record<string, unknown>, world: WorldMap): boolean {
   if (!npcLocation(world, value, value.locationId)) return false;
   if (!location(world, value.homePortId ?? value.locationId)) return false;
+  if (value.workLocationId !== undefined && !location(world, value.workLocationId)) return false;
+  if (value.lastWorkLocationId !== undefined && !location(world, value.lastWorkLocationId)) {
+    return false;
+  }
   if (typeof value.id !== 'string' || !value.id || typeof value.shipId !== 'string') {
     return false;
   }
