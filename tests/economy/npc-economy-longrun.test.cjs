@@ -50,7 +50,10 @@ const nextRandom = () => {
   rng = (Math.imul(rng, 1664525) + 1013904223) >>> 0;
   return rng / 0x100000000;
 };
-const smuggling = createNpcSmugglingService(ships, sector, () => {}, nextRandom);
+const smuggling = createNpcSmugglingService(ships, sector, () => {}, nextRandom, 0, (id, amount) => {
+  const pool = physical.pools[id];
+  if (pool) pool.recordedLosses += amount;
+});
 const economy = createNpcEconomyService(markets, physical, economyResources, ships, {
   onSale: (npc, resourceId, quantity, gross) => {
     smuggling.recordSale(npc, resourceId, quantity, gross);
@@ -186,6 +189,7 @@ console.log(
       insuranceFundCredits: population.fundCredits,
     },
     report,
+    resourceBalance: physical.getResourceBalance(),
   })
 );
 console.log('ECONOMY BY SHIP');
