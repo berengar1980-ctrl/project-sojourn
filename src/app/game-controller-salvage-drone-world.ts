@@ -180,6 +180,7 @@ export function advanceCareerSalvageDrones(
     if (currentCombat) syncFieldTrafficImpulses(salvageFieldPhysicsBodies(world.field), currentCombat.arena);
     wreckWorld.reconcileCombatWrecks(locationId, world.field.wrecks);
     context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
+    context.economy.wreckClaims.rememberWorkers(world.field, world.salvagers.ships);
     rememberSalvageSecurity(context, world.field, world.drone);
   }
 }
@@ -210,8 +211,11 @@ function rememberSalvageSecurity(
 
 /** Capture the live patrols immediately, not just the last background tick. */
 export function captureSalvageSecurity(context: ControllerRuntimeContext): void {
-  for (const world of worlds(context).values())
+  for (const world of worlds(context).values()) {
+    context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
+    context.economy.wreckClaims.rememberWorkers(world.field, world.salvagers.ships);
     rememberSalvageSecurity(context, world.field, world.drone);
+  }
 }
 
 /** One traffic authority per wreck location across scene switches. */
