@@ -5,7 +5,7 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
 const root = path.resolve(__dirname, '../..');
-const load = (file) => loadStandaloneTypeScriptModule(root, file);
+const load = (file, replacements) => loadStandaloneTypeScriptModule(root, file, replacements);
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
 const { narrowsSector } = load('src/data/maps/narrows-sector.ts');
 const { sectorPorts } = load('src/data/ports/sector-ports.ts');
