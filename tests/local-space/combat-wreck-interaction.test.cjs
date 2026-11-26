@@ -97,11 +97,10 @@ function assertMotion(state, localId, expected) {
 }
 
 assertMotion({ mode: 'star-map' }, null, ['free-field', 'mining-scene', 'salvage-scene']);
-assertMotion(
-  { mode: 'local-space', embeddedCombat: 'local-space' },
-  'mining-scene',
-  ['free-field', 'salvage-scene']
-);
+assertMotion({ mode: 'local-space', embeddedCombat: 'local-space' }, 'mining-scene', [
+  'free-field',
+  'salvage-scene',
+]);
 assertMotion(
   {
     mode: 'salvage-space',
