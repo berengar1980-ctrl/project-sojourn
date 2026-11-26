@@ -52,3 +52,29 @@ for (const days of horizons) {
   );
 }
 console.log('PASS 90/180/365-day NPC economic progression, customs and insurance audit');
+
+const physicalTest = path.resolve(__dirname, '../tests/economy/physical-resource-horizons.test.cjs');
+const physicalRun = spawnSync(process.execPath, [physicalTest], {
+  cwd: path.resolve(__dirname, '..'),
+  encoding: 'utf8',
+  maxBuffer: 8 * 1024 * 1024,
+});
+if (physicalRun.status !== 0) {
+  process.stderr.write(physicalRun.stdout ?? '');
+  process.stderr.write(physicalRun.stderr ?? '');
+  process.exit(physicalRun.status ?? 1);
+}
+const physicalReports = physicalRun.stdout
+  .split('\n')
+  .filter((line) => line.startsWith('{'))
+  .map((line) => JSON.parse(line))
+  .filter((report) => report.physicalFields);
+assert.deepEqual(
+  physicalReports.map((report) => report.days),
+  horizons
+);
+for (const report of physicalReports) {
+  assert(report.resourceBalance.every((row) => row.discrepancy === 0));
+  console.log(JSON.stringify(report));
+}
+console.log('PASS 90/180/365-day physical resource balance audit');
