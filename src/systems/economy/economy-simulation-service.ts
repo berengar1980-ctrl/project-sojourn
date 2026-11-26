@@ -7,6 +7,7 @@ import type {
   PlayerEconomyState,
 } from '../../core/economy-types';
 import type { EconomyMarketService } from './market-service';
+import { resourceBalanceReport, type ResourceBalanceReport } from './resource-balance-report';
 import { dailyProductionBudget, supplyDailyCombatBuffer } from './physical-reserve-policy';
 import {
   captureCareerResourcePools,
@@ -217,6 +218,7 @@ export interface EconomySimulationService {
   readonly currentDay: number;
   readonly pools: Readonly<Record<EconomyResourceId, EconomyResourcePool>>;
   getResourceTotal(resourceId: EconomyResourceId): number;
+  getResourceBalance(): readonly ResourceBalanceReport[];
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
   fundPhysicalStock(
     resourceId: EconomyResourceId,
@@ -416,6 +418,11 @@ export function createEconomySimulationService(
     getResourceTotal(resourceId) {
       const pool = pools[resourceId];
       return pool ? totalResource(resourceId, markets, player, npcs, pool) : 0;
+    },
+    getResourceBalance() {
+      return resources.map((resource) =>
+        resourceBalanceReport(resource.id, markets, player, npcs, pools[resource.id]!)
+      );
     },
     allocatePhysicalResource,
     ...physicalStocks,
