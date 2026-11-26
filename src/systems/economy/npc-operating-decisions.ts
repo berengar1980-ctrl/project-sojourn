@@ -1,6 +1,15 @@
 import type { NpcEconomyState } from '../../core/economy-types';
 import type { NpcTravelOperatingQuote } from './npc-economy-types';
 
+/** Operating reserves are retained for wages, repairs and fuel, not speculative purchases. */
+export function npcWorkingCapital(npc: NpcEconomyState): number {
+  const large = npc.cargoCapacity >= 200;
+  if (npc.role === 'miner') return large ? 450000 : 220000;
+  if (npc.role === 'salvager') return large ? 500000 : 250000;
+  if (npc.role === 'freighter' || npc.role === 'trader') return large ? 650000 : 300000;
+  return 0;
+}
+
 export type NpcTravelQuoteFn = (
   npc: NpcEconomyState,
   destinationId: string,
@@ -22,12 +31,14 @@ export function maxAffordableShipment(
   unitCost: number,
   quoteTravel?: NpcTravelQuoteFn
 ): number {
-  if (!quoteTravel) return maxUnits;
+  const spendable = Math.max(0, npc.credits - npcWorkingCapital(npc));
+  const affordable = Math.min(maxUnits, Math.floor(spendable / Math.max(1, unitCost)));
+  if (!quoteTravel) return affordable;
   let low = 0;
-  let high = maxUnits;
+  let high = affordable;
   while (low < high) {
     const mid = Math.ceil((low + high) / 2);
-    const creditsAfterPurchase = npc.credits - mid * unitCost;
+    const creditsAfterPurchase = spendable - mid * unitCost;
     if (quoteTravel(npc, destinationId, creditsAfterPurchase)) low = mid;
     else high = mid - 1;
   }
