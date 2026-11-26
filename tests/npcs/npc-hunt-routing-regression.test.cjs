@@ -43,7 +43,24 @@ contacts.push({ ...pirate, id: 'retired', retiredUntilDay: 10 });
 contacts.push({ ...pirate, id: 'recovering', combatRecoverySeconds: 10 });
 assert.equal(npcRouteThreats(civilian, contacts, () => origin).length, 15);
 
-const copper = narrowsSector.locations.find((location) => location.id === 'copper-crown-field');
-assert(copper);
-assert.equal(fixedDangerAtPoint(narrowsSector.regions, copper.position, 3), copper.dangerLevel);
+const { fieldSecurityDroneCount } = load('src/core/security-drone.ts');
+const { canPirateOperateAt, worldDangerAt } = load('src/systems/npcs/npc-pirate-classes.ts');
+const { economyResources } = load('src/data/economy/economy-resources.ts');
+const resources = new Map(economyResources.map((resource) => [resource.id, resource]));
+for (const location of narrowsSector.locations) {
+  const band = Math.max(1, location.dangerLevel);
+  const geographic = fixedDangerAtPoint(narrowsSector.regions, location.position, 3);
+  assert.equal(Math.max(1, geographic), band, location.id + ': geographic danger');
+  assert.equal(worldDangerAt(narrowsSector, location.position), geographic);
+  assert.equal(fieldSecurityDroneCount(location.dangerLevel), 3 - band);
+  for (const [pirateClass, minimum] of [['raider', 1], ['reaver', 2], ['marauder', 3]]) {
+    assert.equal(canPirateOperateAt({ pirate: true, pirateClass }, geographic), band >= minimum);
+  }
+  for (const id of location.minedResourceIds ?? []) {
+    const resource = resources.get(id);
+    assert(resource, id);
+    if (band === 1) assert(resource.basePrice <= 122 && resource.legality === 'legal', id);
+    if (band === 2) assert(resource.basePrice <= 360 && resource.legality === 'legal', id);
+  }
+}
 console.log('PASS NPC hunting residence, active route contacts and Copper Crown geography');
