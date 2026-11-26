@@ -1,4 +1,4 @@
-import { isSecurityDrone } from '../../core/security-drone';
+import { isSecurityDrone, SECURITY_DRONE_SHIP_ID } from '../../core/security-drone';
 import type {
   NpcCombatMovementMode,
   NpcCombatTargetKind,
@@ -6,6 +6,7 @@ import type {
 } from '../../core/npc-types';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../ships';
+import { equipSecurityDroneMk3 } from '../ships/security-drone-weapon-loadout';
 import { npcOperationalSpeed } from './npc-upgrade-service';
 import { replanNpcTravel } from './npc-sector-live-replan';
 import { advanceNpcCombatRecovery, beginNpcCombatRecovery } from './npc-sector-combat-recovery';
@@ -445,6 +446,10 @@ class SectorService implements NpcSectorService {
 
     for (const npc of this.npcs) {
       if (npc.retiredUntilDay !== undefined) continue;
+      // Do not alter a restored legacy battle's loadout mid-fight. Migrate the
+      // drone as soon as the existing combat engine releases its ownership.
+      if (isSecurityDrone(npc.id) && npc.shipId !== SECURITY_DRONE_SHIP_ID && !npc.combatMovement)
+        equipSecurityDroneMk3(npc);
       if (advanceNpcCombatRecovery(this.world, npc, dt)) continue;
       if (npc.hullHp <= 0) {
         if (!isSecurityDrone(npc.id) || !npc.combatMovement)
@@ -458,6 +463,10 @@ class SectorService implements NpcSectorService {
         continue;
       }
 
+      if (isSecurityDrone(npc.id)) {
+        delete npc.travel;
+        continue;
+      }
       if (!npc.travel) advanceNpcOrbit(this.world, npc, dt);
       this.advanceTravel(npc, dt);
     }
