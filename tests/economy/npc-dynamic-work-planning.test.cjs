@@ -100,3 +100,38 @@ assert.equal(first.ships.length, 0);
 assert.equal(second.ships.length, 1);
 assert.equal(second.ships[0].npcId, npc.id);
 console.log('PASS dynamic worker profit ranking, empty departure, mobile roster and save/load');
+
+const { knownWorkPrice } = load('src/systems/economy/npc-work-planning.ts');
+const { npcMarketConfidence, observeNpcMarket } = load(
+  'src/systems/economy/npc-market-knowledge.ts'
+);
+delete npc.lastWorkLocationId;
+npc.locationId = 'haven';
+npc.marketIntel = {
+  haven: {
+    locationId: 'haven',
+    observedDay: 42,
+    entries: { ferrite: { resourceId: 'ferrite', stock: 100, price: 200 } },
+  },
+  crown: {
+    locationId: 'crown',
+    observedDay: 0,
+    entries: { cuprium: { resourceId: 'cuprium', stock: 100, price: 400 } },
+  },
+};
+assert.equal(npcMarketConfidence(42, 42), 1);
+assert.equal(npcMarketConfidence(28, 42), 0.5);
+assert.equal(npcMarketConfidence(0, 42), 0.25);
+assert.equal(npcMarketConfidence(0, 365), 0.25);
+const oldIntel = JSON.stringify(npc.marketIntel);
+assert.equal(knownWorkPrice(npc, 'cuprium', resources, 42), 100);
+assert.equal(chooseNpcWorksite(npc, planning, resources, positions, quote, 42).site.id, a);
+assert.equal(JSON.stringify(npc.marketIntel), oldIntel);
+const crown = {
+  locationId: 'crown',
+  entries: { cuprium: { resourceId: 'cuprium', stock: 90, price: 400 } },
+};
+assert(observeNpcMarket(npc, { getMarket: () => crown }, 'crown', 42));
+assert.equal(knownWorkPrice(npc, 'cuprium', resources, 42), 400);
+assert.equal(chooseNpcWorksite(npc, planning, resources, positions, quote, 42).site.id, b);
+console.log('PASS old work prices lose influence and a fresh observation restores it');
