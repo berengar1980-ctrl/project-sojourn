@@ -1434,3 +1434,9 @@ verworfen. Die temporären Indizes sind nicht Teil des Spielstands.
 Die Hintergrund-Bergungsphysik fragt die bestehende Kampfzuständigkeit
 ohne vollständigen Kampfsnapshot ab. Besitzprüfung, Feld/Seed-Zuordnung,
 Simulationsreihenfolge, Zeitschritte und Save-Zustände bleiben unverändert.
+
+Der Treibstoffplaner speichert unveränderliche Luftlinienabstände nur innerhalb
+einer Anfrage und prüft einen finanzierbaren Direktflug vor der optimistischen
+Tankstellensuche. Der A*-Routenplaner berechnet die identische untere Schranke
+zum Ziel pro Knoten einmal. Suchreihenfolge, Kostenformeln, Gefahrenprofile,
+Tankregeln und persistierte Routen bleiben unverändert. Keine neuen Save-Daten.
