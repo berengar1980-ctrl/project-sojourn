@@ -107,6 +107,7 @@ const engagements = createStarMapEngagementService({
     }),
   },
   sectorNpcs: sector,
+  ...(integrated ? { world: () => narrowsSector } : {}),
   getPlayerShip: () => getShipDefinition(ships[0].shipId),
   getPlayerCombatant: () => {
     throw new Error('Player combat is excluded from this NPC-only audit');
@@ -117,10 +118,16 @@ const engagements = createStarMapEngagementService({
 
 const initial = {};
 const activity = {};
+const lastRuns = {};
+const lastGeneration = {};
+const completedLegs = {};
 const bankruptDays = {};
 for (const ship of ships) {
   initial[ship.id] = { credits: ship.credits, runs: ship.successfulRuns };
   activity[ship.id] = 0;
+  lastRuns[ship.id] = ship.successfulRuns;
+  lastGeneration[ship.id] = ship.replacementGeneration ?? 0;
+  completedLegs[ship.id] = 0;
   bankruptDays[ship.id] = 0;
 }
 
@@ -139,9 +146,13 @@ function validate(day) {
     }
     assert(units <= ship.cargoCapacity, ship.id + ' exceeds cargo capacity');
     if (ship.credits === 0) bankruptDays[ship.id] += 1;
-    if (ship.successfulRuns > initial[ship.id].runs) {
-      activity[ship.id] = day;
-    }
+    const generation = ship.replacementGeneration ?? 0;
+    const previousRuns = generation === lastGeneration[ship.id] ? lastRuns[ship.id] : 0;
+    const newLegs = Math.max(0, ship.successfulRuns - previousRuns);
+    if (newLegs > 0) activity[ship.id] = day;
+    completedLegs[ship.id] += newLegs;
+    lastRuns[ship.id] = ship.successfulRuns;
+    lastGeneration[ship.id] = generation;
   }
   for (const market of markets.snapshot()) {
     for (const entry of Object.values(market.entries)) {
@@ -149,6 +160,25 @@ function validate(day) {
       assert(Number.isFinite(entry.price) && entry.price > 0);
     }
   }
+}
+
+function workerStatus(ship) {
+  return {
+    id: ship.id,
+    role: ship.job,
+    locationId: ship.locationId,
+    workLocationId: ship.workLocationId,
+    phase: ship.autonomy?.phase,
+    activity: ship.activityId,
+    lastTravelDay: activity[ship.id],
+    retiredUntilDay: ship.retiredUntilDay,
+    fuel: ship.fuel,
+    hull: ship.hullHp,
+    credits: ship.credits,
+    cargoUnits: Object.values(ship.cargo).reduce((total, units) => total + units, 0),
+    cargoCapacity: ship.cargoCapacity,
+    target: ship.travel?.finalTargetId,
+  };
 }
 
 function printReport(elapsedDays) {
@@ -163,9 +193,10 @@ function printReport(elapsedDays) {
       startingCredits: sum((ship) => initial[ship.id].credits),
       finalCredits: sum((ship) => ship.credits),
       netCreditChange: sum((ship) => ship.credits - initial[ship.id].credits),
-      completedLegs: sum((ship) => ship.successfulRuns - initial[ship.id].runs),
-      noTravel: members.filter((ship) => ship.successfulRuns === initial[ship.id].runs).length,
+      completedLegs: sum((ship) => completedLegs[ship.id]),
+      noTravel: members.filter((ship) => completedLegs[ship.id] === 0).length,
       inactive30Days: members.filter((ship) => elapsedDays - activity[ship.id] > 30).length,
+      retired: members.filter((ship) => ship.retiredUntilDay !== undefined).length,
       zeroCreditDays: sum((ship) => bankruptDays[ship.id]),
       lowFuel: members.filter((ship) => ship.fuel < ship.fuelCapacity * 0.1).length,
       lootRevenue: sum((ship) => ship.pirateLootRevenue ?? 0),
@@ -199,6 +230,11 @@ function printReport(elapsedDays) {
         insuranceFundCredits: population.fundCredits,
       },
       report,
+      workerStatus: integrated
+        ? ships
+            .filter((ship) => ship.job === 'miner' || ship.job === 'salvager')
+            .map(workerStatus)
+        : [],
       resourceBalance: physical.getResourceBalance(),
     })
   );
@@ -240,7 +276,7 @@ for (const ship of ships) {
       creditsStart: initial[ship.id].credits,
       creditsEnd: ship.credits,
       creditsDelta: ship.credits - initial[ship.id].credits,
-      completedLegs: ship.successfulRuns - initial[ship.id].runs,
+      completedLegs: completedLegs[ship.id],
       fuel: ship.fuel,
       hull: ship.hullHp,
       lootRevenue: ship.pirateLootRevenue ?? 0,
