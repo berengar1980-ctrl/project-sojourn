@@ -52,6 +52,7 @@ export function stageCareerCommerceSession(
   if (!checkpoint || checkpoint.version !== 1 || !checkpoint.player || !checkpoint.sector) {
     throw new Error('Invalid combined career commerce checkpoint');
   }
+  const worldLocationIds = new Set(world.locations.map((location) => location.id));
   let trade: PlayerTradeService | null = null;
   const sector = stageCareerNpcEconomySession(
     checkpoint.sector,
@@ -59,7 +60,7 @@ export function stageCareerCommerceSession(
     ports,
     resources,
     (markets) => {
-      trade = stageCareerPlayer(checkpoint.player, markets, resources);
+      trade = stageCareerPlayer(checkpoint.player, markets, resources, worldLocationIds);
       return trade.player;
     },
     seed,
