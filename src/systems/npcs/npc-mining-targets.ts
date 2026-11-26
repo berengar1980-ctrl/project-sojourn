@@ -76,6 +76,7 @@ export interface NpcLocalMiningOptions {
     requested: number,
     asteroidId?: string
   ) => number;
+  readonly fundMiningBonus?: (asteroidId: string, resourceId: string, amount: number) => number;
   readonly onAsteroidScanned?: (npc: SectorNpcState, asteroid: LocalAsteroid) => void;
   readonly onAsteroidMined?: (
     npc: SectorNpcState,
