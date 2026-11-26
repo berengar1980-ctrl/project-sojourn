@@ -44,3 +44,31 @@ jobs:
           SOJOURN_INTEGRATED_FIELDS: '1'
           SOJOURN_LONGRUN_DAYS: '3'
         run: node tests/economy/npc-economy-longrun.test.cjs
+  combat-balance:
+    if: github.head_ref == 'fix/npc-combat-logic'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: node scripts/audit-security-drone-combat.cjs 100
+  economic-horizons:
+    if: github.head_ref == 'fix/npc-combat-logic'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run test:economy-horizons
