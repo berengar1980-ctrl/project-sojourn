@@ -194,8 +194,7 @@ function resolvePendingEvent(
     npc.hullHp = Math.max(0, npc.hullHp - damage);
     return damage;
   };
-  const funding = fund ? (id: string, amount: number) => fund(asteroid.id, id, amount) : undefined;
-  const result = controller.resolve(asteroid, choice.id, damageHull, funding);
+  const result = controller.resolve(asteroid, choice.id, damageHull, fund);
   if (!result) return false;
   npc.lastWorkEvent = {
     kind: 'mining',
