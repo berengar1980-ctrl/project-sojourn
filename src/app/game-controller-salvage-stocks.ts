@@ -1,6 +1,5 @@
 import type { SalvageField, SalvageWreck } from '../core/salvage-types';
 import type { WorldLocation } from '../core/world-types';
-import type { NpcEconomyState } from '../core/economy-types';
 import { hashId } from '../systems/npcs/npc-mining-targets';
 import { generateSalvageField } from '../systems/salvage';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
@@ -77,7 +76,11 @@ function applyRegionalStockProfile(wreck: SalvageWreck, danger: number): void {
   }
 }
 
-/** New career fields use a stable, versioned seed; legacy seeds retain their original loot. */
+const permanentFields = new WeakMap<ControllerRuntimeContext, Map<string, SalvageField>>();
+
+/** New career fields use a stable, versioned seed; legacy seeds retain their original loot.
+ * The field object is the physical authority shared by the player and background workers.
+ */
 export function permanentSalvageField(
   context: ControllerRuntimeContext,
   location: WorldLocation,
@@ -86,43 +89,20 @@ export function permanentSalvageField(
   const canonicalSeed = hashId('sojourn-salvage-regional-v1:' + location.id);
   const { wreckClaims, simulation } = context.economy;
   const seed = wreckClaims.seedFor(location.id, preferredSeed ?? canonicalSeed);
+  let fields = permanentFields.get(context);
+  if (!fields) {
+    fields = new Map();
+    permanentFields.set(context, fields);
+  }
+  const existing = fields.get(location.id);
+  if (existing) return existing;
   const field = generateSalvageField(location.id, seed, location.dangerLevel);
   if (seed === canonicalSeed) {
     for (const wreck of field.wrecks) applyRegionalStockProfile(wreck, location.dangerLevel);
   }
   wreckClaims.restoreField(field);
   registerPermanentSalvageStocks(simulation, field);
+  fields.set(location.id, field);
   return field;
 }
 
-export function recoverBackgroundSalvage(
-  context: ControllerRuntimeContext,
-  npc: NpcEconomyState,
-  field: SalvageField,
-  day: number
-): void {
-  const { wreckClaims, npcs } = context.economy;
-  for (const wreck of field.wrecks) {
-    if (wreck.combatWreckVariant || (wreck.boardingHostiles && !wreck.boardingCleared)) continue;
-    const claim = wreckClaims.claim(field.id, wreck.id, day);
-    if (claim && claim.ownerId !== npc.id) continue;
-    const deposit = wreck.resources.find((entry) => entry.remainingAmount > 0);
-    if (!deposit) continue;
-    if (!claim) {
-      wreck.inspected = true;
-      wreck.scanLevel = 'analyzed';
-      const registered = wreckClaims.register(field, wreck, npc.id, day, npc.credits);
-      if (!registered.ok) continue;
-      npc.credits -= registered.fee;
-    }
-    const requested = Math.min(5, deposit.remainingAmount);
-    const sourceId = salvageStockId(field, wreck);
-    const accepted = npcs.salvageLocal(npc, deposit.resourceId, requested, sourceId);
-    deposit.remainingAmount -= accepted;
-    if (accepted > 0) {
-      wreckClaims.rememberField(field);
-      return;
-    }
-  }
-  npcs.dispatchLoadedWorker(npc);
-}
