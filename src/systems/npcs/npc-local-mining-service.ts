@@ -188,11 +188,14 @@ function resolvePendingEvent(
   if (!controller || !pending) return false;
   const choice = chooseEventChoice(npc, pending.choices);
   if (!choice) return false;
-  const result = controller.resolve(asteroid, choice.id, (fraction) => {
+  const fund = runtime.options.fundMiningBonus;
+  const damageHull = (fraction: number): number => {
     const damage = Math.max(0, Math.round(npc.hullMaxHp * fraction));
     npc.hullHp = Math.max(0, npc.hullHp - damage);
     return damage;
-  });
+  };
+  const funding = fund ? (id: string, amount: number) => fund(asteroid.id, id, amount) : undefined;
+  const result = controller.resolve(asteroid, choice.id, damageHull, funding);
   if (!result) return false;
   npc.lastWorkEvent = {
     kind: 'mining',
