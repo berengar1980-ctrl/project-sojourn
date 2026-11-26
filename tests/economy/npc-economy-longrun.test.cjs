@@ -73,6 +73,7 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
   isManaged: (npc) =>
     integrated &&
     npc.role === 'miner' &&
+    npc.workLocationId === npc.locationId &&
     npc.autonomy?.phase === 'working' &&
     narrowsSector.locations.some((entry) => entry.id === npc.locationId && entry.activities.mine),
   travel: {
