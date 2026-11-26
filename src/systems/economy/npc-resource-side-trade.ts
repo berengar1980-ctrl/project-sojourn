@@ -5,6 +5,8 @@ import type {
   NpcResourceSideTradePlan,
 } from '../../core/economy-types';
 
+import { npcWorkingCapital } from './npc-operating-decisions';
+
 export interface EconomyPoint {
   readonly x: number;
   readonly y: number;
@@ -135,7 +137,7 @@ function bestResourceCandidate(
   const maxQuantity = Math.min(
     free,
     quantity(buy.stock),
-    Math.floor(Math.max(0, npc.credits) / buy.price)
+    Math.floor(Math.max(0, npc.credits - npcWorkingCapital(npc)) / buy.price)
   );
   if (maxQuantity <= 0) return null;
 
