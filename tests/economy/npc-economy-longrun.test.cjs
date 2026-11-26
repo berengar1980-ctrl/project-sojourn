@@ -297,27 +297,33 @@ if (integrated) {
 
 // A scripted NPC raid checks conservation and one-time resale.
 // This does not imply that automatic pirate combat is profitable.
-const pirate = ships.find((ship) => ship.pirate);
-const victim = ships.find((ship) => ship.job === 'freighter');
+const raidShips = createSectorNpcEconomyStates();
+const pirate = raidShips.find((ship) => ship.pirate && ship.factionId === 'pirates');
+const victim = raidShips.find((ship) => ship.job === 'freighter');
 assert(pirate && victim);
-const market = markets.getEntry('blackjaw-outpost', 'ferrite');
+const raidMarkets = createEconomyMarketService(sectorPorts, economyResources);
+const raidSector = createNpcSectorService(narrowsSector, [pirate], { markets: raidMarkets });
+const market = raidMarkets.getEntry('blackjaw-outpost', 'ferrite');
 assert(market && market.stock >= 5);
 market.stock -= 5;
 for (const id of Object.keys(victim.cargo)) delete victim.cargo[id];
 victim.cargo.ferrite = 5;
 const stock = () => market.stock + (victim.cargo.ferrite ?? 0) + (pirate.cargo.ferrite ?? 0);
 const before = stock();
-assert(transferPirateLoot(pirate, victim) >= 5);
+assert.equal(transferPirateLoot(pirate, victim), 5);
+assert.equal(pirate.cargo.ferrite, 5);
 pirate.locationId = 'blackjaw-outpost';
 delete pirate.travel;
 delete pirate.combatMovement;
 const revenueBefore = pirate.pirateLootRevenue ?? 0;
-sector.tick(0.25);
+raidSector.tick(0.25);
 assert.equal(stock(), before, 'pirate trade must conserve physical goods');
+assert.equal(pirate.cargo.ferrite, undefined);
 assert((pirate.pirateLootRevenue ?? 0) > revenueBefore);
 const revenueAfter = pirate.pirateLootRevenue;
-sector.tick(0.25);
+raidSector.tick(0.25);
 assert.equal(pirate.pirateLootRevenue, revenueAfter, 'no duplicate sales');
+assert.equal(stock(), before, 'second tick must not duplicate physical goods');
 console.log(
   'PASS ' + days + '-day combat- and smuggling-enabled economic integrity and pirate loot resale'
 );
