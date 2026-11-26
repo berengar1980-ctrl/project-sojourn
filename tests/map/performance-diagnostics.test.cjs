@@ -45,6 +45,9 @@ assert(has('src/systems/economy/npc-economy-service.ts', 'decisionTravelQuotes')
 assert(has('src/app/bootstrap.ts', 'frame.interval'));
 assert(has('src/app/bootstrap.ts', 'frame.controller'));
 assert(has('src/app/game-controller-scene-tick.ts', 'sim.salvage-world'));
+for (const section of ['field', 'traffic', 'workers', 'drift', 'checkpoint']) {
+  assert(has('src/app/game-controller-salvage-drone-world.ts', 'sim.salvage-world.' + section));
+}
 assert(has('src/app/game-controller-scene-tick.ts', 'scene.local.physics'));
 assert(has('src/app/game-controller-scene-tick.ts', 'scene.local.panel'));
 console.log('PASS opt-in browser performance diagnostics');

@@ -30,6 +30,7 @@ import { npcCombatant } from './npc-combatant-setup';
 import {
   finishPlayerCombat,
   fieldCombat,
+  hasFieldCombat,
   prepareFieldCombatArena,
   resetFieldCombatSteps,
   registerFieldCombatWreck,
@@ -445,6 +446,7 @@ export function createStarMapEngagementService(
       ]),
     fieldCombat: (locationId, seed, bystanders) =>
       fieldCombat(runtime, locationId, seed, bystanders),
+    hasFieldCombat: (locationId, seed) => hasFieldCombat(runtime, locationId, seed),
     registerFieldCombatWreck: (locationId, seed, destroyedId, body) =>
       registerFieldCombatWreck(runtime, locationId, seed, destroyedId, body),
     removeFieldCombatWrecks: (ids) => removeFieldCombatWrecks(runtime, ids),

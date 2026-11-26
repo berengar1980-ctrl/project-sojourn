@@ -38,6 +38,8 @@ export interface StarMapEngagementService {
     seed: number,
     bystanders?: readonly StrategicCombatBystander[]
   ): StrategicCombatSnapshot | null;
+  /** Lightweight ownership query; does not serialize combat state. */
+  hasFieldCombat?(locationId: string, seed: number): boolean;
   registerFieldCombatWreck(
     locationId: string,
     seed: number,

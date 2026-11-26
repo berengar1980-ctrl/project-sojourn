@@ -1,4 +1,5 @@
 import type { SalvageField } from '../core/salvage-types';
+import { measurePerformance } from '../core/performance-diagnostics';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import { permanentSalvageField } from './game-controller-salvage-stocks';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
@@ -128,7 +129,9 @@ export function advanceCareerSalvageDrones(
     // One-off event maps retain their existing on-entry lifecycle.
     const location = narrowsSector.locations.find((entry) => entry.id === locationId);
     if (!location?.activities.salvage) continue;
-    advanceSalvageField(context, world, wreckWorld, locationId, elapsed);
+    measurePerformance('sim.salvage-world.field', () =>
+      advanceSalvageField(context, world, wreckWorld, locationId, elapsed)
+    );
   }
 }
 
@@ -227,33 +230,46 @@ function advanceSalvageField(
   if (fieldCombat) syncSalvageCombatField(world.field, fieldCombat);
   const engage = backgroundEngagement(context, world, traffic, locationId);
   for (let i = 0; i < elapsed * 5; i += 1) {
-    advanceSalvagePirateResponse({
-      field: world.field,
-      drone: world.drone,
-      pirates: traffic,
-      sectorNpcs: npcs,
-      salvagers: world.salvagers.ships,
-      playerPosition: null,
-      playerRadius: 0,
-      dt: 0.2,
-      playerCombat: null,
-      npcCombats: duels,
-      onPirateAttack: engage,
-      onDroneAttack: (pirateId, position) =>
-        engage(pirateId, 'security-drone:' + locationId, position, world.drone.position),
-      onFreighterExit: (npc) => {
-        if (npc.homePortId)
-          context.economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
-      },
-    });
+    measurePerformance('sim.salvage-world.traffic', () =>
+      advanceSalvagePirateResponse({
+        field: world.field,
+        drone: world.drone,
+        pirates: traffic,
+        sectorNpcs: npcs,
+        salvagers: world.salvagers.ships,
+        playerPosition: null,
+        playerRadius: 0,
+        dt: 0.2,
+        playerCombat: null,
+        npcCombats: duels,
+        onPirateAttack: engage,
+        onDroneAttack: (pirateId, position) =>
+          engage(pirateId, 'security-drone:' + locationId, position, world.drone.position),
+        onFreighterExit: (npc) => {
+          if (npc.homePortId)
+            context.economy.sectorNpcs.requestTravel(
+              npc,
+              npc.homePortId,
+              'Rückflug zum Heimathafen'
+            );
+        },
+      })
+    );
     // The local worker caps each integration step at 80 ms.
     for (let step = 0; step < 4; step++) {
-      world.salvagers.tick(0.05, undefined, true);
-      if (!context.engagements.fieldCombat?.(locationId, world.field.seed))
-        advanceSalvageContainerDrift(world.field, 0.05);
+      measurePerformance('sim.salvage-world.workers', () =>
+        world.salvagers.tick(0.05, undefined, true)
+      );
+      const combatOwnsPhysics =
+        context.engagements.hasFieldCombat?.(locationId, world.field.seed) ??
+        Boolean(context.engagements.fieldCombat?.(locationId, world.field.seed));
+      if (!combatOwnsPhysics)
+        measurePerformance('sim.salvage-world.drift', () =>
+          advanceSalvageContainerDrift(world.field, 0.05)
+        );
     }
   }
-  context.engagements.fieldCombat?.(
+  const currentCombat = context.engagements.fieldCombat?.(
     locationId,
     world.field.seed,
     salvageDroneBystanders(
@@ -264,13 +280,14 @@ function advanceSalvageField(
       traffic.snapshot(npcs)
     )
   );
-  const currentCombat = context.engagements.fieldCombat?.(locationId, world.field.seed);
   if (currentCombat)
     syncFieldTrafficImpulses(salvageFieldPhysicsBodies(world.field), currentCombat.arena);
-  wreckWorld.reconcileCombatWrecks(locationId, world.field.wrecks);
-  context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
-  context.economy.wreckClaims.rememberWorkers(world.field, world.salvagers.ships);
-  rememberSalvageEscorts(context, world.field);
+  measurePerformance('sim.salvage-world.checkpoint', () => {
+    wreckWorld.reconcileCombatWrecks(locationId, world.field.wrecks);
+    context.economy.wreckClaims.rememberField(world.field, world.drone.exportState());
+    context.economy.wreckClaims.rememberWorkers(world.field, world.salvagers.ships);
+    rememberSalvageEscorts(context, world.field);
+  });
 }
 
 function backgroundEngagement(

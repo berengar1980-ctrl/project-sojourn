@@ -31,6 +31,15 @@ function fieldCombatServices(runtime: EngagementRuntime, locationId: string, see
   return services;
 }
 
+/** Check ownership without constructing a full combat snapshot. */
+export function hasFieldCombat(
+  runtime: EngagementRuntime,
+  locationId: string,
+  seed: number
+): boolean {
+  return fieldCombatServices(runtime, locationId, seed).length > 0;
+}
+
 export function fieldCombat(
   runtime: EngagementRuntime,
   locationId: string,

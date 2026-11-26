@@ -1430,3 +1430,7 @@ verwendet numerische Zeilen- und Spaltenindizes statt String-Schlüsseln.
 Kandidatenreihenfolge, Radien, Kontaktformeln und Integrationsschritte bleiben
 unverändert. Nicht erreichbare Schildkontakte werden vor der Rotation
 verworfen. Die temporären Indizes sind nicht Teil des Spielstands.
+
+Die Hintergrund-Bergungsphysik fragt die bestehende Kampfzuständigkeit
+ohne vollständigen Kampfsnapshot ab. Besitzprüfung, Feld/Seed-Zuordnung,
+Simulationsreihenfolge, Zeitschritte und Save-Zustände bleiben unverändert.
