@@ -38,7 +38,9 @@ export function npcRouteThreats(
 ): RouteThreatContact[] {
   if (self.pirate || self.job === 'patrol') return [];
   return npcs
-    .filter((npc) => npc.id !== self.id && activeContact(npc) && (npc.pirate || npc.job === 'patrol'))
+    .filter(
+      (npc) => npc.id !== self.id && activeContact(npc) && (npc.pirate || npc.job === 'patrol')
+    )
     .map((npc) => ({
       position: livePosition(npc),
       kind: npc.pirate ? ('pirate' as const) : ('patrol' as const),
@@ -100,7 +102,9 @@ function pirateHomeId(npc: SectorNpcState): string {
 }
 
 function activeContact(npc: SectorNpcState): boolean {
-  return npc.hullHp > 0 && npc.retiredUntilDay === undefined && (npc.combatRecoverySeconds ?? 0) <= 0;
+  return (
+    npc.hullHp > 0 && npc.retiredUntilDay === undefined && (npc.combatRecoverySeconds ?? 0) <= 0
+  );
 }
 
 function pirateTrafficAt(
@@ -179,13 +183,18 @@ export function pirateHuntDestination(
       const estimatedOpportunity = traffic * 1400 + Math.min(cargoUnits, 100) * 80;
       // Sector simulation may not instantiate local field drones until entry.
       // Use configured coverage only when no actual field drone contacts exist.
-      const fieldDrones = npcs.filter((entry) => isSecurityDrone(entry.id) && entry.locationId === location.id);
-      const configuredCoverage = location.activities.mine || location.activities.salvage
-        ? fieldSecurityDroneCount(location.dangerLevel)
-        : 0;
+      const fieldDrones = npcs.filter(
+        (entry) => isSecurityDrone(entry.id) && entry.locationId === location.id
+      );
+      const configuredCoverage =
+        location.activities.mine || location.activities.salvage
+          ? fieldSecurityDroneCount(location.dangerLevel)
+          : 0;
       const additionalCoverage = fieldDrones.length === 0 ? configuredCoverage : 0;
       const riskCost =
-        (patrols + additionalCoverage) * (1800 - npc.aggression * 9) + rivals * 450 + (1 - hullFraction) * 1400;
+        (patrols + additionalCoverage) * (1800 - npc.aggression * 9) +
+        rivals * 450 +
+        (1 - hullFraction) * 1400;
       const homeDistance = home
         ? Math.hypot(home.position.x - location.position.x, home.position.y - location.position.y)
         : 2000;
