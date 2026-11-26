@@ -9,28 +9,10 @@ export function scenarioArrivals(roster: readonly FleetScenarioShip[], location:
   const arrivals: { at: number; npc: SectorNpcState }[] = [];
   let droneCount = 0;
   const templates = createSectorNpcEconomyStates();
-  const jobFor = (ship: FleetScenarioShip): NpcJob => {
-    if (ship.group === 'pirates-yellow' || ship.group === 'pirates-red') return 'pirate';
-    if (ship.group === 'drone') return 'patrol';
-    const role = getShipDefinition(ship.draft.shipId)?.role;
-    if (role === 'mining') return 'miner';
-    if (role === 'salvage') return 'salvager';
-    if (role === 'freighter') return 'freighter';
-    return 'patrol';
-  };
   for (const ship of roster) {
     if (ship.group === 'player') continue;
     const job = jobFor(ship);
-    const preset = ship.draft.campaignNpcId ? campaignCombatPreset(ship.draft.campaignNpcId) : null;
-    const template =
-      preset ??
-      templates.find(
-        (candidate) => candidate.job === job && candidate.shipId === ship.draft.shipId
-      ) ??
-      templates.find((candidate) => candidate.job === job);
-    if (!template) throw new Error('Missing career NPC template for ' + job);
-    const hull =
-      preset?.hullHp ?? duelCombatant(0, ship.draft, getShipDefinition(ship.draft.shipId)!).hullHp;
+    const { preset, template, hull } = scenarioTemplate(ship, job, templates);
     const npc: SectorNpcState = {
       ...structuredClone(template),
       id:
@@ -73,4 +55,28 @@ export function scenarioArrivals(roster: readonly FleetScenarioShip[], location:
     arrivals.push({ at: ship.arrivalSeconds, npc });
   }
   return arrivals.sort((a, b) => a.at - b.at);
+}
+
+function jobFor(ship: FleetScenarioShip): NpcJob {
+  if (ship.group === 'pirates-yellow' || ship.group === 'pirates-red') return 'pirate';
+  if (ship.group === 'drone') return 'patrol';
+  const role = getShipDefinition(ship.draft.shipId)?.role;
+  if (role === 'mining') return 'miner';
+  if (role === 'salvage') return 'salvager';
+  if (role === 'freighter') return 'freighter';
+  return 'patrol';
+}
+
+function scenarioTemplate(ship: FleetScenarioShip, job: NpcJob, templates: readonly SectorNpcState[]) {
+  const preset = ship.draft.campaignNpcId ? campaignCombatPreset(ship.draft.campaignNpcId) : null;
+  const template =
+    preset ??
+    templates.find(
+      (candidate) => candidate.job === job && candidate.shipId === ship.draft.shipId
+    ) ??
+    templates.find((candidate) => candidate.job === job);
+  if (!template) throw new Error('Missing career NPC template for ' + job);
+  const hull =
+    preset?.hullHp ?? duelCombatant(0, ship.draft, getShipDefinition(ship.draft.shipId)!).hullHp;
+  return { preset, template, hull };
 }

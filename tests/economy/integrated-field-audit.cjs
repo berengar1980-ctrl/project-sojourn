@@ -98,22 +98,7 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
     salvageFields: salvageLocations.length,
   };
 
-  const mine = npcs.mineLocal.bind(npcs);
-  npcs.mineLocal = (npc, id, amount, source) => {
-    assert(source && physical.getPhysicalStock(id, source) !== undefined);
-    const accepted = mine(npc, id, amount, source);
-    stats.minedUnits += accepted;
-    recordWorkedSite(stats.miningSitesByNpc, npc, accepted);
-    return accepted;
-  };
-  const recover = npcs.salvageLocal.bind(npcs);
-  npcs.salvageLocal = (npc, id, amount, source) => {
-    assert(source && physical.getPhysicalStock(id, source) !== undefined);
-    const accepted = recover(npc, id, amount, source);
-    stats.recoveredUnits += accepted;
-    recordWorkedSite(stats.salvageSitesByNpc, npc, accepted);
-    return accepted;
-  };
+  trackPhysicalRecovery(npcs, physical, stats);
 
   return {
     stats,
@@ -152,3 +137,23 @@ function createIntegratedFieldAudit(load, world, physical, npcs, sector, player)
 }
 
 module.exports = { createIntegratedFieldAudit };
+
+function trackPhysicalRecovery(npcs, physical, stats) {
+  const mine = npcs.mineLocal.bind(npcs);
+  npcs.mineLocal = (npc, id, amount, source) => {
+    assert(source && physical.getPhysicalStock(id, source) !== undefined);
+    const accepted = mine(npc, id, amount, source);
+    stats.minedUnits += accepted;
+    recordWorkedSite(stats.miningSitesByNpc, npc, accepted);
+    return accepted;
+  };
+  const recover = npcs.salvageLocal.bind(npcs);
+  npcs.salvageLocal = (npc, id, amount, source) => {
+    assert(source && physical.getPhysicalStock(id, source) !== undefined);
+    const accepted = recover(npc, id, amount, source);
+    stats.recoveredUnits += accepted;
+    recordWorkedSite(stats.salvageSitesByNpc, npc, accepted);
+    return accepted;
+  };
+
+}

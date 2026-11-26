@@ -32,22 +32,23 @@ export function campaignCombatPreset(id: string): SectorNpcState {
 export function campaignPresetDraft(id: string) {
   const npc = campaignCombatPreset(id);
   const installed = ensureNpcInstalledComponents(npc);
+  const component = (type: keyof typeof installed) => installed[type]?.[0] ?? '';
   return {
     campaignNpcId: id,
     shipId: npc.shipId,
     weapons: [...(installed.weapon ?? [])],
     mines: [...(installed.mine ?? [])],
     crewId: '',
-    reactorId: installed.reactor?.[0] ?? '',
-    engineId: installed.engine?.[0] ?? '',
-    shieldId: installed.shield?.[0] ?? '',
-    hullId: installed.hull?.[0] ?? '',
-    armorId: installed.armor?.[0] ?? '',
-    sensorId: installed.sensor?.[0] ?? '',
-    tractorId: installed.tractor?.[0] ?? '',
-    miningId: installed.mining?.[0] ?? '',
-    salvageId: installed.salvage?.[0] ?? '',
-    cargoId: installed.cargo?.[0] ?? '',
+    reactorId: component('reactor'),
+    engineId: component('engine'),
+    shieldId: component('shield'),
+    hullId: component('hull'),
+    armorId: component('armor'),
+    sensorId: component('sensor'),
+    tractorId: component('tractor'),
+    miningId: component('mining'),
+    salvageId: component('salvage'),
+    cargoId: component('cargo'),
   };
 }
 

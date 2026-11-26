@@ -47,13 +47,13 @@ const roster = createFleetScenarioRoster([
   { group: 'npc', initial: 3, joining: 0, afterSeconds: 0 },
 ]);
 assert(roster.filter((ship) => ship.group !== 'player').every((ship) => ship.draft.campaignNpcId));
-for (const ship of roster.filter((ship) => ship.group === 'drone')) {
+for (const ship of roster.filter((entry) => entry.group === 'drone')) {
   assert.equal(ship.draft.shipId, '24m-security-drone');
   assert.equal(ship.draft.armorId, 'armor-all-3');
   assert.equal(ship.draft.engineId, 'engine3');
   assert.equal(ship.draft.sensorId, 'sensor3');
 }
-for (const ship of roster.filter((ship) => ship.group === 'pirates-yellow')) {
+for (const ship of roster.filter((entry) => entry.group === 'pirates-yellow')) {
   assert.notEqual(presets.campaignCombatPreset(ship.draft.campaignNpcId).pirateClass, 'marauder');
 }
 console.log('PASS campaign combat presets are identical in PvP and FleetCombat');
