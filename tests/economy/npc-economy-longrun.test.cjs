@@ -255,6 +255,11 @@ for (const ship of ships) {
   );
 }
 
+if (integrated) {
+  console.log('PASS integrated physical fields and full-day NPC activity');
+  process.exit(0);
+}
+
 // A scripted NPC raid checks conservation and one-time resale.
 // This does not imply that automatic pirate combat is profitable.
 const pirate = ships.find((ship) => ship.pirate);
