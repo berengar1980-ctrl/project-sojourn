@@ -425,13 +425,13 @@ function verifyPhysicalCareerRoundTrip() {
     },
   ];
   for (const timeline of timelines) {
-    const { economy } = timeline;
-    assert.equal(economy.mining.collect(ore.resourceId, 1, 1000, location.id, rockSource), 1);
+    const { economy: timelineEconomy } = timeline;
+    assert.equal(timelineEconomy.mining.collect(ore.resourceId, 1, 1000, location.id, rockSource), 1);
     timeline.chunk.amount -= 1;
-    assert.equal(economy.salvage.recover(deposit.resourceId, 1, 1000, red.id, source), 1);
+    assert.equal(timelineEconomy.salvage.recover(deposit.resourceId, 1, 1000, red.id, source), 1);
     timeline.deposit.remainingAmount -= 1;
-    economy.wreckClaims.rememberField(timeline.field);
-    economy.simulation.advanceNextDay();
+    timelineEconomy.wreckClaims.rememberField(timeline.field);
+    timelineEconomy.simulation.advanceNextDay();
   }
   assert.deepEqual(restoredEconomy.trade.player.cargo, originalEconomy.trade.player.cargo);
   assert.deepEqual(
