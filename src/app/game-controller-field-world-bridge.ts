@@ -472,6 +472,15 @@ export function advanceControllerFieldWorld(
 
 function activeFieldContact(context: ControllerRuntimeContext | null, npc: SectorNpcState) {
   if (!context || npc.travel) return false;
+  // Both the primary drone and its escort belong to the local field runtime.
+  if (
+    npc.id.startsWith('security-drone:') &&
+    narrowsSector.locations.some(
+      (location) => location.id === npc.locationId && location.activities.mine
+    )
+  ) {
+    return true;
+  }
   if (npc.id === 'security-drone:' + npc.locationId) return true;
   if (context.state.mode !== 'local-space' && context.state.mode !== 'salvage-space') return false;
   return npc.locationId === context.navigation.getSnapshot().currentLocationId;
