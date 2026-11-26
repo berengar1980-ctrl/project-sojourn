@@ -11,7 +11,32 @@ function stopName(model: StarMapViewModel, id: string): string {
   return model.locations.find((location) => location.id === id)?.name ?? id;
 }
 
-export function updateStarMapFuelStatus(model: StarMapViewModel, element: HTMLElement): void {
+function updateEmergencyButton(
+  model: StarMapViewModel,
+  element: HTMLElement,
+  action?: () => void
+): void {
+  let button = element.querySelector<HTMLButtonElement>('.map-emergency-fuel');
+  if (!button) {
+    button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'map-emergency-fuel';
+    button.addEventListener('click', () => action?.());
+    element.append(button);
+  }
+  const quote = model.fuelStatus?.emergencyQuote;
+  button.hidden = !action || !quote || model.navigation.isTravelling;
+  button.disabled = !quote || quote.units <= 0;
+  button.textContent = quote?.units
+    ? 'NOTBETANKUNG · +' + number(quote.units) + ' E · ' + number(quote.cost, 0) + ' CR'
+    : 'NOTBETANKUNG · NICHT VERFÜGBAR';
+}
+
+export function updateStarMapFuelStatus(
+  model: StarMapViewModel,
+  element: HTMLElement,
+  emergency?: () => void
+): void {
   const fuel = model.fuelStatus;
   if (!fuel) {
     element.hidden = true;
@@ -44,5 +69,12 @@ export function updateStarMapFuelStatus(model: StarMapViewModel, element: HTMLEl
     );
     lines.push('ERFASSTE PIRATEN  ' + risk.contactCount);
   }
-  element.textContent = lines.join('\n');
+  let text = element.querySelector<HTMLElement>('.map-fuel-readout');
+  if (!text) {
+    text = document.createElement('div');
+    text.className = 'map-fuel-readout';
+    element.prepend(text);
+  }
+  text.textContent = lines.join('\n');
+  updateEmergencyButton(model, element, emergency);
 }
