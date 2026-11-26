@@ -373,6 +373,7 @@ function arrangeWorkerJourney(
   }
   const plan = findNpcResourceSideTrade(npc, npc.workLocationId, {
     markets: npcKnownMarketViews(npc),
+    day,
     resources,
     positions,
   });
@@ -418,7 +419,7 @@ export function chooseWorkerAction(
     finishNpcWorksite(npc);
   }
   if (planning && !npc.workLocationId) {
-    const candidate = chooseNpcWorksite(npc, planning, resources, positions, quoteTravel);
+    const candidate = chooseNpcWorksite(npc, planning, resources, positions, quoteTravel, day);
     if (!candidate) {
       beginRest(npc);
       return;
