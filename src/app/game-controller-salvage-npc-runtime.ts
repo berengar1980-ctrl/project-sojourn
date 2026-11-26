@@ -54,6 +54,7 @@ export function createNpcSalvageRuntime(
     locationId: options.location.id,
     field,
     initialPosition: (id) => options.spawnPositions?.get(id),
+    initialWorkers: options.wreckClaims.workerCheckpoint(field),
     get salvagers() {
       return options.sectorNpcs.filter(
         (npc) =>
