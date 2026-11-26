@@ -7,25 +7,14 @@ import type {
 
 import { npcWorkingCapital, type NpcTravelQuoteFn } from './npc-operating-decisions';
 import type { SectorNpcState } from '../../core/npc-types';
-import type { NpcTravelOperatingQuote } from './npc-economy-types';
+import type {
+  EconomyPoint,
+  NpcTradeMarketView,
+  NpcTravelOperatingQuote,
+} from './npc-economy-types';
 import { npcMarketConfidence } from './npc-market-knowledge';
 
-export interface EconomyPoint {
-  readonly x: number;
-  readonly y: number;
-}
-
-export interface NpcTradeMarketEntry {
-  readonly resourceId: EconomyResourceId;
-  readonly stock: number;
-  readonly price: number;
-}
-
-export interface NpcTradeMarketView {
-  readonly locationId: string;
-  readonly observedDay?: number;
-  readonly entries: Readonly<Record<EconomyResourceId, NpcTradeMarketEntry>>;
-}
+export type { EconomyPoint, NpcTradeMarketEntry, NpcTradeMarketView } from './npc-economy-types';
 
 export interface NpcSideTradeContext {
   readonly day?: number;
