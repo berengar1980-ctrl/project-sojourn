@@ -101,6 +101,8 @@ export interface SectorNpcState extends NpcEconomyState {
   hullUpgradeCount?: number;
   lastHullUpgradeRun?: number;
   retiredUntilDay?: number;
+  insolventSinceDay?: number;
+  refinancingCredits?: number;
   replacementGeneration?: number;
   replacementCapitalSpent?: number;
   tradeCharter?: 'independent' | 'veylan' | 'mercator';
