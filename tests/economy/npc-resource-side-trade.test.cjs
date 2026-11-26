@@ -239,3 +239,41 @@ console.log('PASS timed bounded NPC side trade, dwell and work resumption');
   assert(older && older.expectedProfit < refreshed.expectedProfit);
 }
 console.log('PASS side-trade confidence affects profitability without changing market memory');
+
+{
+  const markets = createMarkets();
+  const context = { markets: markets.markets, resources, positions };
+  const quote = (distance, fuelExpense) => ({ distance, fuelExpense, refuelCost: 0 });
+  const validRoute = (npc, destination) => {
+    if (npc.locationId === 'near-stop' && destination === 'work') return quote(55, 8);
+    if (destination === 'near-stop') return quote(60, 12);
+    if (destination === 'work') return quote(100, 10);
+    return null;
+  };
+  for (const role of ['miner', 'salvager']) {
+    const worker = { ...createMiner(), role };
+    const plan = sideTradeModule.findNpcResourceSideTrade(worker, 'work', {
+      ...context,
+      quoteTravel: validRoute,
+    });
+    assert(plan);
+    assert.equal(plan.extraDistance, 15);
+    assert.equal(plan.expectedProfit, 260);
+    assert.equal(plan.workLocationId, 'work');
+    assert.equal(worker.locationId, 'source');
+    const tooLong = (npc, destination) => {
+      if (destination === 'near-stop') return quote(90, 12);
+      return validRoute(npc, destination);
+    };
+    assert.equal(
+      sideTradeModule.findNpcResourceSideTrade(worker, 'work', {
+        ...context,
+        quoteTravel: tooLong,
+      }),
+      null
+    );
+  }
+  const patrol = { ...createMiner(), role: 'patrol' };
+  assert.equal(sideTradeModule.findNpcResourceSideTrade(patrol, 'work', context), null);
+}
+console.log('PASS real two-leg detour, extra fuel cost and worker-only side trade');
