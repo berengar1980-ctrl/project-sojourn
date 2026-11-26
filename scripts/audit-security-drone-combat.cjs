@@ -29,7 +29,20 @@ const scenarios = [
 function makeShip(template, team, id) {
   const setup = npcCombatant({ ...structuredClone(template), id });
   assert(setup && setup.weapons.length > 0, id + ' must have real weapons');
-  return { id, team, setup };
+  // Optional trial-only durability deltas: do not mutate ship registry or the engine.
+  const droneTrial = template.id.startsWith('security-drone:');
+  const marauderTrial = template.pirateClass === 'marauder';
+  const hullDelta = droneTrial ? process.env.AUDIT_DRONE_HULL : marauderTrial ? process.env.AUDIT_MARAUDER_HULL : undefined;
+  const shieldDelta = droneTrial ? process.env.AUDIT_DRONE_SHIELD : marauderTrial ? process.env.AUDIT_MARAUDER_SHIELD : undefined;
+  return {
+    id,
+    team,
+    setup: {
+      ...setup,
+      hullHp: setup.hullHp + Number(hullDelta ?? 0),
+      shieldHp: setup.shieldHp + Number(shieldDelta ?? 0),
+    },
+  };
 }
 
 function trial(droneCount, pirateCount, pirates, seed) {

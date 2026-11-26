@@ -64,6 +64,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: node scripts/audit-security-drone-combat.cjs 100
+      - name: Trial central durability values (no game changes)
+        run: |
+          for drone in '20 10' '40 20' '60 0'; do
+            read -r dh ds <<< "$drone"
+            for marauder in '0 0' '60 30' '120 60'; do
+              read -r mh ms <<< "$marauder"
+              echo "CANDIDATE drone hull+$dh shield+$ds marauder hull+$mh shield+$ms"
+              AUDIT_DRONE_HULL="$dh" AUDIT_DRONE_SHIELD="$ds" AUDIT_MARAUDER_HULL="$mh" AUDIT_MARAUDER_SHIELD="$ms" node scripts/audit-security-drone-combat.cjs 100
+            done
+          done
   economic-horizons:
     if: github.head_ref == 'fix/npc-combat-logic'
     runs-on: ubuntu-latest
