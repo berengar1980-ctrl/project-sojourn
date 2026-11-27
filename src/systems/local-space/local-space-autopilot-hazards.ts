@@ -1,5 +1,7 @@
 import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { advanceAutopilotRoute } from './local-space-autopilot';
+import { fieldTrafficObstacles } from '../navigation/field-traffic-obstacles';
 import type { ShieldWorldGeometry } from './local-space-collision';
 import { planPointRoute } from './local-space-navigation';
 import { crewAvoidsAsteroid, findRouteAsteroidHazard } from './local-space-hazard-avoidance';
@@ -17,6 +19,14 @@ export class LocalSpaceAutopilotHazards {
     private readonly notice: (message: string) => void,
     private readonly additionalObstacles: () => readonly LocalAsteroid[] = () => []
   ) {}
+
+  advanceRoute(...args: Parameters<typeof advanceAutopilotRoute>) {
+    const [ship, route, index, speed, dt, brake, reverse, turnRate] = args;
+    return advanceAutopilotRoute(ship, route, index, speed, dt, brake, reverse, turnRate, {
+      obstacles: fieldTrafficObstacles(this.instance, 'player'),
+      clearance: Math.max(this.shield.radiusX, this.shield.radiusY),
+    });
+  }
 
   reset(): void {
     this.elapsed = 0;

@@ -3,6 +3,7 @@ import type { WorldPoint } from '../../core/world-types';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
+import { trafficStepClear } from './field-traffic-obstacles';
 
 export interface FieldRouteObstacle {
   readonly id: string;
@@ -147,8 +148,19 @@ export function moveFieldShip(
   const dy = waypoint.y - ship.position.y;
   const remaining = Math.hypot(dx, dy);
   const step = Math.max(0, speed) * Math.max(0, dt);
+  const arrives = remaining <= Math.max(2, step);
+  const next = arrives
+    ? { ...waypoint }
+    : {
+        x: ship.position.x + (dx / remaining) * step,
+        y: ship.position.y + (dy / remaining) * step,
+      };
+  if (!trafficStepClear(ship.position, next, dt, obstacles, clearance)) {
+    ship.speed = 0;
+    return false;
+  }
   ship.headingRadians = Math.atan2(dy, dx);
-  if (remaining <= Math.max(2, step)) {
+  if (arrives) {
     ship.position = { ...waypoint };
     ship.speed = 0;
     const route = ship.routeState!;
@@ -159,10 +171,7 @@ export function moveFieldShip(
     }
     return false;
   }
-  ship.position = {
-    x: ship.position.x + (dx / remaining) * step,
-    y: ship.position.y + (dy / remaining) * step,
-  };
+  ship.position = next;
   ship.speed = speed;
   return false;
 }

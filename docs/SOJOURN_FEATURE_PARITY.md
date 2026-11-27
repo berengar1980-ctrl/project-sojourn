@@ -2097,3 +2097,8 @@ unverändert. Ankunft, Abflug und Verkehrsdurchsatz sind zu validieren.
 **Keine Statusänderung** der Feature-IDs. Schildzentrum, Kontaktachse und
 bestehende Kampfhüllen-Geometrie teilen die technischen Grundfunktionen;
 Schild- und Hüllenkontakt bleiben unterschiedliche Spielregeln.
+
+**Keine Statusänderung** der Feature-IDs. Bewegte Schiffshindernisse werden
+bei ziviler Routenfahrt auf einen kurzen relativen Kollisionskurs geprüft.
+Ein sicheres Warten behält den vorhandenen Routenplan. Das aktive
+Kampfflugverhalten bleibt unverändert; Verkehrsdurchsatz ist zu prüfen.

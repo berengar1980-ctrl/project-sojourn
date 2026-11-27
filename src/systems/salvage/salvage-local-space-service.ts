@@ -29,6 +29,7 @@ import type { LocalShipState } from '../../core/local-space-types';
 import type { EconomyResourceId } from '../../core/economy-types';
 import type { WorldPoint } from '../../core/world-types';
 import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
+import { fieldTrafficObstacles } from '../navigation/field-traffic-obstacles';
 import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
 import { createSalvageEventController } from './salvage-event-service';
 import { createSalvageFieldService, type SalvageFieldService } from './salvage-field-service';
@@ -331,7 +332,11 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       deltaSeconds,
       true,
       true,
-      this.options.turnRateMultiplier ?? 1
+      this.options.turnRateMultiplier ?? 1,
+      {
+        obstacles: fieldTrafficObstacles(this.options.field, 'player'),
+        clearance: Math.max(32, (this.options.shipLengthMeters ?? 70) * 0.46),
+      }
     );
     this.routeIndex = result.nextIndex;
     if (!result.completed) return;

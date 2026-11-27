@@ -1516,3 +1516,8 @@ an Kampfentscheidungen, Kollisionsreaktionen oder Integrationsintervallen.
 Die gemeinsame Kontaktachse, Weltposition des Schildzentrums und bisherige
 Kampfhüllenform sind reine Ableitungen ohne gespeicherten Zustand. Die
 bestehenden Kontaktregeln, Grenzwerte und Zuständigkeiten bleiben erhalten.
+
+Vorausschauende zivile Verkehrsprüfung verwendet nur die vorhandene
+Route, Position und abgeleitete Geschwindigkeit. Ein wartendes Schiff
+behält seinen gespeicherten Routenindex; kein neuer Timer, kein zweiter
+Physikschritt und keine Änderung des Speicherformats.

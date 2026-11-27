@@ -14,7 +14,6 @@ import {
   type ShieldWorldGeometry,
 } from './local-space-collision';
 import {
-  advanceAutopilotRoute,
   faceAutopilotTarget,
   resetAutopilotMotion,
 } from './local-space-autopilot';
@@ -370,7 +369,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     const reviewed = this.hazards.review(deltaSeconds, this.navigationRoute, this.navigationIndex);
     this.navigationRoute = reviewed.route;
     this.navigationIndex = reviewed.index;
-    const result = advanceAutopilotRoute(
+    const result = this.hazards.advanceRoute(
       this.instance.ship,
       this.navigationRoute,
       this.navigationIndex,
@@ -404,7 +403,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
     );
     this.approachRoute = reviewed.route;
     this.approachIndex = reviewed.index;
-    const result = advanceAutopilotRoute(
+    const result = this.hazards.advanceRoute(
       this.instance.ship,
       this.approachRoute,
       this.approachIndex,

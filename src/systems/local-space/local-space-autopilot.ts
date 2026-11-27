@@ -1,5 +1,7 @@
 import type { LocalShipState } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { FieldRouteObstacle } from '../navigation/field-ship-routing';
+import { trafficStepClear } from '../navigation/field-traffic-obstacles';
 import { angleDelta, distance, heading, moveToward, turnToward } from './local-space-motion';
 
 const MAX_TURN_RATE = 1.15;
@@ -65,10 +67,12 @@ export function advanceAutopilotRoute(
   deltaSeconds: number,
   brakeAtFinalWaypoint: boolean,
   allowReverseCorrection = false,
-  turnRateMultiplier = 1
+  turnRateMultiplier = 1,
+  traffic?: { readonly obstacles: readonly FieldRouteObstacle[]; readonly clearance: number }
 ): RouteAdvanceResult {
   if (index >= route.length) return { nextIndex: index, completed: true };
 
+  const start = ship.position;
   const waypoint = route[index]!;
   const remainingDistance = distance(ship.position, waypoint);
   const finalWaypoint = index === route.length - 1;
@@ -97,9 +101,14 @@ export function advanceAutopilotRoute(
   }
 
   const arrivalDistance = finalWaypoint && brakeAtFinalWaypoint ? 2 : 1;
-  if (distance(ship.position, waypoint) > arrivalDistance) {
+  const arrived = distance(ship.position, waypoint) <= arrivalDistance;
+  const next = arrived ? waypoint : ship.position;
+  if (traffic && !trafficStepClear(start, next, deltaSeconds, traffic.obstacles, traffic.clearance)) {
+    ship.position = start;
+    ship.speed = 0;
     return { nextIndex: index, completed: false };
   }
+  if (!arrived) return { nextIndex: index, completed: false };
 
   ship.position = { ...waypoint };
   ship.speed = 0;
