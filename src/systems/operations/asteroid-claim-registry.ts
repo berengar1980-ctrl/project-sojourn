@@ -310,6 +310,16 @@ export class AsteroidClaimRegistry {
     return true;
   }
 
+  /** Read only the claims needed by the mounted field, without cloning disputes. */
+  claimsAt(locationId: string): AsteroidClaim[] {
+    const result: AsteroidClaim[] = [];
+    for (const claim of this.claims.values()) {
+      if (claim.locationId !== locationId) continue;
+      result.push({ ...claim, oreAtRegistration: { ...claim.oreAtRegistration } });
+    }
+    return result;
+  }
+
   snapshot() {
     return {
       claims: [...this.claims.values()].map((c) => ({
