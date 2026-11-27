@@ -27,8 +27,8 @@ function collectMiningTraffic(
   field: AsteroidFieldRuntime,
   excludedId: string
 ): FieldRouteObstacle[] {
-  const npcs = context.economy.sectorNpcs.npcs;
-  const byId = new Map(npcs.map((npc) => [npc.id, npc]));
+  const sector = context.economy.sectorNpcs;
+  const byId = sector.indexById?.() ?? new Map(sector.npcs.map((npc) => [npc.id, npc]));
   const result: FieldRouteObstacle[] = [];
   const added = new Set<string>([excludedId]);
   const add = (id: string, pose: Parameters<typeof shipTrafficObstacle>[2]) => {
@@ -41,7 +41,7 @@ function collectMiningTraffic(
     result.push(shipTrafficObstacle(id, ship, pose));
   };
   for (const ship of field.miners.ships) add(ship.npcId, ship);
-  for (const ship of field.pirates.snapshot(npcs, byId)) add(ship.npcId, ship);
+  field.pirates.visitBodies(add);
   if (field.drone.snapshot().operational) add('security-drone:' + field.locationId, field.drone);
   const state = context.state;
   if (
