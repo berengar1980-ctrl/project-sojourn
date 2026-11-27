@@ -2,6 +2,18 @@
 
 These rules apply to all automated coding work in this repository, including new ChatGPT sessions.
 
+## Local field physics unification (mandatory)
+
+Before working on local flight, collision, navigation, combat, mining or
+salvage unification, read `docs/UNIFIED_FIELD_FLIGHT_ARCHITECTURE.md`.
+It is the binding implementation plan and handover for
+`refactor/unified-field-flight-physics`. Use the historical PvP 1vs1
+reference first, then FleetCombat, then civilian campaign. Maintain the
+package checklist and evidence log on every work increment. Do not mark
+a package complete on the basis of helper reuse or green CI alone.
+Do not preserve parallel physics implementations under a new wrapper.
+Run the architecture-document test as part of the existing test gate.
+
 ## CI failures: evidence before edits (mandatory)
 
 1. **Never repair a failing CI job by guessing.** Before modifying code or tests, identify the failed job, the exact failing command, and the relevant error output. A GitHub commit status such as `ci/diagnostic: tests = failure` is **not** a diagnostic log.
