@@ -20,7 +20,9 @@ assert(
   'mining NPC duels mirror the real combatant pose into the drone sprite'
 );
 assert(
-  bridge.includes('if (shouldTickFieldDrone(field.locationId, activeCombat, finishedHere, duels))') &&
+  bridge.includes(
+    'if (shouldTickFieldDrone(field.locationId, activeCombat, finishedHere, duels))'
+  ) &&
     tickIndex.includes('activeCombat?.defender.id !== droneId') &&
     tickIndex.includes('!finished.some(droneInDuel) && !duels.some(droneInDuel)') &&
     tickIndex.includes('duel.attacker.id === droneId && duel.attacker.hullHp > 0') &&
