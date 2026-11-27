@@ -68,7 +68,11 @@ assert.equal(
   0,
   'foreign contact does not tick the other fleet'
 );
-assert.notStrictEqual(second.getSnapshot(), cached, 'foreign correction invalidates stale snapshots');
+assert.notStrictEqual(
+  second.getSnapshot(),
+  cached,
+  'foreign correction invalidates stale snapshots'
+);
 assert.equal(
   authority.claimFieldContact(field, 'c', 'a'),
   false,
