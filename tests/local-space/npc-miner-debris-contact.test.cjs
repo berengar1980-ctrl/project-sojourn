@@ -102,7 +102,10 @@ assert.equal(resolveShipFieldDebrisContacts(definition, pose, [fragment]), 1);
 assert.equal(
   resolveFieldDebrisContacts(
     footprint.position,
-    { x: Math.cos(pose.headingRadians) * pose.speed, y: Math.sin(pose.headingRadians) * pose.speed },
+    {
+      x: Math.cos(pose.headingRadians) * pose.speed,
+      y: Math.sin(pose.headingRadians) * pose.speed,
+    },
     [reference],
     footprint.radius
   ),
