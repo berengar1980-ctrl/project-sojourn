@@ -1565,3 +1565,7 @@ Gemischte Schiffskontakte erhalten einen flüchtigen Korrektur-Handle auf
 die lebende Feldpose. Der Feldbesitzer validiert ID, aktuelle Pose und
 Kampfzustand vor der Positions- und Geschwindigkeitskorrektur. Der Handle
 wird nicht gespeichert; die existierende Feldposition bleibt maßgeblich.
+
+Die Geschwindigkeitskorrektur gemischter Kontakte respektiert die vorhandene
+skalare Vorwärtsgeschwindigkeit ziviler Schiffe. Kein zusätzlicher
+lateraler Geschwindigkeitszustand wird angelegt oder gespeichert.

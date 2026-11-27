@@ -1,9 +1,6 @@
 import { shipContact, type ShipContact } from './combat-ship-contact-geometry';
 import { getShipDefinition } from '../ships';
-import {
-  shipShieldGeometry,
-  weightedContactSeparation,
-} from '../../core/ship-contact-geometry';
+import { shipShieldGeometry, weightedContactSeparation } from '../../core/ship-contact-geometry';
 import type { MutableCombatant } from './strategic-combat-types';
 import type {
   FieldBystanderContact,
@@ -25,11 +22,13 @@ function separateBystander(
       normal.x * Math.cos(field.pose.headingRadians) + normal.y * Math.sin(field.pose.headingRadians);
     const relativeClosing = Math.max(0, ownClosing - (field.pose.speed ?? 0) * alongBow);
     const shares = weightedContactSeparation(overlap, 1, field.pushWeight);
-    const response = weightedContactSeparation(relativeClosing, 1, field.pushWeight);
-    const applied = field.apply(normal, shares.second, response.second);
+    // Field autopilots store signed forward speed, not arbitrary lateral
+    // velocity. Account for that degree of freedom in the normal impulse.
+    const normalImpulse = relativeClosing / (1 + (alongBow * alongBow) / field.pushWeight);
+    const applied = field.apply(normal, shares.second, normalImpulse / field.pushWeight);
     if (applied === null) return;
     move -= applied;
-    impulse = response.first;
+    impulse = normalImpulse;
   }
   ship.position.x -= normal.x * move;
   ship.position.y -= normal.y * move;

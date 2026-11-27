@@ -17,6 +17,7 @@ const {
   shieldWorldCenter,
   combatHullRadii,
   orientedHullRadius,
+  weightedContactSeparation,
 } = load('src/core/ship-contact-geometry.ts');
 
 const rotated = rotatePoint({ x: 10, y: 0 }, Math.PI / 2);
@@ -67,5 +68,7 @@ assert.deepEqual(load('src/core/field-geometry.ts').contactAxis(0, 0), {
   distance: 0,
   normal: { x: 1, y: 0 },
 });
+
+assert.deepEqual(weightedContactSeparation(30, 1, 2), { first: 20, second: 10 });
 
 console.log('PASS shared field geometry and definition-scoped shield cache');

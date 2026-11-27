@@ -2150,3 +2150,7 @@ Der Feldbesitzer prüft die aktuelle Zuständigkeit, die Fleet-Kontaktliste
 verhindert doppelte Paare innerhalb des Flottenschritts. Ungebundene
 Test-/Standalone-Hindernisse bleiben unveränderliche Kollisionspartner.
 Keine neue Schadensregel oder Änderung der aktiven Duellphysik.
+
+**Keine Statusänderung** der Feature-IDs. Gemischte Kontakte berücksichtigen
+den tatsächlich verfügbaren Freiheitsgrad ziviler Bewegung; Regressionen
+prüfen beidseitige Korrektur, Paar-Deduplizierung und Eigentümerwechsel.

@@ -37,8 +37,49 @@ assert.deepEqual(
 assert.equal(liveFieldBystanders(field, 'worker').length, 0);
 assert.equal(liveFieldBystanders({ ...field }).length, 0);
 const old = liveFieldBystanders(field)[0];
+assert(old.fieldContact);
 pose.position.x = 300;
 assert.equal(old.position.x, 100);
 assert.equal(liveFieldBystanders(field)[0].position.x, 300);
 assert.equal(traffic.fieldTrafficObstacles(field, 'worker').length, 0);
-console.log('PASS navigation and combat share a live field identity source');
+const { resolveCombatBystanderContacts } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/combat/combat-bystander-contacts.ts'
+);
+const current = liveFieldBystanders(field)[0];
+const fighter = {
+  setup: { id: 'fighter', shipId: 'miner-80m-variant-04' },
+  position: { x: 295, y: 200 },
+  velocity: { x: 80, y: 0 },
+  speed: 80,
+  headingRadians: 0,
+};
+const claimed = new Set();
+const claim = (first, second) => {
+  const key = JSON.stringify([first, second].sort());
+  if (claimed.has(key)) return false;
+  claimed.add(key);
+  return true;
+};
+resolveCombatBystanderContacts(fighter, [current], undefined, claim);
+assert(fighter.position.x < 295);
+assert(pose.position.x > 300, 'contact moves the original field pose');
+assert.equal(fighter.speed, pose.speed, 'normal closing motion is canceled');
+assert.equal(current.position.x, 300, 'published snapshot remains read-only');
+assert.equal(liveFieldBystanders(field)[0].position.x, pose.position.x);
+const after = { ...pose.position };
+// Reintroduce contact within the same fleet step; only the first claim may act.
+fighter.position.x = pose.position.x - 1;
+const beforeRepeat = { ...fighter.position };
+resolveCombatBystanderContacts(fighter, [current], undefined, claim);
+assert.deepEqual(pose.position, after);
+assert.deepEqual(fighter.position, beforeRepeat);
+npc.hullHp = 0;
+assert.equal(current.fieldContact.apply({ x: 1, y: 0 }, 10, 5), null);
+assert.deepEqual(pose.position, after, 'destroyed or departed bodies cannot be corrected');
+npc.hullHp = 100;
+npc.combatMovement = { mode: 'engaged' };
+assert.equal(current.fieldContact.apply({ x: 1, y: 0 }, 10, 5), null);
+assert.equal(liveFieldBystanders(field)[0].fieldContact, undefined);
+assert.deepEqual(pose.position, after, 'combat authority must not be overwritten');
+console.log('PASS shared live field source, reciprocal contact and exclusive pose ownership');
