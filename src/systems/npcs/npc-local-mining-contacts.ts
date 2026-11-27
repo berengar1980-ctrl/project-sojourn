@@ -25,6 +25,8 @@ export function resolveMinerCollisions(
     const definition = getShipDefinition(local.shipId);
     return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
   });
+  // With no free NPC body, neither pair contacts nor NPC/rock contacts can occur.
+  if (bodies.length === 0) return;
   const playerShip = options.getPlayerShip?.() ?? options.playerShip;
   if (playerState && playerShip) {
     bodies.unshift({

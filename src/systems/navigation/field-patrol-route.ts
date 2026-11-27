@@ -6,6 +6,11 @@ export interface PatrolRouteObstacle {
   readonly radius: number;
 }
 
+const patrolDirections = Array.from({ length: 8 }, (_, index) => {
+  const angle = (index * Math.PI) / 4;
+  return { x: Math.cos(angle), y: Math.sin(angle) };
+});
+
 function gapToSegment(point: WorldPoint, a: WorldPoint, b: WorldPoint): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -88,11 +93,10 @@ export function planFieldPatrolRoute(
   const nodes: WorldPoint[] = [start, destination];
   for (const obstacle of nearby) {
     const radius = (obstacle.radius + clearance) * 1.2 + 16;
-    for (let index = 0; index < 8; index += 1) {
-      const angle = (index * Math.PI) / 4;
+    for (const direction of patrolDirections) {
       const point = {
-        x: obstacle.position.x + Math.cos(angle) * radius,
-        y: obstacle.position.y + Math.sin(angle) * radius,
+        x: obstacle.position.x + direction.x * radius,
+        y: obstacle.position.y + direction.y * radius,
       };
       if (
         obstacles.every(
@@ -107,21 +111,21 @@ export function planFieldPatrolRoute(
   // Dijkstra over <=98 nodes, O(N^2) with no field-size dependence.
   const costs = nodes.map(() => Infinity);
   const parents = nodes.map(() => -1);
-  const visited = new Set<number>();
+  const visited = new Uint8Array(nodes.length);
   costs[0] = 0;
   for (let step = 0; step < nodes.length; step += 1) {
     let current = -1;
     for (let index = 0; index < nodes.length; index += 1) {
-      if (visited.has(index)) continue;
+      if (visited[index]) continue;
       if (current < 0 || costs[index]! < costs[current]!) current = index;
     }
     if (current < 0 || !Number.isFinite(costs[current]!)) break;
     if (current === 1) {
       return recoverPatrolRoute(start, nodes, parents, obstacles, clearance);
     }
-    visited.add(current);
+    visited[current] = 1;
     for (let index = 1; index < nodes.length; index += 1) {
-      if (visited.has(index)) continue;
+      if (visited[index]) continue;
       if (!clearPath(nodes[current]!, nodes[index]!, nearby, clearance)) continue;
       const length = Math.hypot(
         nodes[current]!.x - nodes[index]!.x,

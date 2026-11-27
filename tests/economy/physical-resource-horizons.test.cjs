@@ -100,8 +100,10 @@ function checkField(field) {
   }
 }
 
+const days = Number(process.env.SOJOURN_PHYSICAL_DAYS ?? 365);
+assert([90, 180, 365].includes(days));
 let extracted = 0;
-for (let day = 0; day < 365; day++) {
+for (let day = 0; day < days; day++) {
   simulation.advanceDay(day);
   const amount = simulation.withdrawPhysicalStock(ore.resourceId, rockId, 3);
   ore.oreRemaining -= amount;

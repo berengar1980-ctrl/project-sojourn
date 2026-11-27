@@ -42,6 +42,7 @@ import { serviceNpcAtLocation, serviceIdleNpc } from './npc-port-economy';
 import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
 import { FUEL_PRICE_PER_UNIT, quoteEmergencyRefuel } from '../ships/ship-operating-costs';
+import { refreshNpcIndex } from './npc-sector-types';
 import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-types';
 export type { NpcSectorServiceOptions } from './npc-sector-types';
 export type { NpcSectorService } from './npc-sector-types';
@@ -55,6 +56,10 @@ class SectorService implements NpcSectorService {
     prepareNpcOrbitBerths(world, npcs);
   }
   private currentDay = 0;
+  private readonly npcIndex = new Map<string, SectorNpcState>();
+  indexById(): ReadonlyMap<string, SectorNpcState> {
+    return refreshNpcIndex(this.npcs, this.npcIndex);
+  }
   advanceDay = (day: number): void => {
     this.currentDay = Math.max(this.currentDay, Math.floor(day));
     this.options.population?.advanceDay(this.currentDay);

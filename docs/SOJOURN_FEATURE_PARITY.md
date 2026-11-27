@@ -2062,3 +2062,14 @@ Drohnen-, Arbeiter- und Wrackressourcenzustände. Temporäre Ereignisfelder
 behalten ihre Sonderlogik. Der Dreitagestest und die Kampfprofil-Parität
 sind bestätigt; Langzeitprüfung, Kampfbalance und vollständiger Quality Gate
 bleiben vor dem Merge zu verifizieren.
+
+## Review-Log (2026-11-27) – Simulationsperformance (PR #406)
+
+**Keine Statusänderung** der bestehenden Feature-IDs. Mining und permanente
+Bergungsfelder behalten ihre Integrationsschritte; Hintergrundschritte werden
+innerhalb ihrer bisherigen Zyklen verteilt. Gefechtszuordnung, Kollisions-
+Vorauswahl, NPC-Indizes, Navigationsdaten und Darstellung werden effizienter
+aufbereitet. Die native Kampf-KI und die Kollisionsreaktionen bleiben bestehen.
+Die Schutzbedingung für kämpfende Drohnen gilt weiterhin für aktive und
+beendete Duelle. Keine neuen Save-Daten. Langzeitsimulation, Feature-Parität
+und Performancegewinn sind vor dem Merge zu verifizieren.

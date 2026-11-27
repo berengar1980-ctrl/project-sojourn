@@ -1,0 +1,41 @@
+name: Sojourn economy audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      days:
+        description: Simulation days
+        type: choice
+        options: ['90', '180', '365']
+        default: '90'
+      profile:
+        description: Collect detailed performance timings
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  economy-audit:
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [strategic, physical, integrated]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SOJOURN_AUDIT_MODE: ${{ matrix.mode }}
+      SOJOURN_AUDIT_DAYS: ${{ inputs.days }}
+      SOJOURN_PROFILE: ${{ inputs.profile && '1' || '0' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Run selected economy audit
+        run: npm run test:economy-horizons

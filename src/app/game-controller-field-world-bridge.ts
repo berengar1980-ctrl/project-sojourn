@@ -13,6 +13,7 @@ import {
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { LocalSpaceInstance } from '../core/local-space-types';
 import type { SectorNpcState } from '../core/npc-types';
+import { groupDuelsBySeed, shouldTickFieldDrone } from './field-combat-tick-index';
 import { localFieldDuels } from '../systems/combat/dynamic-fleet-combat';
 import {
   syncMiningCombatField,
@@ -380,12 +381,12 @@ function setFieldBystanders(
 function syncFinishedFieldPoses(
   context: ControllerRuntimeContext,
   fieldWorld: AsteroidFieldWorld,
-  finished: readonly StrategicCombatSnapshot[]
+  finished: ReadonlyMap<number, StrategicCombatSnapshot[]>
 ): void {
-  if (finished.length === 0) return;
+  if (finished.size === 0) return;
   fieldWorld.forEachField((field) => {
-    const duels = finished.filter((duel) => duel.arena.backdropSeed === field.instance.seed);
-    syncNpcDuelFieldPoses(context, field, duels);
+    const duels = finished.get(field.instance.seed);
+    if (duels) syncNpcDuelFieldPoses(context, field, duels);
   });
 }
 
@@ -406,7 +407,10 @@ export function advanceControllerFieldWorld(
   const finished = context.engagements.finishedFieldCombatSnapshots();
   const localDuels = localFieldDuels(background, fleet);
   const fieldWorld = fieldWorldFor(context);
-  syncFinishedFieldPoses(context, fieldWorld, finished);
+  const finishedBySeed = groupDuelsBySeed(finished);
+  const backgroundBySeed = groupDuelsBySeed(background);
+  const localBySeed = groupDuelsBySeed(localDuels);
+  syncFinishedFieldPoses(context, fieldWorld, finishedBySeed);
   balanceDailyAsteroids(context, fieldWorld, localId);
   advanceFieldWreckLifetime(context, fieldWorld, deltaSeconds);
   const combatLocations = new Set<string>();
@@ -432,12 +436,9 @@ export function advanceControllerFieldWorld(
         activeCombat.attacker.speed
       );
     }
-    const duels = (activeCombat ? localDuels : background).filter(
-      (duel) => duel.arena.backdropSeed === field.instance.seed
-    );
-    if (activeCombat && !fleet) duels.push(activeCombat);
-    const finishedHere = finished.filter((duel) => duel.arena.backdropSeed === field.instance.seed);
-    const poseDuels = [...finishedHere, ...duels];
+    const grouped = (activeCombat ? localBySeed : backgroundBySeed).get(field.instance.seed) ?? [];
+    const duels = activeCombat && !fleet ? [...grouped, activeCombat] : grouped;
+    const finishedHere = finishedBySeed.get(field.instance.seed) ?? [];
     syncNpcDuelFieldPoses(context, field, duels);
     const defenderId = activeCombat?.defender.id;
     measurePerformance('sim.field.miners', () => field.miners.tick(seconds, defenderId));
@@ -446,11 +447,7 @@ export function advanceControllerFieldWorld(
     );
     // The combat engine owns drone motion while it is fighting.
     // A second patrol tick would jump its sprite away from the hitbox.
-    const droneId = 'security-drone:' + field.locationId;
-    const droneFightingNpc = poseDuels.some((duel) =>
-      [duel.attacker, duel.defender].some((ship) => ship.id === droneId && ship.hullHp > 0)
-    );
-    if (activeCombat?.defender.id !== droneId && !droneFightingNpc) {
+    if (shouldTickFieldDrone(field.locationId, activeCombat, finishedHere, duels)) {
       measurePerformance('sim.field.security', () => tickFieldSecurity(context, seconds, field));
     }
     if (fieldCombat) {

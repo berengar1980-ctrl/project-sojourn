@@ -1,3 +1,4 @@
+import { measurePerformance } from '../../core/performance-diagnostics';
 import { isCombatWreckVariant } from '../../core/combat-wreck-variant';
 import type { LocalAsteroid, LocalSpaceInstance, MiningChunk } from '../../core/local-space-types';
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
@@ -377,14 +378,26 @@ export class AsteroidFieldWorld {
     const dt = Math.min(0.25, Math.max(0, deltaSeconds));
     if (dt <= 0) return;
     const active = activeLocationId ? this.fields.get(activeLocationId) : null;
-    if (active) onStep(active, Math.min(dt, 0.08));
-    this.backgroundAccumulator += dt;
-    if (this.backgroundAccumulator < 0.25) return;
-    this.backgroundAccumulator -= 0.25;
-    for (const field of this.fields.values()) {
-      if (field === active) continue;
-      // The NPC mining physics already caps each step at 0.08s.
-      for (let i = 0; i < 4; i++) onStep(field, 0.0625);
-    }
+    if (active)
+      measurePerformance('sim.field.active-step', () => onStep(active, Math.min(dt, 0.08)));
+    const start = this.backgroundAccumulator;
+    const end = start + dt;
+    this.backgroundAccumulator = end >= 0.25 ? end - 0.25 : end;
+    // Stable field order gives each field a fixed phase in the existing 250 ms cycle.
+    // Keep all four integration steps together; only their scheduling phase changes.
+    const advanceWindow = (from: number, to: number) => {
+      let index = 0;
+      for (const field of this.fields.values()) {
+        const phase = (0.25 * ++index) / this.fields.size;
+        if (field === active || phase <= from || phase > to) continue;
+        measurePerformance('sim.field.background-field', () => {
+          for (let i = 0; i < 4; i++) onStep(field, 0.0625);
+        });
+      }
+    };
+    measurePerformance('sim.field.background-batch', () => {
+      advanceWindow(start, Math.min(end, 0.25));
+      if (end > 0.25) advanceWindow(0, end - 0.25);
+    });
   }
 }

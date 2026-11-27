@@ -6,6 +6,7 @@ const root = path.resolve(__dirname, '../..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 
 const bridge = read('src/app/game-controller-field-world-bridge.ts');
+const tickIndex = read('src/app/field-combat-tick-index.ts');
 const local = read('src/ui/local-space/local-space-renderer.ts');
 const salvageLayers = read('src/ui/salvage/salvage-scene-layers.ts');
 const salvageScene = read('src/app/game-controller-salvage.ts');
@@ -19,8 +20,13 @@ assert(
   'mining NPC duels mirror the real combatant pose into the drone sprite'
 );
 assert(
-  bridge.includes('droneFightingNpc') &&
-    bridge.includes('!droneFightingNpc') &&
+  bridge.includes(
+    'if (shouldTickFieldDrone(field.locationId, activeCombat, finishedHere, duels))'
+  ) &&
+    tickIndex.includes('activeCombat?.defender.id !== droneId') &&
+    tickIndex.includes('!finished.some(droneInDuel) && !duels.some(droneInDuel)') &&
+    tickIndex.includes('duel.attacker.id === droneId && duel.attacker.hullHp > 0') &&
+    tickIndex.includes('duel.defender.id === droneId && duel.defender.hullHp > 0') &&
     bridge.includes('tickFieldSecurity(context, seconds, field)'),
   'the patrol engine must not move a fighting drone away from its physics hitbox'
 );

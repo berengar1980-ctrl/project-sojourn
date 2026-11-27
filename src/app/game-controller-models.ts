@@ -175,13 +175,14 @@ function localNpcCombatSnapshots(
   context: ControllerRuntimeContext,
   locationId: string | null | undefined
 ) {
-  const npcs = context.economy.sectorNpcs.npcs;
+  const sector = context.economy.sectorNpcs;
   const fieldSeed = context.state.localSpace?.getSnapshot().instance.seed;
   if (fieldSeed === undefined) return [];
+  const byId = sector.indexById?.() ?? new Map(sector.npcs.map((npc) => [npc.id, npc]));
   return (context.engagements.activeNpcCombatSnapshots?.() ?? []).filter((duel) => {
     if (duel.arena.backdropSeed !== fieldSeed) return false;
-    const first = npcs.find((npc) => npc.id === duel.attacker.id);
-    const second = npcs.find((npc) => npc.id === duel.defender.id);
+    const first = byId.get(duel.attacker.id);
+    const second = byId.get(duel.defender.id);
     return first?.locationId === locationId && second?.locationId === locationId;
   });
 }
@@ -207,18 +208,9 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
   );
   const locationId = context.state.localSpace?.getSnapshot().instance.sourceLocationId;
   const asteroidId = model.selectedAsteroid?.id;
-  const owner =
-    locationId && asteroidId
-      ? (context.economy.asteroidClaims
-          .snapshot()
-          .claims.find(
-            (entry) => entry.locationId === locationId && entry.asteroidId === asteroidId
-          )?.ownerId ?? null)
-      : null;
-  const knownClaims = context.economy.asteroidClaims
-    .snapshot()
-    .claims.filter((claim) => claim.locationId === locationId);
+  const knownClaims = locationId ? context.economy.asteroidClaims.claimsAt(locationId) : [];
   const claimByAsteroid = new Map(knownClaims.map((claim) => [claim.asteroidId, claim]));
+  const owner = asteroidId ? (claimByAsteroid.get(asteroidId)?.ownerId ?? null) : null;
   const pirateShips = locationId
     ? (
         context.economy.localPirates.get(locationId)?.snapshot(context.economy.sectorNpcs.npcs) ??
