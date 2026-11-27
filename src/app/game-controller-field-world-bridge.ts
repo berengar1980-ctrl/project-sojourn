@@ -32,6 +32,7 @@ import {
 } from './game-controller-field-miner-events';
 import { tickFieldPirates, tickFieldSecurity } from './game-controller-security';
 import { bindMiningTraffic, miningTrafficObstacles } from './game-controller-mining-traffic';
+import { liveFieldBystanders } from './game-controller-field-traffic';
 import type {
   CombatVisualAsteroid,
   StrategicCombatSnapshot,
@@ -342,39 +343,7 @@ function setFieldBystanders(
   field: AsteroidFieldRuntime,
   playerShip?: LocalSpaceInstance['ship']
 ): void {
-  const bystanders = [
-    ...(playerShip
-      ? [
-          {
-            id: 'player',
-            shipId: context.state.activeShip.id,
-            position: playerShip.position,
-            headingRadians: playerShip.headingRadians,
-          },
-        ]
-      : []),
-    ...field.miners.ships.map((ship) => ({
-      id: ship.npcId,
-      shipId: ship.shipId,
-      position: { ...ship.position },
-      headingRadians: ship.headingRadians,
-    })),
-    ...field.pirates.snapshot(context.economy.sectorNpcs.npcs).map((ship) => ({
-      id: ship.npcId,
-      shipId: ship.shipId,
-      position: ship.position,
-      headingRadians: ship.headingRadians,
-    })),
-    ...context.economy.sectorNpcs.npcs
-      .filter((npc) => npc.id === 'security-drone:' + field.locationId)
-      .filter((npc) => npc.hullHp > 0 && field.drone.snapshot().operational)
-      .map((npc) => ({
-        id: npc.id,
-        shipId: npc.shipId,
-        position: field.drone.snapshot().position,
-        headingRadians: field.drone.headingRadians,
-      })),
-  ];
+  const bystanders = liveFieldBystanders(field.instance, playerShip ? undefined : 'player');
   context.engagements.fieldCombat?.(field.locationId, field.instance.seed, bystanders);
 }
 

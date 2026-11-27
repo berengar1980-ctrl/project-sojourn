@@ -9,7 +9,6 @@ import { completeSalvageSectorEvent } from './game-controller-salvage-event-prog
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import {
   createSalvageSecurityDrone,
-  salvageDroneBystanders,
   salvageDroneCanSee,
 } from './game-controller-salvage-drone';
 import {
@@ -51,7 +50,7 @@ import {
   requestDistressDiagnosis,
   tickDistressDiagnosis,
 } from './game-controller-salvage-diagnosis';
-import { visitArmedFieldTraffic } from './game-controller-field-traffic';
+import { liveFieldBystanders, visitArmedFieldTraffic } from './game-controller-field-traffic';
 import type { SalvageSceneOptions, SalvageSceneController } from './game-controller-salvage-types';
 export type { SalvageSceneOptions, SalvageSceneController } from './game-controller-salvage-types';
 type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
@@ -331,26 +330,9 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     );
   }
   if (fieldCombat) {
-    const contacts = salvageDroneBystanders(
-      null,
-      npcSalvage.ships,
-      context.drone,
-      context.field.sourceLocationId,
-      context.pirates.snapshot(options.sectorNpcs)
-    );
     options.onCombatBystanders?.(
       context.field,
-      combat
-        ? contacts
-        : [
-            ...contacts,
-            {
-              id: 'player',
-              shipId: options.ship.id,
-              position: playerBody.position,
-              headingRadians: playerBody.headingRadians,
-            },
-          ]
+      liveFieldBystanders(context.field, combat ? 'player' : undefined)
     );
     syncFieldTrafficImpulses(salvageFieldPhysicsBodies(context.field), fieldCombat.arena);
   }

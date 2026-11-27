@@ -1552,3 +1552,7 @@ Neutrale Kampfhindernisse verwenden die aus Schiffsdefinitionen abgeleitete
 Schildgrundfläche und bisherige Hüllenkontaktregel. Native Kampfbeteiligte
 bleiben Eigentümer ihrer Positionen und taktischen Radien; doppelte
 Bystander-Einträge werden entfernt. Keine Änderung des Speicherformats.
+
+Zivile Navigation und Kampf-Bystander-Abfrage lesen dieselbe flüchtige
+feldgebundene Quelle lebender Schiffsposen. Die Bystander-Sicht kopiert
+nur die momentane Position; sie ist keine zweite Bewegungsautorität.

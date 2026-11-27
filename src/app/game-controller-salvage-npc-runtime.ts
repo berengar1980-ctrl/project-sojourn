@@ -12,11 +12,12 @@ import {
   type NpcLocalSalvageService,
 } from '../systems/npcs/npc-local-salvage-service';
 import type { SalvageLocalSpaceService } from '../systems/salvage/salvage-local-space-service';
+import { fieldTrafficObstacles } from '../systems/navigation/field-traffic-obstacles';
 import {
-  bindFieldTraffic,
-  fieldTrafficObstacles,
-} from '../systems/navigation/field-traffic-obstacles';
-import { collectFieldTraffic, type FieldTrafficSource } from './game-controller-field-traffic';
+  bindLiveFieldShips,
+  collectLiveFieldShips,
+  type FieldTrafficSource,
+} from './game-controller-field-traffic';
 
 interface SalvageNpcRuntimeOptions {
   readonly location: WorldLocation;
@@ -126,13 +127,12 @@ export function createNpcSalvageRuntime(
   });
   runtimes.set(field, { runtime, binding });
   const index = new Map<string, SectorNpcState>();
-  bindFieldTraffic(field, (excludedId) => {
+  bindLiveFieldShips(field, () => {
     const byId = refreshNpcIndex(options.sectorNpcs, index);
     const activePlayer = binding.player;
-    return collectFieldTraffic(
+    return collectLiveFieldShips(
       field.sourceLocationId,
       byId,
-      excludedId,
       (add) => {
         for (const ship of runtime.ships) add(ship.npcId, ship);
         (binding.sceneTraffic ?? binding.backgroundTraffic)?.(add);

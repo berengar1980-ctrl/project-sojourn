@@ -2134,3 +2134,8 @@ bleibt auch für vorfahrtsberechtigte Schiffe zwingend.
 verwenden dieselbe geometrische Navigationsgrundlage wie zivile Schiffe.
 Aktive Duellpartner behalten ihre bisherigen taktischen Radien und die
 Kontaktzuständigkeit; die Vorfahrtsregeln werden nicht in den Kampf übernommen.
+
+**Keine Statusänderung** der Feature-IDs. Mining- und Salvage-Feldquellen
+speisen sowohl zivile Navigation als auch taktische Hindernisabfragen;
+Identitätsfilter und Anwesenheitsprüfung sind gemeinsam. Kampfbeteiligte
+bleiben in FleetCombat von der neutralen Liste ausgeschlossen.
