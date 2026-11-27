@@ -7,7 +7,7 @@ import {
   squaredDistance,
 } from '../../core/field-geometry';
 import { shieldWorldCenter, shipShieldGeometry } from '../../core/ship-contact-geometry';
-import type { FieldRouteObstacle } from './field-ship-routing';
+import type { FieldRouteObstacle } from '../../core/field-traffic-types';
 import {
   planPointRoute,
   type PointRoutePlanningOptions,

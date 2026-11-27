@@ -2112,3 +2112,6 @@ bewegter Querverkehr verwendet die kurze Vorhersage und Warteentscheidung.
 prüfen das gemeinsame Feldtor gegen Schildgeometrie und vorhandene Posen;
 belegte Tore werden abgewartet, ohne einen zweiten Positionszustand anzulegen.
 Auswirkung auf Wirtschaftsfluss und mögliche Wartezustände ist zu testen.
+
+**Keine Statusänderung** der Feature-IDs. Gemeinsamer Feldhindernisvertrag
+ausgelagert, um zyklische Modulimporte zu verhindern.

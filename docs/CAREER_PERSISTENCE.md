@@ -1531,3 +1531,6 @@ Reguläre Miner- und Bergungsankünfte werden erst am freien vorhandenen
 Feldtor materialisiert. Ein wartender NPC bleibt im vorhandenen Sektorstatus;
 keine zusätzliche Warteschlange wird gespeichert. Explizite Startpositionen,
 gespeicherte Arbeiter und Kampfrückkehrpositionen werden nicht verschoben.
+
+Der Feldhindernisvertrag liegt unabhängig von den Routen- und
+Verkehrsmodulen im Core. Damit besteht keine zyklische Importabhängigkeit.

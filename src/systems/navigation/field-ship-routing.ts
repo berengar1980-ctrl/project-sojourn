@@ -5,12 +5,8 @@ import { planPointRoute } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
 import { trafficDestinationOccupied, trafficStepClear } from './field-traffic-obstacles';
 
-export interface FieldRouteObstacle {
-  readonly id: string;
-  readonly position: WorldPoint;
-  readonly radius: number;
-  readonly velocity?: WorldPoint;
-}
+import type { FieldRouteObstacle } from '../../core/field-traffic-types';
+export type { FieldRouteObstacle } from '../../core/field-traffic-types';
 
 /** The active route is part of the ship's checkpoint, not hidden in a WeakMap. */
 export interface FieldRouteState {
