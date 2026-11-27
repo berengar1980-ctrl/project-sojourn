@@ -76,10 +76,7 @@ export function collectFieldTraffic(
 const liveSources = new WeakMap<object, () => readonly FieldLiveShip[]>();
 
 /** Both queries read authoritative poses on demand; no cached second positions. */
-export function bindLiveFieldShips(
-  field: object,
-  source: () => readonly FieldLiveShip[]
-): void {
+export function bindLiveFieldShips(field: object, source: () => readonly FieldLiveShip[]): void {
   liveSources.set(field, source);
   bindFieldTraffic(field, (excludedId) =>
     source()

@@ -7,10 +7,7 @@ import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
 import { completeSalvageSectorEvent } from './game-controller-salvage-event-progress';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
-import {
-  createSalvageSecurityDrone,
-  salvageDroneCanSee,
-} from './game-controller-salvage-drone';
+import { createSalvageSecurityDrone, salvageDroneCanSee } from './game-controller-salvage-drone';
 import {
   advanceDistressRamming,
   createDistressRammingState,
