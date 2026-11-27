@@ -2190,3 +2190,8 @@ Kreuzung in beiden Tick-Reihenfolgen sowie wiederholte gefechtsübergreifende
 Kontakte. Standalone-Fallbacks und native Hull-/Ram-Physik bleiben bewusst
 getrennt von zivilen Schildkontakten. Der Index bleibt auf statische
 Hindernisse begrenzt; bewegte Objekte werden live geprüft.
+
+**Keine Statusänderung** der Feature-IDs. Zielbelegungen durch abfahrende
+Schiffe verhindern nicht mehr den Routenstart. Stehende Arbeitsschiffe
+bleiben Hindernisse; alle beweglichen Schiffe bleiben in der unmittelbaren
+Kontaktprüfung. Der unveränderte Kreuzungs-Stresstest ist maßgeblich.

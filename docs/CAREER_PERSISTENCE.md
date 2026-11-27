@@ -1598,3 +1598,7 @@ Die Verkehrsrangfolge nutzt flüchtige Wartezeit-Buckets, keine neuen
 Save-Felder. Save-/Load-Prüfung umfasst die vorhandenen Checkpoint-Tests
 und einen realen Browser-Neustart. Die Feld-Kontaktliste wird nach
 jedem Engagement-Schritt neu gebunden.
+
+Bewegliche Schiffe am Ziel werden nur bei der geometrischen Routenplanung
+als vorübergehende Belegung behandelt. Der tatsächliche Bewegungsschritt
+prüft weiterhin alle Kontakte. Keine Änderung des Checkpointformats.

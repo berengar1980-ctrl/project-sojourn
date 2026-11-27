@@ -58,6 +58,12 @@ jobs:
             echo "### $version timing" >> "$GITHUB_STEP_SUMMARY"
             cat "reports/$version-time.txt" >> "$GITHUB_STEP_SUMMARY"
           done
+      - name: Run focused navigation regression tests
+        working-directory: candidate
+        run: |
+          node tests/navigation/field-traffic-priority.test.cjs
+          node tests/navigation/field-traffic-route-review.test.cjs
+          node tests/navigation/field-traffic-stress.test.cjs
       - name: Diagnose candidate formatting
         working-directory: candidate
         run: |

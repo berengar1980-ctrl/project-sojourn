@@ -35,4 +35,16 @@ const ship = { position: start, headingRadians: 0, speed: 0 };
 assert.equal(fieldRouteTarget(ship, destination, [occupied], 40), null);
 assert.equal(ship.routeState, undefined);
 assert.deepEqual(fieldRouteTarget(ship, destination, [], 40), destination);
+// Two ships exchanging work locations must be able to start moving even
+// when the other occupies the destination. The swept step remains guarded.
+const departing = {
+  ...occupied,
+  intent: { priority: 1, movable: true, waitingSeconds: 0, direction: { x: -1, y: 0 } },
+};
+delete ship.routeState;
+assert.deepEqual(fieldRouteTarget(ship, destination, [departing], 40), destination);
+assert(
+  !trafficDestinationOccupied(destination, [], 40) &&
+    trafficDestinationOccupied(destination, [departing], 40)
+);
 console.log('PASS stationary traffic replanning and occupied destination handling');

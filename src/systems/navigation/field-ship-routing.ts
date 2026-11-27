@@ -4,7 +4,11 @@ import { measurePerformance } from '../../core/performance-diagnostics';
 import { clampedSegmentProjection } from '../../core/field-geometry';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
-import { trafficDestinationOccupied, trafficStepClear } from './field-traffic-obstacles';
+import {
+  trafficDestinationOccupied,
+  trafficPlanningObstacles,
+  trafficStepClear,
+} from './field-traffic-obstacles';
 import {
   beginTrafficLeg,
   endTrafficLeg,
@@ -102,6 +106,7 @@ export function fieldRouteTarget(
   clearance: number,
   mode: 'grid' | 'patrol' = 'grid'
 ): WorldPoint | null {
+  const planning = trafficPlanningObstacles(target, obstacles, clearance);
   const saved = ship.routeState;
   // A ship or drifting obstacle may have entered an already planned route.
   // Invalidate the checkpointed path before attempting to move through it.
@@ -113,16 +118,16 @@ export function fieldRouteTarget(
     const establishedCorner = distance(ship.position, nextWaypoint) <= 24;
     if (
       !establishedCorner &&
-      obstacles.some((obstacle) => blocked(ship.position, nextWaypoint, obstacle, clearance))
+      planning.some((obstacle) => blocked(ship.position, nextWaypoint, obstacle, clearance))
     )
       delete ship.routeState;
   }
   const current = ship.routeState;
   if (!current || distance(current.target, target) > 1 || current.index >= current.points.length) {
     // An occupied destination cannot be solved by repeated full-field searches.
-    if (trafficDestinationOccupied(target, obstacles, clearance)) return null;
+    if (trafficDestinationOccupied(target, planning, clearance)) return null;
     const points = measurePerformance('sim.field.route-search', () =>
-      makeRoute(ship.position, target, obstacles, clearance, mode)
+      makeRoute(ship.position, target, planning, clearance, mode)
     );
     if (points.length === 0) {
       delete ship.routeState;

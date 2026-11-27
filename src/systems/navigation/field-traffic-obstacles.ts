@@ -152,15 +152,36 @@ export function trafficStepClear(
   );
 }
 
+function occupiesTrafficDestination(
+  target: WorldPoint,
+  obstacle: FieldRouteObstacle,
+  clearance: number
+): boolean {
+  return (
+    Boolean(obstacle.velocity) &&
+    squaredDistance(target, obstacle.position) < (obstacle.radius + clearance) ** 2
+  );
+}
+
 export function trafficDestinationOccupied(
   target: WorldPoint,
   obstacles: readonly FieldRouteObstacle[],
   clearance: number
 ): boolean {
-  return obstacles.some(
+  return obstacles.some((obstacle) => occupiesTrafficDestination(target, obstacle, clearance));
+}
+
+/** A departing ship is not a permanent obstruction of another ship's goal.
+ * Omit it only from geometric route planning, never from the swept step check.
+ */
+export function trafficPlanningObstacles(
+  target: WorldPoint,
+  obstacles: readonly FieldRouteObstacle[],
+  clearance: number
+): readonly FieldRouteObstacle[] {
+  return obstacles.filter(
     (obstacle) =>
-      obstacle.velocity &&
-      squaredDistance(target, obstacle.position) < (obstacle.radius + clearance) ** 2
+      !obstacle.intent?.movable || !occupiesTrafficDestination(target, obstacle, clearance)
   );
 }
 
