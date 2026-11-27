@@ -41,7 +41,7 @@ function collectMiningTraffic(
     result.push(shipTrafficObstacle(id, ship, pose));
   };
   for (const ship of field.miners.ships) add(ship.npcId, ship);
-  for (const ship of field.pirates.snapshot(npcs)) add(ship.npcId, ship);
+  for (const ship of field.pirates.snapshot(npcs, byId)) add(ship.npcId, ship);
   if (field.drone.snapshot().operational) add('security-drone:' + field.locationId, field.drone);
   const state = context.state;
   if (
