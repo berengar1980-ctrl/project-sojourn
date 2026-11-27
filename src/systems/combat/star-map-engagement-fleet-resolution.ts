@@ -229,8 +229,7 @@ function releasePrimaryEnemy(
   enemy: SectorNpcState,
   boardingOpponent: SectorNpcState | null
 ): void {
-  const primaryStillOwned =
-    !runtime.playerFleet || runtime.playerFleet.members.has(enemy.id);
+  const primaryStillOwned = !runtime.playerFleet || runtime.playerFleet.members.has(enemy.id);
   if (enemy.hullHp <= 0) {
     if (primaryStillOwned) {
       runtime.options.sectorNpcs.recoverFromCombat(enemy, 'Kampfunfähig');
@@ -241,10 +240,7 @@ function releasePrimaryEnemy(
         ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
     );
   } else if (primaryStillOwned) {
-    const reason =
-      boardingOpponent === enemy
-        ? 'Besatzung nach Enterkampf besiegt'
-        : 'Nach Gefecht';
+    const reason = boardingOpponent === enemy ? 'Besatzung nach Enterkampf besiegt' : 'Nach Gefecht';
     releaseNpc(runtime, runtime.playerFleet, enemy, reason);
   }
 }
