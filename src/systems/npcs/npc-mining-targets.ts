@@ -99,7 +99,7 @@ export const NPC_MINING_SURFACE_DISTANCE = 48;
 
 export const FLIGHT_SPEED = 92;
 
-export const SCAN_SECONDS = 5;
+export { WORKER_SCAN_SECONDS as SCAN_SECONDS } from './npc-worker-primitives';
 
 export const MINING_CYCLE_SECONDS = 1.15;
 

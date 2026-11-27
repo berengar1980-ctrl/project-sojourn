@@ -1,7 +1,11 @@
-import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
+import type { LocalSpaceInstance } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { ShieldWorldGeometry } from './local-space-collision';
-import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
+import type {
+  PointRoutePlanningOptions,
+  RoutePlanningOptions,
+  RouteObstacle,
+} from './local-space-navigation';
 import { selectedRouteOptions } from './local-space-scanning';
 import type { LocalSpaceServiceOptions } from './local-space-options';
 import { trafficRouteBodies } from '../navigation/field-traffic-obstacles';
@@ -9,8 +13,8 @@ import { trafficRouteBodies } from '../navigation/field-traffic-obstacles';
 /** Merge moving, recoverable wrecks into the normal asteroid route graph. */
 function navigationBodies(
   instance: LocalSpaceInstance,
-  additional: readonly LocalAsteroid[]
-): readonly LocalAsteroid[] {
+  additional: readonly RouteObstacle[]
+): readonly RouteObstacle[] {
   return additional.length ? [...instance.asteroids, ...additional] : instance.asteroids;
 }
 

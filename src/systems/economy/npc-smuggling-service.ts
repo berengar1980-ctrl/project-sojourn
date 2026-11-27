@@ -1,3 +1,4 @@
+import { piratePortFaction } from '../../core/pirate-ports';
 import type { SectorNpcState } from '../../core/npc-types';
 import { isIllegalResource } from '../../data/economy/economy-resources';
 import type { NpcSectorService } from '../npcs/npc-sector-service';
@@ -69,7 +70,7 @@ function inspect(
 }
 
 function harborStrength(id: string): number {
-  if (id === 'blackjaw-outpost' || id === 'gallows-anchor') return 0;
+  if (piratePortFaction(id)) return 0;
   return id === 'haven' || id === 'karth-industrial' || id === 'vigil-station' ? 0.76 : 0.48;
 }
 

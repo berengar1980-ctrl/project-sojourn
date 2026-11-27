@@ -8,7 +8,7 @@ import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../sh
 
 export const APPROACH_DISTANCE = 120;
 export const FLIGHT_SPEED = 82;
-export const SCAN_SECONDS = 5;
+export { WORKER_SCAN_SECONDS as SCAN_SECONDS } from './npc-worker-primitives';
 export const BASE_CYCLE_SECONDS = 1.4;
 
 export { stableHash as hashId } from '../../core/stable-hash';

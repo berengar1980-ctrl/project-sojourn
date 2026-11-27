@@ -1,3 +1,4 @@
+import { piratePortFaction as pirateBase } from '../../core/pirate-ports';
 import type { PlayerEconomyState } from '../../core/economy-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import { isIllegalResource } from '../../data/economy/economy-resources';
@@ -6,7 +7,6 @@ import { createSmugglingCustomsService } from './smuggling-customs-service';
 
 import {
   PIRATE_PROTECTION_RATE,
-  type PirateFaction,
   type SmugglingState,
   type SmugglingService,
 } from './smuggling-types';
@@ -27,12 +27,6 @@ export type {
   ContrabandDetection,
   SmugglingService,
 } from './smuggling-types';
-
-function pirateBase(locationId: string): PirateFaction | null {
-  if (locationId === 'blackjaw-outpost') return 'pirates';
-  if (locationId === 'gallows-anchor') return 'pirates2';
-  return null;
-}
 
 export function createSmugglingService(
   player: PlayerEconomyState,

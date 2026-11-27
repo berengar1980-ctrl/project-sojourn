@@ -1,3 +1,4 @@
+import { pirateHomePort } from '../../core/pirate-ports';
 import { applyMarketSale, wholeQuantity } from '../../core/economy-quantity';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { EconomyMarketService } from './market-service';
@@ -12,7 +13,7 @@ export function sellPirateLootAtHome(
   npc: SectorNpcState,
   markets: EconomyMarketService
 ): PirateLootSale {
-  const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+  const homeId = pirateHomePort(npc.factionId);
   if (!npc.pirate || npc.locationId !== homeId) return { units: 0, revenue: 0 };
   let units = 0;
   let revenue = 0;

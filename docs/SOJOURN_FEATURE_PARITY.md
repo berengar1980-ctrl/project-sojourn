@@ -2208,3 +2208,7 @@ Berechnung. Bestehende Rollenparameter, Gebühren und Routen bleiben erhalten.
 
 Gemeinsame reine Zufalls- und Clamp-Funktionen ohne Änderung der Algorithmen,
 Seeds, Aufrufreihenfolgen oder Feature-IDs.
+
+Piraten-Heimathäfen, NPC-Scanzeit und Treibstoff-Distanzfaktor zentralisiert.
+Verkehrshindernisse enthalten ausschließlich die bisherigen Routengeometriedaten.
+Keine Änderung der Fraktions- oder Kollisionsregeln.

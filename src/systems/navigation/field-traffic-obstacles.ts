@@ -1,4 +1,3 @@
-import type { LocalAsteroid } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
@@ -13,6 +12,7 @@ import { trafficIntent, yieldsToTraffic } from './field-traffic-priority';
 import {
   planPointRoute,
   type PointRoutePlanningOptions,
+  type RouteObstacle,
 } from '../local-space/local-space-navigation';
 
 /** Navigation only. The real ship remains owned by its normal physics service. */
@@ -34,24 +34,13 @@ export function shipTrafficObstacle(
   };
 }
 
-/** Adapter for the existing asteroid route graph, never passed to collision physics. */
-export function trafficRouteBodies(obstacles: readonly FieldRouteObstacle[]): LocalAsteroid[] {
+/** Only geometry enters the route graph; traffic never masquerades as a physics body. */
+export function trafficRouteBodies(obstacles: readonly FieldRouteObstacle[]): RouteObstacle[] {
   return obstacles.map((obstacle) => ({
     id: 'traffic:' + obstacle.id,
-    kind: 'resource',
     position: { ...obstacle.position },
     radius: obstacle.radius,
     routeBlocking: true,
-    rotation: 0,
-    physics: {
-      mass: 0,
-      momentOfInertia: 0,
-      centerOfMassOffset: { x: 0, y: 0 },
-      velocity: { x: 0, y: 0 },
-      angularVelocity: 0,
-    },
-    deposits: [],
-    scanLevel: 'unscanned',
   }));
 }
 

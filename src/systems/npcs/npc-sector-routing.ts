@@ -1,3 +1,5 @@
+import { FUEL_DISTANCE_SCALE } from '../../core/fuel-pricing';
+import { pirateHomePort } from '../../core/pirate-ports';
 import { stableHash as hashId } from '../../core/stable-hash';
 import { isSecurityDrone } from '../../core/security-drone';
 import type { SectorNpcState } from '../../core/npc-types';
@@ -8,7 +10,7 @@ import type { WorldMap, WorldPoint } from '../../core/world-types';
 
 import { type RoutePlan, type RouteProfile } from '../navigation/route-planner';
 
-export const FUEL_DISTANCE_SCALE = 0.025;
+export { FUEL_DISTANCE_SCALE } from '../../core/fuel-pricing';
 
 export { stableHash as hashId } from '../../core/stable-hash';
 
@@ -91,10 +93,6 @@ interface PirateHuntQuote {
   readonly fuelExpense: number;
 }
 
-function pirateHomeId(npc: SectorNpcState): string {
-  return npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
-}
-
 function activeContact(npc: SectorNpcState): boolean {
   return (
     npc.hullHp > 0 && npc.retiredUntilDay === undefined && (npc.combatRecoverySeconds ?? 0) <= 0
@@ -155,7 +153,7 @@ export function pirateHuntDestination(
   livePosition: (entry: SectorNpcState) => WorldPoint,
   quoteTravel?: (destinationId: string) => PirateHuntQuote | null
 ): string | null {
-  const homeId = pirateHomeId(npc);
+  const homeId = pirateHomePort(npc.factionId);
   const home = world.locations.find((location) => location.id === homeId);
   const available = Math.max(0, npc.credits);
   const hullFraction = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;

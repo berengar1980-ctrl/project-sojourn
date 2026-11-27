@@ -1,4 +1,5 @@
 export const FUEL_PRICE_PER_UNIT = 10;
+export const FUEL_DISTANCE_SCALE = 0.025;
 
 export interface FuelQuote {
   readonly units: number;

@@ -2,6 +2,8 @@ import type { WorldPoint } from '../../core/world-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import { wholeQuantity } from '../../core/economy-quantity';
 
+export const WORKER_SCAN_SECONDS = 5;
+
 export function moveToward(
   ship: { position: WorldPoint; headingRadians: number; speed: number },
   target: WorldPoint,

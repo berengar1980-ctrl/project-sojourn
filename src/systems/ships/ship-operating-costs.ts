@@ -1,9 +1,8 @@
-import { quoteRefuel, type FuelQuote } from '../../core/fuel-pricing';
+import { FUEL_DISTANCE_SCALE, quoteRefuel, type FuelQuote } from '../../core/fuel-pricing';
 export { FUEL_PRICE_PER_UNIT, quoteRefuel, type FuelQuote } from '../../core/fuel-pricing';
 import type { ShipDefinition } from '../../core/ship-types';
 import { getShipRoleProfile } from '../../data/ships/ship-role-profiles';
 import type { PlayerTradeService } from '../economy/player-trade-service';
-import { FUEL_DISTANCE_SCALE } from '../npcs/npc-sector-routing';
 import { getShipDefinition } from './ship-registry';
 
 export const REPAIR_PRICE_PER_HULL_HP = 100;

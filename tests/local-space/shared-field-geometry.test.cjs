@@ -69,6 +69,13 @@ assert.equal(clamp(-1, 0, 1), 0);
 assert.equal(clamp(0.5, 0, 1), 0.5);
 assert.equal(clamp(2, 0, 1), 1);
 
+const { pirateHomePort, piratePortFaction } = load('src/core/pirate-ports.ts');
+assert.equal(pirateHomePort('pirates'), 'blackjaw-outpost');
+assert.equal(pirateHomePort('pirates2'), 'gallows-anchor');
+assert.equal(pirateHomePort(undefined), 'blackjaw-outpost');
+assert.equal(piratePortFaction('gallows-anchor'), 'pirates2');
+assert.equal(piratePortFaction('haven'), null);
+
 const rotated = rotatePoint({ x: 10, y: 0 }, Math.PI / 2);
 assert(Math.abs(rotated.x) < 1e-10);
 assert.equal(rotated.y, 10);

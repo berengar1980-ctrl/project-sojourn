@@ -1,3 +1,4 @@
+import { pirateHomePort } from '../../core/pirate-ports';
 import { isSecurityDrone, SECURITY_DRONE_SHIP_ID } from '../../core/security-drone';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import type {
@@ -229,11 +230,7 @@ class SectorService implements NpcSectorService {
       npc.hullHp <= 0 ||
       (npcNeedsSafeReturn(npc) &&
         destinationId !==
-          (npc.pirate
-            ? npc.factionId === 'pirates2'
-              ? 'gallows-anchor'
-              : 'blackjaw-outpost'
-            : npc.homePortId)) ||
+          (npc.pirate ? pirateHomePort(npc.factionId) : npc.homePortId)) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;
@@ -273,7 +270,7 @@ class SectorService implements NpcSectorService {
     return target ? this.requestTravel(npc, target, 'Sicherheitspatrouille') : false;
   };
   private requestPirateHunt(npc: SectorNpcState): boolean {
-    const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+    const homeId = pirateHomePort(npc.factionId);
     const lootUnits = Object.values(npc.cargo).reduce(
       (sum, amount) => sum + Math.max(0, Math.floor(amount)),
       0
