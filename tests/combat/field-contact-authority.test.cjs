@@ -94,4 +94,24 @@ const other = { ...field };
 assert(!authority.hasFieldContactStep(other));
 authority.resetFieldContactStep(other);
 assert(authority.claimFieldContact(other, 'a', 'c'));
+// Repeated contested pairs in both scheduler orders must still have a single
+// contact claim per step. Every new step admits the same physical pair again.
+for (let index = 0; index < 20; index++) {
+  authority.resetFieldContactStep(field);
+  field.advanced = false;
+  c.hullHp = 3000;
+  a.position = { x: 1000, y: 1000 };
+  c.position = { x: 1010, y: 1000 };
+  authority.registerFieldCombatActors(field, first.fieldActors(), (id) => first.hasEscaped(id));
+  authority.registerFieldCombatActors(field, second.fieldActors(), (id) => second.hasEscaped(id));
+  const order = index % 2 === 0 ? [first, second] : [second, first];
+  for (const fleet of order) fleet.advance(0.01);
+  assert.equal(authority.claimFieldContact(field, 'a', 'c'), false);
+  assert(Math.abs(first.getSnapshot().elapsedSeconds - (index + 2) * 0.01) < 1e-9);
+  assert(Math.abs(second.getSnapshot().elapsedSeconds - (index + 2) * 0.01) < 1e-9);
+  for (const actor of [a, c]) {
+    assert(Number.isFinite(actor.position.x));
+    assert(Number.isFinite(actor.position.y));
+  }
+}
 console.log('PASS independent fleets share live contact authority and unordered pair claims');

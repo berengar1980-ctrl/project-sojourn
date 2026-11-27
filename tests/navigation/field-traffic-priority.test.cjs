@@ -51,4 +51,21 @@ assert(
   !traffic.trafficStepClear(a.position, { x: 170, y: 300 }, 0.1, [obstacle(b)], 50, a),
   'priority must not bypass immediate contact safety'
 );
+// Equal-priority arrivals need a total order, even when waits differ by fractions
+// of a second. Pairwise tolerance comparisons can otherwise produce cycles.
+const intent = (waitingSeconds) => ({ priority: 1, movable: true, waitingSeconds });
+const ranks = [
+  ['a', intent(0)],
+  ['b', intent(0.2)],
+  ['c', intent(0.4)],
+  ['d', intent(0.6)],
+];
+for (const [id1, first] of ranks) {
+  for (const [id2, second] of ranks) {
+    for (const [id3, third] of ranks) {
+      if (hasTrafficPriority(id1, first, id2, second) && hasTrafficPriority(id2, second, id3, third))
+        assert(hasTrafficPriority(id1, first, id3, third), 'traffic ranking must be transitive');
+    }
+  }
+}
 console.log('PASS deterministic priority, committed starboard escape and immediate contact safety');

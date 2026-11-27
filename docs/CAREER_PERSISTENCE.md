@@ -1593,3 +1593,8 @@ wie Miner und Berger; explizite Kampf-Rückkehrposen bleiben erhalten.
 Statische Festkörper werden nur innerhalb eines einzelnen Solver-Aufrufs
 räumlich indiziert. Nach jeder Korrektur wird erneut gesucht, wobei die
 bisherige Eingabereihenfolge erhalten bleibt. Keine persistenten Indizes.
+
+Die Verkehrsrangfolge nutzt flüchtige Wartezeit-Buckets, keine neuen
+Save-Felder. Save-/Load-Prüfung umfasst die vorhandenen Checkpoint-Tests
+und einen realen Browser-Neustart. Die Feld-Kontaktliste wird nach
+jedem Engagement-Schritt neu gebunden.

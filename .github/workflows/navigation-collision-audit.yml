@@ -1,4 +1,4 @@
-name: Navigation milestone economy audit (90 days)
+name: Navigation final economy audit (90 / 180 / 365 days)
 
 on:
   push:
@@ -19,8 +19,8 @@ jobs:
     timeout-minutes: 120
     env:
       SOJOURN_AUDIT_MODE: ${{ matrix.mode }}
-      SOJOURN_AUDIT_DAYS: '90'
-      SOJOURN_PROFILE: '0'
+      SOJOURN_AUDIT_DAYS: '365'
+      SOJOURN_PROFILE: '1'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -39,6 +39,51 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: navigation-audit-${{ matrix.mode }}-90d
+          name: navigation-audit-${{ matrix.mode }}-365d
           path: economy-audit.log
+          if-no-files-found: warn
+
+  performance-comparison:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ef2f3ac5f917cc61782079ad94c9e8ae56a43c4c
+          path: baseline
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: |
+          npm ci --prefix baseline
+          npm ci --prefix candidate
+      - name: Compare equivalent 90-day integrated workloads
+        env:
+          SOJOURN_AUDIT_MODE: integrated
+          SOJOURN_AUDIT_DAYS: '90'
+          SOJOURN_PROFILE: '1'
+        run: |
+          mkdir -p reports
+          for version in baseline candidate; do
+            (
+              cd "$version"
+              /usr/bin/time -p -o "../reports/$version-time.txt" \
+                npm run test:economy-horizons > "../reports/$version-audit.log" 2> "../reports/$version-progress.log"
+            )
+          done
+          for version in baseline candidate; do
+            echo "### $version (90 days)" >> "$GITHUB_STEP_SUMMARY"
+            cat "reports/$version-time.txt" >> "$GITHUB_STEP_SUMMARY"
+          done
+      - name: Upload timings and economic comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: navigation-performance-comparison
+          path: reports/
           if-no-files-found: warn

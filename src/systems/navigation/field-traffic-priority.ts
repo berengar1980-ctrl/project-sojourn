@@ -116,8 +116,9 @@ export function hasTrafficPriority(
   other: FieldTrafficIntent
 ): boolean {
   if (self.priority !== other.priority) return self.priority > other.priority;
-  if (Math.abs(self.waitingSeconds - other.waitingSeconds) > 0.25)
-    return self.waitingSeconds > other.waitingSeconds;
+  const selfWait = Math.floor(self.waitingSeconds * 4);
+  const otherWait = Math.floor(other.waitingSeconds * 4);
+  if (selfWait !== otherWait) return selfWait > otherWait;
   return selfId < otherId;
 }
 

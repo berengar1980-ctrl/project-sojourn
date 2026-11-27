@@ -2183,3 +2183,10 @@ Standalone-Fallbacks bleiben für ungebundene Aufrufer erhalten.
 werden ab 32 Einträgen räumlich vorausgewählt; erneute Abfragen nach
 Korrekturen erhalten Kontaktreihenfolge und Kettenkontakte. Native
 Kampfschiffe bleiben bei ihrer bisherigen dynamischen Kontaktauflösung.
+
+**Keine Statusänderung** der Feature-IDs. Abschlussprüfung: transitive
+Verkehrsrangfolge (Viertelsekunden-Buckets), Gegenverkehr und Vier-Wege-
+Kreuzung in beiden Tick-Reihenfolgen sowie wiederholte gefechtsübergreifende
+Kontakte. Standalone-Fallbacks und native Hull-/Ram-Physik bleiben bewusst
+getrennt von zivilen Schildkontakten. Der Index bleibt auf statische
+Hindernisse begrenzt; bewegte Objekte werden live geprüft.
