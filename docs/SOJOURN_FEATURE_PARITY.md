@@ -2178,3 +2178,8 @@ Kreis-Broadphase für Schild-, Trümmer- und Verkehrskontakte, gemeinsame
 Segmentprojektion und regulärer Feldzutritt einschließlich bewaffneter
 Schiffe. Ausfahrende Schiffe reservieren nur die kurze Torannäherung.
 Standalone-Fallbacks bleiben für ungebundene Aufrufer erhalten.
+
+**Keine Statusänderung** der Feature-IDs. Statische Kreis-Hindernisse
+werden ab 32 Einträgen räumlich vorausgewählt; erneute Abfragen nach
+Korrekturen erhalten Kontaktreihenfolge und Kettenkontakte. Native
+Kampfschiffe bleiben bei ihrer bisherigen dynamischen Kontaktauflösung.

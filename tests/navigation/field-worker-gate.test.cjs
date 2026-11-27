@@ -46,4 +46,24 @@ assert(
     { ...outbound, position: { x: gate.x + 500, y: gate.y } },
   ])
 );
+const { LocalPirateTraffic } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/npcs/npc-local-pirate-service.ts'
+);
+const traffic = new LocalPirateTraffic(2000, 1400, 19);
+const npc = {
+  id: 'patrol',
+  name: 'patrol',
+  job: 'patrol',
+  shipId: 'patrol-60m-variant-01',
+  hullHp: 100,
+  locationId: 'field',
+};
+traffic.reconcile([npc]);
+const spawn = traffic.body(npc.id).position;
+const waiting = new LocalPirateTraffic(2000, 1400, 19);
+waiting.reconcile([npc], undefined, () => [{ id: 'worker', position: spawn, radius: 50 }]);
+assert.equal(waiting.body(npc.id), undefined, 'armed traffic must wait outside an occupied entry');
+waiting.reconcile([npc], undefined, () => []);
+assert.deepEqual(waiting.body(npc.id).position, spawn);
 console.log('PASS field worker admission waits for a free existing gate');

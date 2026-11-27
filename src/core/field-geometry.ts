@@ -80,3 +80,44 @@ export function contactAxis(
 export function contactCandidate(dx: number, dy: number, reach: number): boolean {
   return !(dx * dx + dy * dy > reach * reach);
 }
+
+interface CircleCandidate {
+  readonly position: WorldPoint;
+  readonly radius: number;
+}
+
+/** Index immutable obstacle centers for one solver call, preserving original order.
+ * Requery after any positional correction; never cache moving ship candidates.
+ */
+export function circleCandidateQuery(
+  obstacles: readonly CircleCandidate[]
+): (center: WorldPoint, radius: number, from: number) => readonly number[] {
+  const all = obstacles.map((_, index) => index);
+  const cell = 256;
+  if (obstacles.length < 32) return (_center, _radius, from) => all.slice(from);
+  const bins = new Map<number, number[]>();
+  let maximumRadius = 0;
+  for (const [index, obstacle] of obstacles.entries()) {
+    if (!Number.isFinite(obstacle.position.x) || !Number.isFinite(obstacle.radius))
+      return (_center, _radius, from) => all.slice(from);
+    maximumRadius = Math.max(maximumRadius, obstacle.radius);
+    const key = Math.floor(obstacle.position.x / cell);
+    const bucket = bins.get(key) ?? [];
+    bucket.push(index);
+    bins.set(key, bucket);
+  }
+  return (center, radius, from) => {
+    const reach = radius + maximumRadius;
+    const low = Math.floor((center.x - reach) / cell);
+    const high = Math.floor((center.x + reach) / cell);
+    if (!Number.isFinite(low) || !Number.isFinite(high) || high - low > bins.size)
+      return all.slice(from);
+    const candidates: number[] = [];
+    for (let key = low; key <= high; key++) {
+      for (const index of bins.get(key) ?? []) {
+        if (index >= from) candidates.push(index);
+      }
+    }
+    return candidates.sort((a, b) => a - b);
+  };
+}

@@ -2,7 +2,12 @@ import { DRONE_SHIELD_RADIUS_METERS, isSecurityDrone } from '../../core/security
 import type { LocalShipState } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
-import { contactAxis, contactCandidate, rotatePoint as rotate } from '../../core/field-geometry';
+import {
+  circleCandidateQuery,
+  contactAxis,
+  contactCandidate,
+  rotatePoint as rotate,
+} from '../../core/field-geometry';
 import {
   shieldWorldCenter,
   shipShieldGeometry,
@@ -125,42 +130,59 @@ export interface ShipObstacleCollision {
   readonly closingDistance: number;
 }
 
+function resolveShieldObstacleContact(
+  body: LocalShieldShipBody,
+  obstacle: ShieldCircleObstacle,
+  center: WorldPoint
+): ShipObstacleCollision | null {
+  const dx = obstacle.position.x - center.x;
+  const dy = obstacle.position.y - center.y;
+  const maximum = maximumShieldRadius(body) + Math.max(0, obstacle.radius);
+  if (!contactCandidate(dx, dy, maximum + 0.000001)) return null;
+  const { distance, normal: towardObstacle } = contactAxis(dx, dy);
+  const shieldRadius = supportRadius(body, towardObstacle);
+  const required = shieldRadius + Math.max(0, obstacle.radius);
+  if (distance >= required) return null;
+  const overlap = required - distance + 0.5;
+  body.state.position = {
+    x: body.state.position.x - towardObstacle.x * overlap,
+    y: body.state.position.y - towardObstacle.y * overlap,
+  };
+  return {
+    shipId: body.id,
+    obstacleId: obstacle.id,
+    point: {
+      x: obstacle.position.x - towardObstacle.x * obstacle.radius,
+      y: obstacle.position.y - towardObstacle.y * obstacle.radius,
+    },
+    normal: { x: -towardObstacle.x, y: -towardObstacle.y },
+    closingDistance: overlap,
+  };
+}
+
 export function resolveShipShieldObstacleCollisions(
   bodies: readonly LocalShieldShipBody[],
   obstacles: readonly ShieldCircleObstacle[]
 ): readonly ShipObstacleCollision[] {
   const impacts: ShipObstacleCollision[] = [];
-
+  if (!bodies.length || !obstacles.length) return impacts;
+  const query = circleCandidateQuery(obstacles);
   for (const body of bodies) {
-    for (const obstacle of obstacles) {
+    let from = 0;
+    while (from < obstacles.length) {
       const center = shieldCenter(body);
-      const dx = obstacle.position.x - center.x;
-      const dy = obstacle.position.y - center.y;
-      const maximum = maximumShieldRadius(body) + Math.max(0, obstacle.radius);
-      if (!contactCandidate(dx, dy, maximum + 0.000001)) continue;
-      const { distance, normal: towardObstacle } = contactAxis(dx, dy);
-      const shieldRadius = supportRadius(body, towardObstacle);
-      const required = shieldRadius + Math.max(0, obstacle.radius);
-      if (distance >= required) continue;
-
-      const overlap = required - distance + 0.5;
-      body.state.position = {
-        x: body.state.position.x - towardObstacle.x * overlap,
-        y: body.state.position.y - towardObstacle.y * overlap,
-      };
-
-      impacts.push({
-        shipId: body.id,
-        obstacleId: obstacle.id,
-        point: {
-          x: obstacle.position.x - towardObstacle.x * obstacle.radius,
-          y: obstacle.position.y - towardObstacle.y * obstacle.radius,
-        },
-        normal: { x: -towardObstacle.x, y: -towardObstacle.y },
-        closingDistance: overlap,
-      });
+      const candidates = query(center, maximumShieldRadius(body) + 0.000001, from);
+      let moved = false;
+      for (const index of candidates) {
+        const hit = resolveShieldObstacleContact(body, obstacles[index]!, center);
+        if (!hit) continue;
+        impacts.push(hit);
+        from = index + 1;
+        moved = true;
+        break;
+      }
+      if (!moved) break;
     }
   }
-
   return impacts;
 }

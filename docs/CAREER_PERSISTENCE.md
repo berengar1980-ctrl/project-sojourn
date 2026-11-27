@@ -1589,3 +1589,7 @@ Sicherheitsdrohnen verwendet. Keine neuen Zustände oder Save-Felder.
 Gemeinsame Kreis-Broadphase, Segmentprojektion und Zutrittsprüfung sind
 zustandslos. Reguläre bewaffnete Feldankünfte nutzen dieselbe Zutrittsprüfung
 wie Miner und Berger; explizite Kampf-Rückkehrposen bleiben erhalten.
+
+Statische Festkörper werden nur innerhalb eines einzelnen Solver-Aufrufs
+räumlich indiziert. Nach jeder Korrektur wird erneut gesucht, wobei die
+bisherige Eingabereihenfolge erhalten bleibt. Keine persistenten Indizes.
