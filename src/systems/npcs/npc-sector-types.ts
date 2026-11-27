@@ -53,3 +53,15 @@ export interface NpcSectorService {
   tick(deltaSeconds: number): void;
   advanceDay(day: number): void;
 }
+
+/** Reuse identity indexes only while every roster entry still matches. */
+export function refreshNpcIndex(
+  npcs: readonly SectorNpcState[],
+  index: Map<string, SectorNpcState>
+): ReadonlyMap<string, SectorNpcState> {
+  if (index.size !== npcs.length || npcs.some((npc) => index.get(npc.id) !== npc)) {
+    index.clear();
+    for (const npc of npcs) index.set(npc.id, npc);
+  }
+  return index;
+}
