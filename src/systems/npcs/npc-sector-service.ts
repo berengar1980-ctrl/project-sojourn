@@ -42,7 +42,11 @@ import { serviceNpcAtLocation, serviceIdleNpc } from './npc-port-economy';
 import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
 import { FUEL_PRICE_PER_UNIT, quoteEmergencyRefuel } from '../ships/ship-operating-costs';
-import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-types';
+import {
+  refreshNpcIndex,
+  type NpcSectorService,
+  type NpcSectorServiceOptions,
+} from './npc-sector-types';
 export type { NpcSectorServiceOptions } from './npc-sector-types';
 export type { NpcSectorService } from './npc-sector-types';
 
@@ -56,20 +60,9 @@ class SectorService implements NpcSectorService {
   }
   private currentDay = 0;
   private readonly npcIndex = new Map<string, SectorNpcState>();
-
-  /** The roster is shared with population and restore services. Check membership
-   * before reuse, including replacements at the same array length. */
   indexById(): ReadonlyMap<string, SectorNpcState> {
-    if (
-      this.npcIndex.size !== this.npcs.length ||
-      this.npcs.some((npc) => this.npcIndex.get(npc.id) !== npc)
-    ) {
-      this.npcIndex.clear();
-      for (const npc of this.npcs) this.npcIndex.set(npc.id, npc);
-    }
-    return this.npcIndex;
+    return refreshNpcIndex(this.npcs, this.npcIndex);
   }
-
   advanceDay = (day: number): void => {
     this.currentDay = Math.max(this.currentDay, Math.floor(day));
     this.options.population?.advanceDay(this.currentDay);
