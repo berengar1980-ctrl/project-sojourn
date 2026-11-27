@@ -1,4 +1,4 @@
-name: Refactor 408 - integrated divergence audit
+name: Refactor 408 - integrated 90 day isolation
 
 on:
   pull_request:
@@ -15,23 +15,21 @@ jobs:
       fail-fast: false
       matrix:
         revision:
-          - { name: baseline, sha: da892c0c3b0f3eccf78dceaa9029a4eb01faeca2 }
+          - { name: baseline-repeat, sha: da892c0c3b0f3eccf78dceaa9029a4eb01faeca2 }
           - { name: p2, sha: f77ad031b6a55f80d2b741206bcabddda6cb2148 }
-          - { name: p3, sha: e5141840b8e6bcd0aae61e18d5178ced126b6b31 }
-          - { name: p4, sha: 4ff063a5c57591748d31d6bcd734ac8cc257c8da }
-          - { name: p5-fuel, sha: 1dcef4d94f3bdcaae5b76d98707e9c4444a7aeea }
-          - { name: p5-hull, sha: e4a002e2f72c3f5dc3d8283c413925dfa500f21f }
-          - { name: p6-sensors, sha: 13f5d025d3b9ca336074d0e6737b44ec1d9fc095 }
+          - { name: p3-rng, sha: 364c7451ea62223a83ff28e7eef9ee9084c12747 }
+          - { name: p3-obstacles, sha: 48677a465eab58fcabe84e11860c950754b3fa6b }
+          - { name: p3-angle, sha: 964a1126abb90b038e69b6887387dc3a4406acf7 }
+          - { name: p3-distance, sha: e5141840b8e6bcd0aae61e18d5178ced126b6b31 }
           - { name: p6-workers, sha: 780a8284c3821ab4708950414d7c37c580b09d99 }
           - { name: p6-factions, sha: 4a52d9f536fb3d523d7d1205ad8ac62b66e2be8f }
-          - { name: p7-damage, sha: bac82fd48a474227486efa5d6534302efd821d59 }
-          - { name: final, sha: 8b854699d7320cb19524a1e0ab9474051173e53d }
-    name: ${{ matrix.revision.name }} / integrated / 30d
+          - { name: final-repeat, sha: 8b854699d7320cb19524a1e0ab9474051173e53d }
+    name: ${{ matrix.revision.name }} / integrated / 90d
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
       SOJOURN_INTEGRATED_FIELDS: '1'
-      SOJOURN_LONGRUN_DAYS: '30'
+      SOJOURN_LONGRUN_DAYS: '90'
       SOJOURN_PROFILE: '0'
     steps:
       - uses: actions/checkout@v4
@@ -43,23 +41,15 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
-      - name: Trace daily reports without changing simulation logic
+      - name: Run original unchanged integrated audit
         shell: bash
         run: |
           git rev-parse HEAD
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('tests/economy/npc-economy-longrun.test.cjs')
-          s = p.read_text()
-          before = 'if ([90, 180, 365].includes(day + 1) && day + 1 !== days)'
-          assert s.count(before) == 1
-          p.write_text(s.replace(before, 'if (day + 1 !== days)'))
-          PY
           set -o pipefail
           node tests/economy/npc-economy-longrun.test.cjs | tee audit-report.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: trace-${{ matrix.revision.name }}
+          name: isolation-${{ matrix.revision.name }}
           path: audit-report.log
           if-no-files-found: warn
