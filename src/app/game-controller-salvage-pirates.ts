@@ -2,6 +2,7 @@ import { pirateHuntAllowedAt } from '../systems/npcs/npc-pirate-classes';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { LocalShieldShipBody } from '../systems/local-space/ship-shield-collision';
 import { getShipDefinition } from '../systems/ships';
+import { fieldTrafficProvider } from '../systems/navigation/field-traffic-obstacles';
 import { syncSalvagePhysicsContacts } from '../systems/salvage/salvage-container-motion';
 import { securityPirateApproach } from '../systems/operations/asteroid-security-drone';
 import { fieldInterceptRange, localArmedTraffic } from '../systems/npcs/npc-combat-ai';
@@ -111,7 +112,8 @@ function advanceDroneInterception(
   if (target && !busy) {
     pursuit = securityPirateApproach(drone.position, target.position);
   }
-  const obstacles = salvageDroneShipObstacles(
+  const obstacles = fieldTrafficProvider(field)?.('security-drone:' + field.sourceLocationId) ??
+    salvageDroneShipObstacles(
     [
       ...salvagers.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
       ...options.pirates
@@ -206,7 +208,8 @@ function advancePirateTraffic(
         : false;
     },
     options.playerCombat?.defender.id,
-    options.onFreighterExit
+    options.onFreighterExit,
+    fieldTrafficProvider(options.field)
   );
   resolveSalvageTrafficContacts(options, livePirates, combatants, rocks);
 }

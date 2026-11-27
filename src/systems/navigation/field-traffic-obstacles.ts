@@ -1,6 +1,7 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
+import { rotatePoint } from '../../core/field-geometry';
 import { shipShieldGeometry } from '../../core/ship-contact-geometry';
 import type { FieldRouteObstacle } from './field-ship-routing';
 
@@ -8,18 +9,23 @@ import type { FieldRouteObstacle } from './field-ship-routing';
 export function shipTrafficObstacle(
   id: string,
   ship: ShipDefinition,
-  pose: { readonly position: WorldPoint; readonly headingRadians: number }
+  pose: {
+    readonly position: WorldPoint;
+    readonly headingRadians: number;
+    readonly speed?: number;
+  }
 ): FieldRouteObstacle {
   const geometry = shipShieldGeometry(ship);
-  const cosine = Math.cos(pose.headingRadians);
-  const sine = Math.sin(pose.headingRadians);
+  const offset = rotatePoint(geometry.centerOffset, pose.headingRadians);
+  const velocity = rotatePoint({ x: pose.speed ?? 0, y: 0 }, pose.headingRadians);
   return {
     id,
     position: {
-      x: pose.position.x + geometry.centerOffset.x * cosine - geometry.centerOffset.y * sine,
-      y: pose.position.y + geometry.centerOffset.x * sine + geometry.centerOffset.y * cosine,
+      x: pose.position.x + offset.x,
+      y: pose.position.y + offset.y,
     },
     radius: Math.max(geometry.radiusX, geometry.radiusY),
+    velocity,
   };
 }
 
@@ -44,13 +50,17 @@ export function trafficRouteBodies(obstacles: readonly FieldRouteObstacle[]): Lo
   }));
 }
 
-type FieldTrafficProvider = (excludedId: string) => readonly FieldRouteObstacle[];
+export type FieldTrafficProvider = (excludedId: string) => readonly FieldRouteObstacle[];
 
 // Field instances are authoritative. Providers read live poses and never own physics.
 const providers = new WeakMap<object, FieldTrafficProvider>();
 
 export function bindFieldTraffic(field: object, provider: FieldTrafficProvider): void {
   providers.set(field, provider);
+}
+
+export function fieldTrafficProvider(field: object): FieldTrafficProvider | undefined {
+  return providers.get(field);
 }
 
 export function fieldTrafficObstacles(

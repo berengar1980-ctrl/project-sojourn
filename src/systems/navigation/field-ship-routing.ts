@@ -8,6 +8,7 @@ export interface FieldRouteObstacle {
   readonly id: string;
   readonly position: WorldPoint;
   readonly radius: number;
+  readonly velocity?: WorldPoint;
 }
 
 /** The active route is part of the ship's checkpoint, not hidden in a WeakMap. */

@@ -2,6 +2,7 @@ import {
   resolvePirateCollisions,
   separateCoincidentSpawn,
   type PirateRuntime,
+  standalonePirateObstacles,
 } from './npc-local-pirate-geometry';
 import { DRONE_PATROL_SPEED, isSecurityDrone } from '../../core/security-drone';
 import { resolveFieldDebrisContacts } from '../local-space/field-debris-contact';
@@ -25,7 +26,12 @@ import {
   rivalPirateGroups,
 } from './npc-combat-ai';
 import { edgePoint, hashId } from './npc-mining-targets';
-import { moveFieldShip, type FieldRouteShip } from '../navigation/field-ship-routing';
+import {
+  moveFieldShip,
+  type FieldRouteObstacle,
+  type FieldRouteShip,
+} from '../navigation/field-ship-routing';
+import type { FieldTrafficProvider } from '../navigation/field-traffic-obstacles';
 import {
   stageLocalPirateCheckpoint,
   type LocalPirateCheckpoint,
@@ -186,7 +192,8 @@ export class LocalPirateTraffic {
     asteroids: readonly LocalAsteroid[],
     onIntercept: (pirateId: string, targetId: string | 'player', position: WorldPoint) => boolean,
     combatantId?: string,
-    onFreighterExit?: (npc: SectorNpcState) => void
+    onFreighterExit?: (npc: SectorNpcState) => void,
+    getTrafficObstacles?: FieldTrafficProvider
   ): void {
     const dt = Math.max(0, Math.min(0.25, deltaSeconds));
     for (const pirate of this.ships.values()) {
@@ -196,12 +203,13 @@ export class LocalPirateTraffic {
       // pirate traffic must not move or re-engage the active combatant.
       if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
       separateCoincidentSpawn(pirate, this.ships);
+      const obstacles = getTrafficObstacles?.(pirate.npcId);
       if (npc.job === 'freighter' && !npc.pirate) {
-        this.advanceFreighter(pirate, npc, dt, asteroids, onFreighterExit);
+        this.advanceFreighter(pirate, npc, dt, asteroids, onFreighterExit, obstacles);
         continue;
       }
       if (!npc.pirate) {
-        this.advancePatrol(pirate, npcs, asteroids, dt, onIntercept);
+        this.advancePatrol(pirate, npcs, asteroids, dt, onIntercept, obstacles);
         continue;
       }
       const target = this.nearestPrey(pirate, npc, npcs, miners, player);
@@ -215,25 +223,9 @@ export class LocalPirateTraffic {
         continue;
       }
       const speed = 128 + (hashId(pirate.npcId) % 24);
-      // Moving traffic is also treated as solid route geometry. Never push
-      // the pirate to an arbitrary position after A* has chosen a safe course:
-      // that caused rapid back-and-forth jitter near working miners.
-      const traffic = [
-        ...[...this.ships.values()]
-          .filter((other) => other.npcId !== pirate.npcId)
-          .map((other) => ({
-            id: other.npcId,
-            position: other.position,
-            radius: 40,
-          })),
-        ...miners
-          .filter((miner) => miner.npcId !== target.id)
-          .map((miner) => ({
-            id: miner.npcId,
-            position: miner.position,
-            radius: 45,
-          })),
-      ];
+      const traffic = obstacles
+        ? obstacles.filter((other) => other.id !== target.id)
+        : standalonePirateObstacles(pirate.npcId, target.id, this.ships, miners);
       // Fly to interception distance. A worker can sit inside the navigation
       // clearance of its asteroid even while the approach corridor is clear.
       const standOff = Math.min(155, distance);
@@ -317,7 +309,8 @@ export class LocalPirateTraffic {
     npc: SectorNpcState,
     dt: number,
     asteroids: readonly LocalAsteroid[],
-    onFreighterExit?: (npc: SectorNpcState) => void
+    onFreighterExit?: (npc: SectorNpcState) => void,
+    traffic: readonly FieldRouteObstacle[] = []
   ) {
     if (
       moveFieldShip(
@@ -325,7 +318,7 @@ export class LocalPirateTraffic {
         seededLocalGate(this.width, this.height, this.seed),
         110,
         dt,
-        asteroids.filter((rock) => rock.routeBlocking),
+        [...asteroids.filter((rock) => rock.routeBlocking), ...traffic],
         65,
         'patrol'
       )
@@ -337,7 +330,8 @@ export class LocalPirateTraffic {
     npcs: readonly SectorNpcState[],
     rocks: readonly LocalAsteroid[],
     dt: number,
-    intercept: (attacker: string, target: string, position: WorldPoint) => boolean
+    intercept: (attacker: string, target: string, position: WorldPoint) => boolean,
+    traffic: readonly FieldRouteObstacle[] = []
   ): void {
     const drone = isSecurityDrone(ship.npcId);
     const hostiles = this.snapshot(
@@ -370,7 +364,10 @@ export class LocalPirateTraffic {
     }
     const pursuit =
       target && drone ? securityPirateApproach(ship.position, target.position) : target?.position;
-    const blockers = rocks.filter((rock) => rock.routeBlocking);
+    const blockers = [
+      ...rocks.filter((rock) => rock.routeBlocking),
+      ...traffic.filter((other) => other.id !== target?.npcId),
+    ];
     const bearing = Math.atan2(ship.position.y - this.height / 2, ship.position.x - this.width / 2);
     for (let step = 1; step <= 8; step++) {
       const angle = bearing + (step * Math.PI) / 4;

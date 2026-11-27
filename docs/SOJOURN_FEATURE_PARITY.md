@@ -2087,3 +2087,9 @@ nutzen eine gemeinsame feldbezogene Verkehrsabfrage. Bergungsarbeiter und
 die reguläre Spielernavigation beziehen anwesende Schiffe in die Routenplanung
 ein. Die Sondernavigation im Distress-Ereignis bleibt zunächst unverändert.
 Physische Körper, Kollisionsreaktionen und Save-Strukturen bleiben bestehen.
+
+**Keine Statusänderung** der bestehenden Feature-IDs. Die freie Feldfahrt
+von Frachtern, Piraten, Patrouillen und Sicherheitsdrohnen nutzt zusätzlich
+die vorhandenen realen Verkehrshindernisse. Geschwindigkeit wird aus der
+aktuellen Pose abgeleitet. Die native 1vs1-Engine und ihre Manöver bleiben
+unverändert. Ankunft, Abflug und Verkehrsdurchsatz sind zu validieren.

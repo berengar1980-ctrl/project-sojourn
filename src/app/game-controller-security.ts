@@ -12,6 +12,7 @@ import {
 } from './game-controller-drone-pirate-response';
 import type { DroneContact } from '../systems/operations/asteroid-security-drone';
 import type { FieldRouteObstacle } from '../systems/navigation/field-ship-routing';
+import { fieldTrafficProvider } from '../systems/navigation/field-traffic-obstacles';
 import type { AsteroidFieldRuntime } from '../systems/operations/asteroid-field-world';
 import { dispatchPatrolToReport } from './game-controller-law-enforcement';
 import { localMiningCombatArena } from './game-controller-combat';
@@ -173,7 +174,8 @@ export function tickFieldPirates(
     (npc) => {
       if (npc.homePortId)
         economy.sectorNpcs.requestTravel(npc, npc.homePortId, 'Rückflug zum Heimathafen');
-    }
+    },
+    fieldTrafficProvider(field.instance)
   );
   resolvePirateFieldShipContacts(context, field);
   recoverFieldDrone(context, field);
@@ -203,6 +205,8 @@ function securityDroneObstacleShips(
   runtime: AsteroidFieldRuntime,
   playerPosition: { readonly x: number; readonly y: number } | null
 ) {
+  const provider = fieldTrafficProvider(runtime.instance);
+  if (provider) return provider('security-drone:' + runtime.locationId);
   const ships = [
     ...runtime.miners.ships.map((ship) => ({
       id: ship.npcId,

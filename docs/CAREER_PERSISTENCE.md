@@ -1505,3 +1505,10 @@ Spielerbindung gelöst; die Hintergrundquelle bleibt bestehen. Die Provider
 sind aus dem Feldzustand ableitbar. Keine neuen Save-Daten. Die bisherige
 Wegpunkt-Persistenz bleibt unverändert; geänderte Bergungsrouten erfordern
 Wiederlade- und Langzeitregressionen.
+
+Frachter, Patrouillen, Piraten und Sicherheitsdrohnen beziehen ihre
+Navigationshindernisse aus der bestehenden Feldabfrage. Das Interzeptionsziel
+bleibt von der regulären Hindernisprüfung ausgenommen, wo es das Manöver
+erfordert. Die momentane Geschwindigkeit wird als abgeleitete Information
+übergeben; sie ist kein zusätzlicher gespeicherter Zustand. Keine Änderung
+an Kampfentscheidungen, Kollisionsreaktionen oder Integrationsintervallen.
