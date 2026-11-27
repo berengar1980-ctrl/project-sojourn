@@ -1547,3 +1547,8 @@ Autopilot behält seine Bewegungsintegration und den Routenindex.
 Begegnungsentscheidungen sind symmetrisch und nur per lebender Pose
 referenziert. Wartezeit und Ausweichplanung sind flüchtig; beim Laden
 werden sie aus den aktuellen Posen und Aufträgen neu aufgebaut.
+
+Neutrale Kampfhindernisse verwenden die aus Schiffsdefinitionen abgeleitete
+Schildgrundfläche und bisherige Hüllenkontaktregel. Native Kampfbeteiligte
+bleiben Eigentümer ihrer Positionen und taktischen Radien; doppelte
+Bystander-Einträge werden entfernt. Keine Änderung des Speicherformats.

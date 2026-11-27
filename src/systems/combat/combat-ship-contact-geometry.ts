@@ -1,10 +1,15 @@
 import { contactAxis } from '../../core/field-geometry';
-import { combatHullRadii, orientedHullRadius } from '../../core/ship-contact-geometry';
+import {
+  combatHullRadii,
+  orientedHullRadius,
+  type ShieldWorldGeometry,
+} from '../../core/ship-contact-geometry';
 import type { MutableCombatant } from './strategic-combat-types';
 
 interface ContactShip {
   readonly position: { readonly x: number; readonly y: number };
   readonly headingRadians?: number;
+  readonly hullShieldGeometry?: ShieldWorldGeometry;
   readonly setup?: Pick<MutableCombatant['setup'], 'shipId' | 'shieldGeometry'>;
 }
 
@@ -23,7 +28,10 @@ export interface ShipContact {
 function hullExtent(ship: ContactShip, nx: number, ny: number): number {
   const nominal = /([0-9]+(?:\.[0-9]+)?)m\b/i.exec(ship.setup?.shipId ?? '');
   const length = nominal ? Number(nominal[1]) : 60;
-  const { radiusX, radiusY } = combatHullRadii(length, ship.setup?.shieldGeometry);
+  const { radiusX, radiusY } = combatHullRadii(
+    length,
+    ship.hullShieldGeometry ?? ship.setup?.shieldGeometry
+  );
   return orientedHullRadius(nx, ny, ship.headingRadians ?? 0, radiusX, radiusY);
 }
 

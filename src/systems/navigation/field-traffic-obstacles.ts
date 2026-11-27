@@ -6,7 +6,7 @@ import {
   rotatePoint,
   squaredDistance,
 } from '../../core/field-geometry';
-import { shieldWorldCenter, shipShieldGeometry } from '../../core/ship-contact-geometry';
+import { shipShieldFootprint } from '../../core/ship-contact-geometry';
 import type { FieldRouteObstacle } from '../../core/field-traffic-types';
 import { trafficIntent, yieldsToTraffic } from './field-traffic-priority';
 import {
@@ -24,12 +24,10 @@ export function shipTrafficObstacle(
     readonly speed?: number;
   }
 ): FieldRouteObstacle {
-  const geometry = shipShieldGeometry(ship);
   const velocity = rotatePoint({ x: pose.speed ?? 0, y: 0 }, pose.headingRadians);
   return {
     id,
-    position: shieldWorldCenter(pose.position, pose.headingRadians, geometry),
-    radius: Math.max(geometry.radiusX, geometry.radiusY),
+    ...shipShieldFootprint(ship, pose.position, pose.headingRadians),
     velocity,
     intent: trafficIntent(pose, id),
   };

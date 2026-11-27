@@ -2129,3 +2129,8 @@ beidseitig festgelegt (Ausflugstatus, Wartezeit, stabile ID) und erst bei
 Trennung bzw. geändertem Auftrag wieder freigegeben. Ein neu versperrter
 Ausweichpunkt wird zunächst abgewartet; die unmittelbare Kontaktprüfung
 bleibt auch für vorfahrtsberechtigte Schiffe zwingend.
+
+**Keine Statusänderung** der Feature-IDs. Neutrale Schiffe im Gefechtsfeld
+verwenden dieselbe geometrische Navigationsgrundlage wie zivile Schiffe.
+Aktive Duellpartner behalten ihre bisherigen taktischen Radien und die
+Kontaktzuständigkeit; die Vorfahrtsregeln werden nicht in den Kampf übernommen.

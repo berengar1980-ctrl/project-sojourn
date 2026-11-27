@@ -68,3 +68,16 @@ export function orientedHullRadius(
   const localY = -nx * sin + ny * cos;
   return 1 / Math.hypot(localX / radiusX, localY / radiusY);
 }
+
+/** Conservative navigation envelope, distinct from actual oriented hull contact. */
+export function shipShieldFootprint(
+  ship: ShipDefinition,
+  position: WorldPoint,
+  headingRadians: number
+): { readonly position: WorldPoint; readonly radius: number } {
+  const geometry = shipShieldGeometry(ship);
+  return {
+    position: shieldWorldCenter(position, headingRadians, geometry),
+    radius: Math.max(geometry.radiusX, geometry.radiusY),
+  };
+}

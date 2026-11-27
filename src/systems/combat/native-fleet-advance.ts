@@ -1,6 +1,7 @@
 import type { NativeFleetBoarding } from './native-fleet-boarding';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { getShipDefinition } from '../ships';
+import { shipShieldFootprint } from '../../core/ship-contact-geometry';
 import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import { materializeNativeFleetWrecks } from './native-fleet-wrecks';
 import type {
@@ -51,6 +52,22 @@ function dynamicWreckBlockers(frame: NativeFleetFrame): StrategicCombatObstacle[
 
 function wreckObstacle(rock: CombatVisualAsteroid): StrategicCombatObstacle {
   return { id: rock.id, position: rock.position, radius: rock.collisionRadius ?? rock.radius };
+}
+
+/** Neutral traffic uses the same navigation footprint as the civilian field.
+ * Fleet combatants keep their native tactical radius and contact ownership.
+ */
+export function neutralFleetBlocker(
+  ship: StrategicCombatBystander,
+  radiusById: ReadonlyMap<string, number>
+): StrategicCombatObstacle {
+  const configured = radiusById.get(ship.id);
+  const definition = getShipDefinition(ship.shipId);
+  const footprint =
+    configured === undefined && definition
+      ? shipShieldFootprint(definition, ship.position, ship.headingRadians)
+      : { position: ship.position, radius: configured ?? 30 };
+  return { id: 'ship:' + ship.id, ...footprint };
 }
 
 function pairKey(first: string, second: string): string {
@@ -158,13 +175,9 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     bystanders,
   } = frame;
   stepWorld(frame);
-  const bystanderBlockers = bystanders.map((ship) => ({
-    id: 'ship:' + ship.id,
-    position: ship.position,
-    radius:
-      radiusById.get(ship.id) ??
-      Math.max(20, (getShipDefinition(ship.shipId)?.nominalLengthMeters ?? 60) * 0.5),
-  }));
+  const actorIds = new Set(actors.map((actor) => actor.setup.id));
+  const neutralBystanders = bystanders.filter((ship) => !actorIds.has(ship.id));
+  const bystanderBlockers = neutralBystanders.map((ship) => neutralFleetBlocker(ship, radiusById));
   const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
   for (const id of escaped) escapedRecords.add(id);
   frame.boarding.resolve(elapsed, true);
@@ -203,7 +216,7 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
         radius: radiusById.get(ship.id) ?? 35,
       }))
     );
-    service.setBystanders([...others, ...bystanders.filter((ship) => !duelIds.has(ship.id))]);
+    service.setBystanders([...others, ...neutralBystanders]);
     const rockCount = asteroidWorld.length;
     service.advance(dt, contacts);
     const state = service.getStatus();
