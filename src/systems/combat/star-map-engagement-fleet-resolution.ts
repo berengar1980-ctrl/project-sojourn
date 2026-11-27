@@ -224,6 +224,31 @@ function releaseFleetMembers(
   }
 }
 
+function releasePrimaryEnemy(
+  runtime: EngagementRuntime,
+  enemy: SectorNpcState,
+  boardingOpponent: SectorNpcState | null
+): void {
+  const primaryStillOwned =
+    !runtime.playerFleet || runtime.playerFleet.members.has(enemy.id);
+  if (enemy.hullHp <= 0) {
+    if (primaryStillOwned) {
+      runtime.options.sectorNpcs.recoverFromCombat(enemy, 'Kampfunfähig');
+    }
+    runtime.options.log(
+      'COMBAT > ' +
+        enemy.name.toUpperCase() +
+        ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
+    );
+  } else if (primaryStillOwned) {
+    const reason =
+      boardingOpponent === enemy
+        ? 'Besatzung nach Enterkampf besiegt'
+        : 'Nach Gefecht';
+    releaseNpc(runtime, runtime.playerFleet, enemy, reason);
+  }
+}
+
 export function finishPlayerCombat(
   runtime: EngagementRuntime,
   boardingOutcome?: BoardingOutcome
@@ -248,24 +273,7 @@ export function finishPlayerCombat(
   if (boardingOpponent || (runtime.playerEnemy.hullHp <= 0 && playerAlive)) {
     runtime.options.onPlayerVictory?.((boardingOpponent ?? runtime.playerEnemy).id);
   }
-  const primaryStillOwned =
-    !runtime.playerFleet || runtime.playerFleet.members.has(runtime.playerEnemy.id);
-  if (runtime.playerEnemy.hullHp <= 0) {
-    if (primaryStillOwned) {
-      runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Kampfunfähig');
-    }
-    runtime.options.log(
-      'COMBAT > ' +
-        runtime.playerEnemy.name.toUpperCase() +
-        ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
-    );
-  } else if (primaryStillOwned) {
-    const reason =
-      boardingOpponent === runtime.playerEnemy
-        ? 'Besatzung nach Enterkampf besiegt'
-        : 'Nach Gefecht';
-    releaseNpc(runtime, runtime.playerFleet, runtime.playerEnemy, reason);
-  }
+  releasePrimaryEnemy(runtime, runtime.playerEnemy, boardingOpponent);
   if (!playerAlive) {
     const recovery = runtime.options.navigation.recoverToNearestDock();
     const destination = recovery.currentLocationId ?? 'UNKNOWN';

@@ -123,9 +123,8 @@ for (const destroyedSide of ['attacker', 'defender']) {
   const recorded = new Set();
   materializeNativeFleetWrecks(Object.values(actors), wrecks, recorded, 1, 1);
   materializeNativeFleetWrecks(Object.values(actors), wrecks, recorded, 1, 2);
-  assert.deepEqual(
-    wrecks.map((wreck) => wreck.destroyedShipId).sort(),
-    ['boarder', 'target']
-  );
+  assert.deepEqual(wrecks.map((wreck) => wreck.destroyedShipId).sort(), ['boarder', 'target']);
 }
-console.log('PASS career fleet destruction handoff, replacement isolation and boarding wreck pairs');
+console.log(
+  'PASS career fleet destruction handoff, replacement isolation and boarding wreck pairs'
+);

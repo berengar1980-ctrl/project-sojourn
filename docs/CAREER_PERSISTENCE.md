@@ -1464,3 +1464,8 @@ innerhalb derselben synchronen Suche. Piraten wählen das nächste zulässige
 Ziel ohne Render-Snapshots und Sortierung, bei identischer Priorität im
 Gleichstand. Leere Kampfwracklisten erzeugen keinen temporären ID-Index.
 Die autoritative Reihenfolge der Feld-Ticks und Save-Daten bleiben unverändert.
+
+Der Kampagnenadapter übernimmt zerstörte Flottenakteure vor deren Ersatz.
+Die Rumpfkonvertierung erhält die Lebendig/Tot-Grenze der nativen Engine.
+Wracks nutzen bestehende persistierte Feldzustände und NPC-Ersatzgenerationen;
+die Duplikatprüfung ist sitzungsgebunden. Kein neues Save-Schema.

@@ -1,6 +1,10 @@
 {
   "version": 1,
   "modules": {
+    "src/systems/combat/campaign-combat-hull.ts": {
+      "mode": "derived",
+      "reason": "Pure hull conversion preserves the native alive/dead boundary in the existing checkpointed NPC state; owns no independent state."
+    },
     "src/systems/npcs/npc-sector-combat-recovery.ts": {
       "mode": "derived",
       "reason": "Recovery and drone replacement update the existing checkpointed sector NPC; this module owns no separate state."
