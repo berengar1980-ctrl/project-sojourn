@@ -34,8 +34,8 @@ function auditStrategic() {
     horizons
   );
   for (const summary of reports) {
-    const days = summary.days;
-    assert(summary, 'Missing economic audit report at day ' + days);
+    const reportDay = summary.days;
+    assert(summary, 'Missing economic audit report at day ' + reportDay);
     assert.equal(
       summary.report.reduce((sum, group) => sum + group.ships, 0),
       33
@@ -44,7 +44,7 @@ function auditStrategic() {
     assert(summary.report.every((group) => group.finalCredits >= 0));
     console.log(
       JSON.stringify({
-        days,
+        days: reportDay,
         combat: summary.combat,
         smuggling: summary.smuggling,
         population: summary.population,
