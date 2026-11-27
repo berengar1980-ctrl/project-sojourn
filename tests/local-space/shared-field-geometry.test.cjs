@@ -7,6 +7,7 @@ const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const {
   rotatePoint,
+  distance,
   pointToSegmentDistanceSquared,
   predictsClosingContact,
   clampedSegmentProjection,
@@ -19,6 +20,24 @@ const {
   orientedHullRadius,
   weightedContactSeparation,
 } = load('src/core/ship-contact-geometry.ts');
+
+assert.equal(distance({ x: 0, y: 0 }, { x: 3, y: 4 }), 5);
+const { stableHash } = load('src/core/stable-hash.ts');
+assert.equal(stableHash(''), 2166136261);
+assert.equal(stableHash('hello'), 1335831723);
+const { wholeQuantity, applyMarketPurchase, applyMarketSale } = load(
+  'src/core/economy-quantity.ts'
+);
+assert.equal(wholeQuantity(3.9), 3);
+assert.equal(wholeQuantity(Infinity), 0);
+assert.equal(wholeQuantity(-1), 0);
+const entry = { stock: 20, demand: 0.5 };
+applyMarketPurchase(entry, 5);
+assert.equal(entry.stock, 15);
+assert.equal(entry.demand, 0.501);
+applyMarketSale(entry, 5);
+assert.equal(entry.stock, 20);
+assert.equal(entry.demand, 0.5);
 
 const rotated = rotatePoint({ x: 10, y: 0 }, Math.PI / 2);
 assert(Math.abs(rotated.x) < 1e-10);

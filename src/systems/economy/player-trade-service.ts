@@ -1,3 +1,8 @@
+import {
+  applyMarketPurchase,
+  applyMarketSale,
+  wholeQuantity as finiteInteger,
+} from '../../core/economy-quantity';
 import type {
   EconomyResourceId,
   PlayerCargoLot,
@@ -12,11 +17,6 @@ import {
 
 // Without a working logistics station the vendor retains 25%; purchases pay no fee.
 const DEFAULT_SALE_FEE_RATE = 0.25;
-
-function finiteInteger(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.floor(value));
-}
 
 export function playerSaleUnitPrice(marketPrice: number, feeRate = DEFAULT_SALE_FEE_RATE): number {
   const price = Math.max(1, Number.isFinite(marketPrice) ? marketPrice : 1);
@@ -93,8 +93,7 @@ export function createPlayerTradeService(
       const cost = quantity * entry.price;
       const lot = player.cargo[resourceId];
       player.credits -= cost;
-      entry.stock -= quantity;
-      entry.demand = Math.min(1, entry.demand + quantity / 5000);
+      applyMarketPurchase(entry, quantity);
       player.cargo[resourceId] = {
         qty: (lot?.qty ?? 0) + quantity,
         totalCost: weightedCostAfterPurchase(lot, quantity, entry.price),
@@ -150,8 +149,7 @@ export function createPlayerTradeService(
       const realizedProfit = Math.round(revenue - averageCost * quantity);
 
       player.credits += revenue;
-      entry.stock += quantity;
-      entry.demand = Math.max(0, entry.demand - quantity / 5000);
+      applyMarketSale(entry, quantity);
       const visibleQuantity = Math.max(0, lot.qty - (lot.hiddenQty ?? 0));
       const hiddenSold = Math.max(0, quantity - visibleQuantity);
       if (hiddenSold > 0) lot.hiddenQty = Math.max(0, (lot.hiddenQty ?? 0) - hiddenSold);

@@ -1,9 +1,8 @@
 import type { NpcEconomyState } from '../../core/economy-types';
 
-export function quantity(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.floor(value));
-}
+import { wholeQuantity as quantity } from '../../core/economy-quantity';
+
+export { wholeQuantity as quantity } from '../../core/economy-quantity';
 
 export function npcCargoUsed(npc: NpcEconomyState): number {
   return Object.values(npc.cargo).reduce((sum, value) => sum + quantity(value), 0);

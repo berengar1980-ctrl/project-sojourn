@@ -1,3 +1,4 @@
+import { applyMarketPurchase, applyMarketSale } from '../../core/economy-quantity';
 import type {
   EconomyResourceDefinition,
   EconomyResourceId,
@@ -52,8 +53,7 @@ export function buyFromMarket(
   if (moved <= 0) return 0;
 
   npc.credits -= moved * entry.price;
-  entry.stock -= moved;
-  entry.demand = Math.min(1, entry.demand + moved / 5000);
+  applyMarketPurchase(entry, moved);
   npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + moved;
   markets.recalculate(locationId, resourceId);
   observeNpcMarket(npc, markets, locationId, day);
@@ -82,8 +82,7 @@ export function sellToMarket(
 
   const unitPrice = npcNetSaleUnitPrice(npc, entry.price);
   npc.credits += moved * unitPrice;
-  entry.stock += moved;
-  entry.demand = Math.max(0, entry.demand - moved / 5000);
+  applyMarketSale(entry, moved);
   const remaining = aboard - moved;
   if (remaining > 0) npc.cargo[resourceId] = remaining;
   else delete npc.cargo[resourceId];

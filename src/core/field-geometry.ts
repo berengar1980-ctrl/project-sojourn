@@ -9,6 +9,10 @@ export function rotatePoint(point: WorldPoint, angle: number): { x: number; y: n
   };
 }
 
+export function distance(a: WorldPoint, b: WorldPoint): number {
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
 export function squaredDistance(a: WorldPoint, b: WorldPoint): number {
   const x = a.x - b.x;
   const y = a.y - b.y;

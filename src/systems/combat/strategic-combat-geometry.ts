@@ -35,14 +35,7 @@ export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.max(minimum, Math.min(maximum, value));
 }
 
-export function hashSeed(value: string): number {
-  let hash = 2166136261;
-  for (const char of value) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { stableHash as hashSeed } from '../../core/stable-hash';
 
 export function createRng(seed: number): () => number {
   let state = seed >>> 0 || 1;
@@ -54,9 +47,7 @@ export function createRng(seed: number): () => number {
   };
 }
 
-export function distance(a: CombatPoint, b: CombatPoint): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
+export { distance } from '../../core/field-geometry';
 
 export function createCombatShieldGeometry(
   hardpoints: ShipHardpoints,

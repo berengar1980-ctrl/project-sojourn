@@ -1,3 +1,5 @@
+import { stableHash as hashId } from '../../core/stable-hash';
+import { distance } from '../../core/field-geometry';
 import type { FieldRouteState, FieldRouteObstacle } from '../navigation/field-ship-routing';
 import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
 import type {
@@ -105,14 +107,7 @@ export const MINING_CYCLE_SECONDS = 1.15;
 
 export const MINING_AMOUNT = 4;
 
-export function hashId(id: string): number {
-  let hash = 2166136261;
-  for (const char of id) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { stableHash as hashId } from '../../core/stable-hash';
 
 export function edgePoint(id: string, width: number, height: number, outside = false): WorldPoint {
   const hash = hashId(id);
@@ -123,10 +118,6 @@ export function edgePoint(id: string, width: number, height: number, outside = f
   if (side === 1) return { x: width - (outside ? -margin : margin), y: height * (0.15 + t * 0.7) };
   if (side === 2) return { x: width * (0.15 + t * 0.7), y: outside ? -margin : margin };
   return { x: width * (0.15 + t * 0.7), y: height - (outside ? -margin : margin) };
-}
-
-function distance(a: WorldPoint, b: WorldPoint): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
 }
 
 export function moveToward(

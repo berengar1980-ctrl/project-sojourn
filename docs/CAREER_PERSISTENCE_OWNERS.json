@@ -31,7 +31,7 @@
     },
     "src/systems/navigation/field-ship-routing.ts": {
       "mode": "transient",
-      "reason": "Shared non-persistent NPC and drone field-route waypoints live in a WeakMap and are reconstructed from checkpointed positions and obstacles after loading."
+      "reason": "Route waypoints are held on the existing ship routeState; no independent route cache is owned by this module. Persistence follows the owning ship checkpoint."
     },
     "src/systems/economy/career-economy-session.ts": {
       "mode": "persisted",

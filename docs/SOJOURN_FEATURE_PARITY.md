@@ -2195,3 +2195,8 @@ Hindernisse begrenzt; bewegte Objekte werden live geprüft.
 Schiffe verhindern nicht mehr den Routenstart. Stehende Arbeitsschiffe
 bleiben Hindernisse; alle beweglichen Schiffe bleiben in der unmittelbaren
 Kontaktprüfung. Der unveränderte Kreuzungs-Stresstest ist maßgeblich.
+
+**Keine Statusänderung** der Feature-IDs. Gemeinsame Distanz- und Hashfunktionen,
+strukturelle Hindernisse für die Routenplanung und gemeinsame Marktbestands-
+und Nachfragebuchungen für Spieler und NPCs. Gebühren, Frachtbuchhaltung,
+Routenstrategien und bestehende Zufallsfolgen bleiben unverändert.
