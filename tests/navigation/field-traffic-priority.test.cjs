@@ -48,14 +48,7 @@ moveFieldShip(b, { x: 10, y: 300 }, 60, 0.1, [obstacle(a)], 50);
 assert(Math.hypot(b.position.x - before.x, b.position.y - before.y) <= 6.001);
 assert(b.position.y < before.y, 'escape is integrated, not teleported');
 assert(
-  !traffic.trafficStepClear(
-    a.position,
-    { x: 170, y: 300 },
-    0.1,
-    [obstacle(b)],
-    50,
-    a
-  ),
+  !traffic.trafficStepClear(a.position, { x: 170, y: 300 }, 0.1, [obstacle(b)], 50, a),
   'priority must not bypass immediate contact safety'
 );
 console.log('PASS deterministic priority, committed starboard escape and immediate contact safety');

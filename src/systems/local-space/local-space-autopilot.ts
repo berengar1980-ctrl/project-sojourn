@@ -81,7 +81,11 @@ function autopilotEscape(
   if (!traffic) return undefined;
   beginTrafficLeg(ship, target, 'player');
   if (!traffic.solids || !needsTrafficEscape(ship)) return undefined;
-  return trafficEscapeWaypoint(ship, [...traffic.solids(), ...traffic.obstacles], traffic.clearance);
+  return trafficEscapeWaypoint(
+    ship,
+    [...traffic.solids(), ...traffic.obstacles],
+    traffic.clearance
+  );
 }
 
 export function advanceAutopilotRoute(

@@ -139,7 +139,8 @@ export function yieldsToTraffic(
     }
     return true;
   }
-  if (!owner) return !hasTrafficPriority(entry.id, trafficIntent(pose, entry.id), obstacle.id, other);
+  if (!owner)
+    return !hasTrafficPriority(entry.id, trafficIntent(pose, entry.id), obstacle.id, other);
   const winner = entry.encounters.get(owner) ?? owner.encounters.get(entry);
   if (winner) return winner !== entry.id;
   const selected = hasTrafficPriority(entry.id, trafficIntent(pose, entry.id), obstacle.id, other)
