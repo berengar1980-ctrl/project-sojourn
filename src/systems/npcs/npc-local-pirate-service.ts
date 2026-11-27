@@ -104,34 +104,39 @@ export class LocalPirateTraffic {
   }
 
   snapshot(npcs: readonly SectorNpcState[]): LocalPirateContact[] {
+    if (this.ships.size === 0) return [];
     const byId = new Map(npcs.map((npc) => [npc.id, npc]));
-    return [...this.ships.values()].flatMap((ship) => {
+    const contacts: LocalPirateContact[] = [];
+    for (const ship of this.ships.values()) {
       const npc = byId.get(ship.npcId);
-      if (!npc) return [];
-      return [
-        {
-          npcId: npc.id,
-          pirate: npc.pirate === true,
-          ...(npc.pirate && {
-            pirateMark:
-              npc.pirateMark ?? (npc.factionId === 'pirates2' ? 'black-tide' : 'broken-spear'),
-          }),
-          shipId: npc.shipId,
-          name: npc.name,
-          position: { ...ship.position },
-          headingRadians: ship.headingRadians,
-          speed: ship.speed,
-        },
-      ];
-    });
+      if (!npc) continue;
+      contacts.push({
+        npcId: npc.id,
+        pirate: npc.pirate === true,
+        ...(npc.pirate && {
+          pirateMark:
+            npc.pirateMark ?? (npc.factionId === 'pirates2' ? 'black-tide' : 'broken-spear'),
+        }),
+        shipId: npc.shipId,
+        name: npc.name,
+        position: { ...ship.position },
+        headingRadians: ship.headingRadians,
+        speed: ship.speed,
+      });
+    }
+    return contacts;
   }
 
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set<string>();
-    for (const npc of pirates) if (availableLocalTraffic(npc)) active.add(npc.id);
+    const byId = new Map<string, SectorNpcState>();
+    for (const npc of pirates) {
+      if (!byId.has(npc.id)) byId.set(npc.id, npc);
+      if (availableLocalTraffic(npc)) active.add(npc.id);
+    }
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
-      const npc = pirates.find((candidate) => candidate.id === id);
+      const npc = byId.get(id);
       if (keepCombatReturn(id, npc)) {
         this.combatReturnPositions.set(id, { ...ship.position });
       } else {
@@ -142,7 +147,7 @@ export class LocalPirateTraffic {
     for (const id of active) {
       const existing = this.ships.get(id);
       if (existing) {
-        const npc = pirates.find((candidate) => candidate.id === id);
+        const npc = byId.get(id);
         // A local battle no longer deletes its ship. Release the interception
         // latch once the NPC has actually recovered from that engagement.
         if (npc && !npc.combatMovement && !npc.combatRecoverySeconds) {
@@ -150,7 +155,7 @@ export class LocalPirateTraffic {
         }
         continue;
       }
-      const npc = pirates.find((entry) => entry.id === id);
+      const npc = byId.get(id);
       const spawnKey = isSecurityDrone(id) ? id + ':' + (npc?.combatDefeats ?? 0) : id;
       this.ships.set(id, {
         npcId: id,
