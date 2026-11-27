@@ -1585,3 +1585,7 @@ aufgelöst. Unveränderte Schrittgrenzen und Speicherzuständigkeiten.
 Miner und bewaffnete Feldschiffe nutzen denselben definitionsgebundenen
 Trümmerkontakt-Adapter. Der gemeinsame Festkörperfilter wird auch von
 Sicherheitsdrohnen verwendet. Keine neuen Zustände oder Save-Felder.
+
+Gemeinsame Kreis-Broadphase, Segmentprojektion und Zutrittsprüfung sind
+zustandslos. Reguläre bewaffnete Feldankünfte nutzen dieselbe Zutrittsprüfung
+wie Miner und Berger; explizite Kampf-Rückkehrposen bleiben erhalten.

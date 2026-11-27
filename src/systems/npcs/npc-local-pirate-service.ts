@@ -9,6 +9,7 @@ import { resolveShipFieldDebrisContacts } from '../local-space/field-debris-cont
 import { solidFieldRockObstacles } from '../local-space/local-asteroid-footprint';
 import { droneSeesTarget, securityPirateApproach } from '../operations/asteroid-security-drone';
 import { seededLocalGate } from '../../core/local-space-exit';
+import { fieldGateAvailable } from './npc-local-field-arrivals';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
@@ -141,7 +142,11 @@ export class LocalPirateTraffic {
     return contacts;
   }
 
-  reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
+  reconcile(
+    pirates: readonly SectorNpcState[],
+    _combatantId?: string,
+    provider?: FieldTrafficProvider
+  ): void {
     const active = new Set<string>();
     const byId = new Map<string, SectorNpcState>();
     for (const npc of pirates) {
@@ -171,11 +176,18 @@ export class LocalPirateTraffic {
       }
       const npc = byId.get(id);
       const spawnKey = isSecurityDrone(id) ? id + ':' + (npc?.combatDefeats ?? 0) : id;
+      const returning = this.combatReturnPositions.get(id);
+      const position = returning ?? edgePoint(spawnKey + ':' + this.seed, this.width, this.height);
+      if (
+        npc &&
+        !returning &&
+        !npc.combatMovement &&
+        !fieldGateAvailable(id, npc.shipId, position, [], provider)
+      )
+        continue;
       this.ships.set(id, {
         npcId: id,
-        position:
-          this.combatReturnPositions.get(id) ??
-          edgePoint(spawnKey + ':' + this.seed, this.width, this.height),
+        position,
         headingRadians: 0,
         speed: 0,
         awaitingCombat: false,
@@ -202,7 +214,7 @@ export class LocalPirateTraffic {
       // NPC-versus-NPC combat and recovery retain their field contact; normal
       // pirate traffic must not move or re-engage the active combatant.
       if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
-      separateCoincidentSpawn(pirate, this.ships);
+      if (!getTrafficObstacles) separateCoincidentSpawn(pirate, this.ships);
       const obstacles = getTrafficObstacles?.(pirate.npcId);
       if (npc.job === 'freighter' && !npc.pirate) {
         this.advanceFreighter(pirate, npc, dt, asteroids, onFreighterExit, obstacles);
@@ -256,10 +268,6 @@ export class LocalPirateTraffic {
         this.width,
         this.height
       );
-      pirate.position = {
-        x: Math.max(0, Math.min(this.width, pirate.position.x)),
-        y: Math.max(0, Math.min(this.height, pirate.position.y)),
-      };
     }
   }
 

@@ -2172,3 +2172,9 @@ vermeiden den wiederholten Aufbau aller Actor-Maps.
 Festkörperabfragen verwenden gemeinsame Geometrie- und Radiusfunktionen.
 Drohnen behalten ihren kompakten Radius, Kampf-Konturphysik und
 Rammregeln bleiben unverändert.
+
+**Keine Statusänderung** der Feature-IDs. Gemeinsame konservative
+Kreis-Broadphase für Schild-, Trümmer- und Verkehrskontakte, gemeinsame
+Segmentprojektion und regulärer Feldzutritt einschließlich bewaffneter
+Schiffe. Ausfahrende Schiffe reservieren nur die kurze Torannäherung.
+Standalone-Fallbacks bleiben für ungebundene Aufrufer erhalten.

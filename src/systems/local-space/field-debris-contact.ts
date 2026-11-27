@@ -1,7 +1,7 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { ShipDefinition } from '../../core/ship-types';
-import { contactAxis, rotatePoint } from '../../core/field-geometry';
+import { contactAxis, contactCandidate, rotatePoint } from '../../core/field-geometry';
 import { shipShieldFootprint } from '../../core/ship-contact-geometry';
 import { localAsteroidContactRadius } from './local-asteroid-footprint';
 
@@ -21,6 +21,7 @@ export function resolveFieldDebrisContacts(
     const radius = Math.max(0, shieldRadius) + localAsteroidContactRadius(rock);
     const dx = rock.position.x - position.x;
     const dy = rock.position.y - position.y;
+    if (!contactCandidate(dx, dy, radius)) continue;
     const { distance, normal } = contactAxis(dx, dy);
     if (distance >= radius) continue;
     const { x: nx, y: ny } = normal;

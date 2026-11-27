@@ -233,7 +233,7 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
       npc.hullHp > 0 &&
       (!location || pirateHuntAllowedAt(npc, location))
   );
-  options.pirates.reconcile(livePirates);
+  options.pirates.reconcile(livePirates, undefined, fieldTrafficProvider(options.field));
   const combatants = mirrorSalvageDuels(options);
   const ships = options.pirates.snapshot(options.sectorNpcs);
   advanceDroneInterception(

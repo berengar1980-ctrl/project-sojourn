@@ -75,3 +75,8 @@ export function contactAxis(
   const normal = distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
   return { distance, normal };
 }
+
+/** Conservative circular broadphase; callers retain their own margin and narrow phase. */
+export function contactCandidate(dx: number, dy: number, reach: number): boolean {
+  return !(dx * dx + dy * dy > reach * reach);
+}

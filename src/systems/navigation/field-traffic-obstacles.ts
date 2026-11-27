@@ -2,6 +2,7 @@ import type { LocalAsteroid } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import {
+  contactCandidate,
   pointToSegmentDistanceSquared,
   rotatePoint,
   squaredDistance,
@@ -114,7 +115,7 @@ function trafficContactAllowsStep(
     radius +
     Math.hypot(displacement.x, displacement.y) * (horizon / seconds) +
     Math.hypot(velocity.x, velocity.y) * horizon;
-  if (start.x * start.x + start.y * start.y > reach * reach) return true;
+  if (!contactCandidate(start.x, start.y, reach)) return true;
   if (!relativeMotionClear(start, displacement, velocity, seconds, radius)) return false;
   if (!yieldRequired || (velocity.x === 0 && velocity.y === 0)) return true;
   const projected = {

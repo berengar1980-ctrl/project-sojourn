@@ -1,6 +1,6 @@
 import type { FieldTrafficIntent, FieldRouteObstacle } from '../../core/field-traffic-types';
 import type { WorldPoint } from '../../core/world-types';
-import { squaredDistance } from '../../core/field-geometry';
+import { clampedSegmentProjection, squaredDistance } from '../../core/field-geometry';
 
 interface TrafficPose {
   readonly npcId?: string;
@@ -184,7 +184,7 @@ function escapePathClear(
       return ax * dx + ay * dy >= 0 && squaredDistance(end, obstacle.position) > initial;
     }
     const length = dx * dx + dy * dy;
-    const t = Math.max(0, Math.min(1, -(ax * dx + ay * dy) / Math.max(1, length)));
+    const t = clampedSegmentProjection(obstacle.position, start, dx, dy, Math.max(1, length));
     return (ax + dx * t) ** 2 + (ay + dy * t) ** 2 >= radius * radius;
   });
 }

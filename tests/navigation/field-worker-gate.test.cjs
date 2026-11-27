@@ -29,4 +29,21 @@ assert(
     { id: 'player', position: gate, radius: 50 },
   ])
 );
+const outbound = {
+  id: 'leaving',
+  position: { x: gate.x + 140, y: gate.y },
+  radius: 40,
+  intent: { priority: 2, movable: true, waitingSeconds: 0, direction: { x: -1, y: 0 } },
+};
+assert(!workerGateAvailable('entering', shipId, gate, [], () => [outbound]));
+assert(
+  workerGateAvailable('entering', shipId, gate, [], () => [
+    { ...outbound, intent: { ...outbound.intent, direction: { x: 1, y: 0 } } },
+  ])
+);
+assert(
+  workerGateAvailable('entering', shipId, gate, [], () => [
+    { ...outbound, position: { x: gate.x + 500, y: gate.y } },
+  ])
+);
 console.log('PASS field worker admission waits for a free existing gate');

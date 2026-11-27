@@ -100,7 +100,7 @@ export function tickFieldPirates(
   );
   // Keep the active duel defender rendered, even when strategic combat marks
   // it as combatMovement. Other combatants still use normal sector transitions.
-  traffic.reconcile(pirates, combatantId);
+  traffic.reconcile(pirates, combatantId, fieldTrafficProvider(field.instance));
   traffic.tick(
     seconds,
     pirates,
