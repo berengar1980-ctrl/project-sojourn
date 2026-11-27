@@ -85,4 +85,32 @@ assert.deepEqual(
 assert.deepEqual(debris.position, beforeRock, 'field solver must not integrate a native fighter');
 assert.equal(miner.speed, 46, 'duel flight speed is retained for visual thrusters');
 
+const { resolveShipFieldDebrisContacts, resolveFieldDebrisContacts } = load(
+  'src/systems/local-space/field-debris-contact.ts'
+);
+const { shipShieldFootprint } = load('src/core/ship-contact-geometry.ts');
+const { solidFieldRockObstacles } = load('src/systems/local-space/local-asteroid-footprint.ts');
+const pose = { position: { x: 150, y: 200 }, headingRadians: Math.PI / 2, speed: -40 };
+const footprint = shipShieldFootprint(definition, pose.position, pose.headingRadians);
+const fragment = {
+  ...debris,
+  position: { x: footprint.position.x, y: footprint.position.y - 10 },
+  physics: { velocity: { x: 0, y: 0 }, angularVelocity: 0 },
+};
+const reference = structuredClone(fragment);
+assert.equal(resolveShipFieldDebrisContacts(definition, pose, [fragment]), 1);
+assert.equal(
+  resolveFieldDebrisContacts(
+    footprint.position,
+    { x: Math.cos(pose.headingRadians) * pose.speed, y: Math.sin(pose.headingRadians) * pose.speed },
+    [reference],
+    footprint.radius
+  ),
+  1
+);
+assert.deepEqual(fragment, reference);
+assert.deepEqual(solidFieldRockObstacles([fragment, { ...ore, collisionRadius: 23 }]), [
+  { id: ore.id, position: ore.position, radius: 23 },
+]);
+
 console.log('PASS miners push light debris without route deadlock or double combat motion');

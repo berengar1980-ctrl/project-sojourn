@@ -1,6 +1,7 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { contactAxis } from '../../core/field-geometry';
+import { solidFieldRockObstacles } from '../local-space/local-asteroid-footprint';
 import type { FieldRouteObstacle } from '../navigation/field-ship-routing';
 import { DRONE_SHIELD_RADIUS_METERS } from './security-drone-debris-contact';
 
@@ -17,16 +18,7 @@ export function resolveSecurityDroneSolidContacts(
   let x = position.x;
   let y = position.y;
   let contacts = 0;
-  const obstacles: readonly FieldRouteObstacle[] = [
-    ...asteroids
-      .filter((rock) => rock.routeBlocking)
-      .map((rock) => ({
-        id: rock.id,
-        position: rock.position,
-        radius: rock.collisionRadius ?? rock.radius,
-      })),
-    ...ships,
-  ];
+  const obstacles = [...solidFieldRockObstacles(asteroids), ...ships];
   // Two passes resolve a drone wedged between a moving ship and a rock.
   for (let pass = 0; pass < 2; pass += 1) {
     for (const obstacle of obstacles) {

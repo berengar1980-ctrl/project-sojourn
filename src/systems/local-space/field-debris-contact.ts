@@ -1,5 +1,9 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { ShipDefinition } from '../../core/ship-types';
+import { contactAxis, rotatePoint } from '../../core/field-geometry';
+import { shipShieldFootprint } from '../../core/ship-contact-geometry';
+import { localAsteroidContactRadius } from './local-asteroid-footprint';
 
 /** Shared light-debris response for noncombat field traffic.
  * Large route-blocking rocks remain solid obstacles; small drifting fragments
@@ -14,13 +18,12 @@ export function resolveFieldDebrisContacts(
   let contacts = 0;
   for (const rock of asteroids) {
     if (rock.kind !== 'debris' || rock.routeBlocking || !rock.physics) continue;
-    const radius = Math.max(0, shieldRadius) + (rock.collisionRadius ?? rock.radius);
+    const radius = Math.max(0, shieldRadius) + localAsteroidContactRadius(rock);
     const dx = rock.position.x - position.x;
     const dy = rock.position.y - position.y;
-    const distance = Math.hypot(dx, dy);
+    const { distance, normal } = contactAxis(dx, dy);
     if (distance >= radius) continue;
-    const nx = distance > 0.001 ? dx / distance : 1;
-    const ny = distance > 0.001 ? dy / distance : 0;
+    const { x: nx, y: ny } = normal;
     const penetration = radius - distance + 0.5;
     rock.position = {
       x: rock.position.x + nx * penetration,
@@ -37,4 +40,15 @@ export function resolveFieldDebrisContacts(
     contacts++;
   }
   return contacts;
+}
+
+/** Use the same definition-scoped shield footprint for all free-flying ships. */
+export function resolveShipFieldDebrisContacts(
+  ship: ShipDefinition,
+  pose: { readonly position: WorldPoint; readonly headingRadians: number; readonly speed: number },
+  rocks: readonly LocalAsteroid[]
+): number {
+  const footprint = shipShieldFootprint(ship, pose.position, pose.headingRadians);
+  const velocity = rotatePoint({ x: pose.speed, y: 0 }, pose.headingRadians);
+  return resolveFieldDebrisContacts(footprint.position, velocity, rocks, footprint.radius);
 }

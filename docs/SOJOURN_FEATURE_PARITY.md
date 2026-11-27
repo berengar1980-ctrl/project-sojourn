@@ -2167,3 +2167,8 @@ Snapshot-Aktualisierung und getrennte Feldinstanzen.
 **Keine Statusänderung** der Feature-IDs. Flotten-Hindernisabfragen
 sind aus der Schrittkoordination extrahiert; Einzel-ID-Kontaktabfragen
 vermeiden den wiederholten Aufbau aller Actor-Maps.
+
+**Keine Statusänderung** der Feature-IDs. Trümmerimpulse und kreisförmige
+Festkörperabfragen verwenden gemeinsame Geometrie- und Radiusfunktionen.
+Drohnen behalten ihren kompakten Radius, Kampf-Konturphysik und
+Rammregeln bleiben unverändert.

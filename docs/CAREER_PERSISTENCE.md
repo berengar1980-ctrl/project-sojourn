@@ -1581,3 +1581,7 @@ Zerstörte oder entkommene native Actor-IDs sperren veraltete Feldspiegel.
 Die native Flotten-Schrittfunktion delegiert die Hindernislisten an eine
 separate Abfrage. Einzelne Kontaktpartner werden ohne temporäre Vollkarte
 aufgelöst. Unveränderte Schrittgrenzen und Speicherzuständigkeiten.
+
+Miner und bewaffnete Feldschiffe nutzen denselben definitionsgebundenen
+Trümmerkontakt-Adapter. Der gemeinsame Festkörperfilter wird auch von
+Sicherheitsdrohnen verwendet. Keine neuen Zustände oder Save-Felder.
