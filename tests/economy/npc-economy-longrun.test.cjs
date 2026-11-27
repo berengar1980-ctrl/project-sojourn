@@ -352,10 +352,11 @@ for (let day = 0; day < days; day += 1) {
     tickFields(0.25);
   }
   validateDay(day);
-  if (profiling && ((day + 1) % 5 === 0 || day === 0 || day + 1 === days)) {
-    printProgress(day + 1, days, setupMs);
+  if ((day + 1) % 5 === 0 || day === 0 || day + 1 === days) {
+    if (profiling) printProgress(day + 1, days, setupMs);
+    else if (integrated) console.error('Integrated simulation day ' + (day + 1) + '/' + days);
   }
-  if (integrated && [90, 180, 365].includes(day + 1) && day + 1 !== days) {
+  if ([90, 180, 365].includes(day + 1) && day + 1 !== days) {
     printReport(day + 1);
   }
 }
