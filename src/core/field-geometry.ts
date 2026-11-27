@@ -50,3 +50,13 @@ export function predictsClosingContact(
   if (time <= 0 || time >= horizon) return false;
   return Math.hypot(dx + vx * time, dy + vy * time) < warningRange;
 }
+
+/** Common contact axis; coincident centers use the existing positive-x normal. */
+export function contactAxis(dx: number, dy: number): {
+  readonly distance: number;
+  readonly normal: WorldPoint;
+} {
+  const distance = Math.hypot(dx, dy);
+  const normal = distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
+  return { distance, normal };
+}

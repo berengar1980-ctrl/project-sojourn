@@ -1,6 +1,6 @@
 import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
 import { rotatePoint as rotate } from '../../core/field-geometry';
-import type { ShieldWorldGeometry } from '../../core/ship-contact-geometry';
+import { shieldWorldCenter, type ShieldWorldGeometry } from '../../core/ship-contact-geometry';
 import type { WorldPoint } from '../../core/world-types';
 import { applyImpulseAtPoint, pointVelocity, rotationalMassTerm } from './local-space-physics';
 import { localAsteroidContactRadius } from './local-asteroid-footprint';
@@ -26,14 +26,6 @@ function dot(a: WorldPoint, b: WorldPoint): number {
 function normalized(point: WorldPoint): WorldPoint {
   const length = Math.max(0.001, Math.hypot(point.x, point.y));
   return { x: point.x / length, y: point.y / length };
-}
-
-function shieldCenter(ship: LocalShipState, shield: ShieldWorldGeometry): WorldPoint {
-  const offset = rotate(shield.centerOffset, ship.headingRadians);
-  return {
-    x: ship.position.x + offset.x,
-    y: ship.position.y + offset.y,
-  };
 }
 
 function separationVector(
@@ -69,7 +61,7 @@ export function resolveShieldCollisions(
   asteroids: readonly LocalAsteroid[],
   shield: ShieldWorldGeometry
 ): ShieldCollisionImpact[] {
-  const center = shieldCenter(ship, shield);
+  const center = shieldWorldCenter(ship.position, ship.headingRadians, shield);
   const impacts: ShieldCollisionImpact[] = [];
 
   for (const asteroid of asteroids) {

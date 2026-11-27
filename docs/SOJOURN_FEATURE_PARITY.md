@@ -2093,3 +2093,7 @@ von Frachtern, Piraten, Patrouillen und Sicherheitsdrohnen nutzt zusätzlich
 die vorhandenen realen Verkehrshindernisse. Geschwindigkeit wird aus der
 aktuellen Pose abgeleitet. Die native 1vs1-Engine und ihre Manöver bleiben
 unverändert. Ankunft, Abflug und Verkehrsdurchsatz sind zu validieren.
+
+**Keine Statusänderung** der Feature-IDs. Schildzentrum, Kontaktachse und
+bestehende Kampfhüllen-Geometrie teilen die technischen Grundfunktionen;
+Schild- und Hüllenkontakt bleiben unterschiedliche Spielregeln.

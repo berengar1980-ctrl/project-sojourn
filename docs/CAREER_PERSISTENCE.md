@@ -1512,3 +1512,7 @@ bleibt von der regulären Hindernisprüfung ausgenommen, wo es das Manöver
 erfordert. Die momentane Geschwindigkeit wird als abgeleitete Information
 übergeben; sie ist kein zusätzlicher gespeicherter Zustand. Keine Änderung
 an Kampfentscheidungen, Kollisionsreaktionen oder Integrationsintervallen.
+
+Die gemeinsame Kontaktachse, Weltposition des Schildzentrums und bisherige
+Kampfhüllenform sind reine Ableitungen ohne gespeicherten Zustand. Die
+bestehenden Kontaktregeln, Grenzwerte und Zuständigkeiten bleiben erhalten.

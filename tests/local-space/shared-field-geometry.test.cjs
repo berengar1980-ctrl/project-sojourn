@@ -8,7 +8,13 @@ const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { rotatePoint, pointToSegmentDistanceSquared, predictsClosingContact } = load(
   'src/core/field-geometry.ts'
 );
-const { createShieldWorldGeometry, shipShieldGeometry } = load('src/core/ship-contact-geometry.ts');
+const {
+  createShieldWorldGeometry,
+  shipShieldGeometry,
+  shieldWorldCenter,
+  combatHullRadii,
+  orientedHullRadius,
+} = load('src/core/ship-contact-geometry.ts');
 
 const rotated = rotatePoint({ x: 10, y: 0 }, Math.PI / 2);
 assert(Math.abs(rotated.x) < 1e-10);
@@ -40,5 +46,18 @@ assert.deepEqual(geometry, {
 assert.equal(shipShieldGeometry(ship), geometry);
 assert.deepEqual(createShieldWorldGeometry(hardpoints, 200), geometry);
 assert.notEqual(shipShieldGeometry({ ...ship, nominalLengthMeters: 100 }), geometry);
+
+assert.deepEqual(shieldWorldCenter({ x: 100, y: 100 }, Math.PI / 2, geometry), {
+  x: 100,
+  y: 120,
+});
+const hull = combatHullRadii(200, geometry);
+assert.equal(hull.radiusX, 80 * 0.88);
+assert.equal(hull.radiusY, 40 * 0.88);
+assert.equal(orientedHullRadius(1, 0, 0, hull.radiusX, hull.radiusY), hull.radiusX);
+assert.deepEqual(load('src/core/field-geometry.ts').contactAxis(0, 0), {
+  distance: 0,
+  normal: { x: 1, y: 0 },
+});
 
 console.log('PASS shared field geometry and definition-scoped shield cache');

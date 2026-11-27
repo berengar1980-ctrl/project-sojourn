@@ -2,8 +2,8 @@ import { DRONE_SHIELD_RADIUS_METERS, isSecurityDrone } from '../../core/security
 import type { LocalShipState } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
-import { rotatePoint as rotate } from '../../core/field-geometry';
-import { shipShieldGeometry } from '../../core/ship-contact-geometry';
+import { contactAxis, rotatePoint as rotate } from '../../core/field-geometry';
+import { shieldWorldCenter, shipShieldGeometry } from '../../core/ship-contact-geometry';
 
 export interface LocalShieldShipBody {
   readonly id: string;
@@ -29,11 +29,7 @@ function maximumShieldRadius(body: LocalShieldShipBody): number {
 function shieldCenter(body: LocalShieldShipBody): WorldPoint {
   if (isSecurityDrone(body.id)) return body.state.position;
   const geometry = shipShieldGeometry(body.ship);
-  const offset = rotate(geometry.centerOffset, body.state.headingRadians);
-  return {
-    x: body.state.position.x + offset.x,
-    y: body.state.position.y + offset.y,
-  };
+  return shieldWorldCenter(body.state.position, body.state.headingRadians, geometry);
 }
 
 function supportRadius(body: LocalShieldShipBody, directionWorld: WorldPoint): number {
@@ -79,8 +75,7 @@ export function resolveShipShieldCollisions(
       const dy = secondCenter.y - firstCenter.y;
       const maximum = maximumShieldRadius(first) + maximumShieldRadius(second);
       if (dx * dx + dy * dy > (maximum + 0.000001) ** 2) continue;
-      const distance = Math.hypot(dx, dy);
-      const normal = distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
+      const { distance, normal } = contactAxis(dx, dy);
       const firstRadius = supportRadius(first, normal);
       const secondRadius = supportRadius(second, { x: -normal.x, y: -normal.y });
       const required = firstRadius + secondRadius;
@@ -142,9 +137,7 @@ export function resolveShipShieldObstacleCollisions(
       const dy = obstacle.position.y - center.y;
       const maximum = maximumShieldRadius(body) + Math.max(0, obstacle.radius);
       if (dx * dx + dy * dy > (maximum + 0.000001) ** 2) continue;
-      const distance = Math.hypot(dx, dy);
-      const towardObstacle =
-        distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
+      const { distance, normal: towardObstacle } = contactAxis(dx, dy);
       const shieldRadius = supportRadius(body, towardObstacle);
       const required = shieldRadius + Math.max(0, obstacle.radius);
       if (distance >= required) continue;
