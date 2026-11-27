@@ -42,11 +42,8 @@ import { serviceNpcAtLocation, serviceIdleNpc } from './npc-port-economy';
 import { npcNeedsSafeReturn } from './npc-operating-policy';
 import { planFuelRoute } from '../navigation/fuel-route-planner';
 import { FUEL_PRICE_PER_UNIT, quoteEmergencyRefuel } from '../ships/ship-operating-costs';
-import {
-  refreshNpcIndex,
-  type NpcSectorService,
-  type NpcSectorServiceOptions,
-} from './npc-sector-types';
+import { refreshNpcIndex } from './npc-sector-types';
+import type { NpcSectorService, NpcSectorServiceOptions } from './npc-sector-types';
 export type { NpcSectorServiceOptions } from './npc-sector-types';
 export type { NpcSectorService } from './npc-sector-types';
 
