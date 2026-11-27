@@ -103,9 +103,12 @@ export class LocalPirateTraffic {
     return this.ships.get(id);
   }
 
-  snapshot(npcs: readonly SectorNpcState[]): LocalPirateContact[] {
+  snapshot(
+    npcs: readonly SectorNpcState[],
+    index?: ReadonlyMap<string, SectorNpcState>
+  ): LocalPirateContact[] {
     if (this.ships.size === 0) return [];
-    const byId = new Map(npcs.map((npc) => [npc.id, npc]));
+    const byId = index ?? new Map(npcs.map((npc) => [npc.id, npc]));
     const contacts: LocalPirateContact[] = [];
     for (const ship of this.ships.values()) {
       const npc = byId.get(ship.npcId);
