@@ -1,12 +1,12 @@
+import { boundedSimulationStep, COMBAT_STEP_SECONDS } from '../../core/simulation-step';
 import { npcCargoUsed } from '../economy/npc-cargo';
 import type { WorldPoint } from '../../core/world-types';
 import type { SectorNpcState } from '../../core/npc-types';
 
 export const WORKER_SCAN_SECONDS = 5;
-const MAX_WORKER_STEP_SECONDS = 0.08;
 
 export function workerStepSeconds(deltaSeconds: number): number {
-  return Math.min(Math.max(0, deltaSeconds), MAX_WORKER_STEP_SECONDS);
+  return boundedSimulationStep(deltaSeconds, COMBAT_STEP_SECONDS);
 }
 
 export function workerCargoFull(npc: SectorNpcState): boolean {

@@ -1,3 +1,4 @@
+import { boundedSimulationStep, LOCAL_PHYSICS_STEP_SECONDS } from '../../core/simulation-step';
 import type {
   LocalAsteroid,
   LocalSpaceInstance,
@@ -258,7 +259,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   /** Advance non-flight systems while combat owns both ship and asteroid physics. */
   tickCombatEnvironment(deltaSeconds: number): LocalSpaceSnapshot {
-    const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
+    const clamped = boundedSimulationStep(deltaSeconds, LOCAL_PHYSICS_STEP_SECONDS);
     this.shipSystems.advance(clamped);
     this.scanClock.advanceLong(clamped);
     this.miningResources.advanceChunks(this.instance.ship, clamped);
@@ -266,7 +267,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   tick(deltaSeconds: number, combatOwnsBodies?: boolean): LocalSpaceSnapshot {
-    const clamped = Math.min(Math.max(deltaSeconds, 0), 0.05);
+    const clamped = boundedSimulationStep(deltaSeconds, LOCAL_PHYSICS_STEP_SECONDS);
     this.shipSystems.advance(clamped);
     this.scanClock.advanceLong(clamped);
     if (!combatOwnsBodies) {

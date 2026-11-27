@@ -1,3 +1,4 @@
+import { boundedSimulationStep, SECTOR_STEP_SECONDS } from '../../core/simulation-step';
 import { fuelForDistance } from '../../core/fuel-pricing';
 import { pirateHomePort } from '../../core/pirate-ports';
 import { isSecurityDrone, SECURITY_DRONE_SHIP_ID } from '../../core/security-drone';
@@ -450,7 +451,7 @@ class SectorService implements NpcSectorService {
   };
   tick = (deltaSeconds: number): void => {
     if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
-    const dt = Math.min(deltaSeconds, 0.25);
+    const dt = boundedSimulationStep(deltaSeconds, SECTOR_STEP_SECONDS);
     const npcPositions = measurePerformance(
       'sim.npcs.positions',
       () => new Map(this.npcs.map((npc) => [npc.id, this.livePosition(npc)]))

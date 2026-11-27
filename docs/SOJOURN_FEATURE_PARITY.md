@@ -2241,3 +2241,7 @@ strategische Begegnungen. Unterschiedliche Auftrags- und Gebietsregeln bleiben.
 Gemeinsame Schadensabsorption für Waffen, Minen, Schildtreffer und Rammkontakt.
 Native Schadenswerte, Panzerung und die bewusst unterschiedlichen Überlaufregeln
 bleiben unverändert. Keine neue Kampfengine oder Regenerationsregel.
+
+Gemeinsame validierte Zeitschrittbegrenzung ohne Änderung der Simulationsraten.
+NPC-Ersatzgenerationen besitzen unabhängige verschachtelte Daten; wiederholte
+Bergung/Erholung ist idempotent. Bestehende Flotten- und Feldtickautorität bleibt.

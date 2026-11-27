@@ -89,3 +89,11 @@ const scan = { speed: 20, scanProgress: 0 };
 assert.equal(worker.advanceWorkerScan(scan, 2.5), false);
 assert.equal(scan.speed, 0);
 assert.equal(worker.advanceWorkerScan(scan, 2.5), true);
+
+const steps = loadStandaloneTypeScriptModule(root, 'src/core/simulation-step.ts');
+assert.equal(steps.boundedSimulationStep(1, steps.COMBAT_STEP_SECONDS), 0.08);
+assert.equal(steps.boundedSimulationStep(1, steps.LOCAL_PHYSICS_STEP_SECONDS), 0.05);
+assert.equal(steps.boundedSimulationStep(1, steps.SECTOR_STEP_SECONDS), 0.25);
+assert.equal(steps.boundedSimulationStep(0.01, steps.COMBAT_STEP_SECONDS), 0.01);
+assert.equal(steps.boundedSimulationStep(-1, steps.COMBAT_STEP_SECONDS), 0);
+assert.equal(steps.boundedSimulationStep(NaN, steps.COMBAT_STEP_SECONDS), 0);

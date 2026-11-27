@@ -1635,3 +1635,8 @@ abgeleitet; Schutzgeld nutzt weiterhin das bestehende Fraktionsfeld.
 
 Schadensabsorption ist eine zustandslose Berechnung; Schild-, Rumpf- und
 Subsystemzustände bleiben in den bestehenden Eigentümern und Checkpoints.
+
+Simulationsschrittgrenzen bleiben unverändert (Kampf/Worker 0,08 s, lokale
+Physik 0,05 s, Sektor 0,25 s). NPC-Ersatzvorlagen werden tief kopiert;
+Wiederholungsaufrufe während laufender Erholung buchen keine weiteren Verluste.
+Keine neuen gespeicherten Felder.

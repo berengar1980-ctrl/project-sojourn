@@ -100,7 +100,7 @@ export function createNpcPopulationService(
     const previousRefinancing = npc.refinancingCredits ?? 0;
     const key = npc.id;
     for (const field of Object.keys(npc)) delete (npc as unknown as Record<string, unknown>)[field];
-    Object.assign(npc, original, {
+    Object.assign(npc, structuredClone(original), {
       id: key,
       name: original.name + ' · Nachfolger ' + generation,
       credits: capital,
@@ -140,6 +140,7 @@ export function createNpcPopulationService(
     },
     scheduleDefeated(npc, day) {
       if (npc.retiredUntilDay !== undefined || !templates.has(npc.id)) return false;
+      if (!Number.isFinite(day)) return false;
       npc.retiredUntilDay = Math.max(0, Math.floor(day)) + replacementDelay(npc);
       delete npc.travel;
       delete npc.combatMovement;
@@ -149,6 +150,7 @@ export function createNpcPopulationService(
       return true;
     },
     advanceDay(day) {
+      if (!Number.isFinite(day) || day < 0) return;
       for (const npc of npcs) {
         if (isSecurityDrone(npc.id)) continue;
         if (npc.retiredUntilDay !== undefined) {
