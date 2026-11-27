@@ -1,7 +1,7 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
-import { createShieldWorldGeometry } from '../local-space/local-space-collision';
+import { shipShieldGeometry } from '../../core/ship-contact-geometry';
 import type { FieldRouteObstacle } from './field-ship-routing';
 
 /** Navigation only. The real ship remains owned by its normal physics service. */
@@ -10,7 +10,7 @@ export function shipTrafficObstacle(
   ship: ShipDefinition,
   pose: { readonly position: WorldPoint; readonly headingRadians: number }
 ): FieldRouteObstacle {
-  const geometry = createShieldWorldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters);
+  const geometry = shipShieldGeometry(ship);
   const cosine = Math.cos(pose.headingRadians);
   const sine = Math.sin(pose.headingRadians);
   return {

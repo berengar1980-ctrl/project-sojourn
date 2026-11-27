@@ -4,6 +4,7 @@ import type {
   StrategicCombatSide,
 } from './strategic-combat-types';
 import { shipContact } from './combat-ship-contact-geometry';
+import { predictsClosingContact } from '../../core/field-geometry';
 
 export function collisionThreat(first: MutableCombatant, second: MutableCombatant): boolean {
   const dx = second.position.x - first.position.x;
@@ -13,16 +14,7 @@ export function collisionThreat(first: MutableCombatant, second: MutableCombatan
   const contact = shipContact(first, second);
   // Predictive avoidance gets a modest clearance buffer, but never applies
   // forces. Only the shared physical hull geometry can resolve a collision.
-  const warningRange = contact.required + 34;
-  const separation = contact.distance;
-  if (separation <= warningRange) {
-    return dx * vx + dy * vy < 0;
-  }
-  const relativeSpeedSquared = vx * vx + vy * vy;
-  if (relativeSpeedSquared < 0.001) return false;
-  const time = Math.max(0, Math.min(4, -(dx * vx + dy * vy) / relativeSpeedSquared));
-  if (time <= 0 || time >= 4) return false;
-  return Math.hypot(dx + vx * time, dy + vy * time) < warningRange;
+  return predictsClosingContact(dx, dy, vx, vy, contact.required + 34, 4);
 }
 
 export function reviewShipContact(

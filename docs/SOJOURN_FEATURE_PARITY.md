@@ -2073,3 +2073,11 @@ aufbereitet. Die native Kampf-KI und die Kollisionsreaktionen bleiben bestehen.
 Die Schutzbedingung für kämpfende Drohnen gilt weiterhin für aktive und
 beendete Duelle. Keine neuen Save-Daten. Langzeitsimulation, Feature-Parität
 und Performancegewinn sind vor dem Merge zu verifizieren.
+
+## Review-Log (2026-11-27) – Gemeinsame Navigationsgeometrie (PR #407)
+
+**Keine Statusänderung** der bestehenden Feature-IDs. Lokale Navigation,
+Schildkontakt und native Kampfengine verwenden gemeinsame mathematische
+Grundfunktionen und Schildabmessungen. Die bestehenden Kontaktarten,
+Vorhersagegrenzen, Manöver, Feld-Ticks und Save-Strukturen bleiben erhalten.
+Die deterministischen Referenzen und Quality Gate prüfen die Parität.

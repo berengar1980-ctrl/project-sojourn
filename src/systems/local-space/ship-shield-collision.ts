@@ -2,7 +2,8 @@ import { DRONE_SHIELD_RADIUS_METERS, isSecurityDrone } from '../../core/security
 import type { LocalShipState } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
-import { createShieldWorldGeometry } from './local-space-collision';
+import { rotatePoint as rotate } from '../../core/field-geometry';
+import { shipShieldGeometry } from '../../core/ship-contact-geometry';
 
 export interface LocalShieldShipBody {
   readonly id: string;
@@ -19,38 +20,15 @@ export interface ShipShieldCollision {
   readonly closingDistance: number;
 }
 
-function rotate(point: WorldPoint, angle: number): WorldPoint {
-  const cosine = Math.cos(angle);
-  const sine = Math.sin(angle);
-  return {
-    x: point.x * cosine - point.y * sine,
-    y: point.x * sine + point.y * cosine,
-  };
-}
-
-const shieldGeometries = new WeakMap<
-  ShipDefinition,
-  ReturnType<typeof createShieldWorldGeometry>
->();
-
-function shieldGeometry(ship: ShipDefinition): ReturnType<typeof createShieldWorldGeometry> {
-  let geometry = shieldGeometries.get(ship);
-  if (!geometry) {
-    geometry = createShieldWorldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters);
-    shieldGeometries.set(ship, geometry);
-  }
-  return geometry;
-}
-
 function maximumShieldRadius(body: LocalShieldShipBody): number {
   if (isSecurityDrone(body.id)) return DRONE_SHIELD_RADIUS_METERS;
-  const geometry = shieldGeometry(body.ship);
+  const geometry = shipShieldGeometry(body.ship);
   return Math.max(0.01, Math.abs(geometry.radiusX), Math.abs(geometry.radiusY));
 }
 
 function shieldCenter(body: LocalShieldShipBody): WorldPoint {
   if (isSecurityDrone(body.id)) return body.state.position;
-  const geometry = shieldGeometry(body.ship);
+  const geometry = shipShieldGeometry(body.ship);
   const offset = rotate(geometry.centerOffset, body.state.headingRadians);
   return {
     x: body.state.position.x + offset.x,
@@ -60,7 +38,7 @@ function shieldCenter(body: LocalShieldShipBody): WorldPoint {
 
 function supportRadius(body: LocalShieldShipBody, directionWorld: WorldPoint): number {
   if (isSecurityDrone(body.id)) return DRONE_SHIELD_RADIUS_METERS;
-  const geometry = shieldGeometry(body.ship);
+  const geometry = shipShieldGeometry(body.ship);
   const direction = rotate(directionWorld, -body.state.headingRadians);
   const length = Math.max(0.0001, Math.hypot(direction.x, direction.y));
   const ux = direction.x / length;

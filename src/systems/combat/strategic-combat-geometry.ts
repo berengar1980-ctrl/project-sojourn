@@ -3,6 +3,7 @@ import { createWeaponTelemetry } from './combat-weapon-telemetry';
 import { weaponCycleSeconds } from './combat-weapon-fire-control';
 import { weaponUiOrder, weaponHardpointName } from '../../core/weapon-hardpoint-labels';
 import type { ShipHardpoints, ShipWeaponFamily } from '../../core/ship-types';
+import { createShieldWorldGeometry } from '../../core/ship-contact-geometry';
 
 import type {
   CombatPoint,
@@ -61,14 +62,11 @@ export function createCombatShieldGeometry(
   hardpoints: ShipHardpoints,
   nominalLengthMeters: number
 ): CombatShieldGeometry {
-  const scale = nominalLengthMeters / hardpoints.sourceWidth;
+  const geometry = createShieldWorldGeometry(hardpoints, nominalLengthMeters);
   return {
-    centerOffset: {
-      x: (hardpoints.shield.centerX - hardpoints.pivot.x) * scale,
-      y: (hardpoints.shield.centerY - hardpoints.pivot.y) * scale,
-    },
-    radiusX: Math.max(1, hardpoints.shield.radiusX * scale),
-    radiusY: Math.max(1, hardpoints.shield.radiusY * scale),
+    centerOffset: geometry.centerOffset,
+    radiusX: Math.max(1, geometry.radiusX),
+    radiusY: Math.max(1, geometry.radiusY),
     modifier: Math.max(0.01, hardpoints.shield.modifier),
   };
 }
@@ -85,14 +83,7 @@ export function wrapAngle(value: number): number {
   return angle;
 }
 
-export function rotate(point: CombatPoint, angle: number): CombatPoint {
-  const cosine = Math.cos(angle);
-  const sine = Math.sin(angle);
-  return {
-    x: point.x * cosine - point.y * sine,
-    y: point.x * sine + point.y * cosine,
-  };
-}
+export { rotatePoint as rotate } from '../../core/field-geometry';
 
 export function createCombatant(
   setup: StrategicCombatantSetup,

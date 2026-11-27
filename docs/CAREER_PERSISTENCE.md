@@ -1490,3 +1490,11 @@ bleiben erhalten. Die geänderte Reihenfolge sektorweiter Ereignisse ist
 durch Ressourcen-, Verlust- und Wrackbilanztests zu überprüfen. Die
 Gefechtsindizes und Performance-Messpunkte sind rein flüchtig. Kein neues
 Save-Schema und keine neuen Persistenz-Owner.
+
+## Gemeinsame Navigationsgeometrie (PR #407)
+
+Rotation, Streckenabstand, Kollisionsvorhersage und Schildabmessungen werden
+in zustandslosen Kernfunktionen berechnet. Der Schildcache ist aus unveränderlichen
+Schiffsdefinitionen ableitbar und enthält keine Live-Positionen. Kampftaktik,
+Kontaktreaktionen, Bewegungszuständigkeit und gespeicherte Routen bleiben
+unverändert. Keine neuen Checkpoint-Felder oder Persistenz-Owner.
