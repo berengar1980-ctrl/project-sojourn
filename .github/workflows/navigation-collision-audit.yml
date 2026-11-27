@@ -1,0 +1,44 @@
+name: Navigation milestone economy audit (90 days)
+
+on:
+  push:
+    branches: [refactor/unified-navigation-collision]
+    paths: ['.github/workflows/navigation-collision-audit.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [strategic, physical, integrated]
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SOJOURN_AUDIT_MODE: ${{ matrix.mode }}
+      SOJOURN_AUDIT_DAYS: '90'
+      SOJOURN_PROFILE: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Run selected economy audit
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run test:economy-horizons | tee economy-audit.log
+      - name: Upload milestone report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: navigation-audit-${{ matrix.mode }}-90d
+          path: economy-audit.log
+          if-no-files-found: warn
