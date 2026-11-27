@@ -5,9 +5,12 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
-const { rotatePoint, pointToSegmentDistanceSquared, predictsClosingContact } = load(
-  'src/core/field-geometry.ts'
-);
+const {
+  rotatePoint,
+  pointToSegmentDistanceSquared,
+  predictsClosingContact,
+  clampedSegmentProjection,
+} = load('src/core/field-geometry.ts');
 const {
   createShieldWorldGeometry,
   shipShieldGeometry,
@@ -21,6 +24,11 @@ assert(Math.abs(rotated.x) < 1e-10);
 assert.equal(rotated.y, 10);
 const start = { x: 0, y: 0 };
 const end = { x: 10, y: 0 };
+assert.equal(clampedSegmentProjection({ x: 5, y: 3 }, start, 10, 0, 100), 0.5);
+assert.equal(clampedSegmentProjection({ x: -5, y: 0 }, start, 10, 0, 100), 0);
+assert.equal(clampedSegmentProjection({ x: 15, y: 0 }, start, 10, 0, 100), 1);
+assert.equal(clampedSegmentProjection({ x: 3, y: 4 }, start, 0, 0, 0), 0);
+assert.equal(clampedSegmentProjection({ x: 0.5, y: 0 }, start, 0.5, 0, 1), 0.25);
 assert.equal(pointToSegmentDistanceSquared({ x: 5, y: 3 }, start, end), 9);
 assert.equal(pointToSegmentDistanceSquared({ x: 13, y: 4 }, start, end), 25);
 assert.equal(pointToSegmentDistanceSquared({ x: 3, y: 4 }, start, start), 25);

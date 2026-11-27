@@ -15,6 +15,21 @@ export function squaredDistance(a: WorldPoint, b: WorldPoint): number {
   return x * x + y * y;
 }
 
+/** Caller supplies its existing short-segment denominator policy. */
+export function clampedSegmentProjection(
+  point: WorldPoint,
+  start: WorldPoint,
+  dx: number,
+  dy: number,
+  lengthSquared: number
+): number {
+  if (lengthSquared <= 0) return 0;
+  return Math.max(
+    0,
+    Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)
+  );
+}
+
 export function pointToSegmentDistanceSquared(
   point: WorldPoint,
   start: WorldPoint,
@@ -25,10 +40,7 @@ export function pointToSegmentDistanceSquared(
   const lengthSquared = dx * dx + dy * dy;
   if (lengthSquared === 0) return squaredDistance(point, start);
 
-  const projection = Math.max(
-    0,
-    Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)
-  );
+  const projection = clampedSegmentProjection(point, start, dx, dy, lengthSquared);
   const offsetX = point.x - (start.x + projection * dx);
   const offsetY = point.y - (start.y + projection * dy);
   return offsetX * offsetX + offsetY * offsetY;

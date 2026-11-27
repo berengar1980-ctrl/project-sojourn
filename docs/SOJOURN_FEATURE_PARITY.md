@@ -2139,3 +2139,7 @@ Kontaktzuständigkeit; die Vorfahrtsregeln werden nicht in den Kampf übernommen
 speisen sowohl zivile Navigation als auch taktische Hindernisabfragen;
 Identitätsfilter und Anwesenheitsprüfung sind gemeinsam. Kampfbeteiligte
 bleiben in FleetCombat von der neutralen Liste ausgeschlossen.
+
+**Keine Statusänderung** der Feature-IDs. Identische Segmentprojektion
+wird von den bestehenden zivilen, taktischen und Drohnen-Planern verwendet;
+Routenwahl, Abstände, Zeitintervalle und Sensorregeln bleiben unverändert.

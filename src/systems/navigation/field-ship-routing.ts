@@ -1,6 +1,7 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { measurePerformance } from '../../core/performance-diagnostics';
+import { clampedSegmentProjection } from '../../core/field-geometry';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
 import { trafficDestinationOccupied, trafficStepClear } from './field-traffic-obstacles';
@@ -42,8 +43,7 @@ function blocked(
   const dy = target.y - start.y;
   const lengthSq = dx * dx + dy * dy;
   if (lengthSq < 1) return false;
-  const dot = (obstacle.position.x - start.x) * dx + (obstacle.position.y - start.y) * dy;
-  const t = Math.max(0, Math.min(1, dot / lengthSq));
+  const t = clampedSegmentProjection(obstacle.position, start, dx, dy, lengthSq);
   const gap = Math.hypot(
     start.x + dx * t - obstacle.position.x,
     start.y + dy * t - obstacle.position.y

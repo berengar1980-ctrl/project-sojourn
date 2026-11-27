@@ -1,4 +1,5 @@
 import type { WorldPoint } from '../../core/world-types';
+import { clampedSegmentProjection } from '../../core/field-geometry';
 /** Structural obstacle contract prevents a route-planner module cycle. */
 export interface PatrolRouteObstacle {
   readonly id: string;
@@ -15,10 +16,7 @@ function gapToSegment(point: WorldPoint, a: WorldPoint, b: WorldPoint): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const squared = dx * dx + dy * dy;
-  const t =
-    squared < 1
-      ? 0
-      : Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / squared));
+  const t = squared < 1 ? 0 : clampedSegmentProjection(point, a, dx, dy, squared);
   return Math.hypot(point.x - a.x - t * dx, point.y - a.y - t * dy);
 }
 

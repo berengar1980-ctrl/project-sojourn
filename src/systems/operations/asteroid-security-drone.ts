@@ -1,3 +1,4 @@
+import { clampedSegmentProjection } from '../../core/field-geometry';
 import type { SectorNpcState } from '../../core/npc-types';
 import { edgePoint } from '../npcs/npc-mining-targets';
 import { DRONE_SCAN_RADIUS, DRONE_PATROL_SPEED } from '../../core/security-drone';
@@ -267,11 +268,7 @@ export class AsteroidSecurityDrone {
         obstacle.position.y - this.position.y
       );
       if (distance < obstacle.radius + 40) continue;
-      const projection =
-        ((obstacle.position.x - this.position.x) * dx +
-          (obstacle.position.y - this.position.y) * dy) /
-        lengthSquared;
-      const t = Math.max(0, Math.min(1, projection));
+      const t = clampedSegmentProjection(obstacle.position, this.position, dx, dy, lengthSquared);
       const gap = Math.hypot(
         this.position.x + dx * t - obstacle.position.x,
         this.position.y + dy * t - obstacle.position.y
@@ -304,14 +301,7 @@ export function droneSeesTarget(
   // Asteroids blocking the physical sensor ray shield illegal miners.
   for (const asteroid of asteroids) {
     if (!asteroid.routeBlocking) continue;
-    const t = Math.max(
-      0,
-      Math.min(
-        1,
-        ((asteroid.position.x - position.x) * dx + (asteroid.position.y - position.y) * dy) /
-          distanceSquared
-      )
-    );
+    const t = clampedSegmentProjection(asteroid.position, position, dx, dy, distanceSquared);
     if (t <= 0.02 || t >= 0.98) continue;
     const closestX = position.x + t * dx;
     const closestY = position.y + t * dy;

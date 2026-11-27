@@ -1556,3 +1556,7 @@ Bystander-Einträge werden entfernt. Keine Änderung des Speicherformats.
 Zivile Navigation und Kampf-Bystander-Abfrage lesen dieselbe flüchtige
 feldgebundene Quelle lebender Schiffsposen. Die Bystander-Sicht kopiert
 nur die momentane Position; sie ist keine zweite Bewegungsautorität.
+
+Die Segmentprojektion für bestehende zivile und taktische Routen sowie
+Drohnen-Sensorstrahlen ist eine zustandslose Core-Funktion. Die bisherigen
+Kurze-Segment-Regeln und Kontaktgrenzen bleiben bei den jeweiligen Aufrufern.
