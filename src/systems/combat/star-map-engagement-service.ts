@@ -387,8 +387,8 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
       (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
     );
     runtime.playerFleet.tick(deltaSeconds);
-    reportFieldFleetLosses(runtime, runtime.playerFleet);
     reportNpcBoardingResults(runtime, runtime.playerFleet);
+    reportFieldFleetLosses(runtime, runtime.playerFleet);
   }
 }
 

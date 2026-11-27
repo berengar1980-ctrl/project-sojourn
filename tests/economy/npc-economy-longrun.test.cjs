@@ -182,7 +182,7 @@ const engagements = createStarMapEngagementService({
   log: combatLog,
   onNpcFleetStarted: () => combatStats.encounters++,
   onNpcFleetFinished: () => combatStats.resolved++,
-  ...(fieldAudit ? { onNpcCombatEnded: fieldAudit.combatEnded, ...fieldAudit.hooks } : {}),
+  ...(fieldAudit ? fieldAudit.hooks : {}),
 });
 
 fieldAudit?.bindEngagements(engagements);

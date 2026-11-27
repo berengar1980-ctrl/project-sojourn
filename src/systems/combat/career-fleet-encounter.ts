@@ -1,4 +1,5 @@
 import { createParallelNativeDuels, type NativeDuelShip } from './parallel-native-duels';
+import { campaignHullPoints } from './campaign-combat-hull';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { fieldInterceptRange, npcMayInitiateAttack } from '../npcs/npc-combat-ai';
 import type { SectorNpcState } from '../../core/npc-types';
@@ -392,7 +393,7 @@ function createSectorFleetEncounter(
       for (const npc of members.values()) {
         const actor = fleet.getActor(npc.id);
         if (!actor) continue;
-        npc.hullHp = Math.max(0, Math.min(npc.hullMaxHp, Math.round(actor.hullHp)));
+        npc.hullHp = campaignHullPoints(actor.hullHp, npc.hullMaxHp);
         // The native 1v1 AI owns position/heading/velocity for engaged ships.
         // Sector navigation observes that same pose instead of integrating a
         // competing movement or returning to the pre-combat contact point.

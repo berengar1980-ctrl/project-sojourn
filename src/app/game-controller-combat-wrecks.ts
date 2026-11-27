@@ -37,10 +37,6 @@ function adoptNativeWreckPose(wreck: SalvageWreck, native: CombatVisualAsteroid)
 
 export function controllerCombatWreckHooks(getContext: () => ControllerRuntimeContext | null) {
   return {
-    onNpcCombatEnded(snapshot: StrategicCombatSnapshot, attacker: { locationId: string }) {
-      const context = getContext();
-      if (context) recordCareerCombatWrecks(context, snapshot, attacker.locationId);
-    },
     onFieldFleetLosses(
       snapshot: StrategicCombatSnapshot,
       losses: readonly StrategicCombatSnapshot['attacker'][],
@@ -104,11 +100,20 @@ export function recordCareerCombatWrecks(
   for (const ship of losses) {
     if (ship.hullHp > 0) continue;
     const nativeWreck = bodies?.find((body) => body.id === 'fleet-wreck:' + ship.id);
-    if (recorded.has(ship.id)) continue;
-    const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
+    const npc = context.economy.sectorNpcs?.npcs.find((entry) => entry.id === ship.id);
+    const generation = npc?.replacementGeneration ?? 0;
+    const droneGeneration = ship.id.startsWith('security-drone:') ? (npc?.combatDefeats ?? 0) : 0;
+    const key = JSON.stringify([ship.id, generation, droneGeneration]);
+    if (recorded.has(key)) continue;
+    const wreck = addDestroyedShipWreck(
+      field,
+      ship,
+      encounterId + '-' + generation + '-' + droneGeneration,
+      snapshot.elapsedSeconds
+    );
     if (wreck) {
       if (nativeWreck) adoptNativeWreckPose(wreck, nativeWreck);
-      recorded.add(ship.id);
+      recorded.add(key);
       fundCombatWreck(context, wreck);
       created.push(wreck);
       if (snapshot.arena.backdropSeed !== undefined) {

@@ -1,8 +1,8 @@
-import { isSecurityDrone } from '../../core/security-drone';
 import { snapshot as snapshotCombatant } from './strategic-combat-geometry';
 import type { CombatVisualAsteroid, StrategicCombatantSnapshot } from './strategic-combat-types';
 import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import { createCareerFleetEncounter } from './career-fleet-encounter';
+import { campaignHullPoints } from './campaign-combat-hull';
 import type { StrategicCombatService } from './strategic-combat-service-types';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import type { StrategicCombatArenaOptions } from './strategic-combat-types';
@@ -137,24 +137,23 @@ export function reportFieldFleetLosses(
   runtime: EngagementRuntime,
   encounter: CareerFleetEncounter
 ): void {
-  const arena = encounter.combat.getArena();
-  if (arena.backdropSeed === undefined) return;
   const losses: StrategicCombatantSnapshot[] = [];
-  for (const body of arena.asteroids ?? []) {
-    if (!body.destroyedShipId || !body.id.startsWith('fleet-wreck:')) continue;
-    const actor = encounter.fleet.getActor(body.destroyedShipId);
+  // Member identity survives retargeting, unlike the mutable duel slots.
+  for (const npc of encounter.members.values()) {
+    const actor = encounter.fleet.getActor(npc.id);
     if (actor && actor.hullHp <= 0) losses.push(snapshotCombatant(actor));
   }
-  if (losses.length)
-    runtime.options.onFieldFleetLosses?.(
-      encounter.combat.getSnapshot(),
-      losses,
-      encounter.fieldLocationId
-    );
+  if (!losses.length) return;
+  runtime.options.onFieldFleetLosses?.(
+    encounter.combat.getSnapshot(),
+    losses,
+    encounter.fieldLocationId
+  );
   for (const loss of losses) {
     const npc = encounter.members.get(loss.id);
-    if (!npc || !isSecurityDrone(npc.id)) continue;
+    if (!npc) continue;
     runtime.options.sectorNpcs.recoverFromCombat(npc, 'Zerstört');
+    // A destroyed actor must never write hull damage into its future replacement.
     encounter.detachMember(npc.id);
   }
 }
@@ -184,8 +183,8 @@ export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSecond
       )
     );
     measurePerformance('sim.combat.advance', () => entry.fleet.tick(deltaSeconds));
-    reportFieldFleetLosses(runtime, entry.fleet);
     reportNpcBoardingResults(runtime, entry.fleet);
+    reportFieldFleetLosses(runtime, entry.fleet);
     if (!entry.fleet.fleet.isFinished()) continue;
     const model = entry.combat.getSnapshot();
     // The fleet may have retargeted its original service; actor identity is
@@ -233,7 +232,12 @@ export function finishPlayerCombat(
   const model = runtime.playerCombat.getSnapshot();
   // The initial defender can be replaced by a different live fleet opponent.
   // The original NPC already receives its real hull via its unique actor ID.
-  if (!runtime.playerFleet) runtime.playerEnemy.hullHp = Math.round(model.defender.hullHp);
+  if (!runtime.playerFleet) {
+    runtime.playerEnemy.hullHp = campaignHullPoints(
+      model.defender.hullHp,
+      runtime.playerEnemy.hullMaxHp
+    );
+  }
   const playerAlive = runtime.playerFleet
     ? (runtime.playerFleet.fleet.getActor('player')?.hullHp ?? 0) > 0
     : model.attacker.hullHp > 0;
@@ -244,14 +248,18 @@ export function finishPlayerCombat(
   if (boardingOpponent || (runtime.playerEnemy.hullHp <= 0 && playerAlive)) {
     runtime.options.onPlayerVictory?.((boardingOpponent ?? runtime.playerEnemy).id);
   }
+  const primaryStillOwned =
+    !runtime.playerFleet || runtime.playerFleet.members.has(runtime.playerEnemy.id);
   if (runtime.playerEnemy.hullHp <= 0) {
-    runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Kampfunfähig');
+    if (primaryStillOwned) {
+      runtime.options.sectorNpcs.recoverFromCombat(runtime.playerEnemy, 'Kampfunfähig');
+    }
     runtime.options.log(
       'COMBAT > ' +
         runtime.playerEnemy.name.toUpperCase() +
         ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
     );
-  } else {
+  } else if (primaryStillOwned) {
     const reason =
       boardingOpponent === runtime.playerEnemy
         ? 'Besatzung nach Enterkampf besiegt'

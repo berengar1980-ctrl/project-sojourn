@@ -125,6 +125,17 @@ for (const report of integratedReports) {
   );
   console.log(JSON.stringify({ ...report, unexplainedResources: discrepancies }));
 }
+for (const report of integratedReports) {
+  const loss = report.lossAudit;
+  assert.equal(loss.multipleWrecksForGeneration, 0, 'one wreck per destroyed generation');
+  assert.equal(loss.observedWithoutWreck, 0, 'every reported destruction must create a wreck');
+  assert.equal(loss.scheduledWithoutWreck, 0, 'every retired combat ship must have a wreck');
+  assert.equal(
+    loss.wreckWithoutRetirement,
+    loss.wreckAwaitingRetirement,
+    'every regular NPC wreck must reconcile with retirement'
+  );
+}
 assert(integratedReports[2].fieldActivity.minedUnits > 0);
 assert(integratedReports[2].fieldActivity.recoveredUnits > 0);
 const visitedMiningSites = Object.values(integratedReports[2].fieldActivity.miningSitesByNpc);

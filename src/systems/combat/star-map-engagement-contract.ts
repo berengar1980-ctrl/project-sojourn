@@ -67,6 +67,7 @@ export interface StarMapEngagementOptions {
   /** Optional diagnostics; not involved in combat decisions. */
   readonly onNpcFleetStarted?: () => void;
   readonly onNpcFleetFinished?: () => void;
+  /** All newly destroyed NPC fleet actors, in local fields and sector encounters. */
   readonly onFieldFleetLosses?: (
     snapshot: StrategicCombatSnapshot,
     losses: readonly StrategicCombatSnapshot['attacker'][],

@@ -184,9 +184,6 @@ function createFieldAuditCallbacks({
       tickMining(dt);
       tickSalvage(dt);
     },
-    combatEnded(snapshot, attacker) {
-      recordLosses(snapshot, attacker.locationId, [snapshot.attacker, snapshot.defender]);
-    },
     validate() {
       validateFieldStocks(fields, physical, salvageLocations, context, salvageStockId, stocks);
     },
