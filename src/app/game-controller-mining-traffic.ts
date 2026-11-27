@@ -44,5 +44,7 @@ export function bindMiningTraffic(
   context: ControllerRuntimeContext,
   field: AsteroidFieldRuntime
 ): void {
-  bindFieldTraffic(field.instance, (excludedId) => collectMiningTraffic(context, field, excludedId));
+  bindFieldTraffic(field.instance, (excludedId) =>
+    collectMiningTraffic(context, field, excludedId)
+  );
 }
