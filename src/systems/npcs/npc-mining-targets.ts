@@ -1,4 +1,4 @@
-import { cargoUsed } from './npc-worker-primitives';
+import { workerAtAssignment, workerCargoFull } from './npc-worker-primitives';
 export { moveToward, cargoUsed, chooseEventChoice } from './npc-worker-primitives';
 import { stableHash as hashId } from '../../core/stable-hash';
 import { distance } from '../../core/field-geometry';
@@ -166,12 +166,8 @@ export function approachPoint(npcId: string, asteroid: LocalAsteroid): WorldPoin
 export function eligibleMiner(npc: SectorNpcState, locationId: string): boolean {
   return (
     npcOperationalRoleAllowed(npc, 'mining') &&
-    npc.workLocationId === locationId &&
-    npc.locationId === locationId &&
-    !npc.travel &&
-    !npc.combatMovement &&
-    npc.autonomy?.phase === 'working' &&
-    cargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity))
+    workerAtAssignment(npc, locationId) &&
+    !workerCargoFull(npc)
   );
 }
 

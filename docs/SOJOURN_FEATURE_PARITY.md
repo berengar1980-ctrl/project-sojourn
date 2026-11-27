@@ -2230,3 +2230,7 @@ primär aus der ID; vorhandene Schildgeometrie und Legacy-Fallback bleiben.
 Spieler, NPCs und frei konfigurierte Duelle nutzen gemeinsame taktische
 Sensorwerte. Der Duellmodus übernimmt nun den installierten Reichweitenbonus;
 Sektorkontakte und industrielle Scans behalten ihre eigenen Maßstäbe.
+
+Miner und Berger teilen Scanfortschritt, Schrittgrenze, Arbeitszulassung,
+Kampfunterbrechung und Abreise bei vollem Frachtraum. Individuelle Erträge,
+Ereignisse und Zielwahl bleiben in ihren jeweiligen Diensten.

@@ -1626,3 +1626,6 @@ diese wird wie der übrige Setup beim Laden neu abgeleitet, nicht gespeichert.
 
 Taktische Sensorparameter werden aus vorhandenen installierten Komponenten
 abgeleitet. Keine Änderung der gespeicherten Sensor- oder Kontaktdaten.
+
+Gemeinsame Worker-Scanfortschritte und Arbeitsbedingungen verwenden weiterhin
+die existierenden lokalen Worker-Felder; keine neuen Checkpoint-Felder.

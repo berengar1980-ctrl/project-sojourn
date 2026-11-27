@@ -1,3 +1,4 @@
+import { workerAtAssignment } from './npc-worker-primitives';
 export { moveToward, cargoUsed, chooseEventChoice } from './npc-worker-primitives';
 import { stableHash as hashId } from '../../core/stable-hash';
 import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
@@ -16,14 +17,7 @@ export { stableHash as hashId } from '../../core/stable-hash';
 export function eligible(npc: SectorNpcState, locationId: string): boolean {
   return (
     npcOperationalRoleAllowed(npc, 'salvage') &&
-    npc.workLocationId === locationId &&
-    npc.locationId === locationId &&
-    npc.hullHp > 0 &&
-    npc.retiredUntilDay === undefined &&
-    !npc.combatMovement &&
-    (npc.combatRecoverySeconds ?? 0) <= 0 &&
-    !npc.travel &&
-    npc.autonomy?.phase === 'working'
+    workerAtAssignment(npc, locationId)
   );
 }
 
