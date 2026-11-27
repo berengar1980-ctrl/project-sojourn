@@ -1,3 +1,5 @@
+import { absorbDamage } from '../../core/layered-damage';
+import { clamp } from '../../core/numeric-geometry';
 import type {
   ShieldDamageResult,
   ShieldHit,
@@ -6,10 +8,6 @@ import type {
 } from '../../core/shield-types';
 
 const REFERENCE_IMPACT_ENERGY = 250_000;
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.max(minimum, Math.min(maximum, value));
-}
 
 export function createShieldState(maxHp: number, modifier: number): ShieldState {
   if (maxHp <= 0) throw new Error('Shield maxHp must be positive.');
@@ -34,9 +32,11 @@ export function applyShieldHit(
   impactId: number
 ): ShieldDamageResult {
   const damage = rawDamage(hit, state);
-  const absorbedDamage = Math.min(state.currentHp, damage);
-  const overflowDamage = Math.max(0, damage - absorbedDamage);
-  state.currentHp = Math.max(0, state.currentHp - absorbedDamage);
+  const { absorbed: absorbedDamage, overflow: overflowDamage, remaining } = absorbDamage(
+    state.currentHp,
+    damage
+  );
+  state.currentHp = remaining;
 
   const visualStrength = Math.sqrt(clamp(damage / state.maxHp, 0, 1));
   const impact: ShieldImpactEffect = {

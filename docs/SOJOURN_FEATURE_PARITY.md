@@ -2237,3 +2237,7 @@ Ereignisse und Zielwahl bleiben in ihren jeweiligen Diensten.
 
 NPC-Zielzulassung und Piratenschutz sind gemeinsame Regeln für lokale und
 strategische Begegnungen. Unterschiedliche Auftrags- und Gebietsregeln bleiben.
+
+Gemeinsame Schadensabsorption für Waffen, Minen, Schildtreffer und Rammkontakt.
+Native Schadenswerte, Panzerung und die bewusst unterschiedlichen Überlaufregeln
+bleiben unverändert. Keine neue Kampfengine oder Regenerationsregel.

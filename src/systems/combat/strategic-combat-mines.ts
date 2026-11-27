@@ -154,10 +154,11 @@ function advanceRuntimeMine(
 
   runtime.impactSerial += 1;
   const source = runtimeCombatant(runtime, mine.owner);
+  const damage = nativeMineDamage(mine.definition);
   const result = applyDamage(
     target,
-    nativeMineDamage(mine.definition).shieldDamage,
-    nativeMineDamage(mine.definition).hullDamage,
+    damage.shieldDamage,
+    damage.hullDamage,
     source,
     false,
     mine.position,

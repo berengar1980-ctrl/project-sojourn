@@ -180,3 +180,21 @@ assert(
   'no duplicate native-damage lookup table'
 );
 console.log('PASS native damage matches approved weapon rebalancing and legacy mine tiers');
+
+const { absorbDamage, resolveLayeredHit } = loadStandaloneTypeScriptModule(
+  root,
+  'src/core/layered-damage.ts'
+);
+assert.deepEqual(absorbDamage(4, 10), { absorbed: 4, remaining: 0, overflow: 6 });
+assert.deepEqual(resolveLayeredHit({ shieldHp: 4, hullHp: 100 }, 10, 50), {
+  shieldDamage: 4,
+  hullDamage: 0,
+  shieldRemaining: 0,
+  hullRemaining: 100,
+});
+assert.deepEqual(resolveLayeredHit({ shieldHp: 0, hullHp: 3 }, 10, 50), {
+  shieldDamage: 0,
+  hullDamage: 3,
+  shieldRemaining: 0,
+  hullRemaining: 0,
+});

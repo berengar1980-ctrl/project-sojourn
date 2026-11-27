@@ -1632,3 +1632,6 @@ die existierenden lokalen Worker-Felder; keine neuen Checkpoint-Felder.
 
 Piratenzugehörigkeit wird aus vorhandener Fraktions-ID oder Legacy-Markierung
 abgeleitet; Schutzgeld nutzt weiterhin das bestehende Fraktionsfeld.
+
+Schadensabsorption ist eine zustandslose Berechnung; Schild-, Rumpf- und
+Subsystemzustände bleiben in den bestehenden Eigentümern und Checkpoints.

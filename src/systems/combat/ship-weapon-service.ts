@@ -1,3 +1,4 @@
+import { resolveLayeredHit } from '../../core/layered-damage';
 import type { LayeredDamageResult, ShipIntegrityState } from '../../core/combat-types';
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import {
@@ -14,10 +15,6 @@ export interface CrewAdjustedWeaponProfile {
   readonly cooldownSeconds: number;
   readonly criticalChance: number;
   readonly hitChanceBonus: number;
-}
-
-function currentHp(value: number): number {
-  return Math.max(0, value);
 }
 
 export function crewAdjustedShipWeaponProfile(
@@ -46,24 +43,5 @@ export function resolveShipWeaponHit(
     throw new Error('Component is not a combat-capable ship weapon.');
   }
 
-  const shieldHp = currentHp(target.shieldHp);
-  const hullHp = currentHp(target.hullHp);
-
-  if (shieldHp > 0) {
-    const shieldDamage = Math.min(shieldHp, component.weapon.shieldDamage);
-    return {
-      shieldDamage,
-      hullDamage: 0,
-      shieldRemaining: shieldHp - shieldDamage,
-      hullRemaining: hullHp,
-    };
-  }
-
-  const hullDamage = Math.min(hullHp, component.weapon.hullDamage);
-  return {
-    shieldDamage: 0,
-    hullDamage,
-    shieldRemaining: 0,
-    hullRemaining: hullHp - hullDamage,
-  };
+  return resolveLayeredHit(target, component.weapon.shieldDamage, component.weapon.hullDamage);
 }
