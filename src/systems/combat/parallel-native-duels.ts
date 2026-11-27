@@ -9,6 +9,7 @@ import { createStrategicCombatService } from './strategic-combat-service';
 import { buildCombatArena } from './strategic-combat-arena';
 import { NativeFleetBoarding } from './native-fleet-boarding';
 import { advanceNativeFleetFrame, escapedNativeFleetShips } from './native-fleet-advance';
+import { fieldContactRevision } from './field-contact-authority';
 import { reassignNativeFleetTargets, type NativeFleetDriver } from './native-fleet-reassignment';
 import {
   activeNativeFleetEngagements,
@@ -49,6 +50,7 @@ export interface ParallelNativeDuels {
   readonly duels: readonly StrategicCombatService[];
   readonly supporters: readonly StrategicCombatService[];
   getActor(id: string): MutableCombatant | null;
+  fieldActors(): readonly MutableCombatant[];
   /** World traffic is a physical bystander, not an automatically hostile combatant. */
   setBystanders(ships: readonly StrategicCombatBystander[]): void;
   /** Bring an existing campaign or test ship into the live battle exactly once. */
@@ -358,6 +360,7 @@ export function createParallelNativeDuels(
   let elapsed = restoredDuel?.getSnapshot().elapsedSeconds ?? 0;
   let bystanders: readonly StrategicCombatBystander[] = [];
   let cachedSnapshot: ParallelNativeDuelSnapshot | null = null;
+  let cachedContactRevision = 0;
   const radiusById = nativeFleetRadii(actors);
   const boarding = new NativeFleetBoarding();
   const isFinished = () =>
@@ -371,7 +374,9 @@ export function createParallelNativeDuels(
       );
     });
   const getSnapshot = (): ParallelNativeDuelSnapshot => {
-    if (cachedSnapshot) return cachedSnapshot;
+    const revision = fieldContactRevision(fleetArena.fieldWorld);
+    if (cachedSnapshot && revision === cachedContactRevision) return cachedSnapshot;
+    cachedContactRevision = revision;
     const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
     const visibleState = (service: StrategicCombatService) => {
       const state = service.getSnapshot();
@@ -463,6 +468,7 @@ export function createParallelNativeDuels(
       return joined;
     },
     getActor: (id) => actorById.get(id) ?? null,
+    fieldActors: () => actors,
     setBystanders(contacts) {
       bystanders = contacts.filter((ship) => !actorById.has(ship.id));
     },

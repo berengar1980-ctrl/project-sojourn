@@ -1,5 +1,14 @@
 import type { LocalShipState } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { FieldRouteObstacle } from '../navigation/field-ship-routing';
+import { trafficStepClear } from '../navigation/field-traffic-obstacles';
+import {
+  beginTrafficLeg,
+  endTrafficLeg,
+  noteTrafficProgress,
+  needsTrafficEscape,
+  trafficEscapeWaypoint,
+} from '../navigation/field-traffic-priority';
 import { angleDelta, distance, heading, moveToward, turnToward } from './local-space-motion';
 
 const MAX_TURN_RATE = 1.15;
@@ -13,6 +22,7 @@ export interface RouteAdvanceResult {
 }
 
 export function resetAutopilotMotion(ship: LocalShipState): void {
+  endTrafficLeg(ship);
   ship.speed = 0;
   ship.turnRateRadiansPerSecond = 0;
   ship.angularThrust = 0;
@@ -57,6 +67,27 @@ function advanceReverseCorrection(
   ship.lateralThrust = 0;
 }
 
+interface AutopilotTraffic {
+  readonly obstacles: readonly FieldRouteObstacle[];
+  readonly clearance: number;
+  readonly solids?: () => readonly FieldRouteObstacle[];
+}
+
+function autopilotEscape(
+  ship: LocalShipState,
+  target: WorldPoint,
+  traffic?: AutopilotTraffic
+): WorldPoint | null | undefined {
+  if (!traffic) return undefined;
+  beginTrafficLeg(ship, target, 'player');
+  if (!traffic.solids || !needsTrafficEscape(ship)) return undefined;
+  return trafficEscapeWaypoint(
+    ship,
+    [...traffic.solids(), ...traffic.obstacles],
+    traffic.clearance
+  );
+}
+
 export function advanceAutopilotRoute(
   ship: LocalShipState,
   route: readonly WorldPoint[],
@@ -65,13 +96,21 @@ export function advanceAutopilotRoute(
   deltaSeconds: number,
   brakeAtFinalWaypoint: boolean,
   allowReverseCorrection = false,
-  turnRateMultiplier = 1
+  turnRateMultiplier = 1,
+  traffic?: AutopilotTraffic
 ): RouteAdvanceResult {
   if (index >= route.length) return { nextIndex: index, completed: true };
 
-  const waypoint = route[index]!;
+  const start = ship.position;
+  const escape = autopilotEscape(ship, route[route.length - 1]!, traffic);
+  if (escape === null) {
+    ship.speed = 0;
+    noteTrafficProgress(ship, deltaSeconds, true);
+    return { nextIndex: index, completed: false };
+  }
+  const waypoint = escape ?? route[index]!;
   const remainingDistance = distance(ship.position, waypoint);
-  const finalWaypoint = index === route.length - 1;
+  const finalWaypoint = !escape && index === route.length - 1;
 
   if (
     canReverseToFinalWaypoint(
@@ -97,13 +136,25 @@ export function advanceAutopilotRoute(
   }
 
   const arrivalDistance = finalWaypoint && brakeAtFinalWaypoint ? 2 : 1;
-  if (distance(ship.position, waypoint) > arrivalDistance) {
+  const arrived = distance(ship.position, waypoint) <= arrivalDistance;
+  const next = arrived ? waypoint : ship.position;
+  if (
+    traffic &&
+    !trafficStepClear(start, next, deltaSeconds, traffic.obstacles, traffic.clearance, ship)
+  ) {
+    ship.position = start;
+    ship.speed = 0;
+    noteTrafficProgress(ship, deltaSeconds, true);
     return { nextIndex: index, completed: false };
   }
+  if (traffic) noteTrafficProgress(ship, deltaSeconds, false);
+  if (!arrived) return { nextIndex: index, completed: false };
 
   ship.position = { ...waypoint };
   ship.speed = 0;
+  if (escape) return { nextIndex: index, completed: false };
   const nextIndex = index + 1;
+  if (nextIndex >= route.length) endTrafficLeg(ship);
   return { nextIndex, completed: nextIndex >= route.length };
 }
 

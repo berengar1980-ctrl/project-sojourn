@@ -2,6 +2,7 @@ import { pirateHuntAllowedAt } from '../systems/npcs/npc-pirate-classes';
 import { narrowsSector } from '../data/maps/narrows-sector';
 import type { LocalShieldShipBody } from '../systems/local-space/ship-shield-collision';
 import { getShipDefinition } from '../systems/ships';
+import { fieldTrafficProvider } from '../systems/navigation/field-traffic-obstacles';
 import { syncSalvagePhysicsContacts } from '../systems/salvage/salvage-container-motion';
 import { securityPirateApproach } from '../systems/operations/asteroid-security-drone';
 import { fieldInterceptRange, localArmedTraffic } from '../systems/npcs/npc-combat-ai';
@@ -97,12 +98,29 @@ function closestVisiblePirate(
   );
 }
 
+function salvageInterceptionObstacles(options: SalvagePirateResponseOptions) {
+  const { field, sectorNpcs, salvagers } = options;
+  return (
+    fieldTrafficProvider(field)?.('security-drone:' + field.sourceLocationId) ??
+    salvageDroneShipObstacles(
+      [
+        ...salvagers.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
+        ...options.pirates
+          .snapshot(sectorNpcs)
+          .map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
+      ],
+      options.playerPosition,
+      options.playerRadius
+    )
+  );
+}
+
 function advanceDroneInterception(
   options: SalvagePirateResponseOptions,
   pirateShips: readonly LocalPirateContact[],
   combatants: ReadonlySet<string>
 ): void {
-  const { drone, field, sectorNpcs, salvagers } = options;
+  const { drone, field, sectorNpcs } = options;
   const defender = sectorNpcs.find((npc) => npc.id === 'security-drone:' + field.sourceLocationId);
   const busy = Boolean(defender?.combatMovement || combatants.has(defender?.id ?? ''));
   if (!busy) drone.syncAvailability(defender);
@@ -111,16 +129,7 @@ function advanceDroneInterception(
   if (target && !busy) {
     pursuit = securityPirateApproach(drone.position, target.position);
   }
-  const obstacles = salvageDroneShipObstacles(
-    [
-      ...salvagers.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
-      ...options.pirates
-        .snapshot(sectorNpcs)
-        .map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
-    ],
-    options.playerPosition,
-    options.playerRadius
-  );
+  const obstacles = salvageInterceptionObstacles(options);
   if (!busy) tickSalvageSecurityDrone(drone, field, options.dt, obstacles, pursuit);
   if (!target || !defender || defender.hullHp <= 0 || busy) return;
   const npc = sectorNpcs.find((entry) => entry.id === target.npcId);
@@ -206,7 +215,8 @@ function advancePirateTraffic(
         : false;
     },
     options.playerCombat?.defender.id,
-    options.onFreighterExit
+    options.onFreighterExit,
+    fieldTrafficProvider(options.field)
   );
   resolveSalvageTrafficContacts(options, livePirates, combatants, rocks);
 }
@@ -223,7 +233,7 @@ export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptio
       npc.hullHp > 0 &&
       (!location || pirateHuntAllowedAt(npc, location))
   );
-  options.pirates.reconcile(livePirates);
+  options.pirates.reconcile(livePirates, undefined, fieldTrafficProvider(options.field));
   const combatants = mirrorSalvageDuels(options);
   const ships = options.pirates.snapshot(options.sectorNpcs);
   advanceDroneInterception(

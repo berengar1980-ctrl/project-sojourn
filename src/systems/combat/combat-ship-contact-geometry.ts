@@ -1,8 +1,15 @@
+import { contactAxis } from '../../core/field-geometry';
+import {
+  combatHullRadii,
+  orientedHullRadius,
+  type ShieldWorldGeometry,
+} from '../../core/ship-contact-geometry';
 import type { MutableCombatant } from './strategic-combat-types';
 
 interface ContactShip {
   readonly position: { readonly x: number; readonly y: number };
   readonly headingRadians?: number;
+  readonly hullShieldGeometry?: ShieldWorldGeometry;
   readonly setup?: Pick<MutableCombatant['setup'], 'shipId' | 'shieldGeometry'>;
 }
 
@@ -21,23 +28,18 @@ export interface ShipContact {
 function hullExtent(ship: ContactShip, nx: number, ny: number): number {
   const nominal = /([0-9]+(?:\.[0-9]+)?)m\b/i.exec(ship.setup?.shipId ?? '');
   const length = nominal ? Number(nominal[1]) : 60;
-  const shield = ship.setup?.shieldGeometry;
-  const rx = Math.max(5, (shield?.radiusX ?? length * 0.5) * 0.88);
-  const ry = Math.max(4, (shield?.radiusY ?? length * 0.34) * 0.88);
-  const theta = ship.headingRadians ?? 0;
-  const cos = Math.cos(theta);
-  const sin = Math.sin(theta);
-  const localX = nx * cos + ny * sin;
-  const localY = -nx * sin + ny * cos;
-  return 1 / Math.hypot(localX / rx, localY / ry);
+  const { radiusX, radiusY } = combatHullRadii(
+    length,
+    ship.hullShieldGeometry ?? ship.setup?.shieldGeometry
+  );
+  return orientedHullRadius(nx, ny, ship.headingRadians ?? 0, radiusX, radiusY);
 }
 
 /** One contact threshold shared by physical response, ram damage and steering. */
 export function shipContact(first: ContactShip, second: ContactShip): ShipContact {
   const dx = second.position.x - first.position.x;
   const dy = second.position.y - first.position.y;
-  const distance = Math.hypot(dx, dy);
-  const normal = distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
+  const { distance, normal } = contactAxis(dx, dy);
   const required = hullExtent(first, normal.x, normal.y) + hullExtent(second, -normal.x, -normal.y);
   return { distance, normal, required };
 }

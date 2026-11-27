@@ -12,6 +12,7 @@ export type {
 import { salvageStockId } from '../salvage/salvage-stock-id';
 import { salvageDroneObstacleAsteroids } from '../salvage/salvage-patrol-geometry';
 import { moveFieldShip } from '../navigation/field-ship-routing';
+import { workerGateAvailable } from './npc-local-field-arrivals';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
@@ -88,6 +89,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
     );
   };
   private syncArrivals = (): void => {
+    const { initialPosition, getTrafficObstacles } = this.options;
     const active = new Set(this.ships.map((ship) => ship.npcId));
     for (const npc of this.options.salvagers) {
       if (this.byId.get(npc.id) !== npc) {
@@ -103,13 +105,19 @@ class LocalSalvageService implements NpcLocalSalvageService {
         this.options.field.height,
         this.options.field.seed
       );
+      const explicit = initialPosition?.(npc.id);
+      if (
+        !explicit &&
+        !workerGateAvailable(npc.id, npc.shipId, entry, this.ships, getTrafficObstacles)
+      )
+        continue;
       this.ships.push({
         npcId: npc.id,
         name: npc.name,
         shipId: npc.shipId,
-        position: { ...(this.options.initialPosition?.(npc.id) ?? entry) },
+        position: { ...(explicit ?? entry) },
         headingRadians: 0,
-        speed: localCruiseSpeed(npc),
+        speed: explicit || !getTrafficObstacles ? localCruiseSpeed(npc) : 0,
         phase:
           cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) ? 'exiting' : 'entering',
         targetWreckId: null,

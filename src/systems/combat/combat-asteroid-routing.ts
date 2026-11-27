@@ -1,3 +1,4 @@
+import { clampedSegmentProjection } from '../../core/field-geometry';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -23,13 +24,7 @@ function nearestBlocker(
   let nearest = Infinity;
   let blocker: NonNullable<StrategicCombatArenaOptions['obstacles']>[number] | null = null;
   for (const rock of arena.obstacles ?? []) {
-    const t = Math.max(
-      0,
-      Math.min(
-        1,
-        ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / lengthSquared
-      )
-    );
+    const t = clampedSegmentProjection(rock.position, start, dx, dy, lengthSquared);
     const offsetX = start.x + dx * t - rock.position.x;
     const offsetY = start.y + dy * t - rock.position.y;
     if (offsetX * offsetX + offsetY * offsetY >= (rock.radius + clearance) ** 2 || t >= nearest)
@@ -111,13 +106,7 @@ function pathBlocked(
   const dy = target.y - start.y;
   const lengthSquared = Math.max(1, dx * dx + dy * dy);
   return (arena.obstacles ?? []).some((rock) => {
-    const t = Math.max(
-      0,
-      Math.min(
-        1,
-        ((rock.position.x - start.x) * dx + (rock.position.y - start.y) * dy) / lengthSquared
-      )
-    );
+    const t = clampedSegmentProjection(rock.position, start, dx, dy, lengthSquared);
     const x = start.x + t * dx - rock.position.x;
     const y = start.y + t * dy - rock.position.y;
     return x * x + y * y < (rock.radius + clearance) ** 2;

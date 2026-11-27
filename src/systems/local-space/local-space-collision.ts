@@ -1,15 +1,13 @@
 import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
-import type { ShipHardpoints } from '../../core/ship-types';
+import { rotatePoint as rotate } from '../../core/field-geometry';
+import { shieldWorldCenter, type ShieldWorldGeometry } from '../../core/ship-contact-geometry';
 import type { WorldPoint } from '../../core/world-types';
 import { applyImpulseAtPoint, pointVelocity, rotationalMassTerm } from './local-space-physics';
 import { localAsteroidContactRadius } from './local-asteroid-footprint';
 import { compoundContact, rockContactBody, shieldContactBody } from '../../core/compound-contact';
 
-export interface ShieldWorldGeometry {
-  readonly centerOffset: WorldPoint;
-  readonly radiusX: number;
-  readonly radiusY: number;
-}
+export { createShieldWorldGeometry } from '../../core/ship-contact-geometry';
+export type { ShieldWorldGeometry } from '../../core/ship-contact-geometry';
 
 export interface ShieldCollisionImpact {
   readonly asteroidId: string;
@@ -21,13 +19,6 @@ export interface ShieldCollisionImpact {
   readonly kineticEnergy: number;
 }
 
-function rotate(point: WorldPoint, angle: number): WorldPoint {
-  return {
-    x: point.x * Math.cos(angle) - point.y * Math.sin(angle),
-    y: point.x * Math.sin(angle) + point.y * Math.cos(angle),
-  };
-}
-
 function dot(a: WorldPoint, b: WorldPoint): number {
   return a.x * b.x + a.y * b.y;
 }
@@ -35,29 +26,6 @@ function dot(a: WorldPoint, b: WorldPoint): number {
 function normalized(point: WorldPoint): WorldPoint {
   const length = Math.max(0.001, Math.hypot(point.x, point.y));
   return { x: point.x / length, y: point.y / length };
-}
-
-export function createShieldWorldGeometry(
-  hardpoints: ShipHardpoints,
-  nominalLengthMeters: number
-): ShieldWorldGeometry {
-  const scale = nominalLengthMeters / hardpoints.sourceWidth;
-  return {
-    centerOffset: {
-      x: (hardpoints.shield.centerX - hardpoints.pivot.x) * scale,
-      y: (hardpoints.shield.centerY - hardpoints.pivot.y) * scale,
-    },
-    radiusX: hardpoints.shield.radiusX * scale,
-    radiusY: hardpoints.shield.radiusY * scale,
-  };
-}
-
-function shieldCenter(ship: LocalShipState, shield: ShieldWorldGeometry): WorldPoint {
-  const offset = rotate(shield.centerOffset, ship.headingRadians);
-  return {
-    x: ship.position.x + offset.x,
-    y: ship.position.y + offset.y,
-  };
 }
 
 function separationVector(
@@ -93,7 +61,7 @@ export function resolveShieldCollisions(
   asteroids: readonly LocalAsteroid[],
   shield: ShieldWorldGeometry
 ): ShieldCollisionImpact[] {
-  const center = shieldCenter(ship, shield);
+  const center = shieldWorldCenter(ship.position, ship.headingRadians, shield);
   const impacts: ShieldCollisionImpact[] = [];
 
   for (const asteroid of asteroids) {

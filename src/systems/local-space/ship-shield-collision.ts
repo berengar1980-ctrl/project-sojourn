@@ -2,7 +2,17 @@ import { DRONE_SHIELD_RADIUS_METERS, isSecurityDrone } from '../../core/security
 import type { LocalShipState } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
-import { createShieldWorldGeometry } from './local-space-collision';
+import {
+  circleCandidateQuery,
+  contactAxis,
+  contactCandidate,
+  rotatePoint as rotate,
+} from '../../core/field-geometry';
+import {
+  shieldWorldCenter,
+  shipShieldGeometry,
+  weightedContactSeparation,
+} from '../../core/ship-contact-geometry';
 
 export interface LocalShieldShipBody {
   readonly id: string;
@@ -19,48 +29,21 @@ export interface ShipShieldCollision {
   readonly closingDistance: number;
 }
 
-function rotate(point: WorldPoint, angle: number): WorldPoint {
-  const cosine = Math.cos(angle);
-  const sine = Math.sin(angle);
-  return {
-    x: point.x * cosine - point.y * sine,
-    y: point.x * sine + point.y * cosine,
-  };
-}
-
-const shieldGeometries = new WeakMap<
-  ShipDefinition,
-  ReturnType<typeof createShieldWorldGeometry>
->();
-
-function shieldGeometry(ship: ShipDefinition): ReturnType<typeof createShieldWorldGeometry> {
-  let geometry = shieldGeometries.get(ship);
-  if (!geometry) {
-    geometry = createShieldWorldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters);
-    shieldGeometries.set(ship, geometry);
-  }
-  return geometry;
-}
-
 function maximumShieldRadius(body: LocalShieldShipBody): number {
   if (isSecurityDrone(body.id)) return DRONE_SHIELD_RADIUS_METERS;
-  const geometry = shieldGeometry(body.ship);
+  const geometry = shipShieldGeometry(body.ship);
   return Math.max(0.01, Math.abs(geometry.radiusX), Math.abs(geometry.radiusY));
 }
 
 function shieldCenter(body: LocalShieldShipBody): WorldPoint {
   if (isSecurityDrone(body.id)) return body.state.position;
-  const geometry = shieldGeometry(body.ship);
-  const offset = rotate(geometry.centerOffset, body.state.headingRadians);
-  return {
-    x: body.state.position.x + offset.x,
-    y: body.state.position.y + offset.y,
-  };
+  const geometry = shipShieldGeometry(body.ship);
+  return shieldWorldCenter(body.state.position, body.state.headingRadians, geometry);
 }
 
 function supportRadius(body: LocalShieldShipBody, directionWorld: WorldPoint): number {
   if (isSecurityDrone(body.id)) return DRONE_SHIELD_RADIUS_METERS;
-  const geometry = shieldGeometry(body.ship);
+  const geometry = shipShieldGeometry(body.ship);
   const direction = rotate(directionWorld, -body.state.headingRadians);
   const length = Math.max(0.0001, Math.hypot(direction.x, direction.y));
   const ux = direction.x / length;
@@ -72,12 +55,7 @@ function supportRadius(body: LocalShieldShipBody, directionWorld: WorldPoint): n
   return denominator > 0 ? 1 / denominator : Math.max(geometry.radiusX, geometry.radiusY);
 }
 
-function collisionPoint(
-  a: WorldPoint,
-  b: WorldPoint,
-  normal: WorldPoint,
-  radius: number
-): WorldPoint {
+function collisionPoint(a: WorldPoint, normal: WorldPoint, radius: number): WorldPoint {
   return {
     x: a.x + normal.x * radius,
     y: a.y + normal.y * radius,
@@ -100,9 +78,8 @@ export function resolveShipShieldCollisions(
       const dx = secondCenter.x - firstCenter.x;
       const dy = secondCenter.y - firstCenter.y;
       const maximum = maximumShieldRadius(first) + maximumShieldRadius(second);
-      if (dx * dx + dy * dy > (maximum + 0.000001) ** 2) continue;
-      const distance = Math.hypot(dx, dy);
-      const normal = distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
+      if (!contactCandidate(dx, dy, maximum + 0.000001)) continue;
+      const { distance, normal } = contactAxis(dx, dy);
       const firstRadius = supportRadius(first, normal);
       const secondRadius = supportRadius(second, { x: -normal.x, y: -normal.y });
       const required = firstRadius + secondRadius;
@@ -111,9 +88,11 @@ export function resolveShipShieldCollisions(
       const overlap = required - distance + 0.5;
       const firstWeight = Math.max(0.05, first.pushWeight ?? 1);
       const secondWeight = Math.max(0.05, second.pushWeight ?? 1);
-      const totalWeight = firstWeight + secondWeight;
-      const firstMove = overlap * (secondWeight / totalWeight);
-      const secondMove = overlap * (firstWeight / totalWeight);
+      const { first: firstMove, second: secondMove } = weightedContactSeparation(
+        overlap,
+        firstWeight,
+        secondWeight
+      );
 
       first.state.position = {
         x: first.state.position.x - normal.x * firstMove,
@@ -127,7 +106,7 @@ export function resolveShipShieldCollisions(
       impacts.push({
         firstId: first.id,
         secondId: second.id,
-        point: collisionPoint(firstCenter, secondCenter, normal, firstRadius),
+        point: collisionPoint(firstCenter, normal, firstRadius),
         normal,
         closingDistance: overlap,
       });
@@ -151,44 +130,59 @@ export interface ShipObstacleCollision {
   readonly closingDistance: number;
 }
 
+function resolveShieldObstacleContact(
+  body: LocalShieldShipBody,
+  obstacle: ShieldCircleObstacle,
+  center: WorldPoint
+): ShipObstacleCollision | null {
+  const dx = obstacle.position.x - center.x;
+  const dy = obstacle.position.y - center.y;
+  const maximum = maximumShieldRadius(body) + Math.max(0, obstacle.radius);
+  if (!contactCandidate(dx, dy, maximum + 0.000001)) return null;
+  const { distance, normal: towardObstacle } = contactAxis(dx, dy);
+  const shieldRadius = supportRadius(body, towardObstacle);
+  const required = shieldRadius + Math.max(0, obstacle.radius);
+  if (distance >= required) return null;
+  const overlap = required - distance + 0.5;
+  body.state.position = {
+    x: body.state.position.x - towardObstacle.x * overlap,
+    y: body.state.position.y - towardObstacle.y * overlap,
+  };
+  return {
+    shipId: body.id,
+    obstacleId: obstacle.id,
+    point: {
+      x: obstacle.position.x - towardObstacle.x * obstacle.radius,
+      y: obstacle.position.y - towardObstacle.y * obstacle.radius,
+    },
+    normal: { x: -towardObstacle.x, y: -towardObstacle.y },
+    closingDistance: overlap,
+  };
+}
+
 export function resolveShipShieldObstacleCollisions(
   bodies: readonly LocalShieldShipBody[],
   obstacles: readonly ShieldCircleObstacle[]
 ): readonly ShipObstacleCollision[] {
   const impacts: ShipObstacleCollision[] = [];
-
+  if (!bodies.length || !obstacles.length) return impacts;
+  const query = circleCandidateQuery(obstacles);
   for (const body of bodies) {
-    for (const obstacle of obstacles) {
+    let from = 0;
+    while (from < obstacles.length) {
       const center = shieldCenter(body);
-      const dx = obstacle.position.x - center.x;
-      const dy = obstacle.position.y - center.y;
-      const maximum = maximumShieldRadius(body) + Math.max(0, obstacle.radius);
-      if (dx * dx + dy * dy > (maximum + 0.000001) ** 2) continue;
-      const distance = Math.hypot(dx, dy);
-      const towardObstacle =
-        distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
-      const shieldRadius = supportRadius(body, towardObstacle);
-      const required = shieldRadius + Math.max(0, obstacle.radius);
-      if (distance >= required) continue;
-
-      const overlap = required - distance + 0.5;
-      body.state.position = {
-        x: body.state.position.x - towardObstacle.x * overlap,
-        y: body.state.position.y - towardObstacle.y * overlap,
-      };
-
-      impacts.push({
-        shipId: body.id,
-        obstacleId: obstacle.id,
-        point: {
-          x: obstacle.position.x - towardObstacle.x * obstacle.radius,
-          y: obstacle.position.y - towardObstacle.y * obstacle.radius,
-        },
-        normal: { x: -towardObstacle.x, y: -towardObstacle.y },
-        closingDistance: overlap,
-      });
+      const candidates = query(center, maximumShieldRadius(body) + 0.000001, from);
+      let moved = false;
+      for (const index of candidates) {
+        const hit = resolveShieldObstacleContact(body, obstacles[index]!, center);
+        if (!hit) continue;
+        impacts.push(hit);
+        from = index + 1;
+        moved = true;
+        break;
+      }
+      if (!moved) break;
     }
   }
-
   return impacts;
 }

@@ -5,6 +5,8 @@ import {
   createInitialSalvageShip,
   distressDiagnosisInRange,
   planSalvageRoute,
+  reviewSalvageTrafficRoute,
+  salvageTrafficSolids,
   salvageWorkInRange,
   workPoint,
 } from './salvage-work-navigation';
@@ -29,6 +31,7 @@ import type { LocalShipState } from '../../core/local-space-types';
 import type { EconomyResourceId } from '../../core/economy-types';
 import type { WorldPoint } from '../../core/world-types';
 import { advanceAutopilotRoute, resetAutopilotMotion } from '../local-space/local-space-autopilot';
+import { fieldTrafficObstacles } from '../navigation/field-traffic-obstacles';
 import { salvageWorkTimeMultiplier } from '../crew/crew-skill-effects';
 import { createSalvageEventController } from './salvage-event-service';
 import { createSalvageFieldService, type SalvageFieldService } from './salvage-field-service';
@@ -52,6 +55,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private navigationTarget: WorldPoint | null = null;
   private navigationRoute: readonly WorldPoint[] = [];
   private routeIndex = 0;
+  private trafficReviewElapsed = 0;
   private elapsed = 0;
   private approachPurpose: ApproachPurpose | null = null;
   private lastRecovery: SalvageLocalSpaceSnapshot['lastRecovery'] = null;
@@ -320,9 +324,26 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.options.shipLengthMeters ?? 70
     );
     this.routeIndex = 1;
+    this.trafficReviewElapsed = 0;
+  }
+
+  private reviewTraffic(deltaSeconds: number): void {
+    this.trafficReviewElapsed += deltaSeconds;
+    if (this.trafficReviewElapsed < 0.65) return;
+    this.trafficReviewElapsed = 0;
+    const result = reviewSalvageTrafficRoute(
+      this.options.field,
+      this.ship.position,
+      this.navigationRoute,
+      this.routeIndex,
+      this.options.shipLengthMeters ?? 70
+    );
+    this.navigationRoute = result.route;
+    this.routeIndex = result.index;
   }
 
   private updateRoute(deltaSeconds: number): void {
+    this.reviewTraffic(deltaSeconds);
     const result = advanceAutopilotRoute(
       this.ship,
       this.navigationRoute,
@@ -331,7 +352,12 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       deltaSeconds,
       true,
       true,
-      this.options.turnRateMultiplier ?? 1
+      this.options.turnRateMultiplier ?? 1,
+      {
+        obstacles: fieldTrafficObstacles(this.options.field, 'player'),
+        solids: () => salvageTrafficSolids(this.options.field),
+        clearance: Math.max(32, (this.options.shipLengthMeters ?? 70) * 0.46),
+      }
     );
     this.routeIndex = result.nextIndex;
     if (!result.completed) return;

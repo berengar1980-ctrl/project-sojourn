@@ -1,6 +1,6 @@
 import type { SectorNpcState } from '../../core/npc-types';
-import { createShieldWorldGeometry } from '../local-space/local-space-collision';
-import { resolveFieldDebrisContacts } from '../local-space/field-debris-contact';
+import { resolveShipFieldDebrisContacts } from '../local-space/field-debris-contact';
+import { solidFieldRockObstacles } from '../local-space/local-asteroid-footprint';
 import {
   resolveShipShieldCollisions,
   resolveShipShieldObstacleCollisions,
@@ -45,31 +45,10 @@ export function resolveMinerCollisions(
     if (body.id === 'player') continue;
     const miner = ships.find((ship) => ship.npcId === body.id);
     if (!miner) continue;
-    const geometry = createShieldWorldGeometry(
-      body.ship.sprite.hardpoints,
-      body.ship.nominalLengthMeters
-    );
-    const cosine = Math.cos(miner.headingRadians);
-    const sine = Math.sin(miner.headingRadians);
-    const center = {
-      x: miner.position.x + geometry.centerOffset.x * cosine - geometry.centerOffset.y * sine,
-      y: miner.position.y + geometry.centerOffset.x * sine + geometry.centerOffset.y * cosine,
-    };
-    resolveFieldDebrisContacts(
-      center,
-      { x: cosine * miner.speed, y: sine * miner.speed },
-      rocks,
-      Math.max(geometry.radiusX, geometry.radiusY)
-    );
+    resolveShipFieldDebrisContacts(body.ship, miner, rocks);
   }
   resolveShipShieldObstacleCollisions(
     bodies.filter((body) => body.id !== 'player'),
-    rocks
-      .filter((asteroid) => asteroid.routeBlocking)
-      .map((asteroid) => ({
-        id: asteroid.id,
-        position: asteroid.position,
-        radius: asteroid.collisionRadius ?? asteroid.radius,
-      }))
+    solidFieldRockObstacles(rocks)
   );
 }

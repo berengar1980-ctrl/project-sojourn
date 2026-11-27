@@ -1,14 +1,23 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { measurePerformance } from '../../core/performance-diagnostics';
+import { clampedSegmentProjection } from '../../core/field-geometry';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
+import {
+  trafficDestinationOccupied,
+  trafficPlanningObstacles,
+  trafficStepClear,
+} from './field-traffic-obstacles';
+import {
+  beginTrafficLeg,
+  endTrafficLeg,
+  noteTrafficProgress,
+  trafficEscapeWaypoint,
+} from './field-traffic-priority';
 
-export interface FieldRouteObstacle {
-  readonly id: string;
-  readonly position: WorldPoint;
-  readonly radius: number;
-}
+import type { FieldRouteObstacle } from '../../core/field-traffic-types';
+export type { FieldRouteObstacle } from '../../core/field-traffic-types';
 
 /** The active route is part of the ship's checkpoint, not hidden in a WeakMap. */
 export interface FieldRouteState {
@@ -38,8 +47,7 @@ function blocked(
   const dy = target.y - start.y;
   const lengthSq = dx * dx + dy * dy;
   if (lengthSq < 1) return false;
-  const dot = (obstacle.position.x - start.x) * dx + (obstacle.position.y - start.y) * dy;
-  const t = Math.max(0, Math.min(1, dot / lengthSq));
+  const t = clampedSegmentProjection(obstacle.position, start, dx, dy, lengthSq);
   const gap = Math.hypot(
     start.x + dx * t - obstacle.position.x,
     start.y + dy * t - obstacle.position.y
@@ -98,6 +106,7 @@ export function fieldRouteTarget(
   clearance: number,
   mode: 'grid' | 'patrol' = 'grid'
 ): WorldPoint | null {
+  const planning = trafficPlanningObstacles(target, obstacles, clearance);
   const saved = ship.routeState;
   // A ship or drifting obstacle may have entered an already planned route.
   // Invalidate the checkpointed path before attempting to move through it.
@@ -109,14 +118,16 @@ export function fieldRouteTarget(
     const establishedCorner = distance(ship.position, nextWaypoint) <= 24;
     if (
       !establishedCorner &&
-      obstacles.some((obstacle) => blocked(ship.position, nextWaypoint, obstacle, clearance))
+      planning.some((obstacle) => blocked(ship.position, nextWaypoint, obstacle, clearance))
     )
       delete ship.routeState;
   }
   const current = ship.routeState;
   if (!current || distance(current.target, target) > 1 || current.index >= current.points.length) {
+    // An occupied destination cannot be solved by repeated full-field searches.
+    if (trafficDestinationOccupied(target, planning, clearance)) return null;
     const points = measurePerformance('sim.field.route-search', () =>
-      makeRoute(ship.position, target, obstacles, clearance, mode)
+      makeRoute(ship.position, target, planning, clearance, mode)
     );
     if (points.length === 0) {
       delete ship.routeState;
@@ -137,31 +148,51 @@ export function moveFieldShip(
   clearance: number,
   mode: 'grid' | 'patrol' = 'grid'
 ): boolean {
-  const waypoint = fieldRouteTarget(ship, target, obstacles, clearance, mode);
+  beginTrafficLeg(ship, target);
+  const escape = trafficEscapeWaypoint(ship, obstacles, clearance);
+  const waypoint =
+    escape === undefined ? fieldRouteTarget(ship, target, obstacles, clearance, mode) : escape;
   if (!waypoint) {
     ship.speed = 0;
+    noteTrafficProgress(ship, dt, true);
     return false;
   }
   const dx = waypoint.x - ship.position.x;
   const dy = waypoint.y - ship.position.y;
   const remaining = Math.hypot(dx, dy);
   const step = Math.max(0, speed) * Math.max(0, dt);
+  const arrives = remaining <= Math.max(2, step);
+  const next = arrives
+    ? { ...waypoint }
+    : {
+        x: ship.position.x + (dx / remaining) * step,
+        y: ship.position.y + (dy / remaining) * step,
+      };
+  if (!trafficStepClear(ship.position, next, dt, obstacles, clearance, ship)) {
+    ship.speed = 0;
+    noteTrafficProgress(ship, dt, true);
+    return false;
+  }
   ship.headingRadians = Math.atan2(dy, dx);
-  if (remaining <= Math.max(2, step)) {
+  if (arrives) {
     ship.position = { ...waypoint };
     ship.speed = 0;
+    if (escape) {
+      delete ship.routeState;
+      noteTrafficProgress(ship, dt, false);
+      return false;
+    }
     const route = ship.routeState!;
     route.index += 1;
     if (route.index >= route.points.length) {
       delete ship.routeState;
+      endTrafficLeg(ship);
       return distance(ship.position, target) < 2;
     }
     return false;
   }
-  ship.position = {
-    x: ship.position.x + (dx / remaining) * step,
-    y: ship.position.y + (dy / remaining) * step,
-  };
+  ship.position = next;
   ship.speed = speed;
+  noteTrafficProgress(ship, dt, false);
   return false;
 }

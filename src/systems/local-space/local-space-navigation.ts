@@ -1,5 +1,6 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { pointToSegmentDistanceSquared, squaredDistance } from '../../core/field-geometry';
 import { localAsteroidContactRadius } from './local-asteroid-footprint';
 
 interface GridNode extends WorldPoint {
@@ -95,31 +96,6 @@ function distance(a: WorldPoint, b: WorldPoint): number {
 
 function key(column: number, row: number): string {
   return column + ':' + row;
-}
-
-function squaredDistance(a: WorldPoint, b: WorldPoint): number {
-  const x = a.x - b.x;
-  const y = a.y - b.y;
-  return x * x + y * y;
-}
-
-function pointToSegmentDistanceSquared(
-  point: WorldPoint,
-  start: WorldPoint,
-  end: WorldPoint
-): number {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const lengthSquared = dx * dx + dy * dy;
-  if (lengthSquared === 0) return squaredDistance(point, start);
-
-  const projection = Math.max(
-    0,
-    Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)
-  );
-  const offsetX = point.x - (start.x + dx * projection);
-  const offsetY = point.y - (start.y + dy * projection);
-  return offsetX * offsetX + offsetY * offsetY;
 }
 
 function obstacleList(

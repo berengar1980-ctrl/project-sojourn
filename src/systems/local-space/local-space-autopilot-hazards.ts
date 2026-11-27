@@ -1,5 +1,11 @@
 import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { advanceAutopilotRoute } from './local-space-autopilot';
+import {
+  fieldTrafficObstacles,
+  reviewFieldTrafficRoute,
+} from '../navigation/field-traffic-obstacles';
+import type { FieldRouteObstacle } from '../navigation/field-ship-routing';
 import type { ShieldWorldGeometry } from './local-space-collision';
 import { planPointRoute } from './local-space-navigation';
 import { crewAvoidsAsteroid, findRouteAsteroidHazard } from './local-space-hazard-avoidance';
@@ -15,8 +21,22 @@ export class LocalSpaceAutopilotHazards {
     private readonly crew: { readonly piloting: number; readonly sensors: number },
     private readonly random: () => number,
     private readonly notice: (message: string) => void,
-    private readonly additionalObstacles: () => readonly LocalAsteroid[] = () => []
+    private readonly additionalObstacles: () => readonly LocalAsteroid[] = () => [],
+    private readonly getTraffic: () => readonly FieldRouteObstacle[] = () =>
+      fieldTrafficObstacles(instance, 'player')
   ) {}
+
+  advanceRoute(...args: Parameters<typeof advanceAutopilotRoute>) {
+    const [ship, route, index, speed, dt, brake, reverse, turnRate] = args;
+    return advanceAutopilotRoute(ship, route, index, speed, dt, brake, reverse, turnRate, {
+      obstacles: this.getTraffic(),
+      solids: () =>
+        [...this.instance.asteroids, ...this.additionalObstacles()].filter(
+          (rock) => rock.routeBlocking
+        ),
+      clearance: Math.max(this.shield.radiusX, this.shield.radiusY),
+    });
+  }
 
   reset(): void {
     this.elapsed = 0;
@@ -33,9 +53,32 @@ export class LocalSpaceAutopilotHazards {
     this.elapsed += seconds;
     if (this.elapsed < 0.65) return { route, index };
     this.elapsed = 0;
+    const clearance = Math.max(this.shield.radiusX, this.shield.radiusY) + 24;
+    const traffic = reviewFieldTrafficRoute(
+      {
+        start: this.instance.ship.position,
+        asteroids: [...this.instance.asteroids, ...this.additionalObstacles()].filter(
+          (rock) => rock.id !== excludedId
+        ),
+        clearance,
+        width: this.instance.width,
+        height: this.instance.height,
+      },
+      route,
+      index,
+      this.getTraffic()
+    );
+    return this.reviewAsteroidHazard(traffic.route, traffic.index, clearance, excludedId);
+  }
+
+  private reviewAsteroidHazard(
+    route: readonly WorldPoint[],
+    index: number,
+    clearance: number,
+    excludedId: string | null
+  ): { readonly route: readonly WorldPoint[]; readonly index: number } {
     const waypoint = route[index];
     if (!waypoint) return { route, index };
-    const clearance = Math.max(this.shield.radiusX, this.shield.radiusY) + 24;
     const hazard = findRouteAsteroidHazard(
       this.instance.ship,
       waypoint,

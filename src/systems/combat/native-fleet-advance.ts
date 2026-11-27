@@ -1,6 +1,7 @@
 import type { NativeFleetBoarding } from './native-fleet-boarding';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
 import { getShipDefinition } from '../ships';
+import { shipShieldFootprint } from '../../core/ship-contact-geometry';
 import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import { materializeNativeFleetWrecks } from './native-fleet-wrecks';
 import type {
@@ -10,6 +11,18 @@ import type {
   StrategicCombatObstacle,
 } from './strategic-combat-types';
 import { resolveCombatantCollision } from './combat-contact-response';
+import {
+  claimContactPair as claimPair,
+  contactPairKey as pairKey,
+  claimFieldContact,
+  fieldCombatActors,
+  fieldCombatActor,
+  fieldCombatOwnsId,
+  fieldCombatOwnedIds,
+  hasFieldContactStep,
+  recordForeignContact,
+  registerFieldCombatActors,
+} from './field-contact-authority';
 import type { FleetCombatContacts, StrategicCombatService } from './strategic-combat-service-types';
 
 export function escapedNativeFleetShips(services: readonly StrategicCombatService[]): Set<string> {
@@ -53,15 +66,21 @@ function wreckObstacle(rock: CombatVisualAsteroid): StrategicCombatObstacle {
   return { id: rock.id, position: rock.position, radius: rock.collisionRadius ?? rock.radius };
 }
 
-function pairKey(first: string, second: string): string {
-  return JSON.stringify(first < second ? [first, second] : [second, first]);
-}
-
-function claimPair(pairs: Set<string>, first: string, second: string): boolean {
-  const key = pairKey(first, second);
-  if (pairs.has(key)) return false;
-  pairs.add(key);
-  return true;
+/** Neutral traffic uses the same navigation footprint as the civilian field.
+ * Fleet combatants keep their native tactical radius and contact ownership.
+ */
+export function neutralFleetBlocker(
+  ship: StrategicCombatBystander,
+  radiusById: ReadonlyMap<string, number>
+): StrategicCombatObstacle {
+  const configured = radiusById.get(ship.id);
+  const definition = getShipDefinition(ship.shipId);
+  const pose = ship.fieldContact?.pose ?? ship;
+  const footprint =
+    configured === undefined && definition
+      ? shipShieldFootprint(definition, pose.position, pose.headingRadians)
+      : { position: pose.position, radius: configured ?? 30 };
+  return { id: 'ship:' + ship.id, ...footprint };
 }
 
 function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): FleetCombatContacts {
@@ -73,8 +92,9 @@ function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): F
     const status = service.getStatus();
     if (!status.winner) activePairs.add(pairKey(status.attackerId, status.defenderId));
   }
+  const world = hasFieldContactStep(frame.arena.fieldWorld) ? frame.arena.fieldWorld : undefined;
   const claimHullContact = (first: string, second: string) =>
-    claimPair(hullContacts, first, second);
+    world ? claimFieldContact(world, first, second) : claimPair(hullContacts, first, second);
   return {
     elapsedSeconds: frame.elapsed,
     isBoarding: (id) => frame.boarding.includes(id),
@@ -87,13 +107,15 @@ function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): F
       return true;
     },
     resolveFleetBystander(ship, bystanderId) {
-      const other = actors.get(bystanderId);
-      if (!other) return false;
+      const local = actors.get(bystanderId);
+      const other = local ?? (world ? fieldCombatActor(world, bystanderId) : undefined);
+      if (!other) return Boolean(world && fieldCombatOwnsId(world, bystanderId));
       // Active opponents run their own ram and hull phases. Applying a
       // bystander correction first would swallow that pair's ram impact.
       const active = activePairs.has(pairKey(ship.setup.id, bystanderId));
       if (!active && other.hullHp > 0 && !escaped.has(bystanderId)) {
-        resolveCombatantCollision(ship, other, claimHullContact);
+        const resolved = resolveCombatantCollision(ship, other, claimHullContact);
+        if (resolved && !local && world) recordForeignContact(world);
       }
       return true;
     },
@@ -140,6 +162,63 @@ function stepWorld(frame: NativeFleetFrame): void {
   materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
 }
 
+interface FrameTraffic {
+  readonly actorIds: ReadonlySet<string>;
+  readonly world: StrategicCombatArenaOptions['fieldWorld'];
+  readonly neutral: readonly StrategicCombatBystander[];
+}
+
+function frameTraffic(frame: NativeFleetFrame): FrameTraffic {
+  const actorIds = new Set(frame.actors.map((actor) => actor.setup.id));
+  const world = hasFieldContactStep(frame.arena.fieldWorld) ? frame.arena.fieldWorld : undefined;
+  if (world) registerFieldCombatActors(world, frame.actors, (id) => frame.escapedRecords.has(id));
+  const ownedIds = world ? fieldCombatOwnedIds(world) : actorIds;
+  return {
+    actorIds,
+    world,
+    neutral: frame.bystanders.filter((ship) => !ownedIds.has(ship.id)),
+  };
+}
+
+function refreshDuelTraffic(
+  frame: NativeFleetFrame,
+  traffic: FrameTraffic,
+  service: StrategicCombatService,
+  index: number,
+  duelIds: ReadonlySet<string>,
+  escaped: ReadonlySet<string>,
+  wreckBlockers: readonly StrategicCombatObstacle[]
+): void {
+  const foreign = traffic.world
+    ? [...fieldCombatActors(traffic.world).values()].filter(
+        (actor) => !traffic.actorIds.has(actor.setup.id)
+      )
+    : [];
+  const others = [...frame.actors, ...foreign]
+    .filter(
+      (actor) => !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)
+    )
+    .map((actor) => ({
+      id: actor.setup.id,
+      shipId: actor.setup.shipId,
+      position: actor.position,
+      headingRadians: actor.headingRadians,
+    }));
+  const blockers = frame.allObstacles[index]!;
+  blockers.length = 0;
+  blockers.push(
+    ...frame.baseObstacles,
+    ...wreckBlockers,
+    ...traffic.neutral.map((ship) => neutralFleetBlocker(ship, frame.radiusById)),
+    ...others.map((ship) => ({
+      id: 'ship:' + ship.id,
+      position: ship.position,
+      radius: frame.radiusById.get(ship.id) ?? 35,
+    }))
+  );
+  service.setBystanders([...others, ...traffic.neutral]);
+}
+
 /** One asteroid tick, one native actor tick, one recorded wreck per vessel. */
 export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   const {
@@ -151,20 +230,12 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     arena,
     recordedWrecks,
     escapedRecords,
-    radiusById,
     seed,
     elapsed,
     dt,
-    bystanders,
   } = frame;
   stepWorld(frame);
-  const bystanderBlockers = bystanders.map((ship) => ({
-    id: 'ship:' + ship.id,
-    position: ship.position,
-    radius:
-      radiusById.get(ship.id) ??
-      Math.max(20, (getShipDefinition(ship.shipId)?.nominalLengthMeters ?? 60) * 0.5),
-  }));
+  const traffic = frameTraffic(frame);
   const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
   for (const id of escaped) escapedRecords.add(id);
   frame.boarding.resolve(elapsed, true);
@@ -181,29 +252,7 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     if (service.getStatus().winner || escaped.has(source.setup.id) || escaped.has(target.setup.id))
       continue;
     const duelIds = new Set([source.setup.id, target.setup.id]);
-    const others = actors
-      .filter(
-        (actor) => !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)
-      )
-      .map((actor) => ({
-        id: actor.setup.id,
-        shipId: actor.setup.shipId,
-        position: actor.position,
-        headingRadians: actor.headingRadians,
-      }));
-    const blockers = allObstacles[index]!;
-    blockers.length = 0;
-    blockers.push(
-      ...baseObstacles,
-      ...wreckBlockers,
-      ...bystanderBlockers.filter((ship) => !duelIds.has(ship.id.slice('ship:'.length))),
-      ...others.map((ship) => ({
-        id: 'ship:' + ship.id,
-        position: ship.position,
-        radius: radiusById.get(ship.id) ?? 35,
-      }))
-    );
-    service.setBystanders([...others, ...bystanders.filter((ship) => !duelIds.has(ship.id))]);
+    refreshDuelTraffic(frame, traffic, service, index, duelIds, escaped, wreckBlockers);
     const rockCount = asteroidWorld.length;
     service.advance(dt, contacts);
     const state = service.getStatus();

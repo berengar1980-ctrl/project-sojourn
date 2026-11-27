@@ -17,6 +17,14 @@
       "mode": "derived",
       "reason": "Pure physical hull contact solver for transient civilian ships passed into native PvP; stores no checkpoint state."
     },
+    "src/systems/npcs/npc-local-field-arrivals.ts": {
+      "mode": "derived",
+      "reason": "Admission derives from the current worker poses, shared gate, ship geometry and live field traffic; waiting is already represented by a sector worker without a materialized local pose."
+    },
+    "src/systems/navigation/field-traffic-priority.ts": {
+      "mode": "transient",
+      "reason": "Per-live-pose traffic priority, progress and committed escape waypoint are reconstructed from the current route after loading; no independent physics state."
+    },
     "src/systems/navigation/field-traffic-obstacles.ts": {
       "mode": "derived",
       "reason": "Navigation-only ship footprints derived from existing live poses and ship hardpoints; no independent checkpoint state."
@@ -202,6 +210,10 @@
     "src/systems/combat/native-fleet-retarget.ts": {
       "mode": "transient",
       "reason": "Guarded PvP Fleet-only survivor retarget of one existing live actor; no save or career world authority."
+    },
+    "src/systems/combat/field-contact-authority.ts": {
+      "mode": "transient",
+      "reason": "Field-scoped live actor references, contact pair claims and snapshot revision; reset each engagement step, never serialized."
     },
     "src/systems/combat/native-fleet-advance.ts": {
       "mode": "transient",

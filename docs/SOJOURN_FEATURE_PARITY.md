@@ -2073,3 +2073,125 @@ aufbereitet. Die native Kampf-KI und die Kollisionsreaktionen bleiben bestehen.
 Die Schutzbedingung für kämpfende Drohnen gilt weiterhin für aktive und
 beendete Duelle. Keine neuen Save-Daten. Langzeitsimulation, Feature-Parität
 und Performancegewinn sind vor dem Merge zu verifizieren.
+
+## Review-Log (2026-11-27) – Gemeinsame Navigationsgeometrie (PR #407)
+
+**Keine Statusänderung** der bestehenden Feature-IDs. Lokale Navigation,
+Schildkontakt und native Kampfengine verwenden gemeinsame mathematische
+Grundfunktionen und Schildabmessungen. Die bestehenden Kontaktarten,
+Vorhersagegrenzen, Manöver, Feld-Ticks und Save-Strukturen bleiben erhalten.
+Die deterministischen Referenzen und Quality Gate prüfen die Parität.
+
+**Keine Statusänderung** der bestehenden Feature-IDs. Mining und Bergung
+nutzen eine gemeinsame feldbezogene Verkehrsabfrage. Bergungsarbeiter und
+die reguläre Spielernavigation beziehen anwesende Schiffe in die Routenplanung
+ein. Die Sondernavigation im Distress-Ereignis bleibt zunächst unverändert.
+Physische Körper, Kollisionsreaktionen und Save-Strukturen bleiben bestehen.
+
+**Keine Statusänderung** der bestehenden Feature-IDs. Die freie Feldfahrt
+von Frachtern, Piraten, Patrouillen und Sicherheitsdrohnen nutzt zusätzlich
+die vorhandenen realen Verkehrshindernisse. Geschwindigkeit wird aus der
+aktuellen Pose abgeleitet. Die native 1vs1-Engine und ihre Manöver bleiben
+unverändert. Ankunft, Abflug und Verkehrsdurchsatz sind zu validieren.
+
+**Keine Statusänderung** der Feature-IDs. Schildzentrum, Kontaktachse und
+bestehende Kampfhüllen-Geometrie teilen die technischen Grundfunktionen;
+Schild- und Hüllenkontakt bleiben unterschiedliche Spielregeln.
+
+**Keine Statusänderung** der Feature-IDs. Bewegte Schiffshindernisse werden
+bei ziviler Routenfahrt auf einen kurzen relativen Kollisionskurs geprüft.
+Ein sicheres Warten behält den vorhandenen Routenplan. Das aktive
+Kampfflugverhalten bleibt unverändert; Verkehrsdurchsatz ist zu prüfen.
+
+**Keine Statusänderung** der Feature-IDs. Blockierte zivile Ziele lösen
+keine wiederholte vollständige Gittersuche aus. Spielerrouten können bei
+stationärem Verkehr mit dem vorhandenen Planer einen Umweg erhalten;
+bewegter Querverkehr verwendet die kurze Vorhersage und Warteentscheidung.
+
+**Keine Statusänderung** der Feature-IDs. Reguläre zivile Arbeiterankünfte
+prüfen das gemeinsame Feldtor gegen Schildgeometrie und vorhandene Posen;
+belegte Tore werden abgewartet, ohne einen zweiten Positionszustand anzulegen.
+Auswirkung auf Wirtschaftsfluss und mögliche Wartezustände ist zu testen.
+
+**Keine Statusänderung** der Feature-IDs. Gemeinsamer Feldhindernisvertrag
+ausgelagert, um zyklische Modulimporte zu verhindern.
+
+**Keine Statusänderung** der Feature-IDs. Zivile Vorfahrt nach Ausflugstatus
+und stabiler ID, kurze Fortschrittsüberwachung und ein gebundener lokaler
+Ausweichpunkt bei ausbleibender Bewegung. Aktive Gefechte sind ausgenommen.
+
+**Keine Statusänderung** der Feature-IDs. Auch Spielerrouten können bei
+fehlendem Fortschritt einen vorübergehenden seitlichen Ausweichpunkt
+anfahren. Bestehende Feldgrenzen und stationäre Hindernisse werden geprüft.
+
+**Keine Statusänderung** der Feature-IDs. Die Vorfahrt wird je Begegnung
+beidseitig festgelegt (Ausflugstatus, Wartezeit, stabile ID) und erst bei
+Trennung bzw. geändertem Auftrag wieder freigegeben. Ein neu versperrter
+Ausweichpunkt wird zunächst abgewartet; die unmittelbare Kontaktprüfung
+bleibt auch für vorfahrtsberechtigte Schiffe zwingend.
+
+**Keine Statusänderung** der Feature-IDs. Neutrale Schiffe im Gefechtsfeld
+verwenden dieselbe geometrische Navigationsgrundlage wie zivile Schiffe.
+Aktive Duellpartner behalten ihre bisherigen taktischen Radien und die
+Kontaktzuständigkeit; die Vorfahrtsregeln werden nicht in den Kampf übernommen.
+
+**Keine Statusänderung** der Feature-IDs. Mining- und Salvage-Feldquellen
+speisen sowohl zivile Navigation als auch taktische Hindernisabfragen;
+Identitätsfilter und Anwesenheitsprüfung sind gemeinsam. Kampfbeteiligte
+bleiben in FleetCombat von der neutralen Liste ausgeschlossen.
+
+**Keine Statusänderung** der Feature-IDs. Identische Segmentprojektion
+wird von den bestehenden zivilen, taktischen und Drohnen-Planern verwendet;
+Routenwahl, Abstände, Zeitintervalle und Sensorregeln bleiben unverändert.
+
+**Keine Statusänderung** der Feature-IDs. Kampfschiff-zu-Feldschiff-Kontakte
+verteilen die Korrektur nach gemeinsamer gewichteter Kontaktgeometrie.
+Der Feldbesitzer prüft die aktuelle Zuständigkeit, die Fleet-Kontaktliste
+verhindert doppelte Paare innerhalb des Flottenschritts. Ungebundene
+Test-/Standalone-Hindernisse bleiben unveränderliche Kollisionspartner.
+Keine neue Schadensregel oder Änderung der aktiven Duellphysik.
+
+**Keine Statusänderung** der Feature-IDs. Gemischte Kontakte berücksichtigen
+den tatsächlich verfügbaren Freiheitsgrad ziviler Bewegung; Regressionen
+prüfen beidseitige Korrektur, Paar-Deduplizierung und Eigentümerwechsel.
+
+**Keine Statusänderung** der Feature-IDs. Unabhängige Gefechte auf derselben
+Feldinstanz teilen eine Kontakt-Paarliste und native Live-Actor-Referenzen.
+Kampfschiffe anderer Gefechte sind Hindernisse, keine zusätzlichen Ziele.
+Stand-alone-Duelle behalten ihre lokale Zuständigkeit.
+
+**Keine Statusänderung** der Feature-IDs. Ein Regressionstest prüft zwei
+unabhängige Flotten, echte Actor-Referenzen, einmalige Paarauflösung,
+Snapshot-Aktualisierung und getrennte Feldinstanzen.
+
+**Keine Statusänderung** der Feature-IDs. Flotten-Hindernisabfragen
+sind aus der Schrittkoordination extrahiert; Einzel-ID-Kontaktabfragen
+vermeiden den wiederholten Aufbau aller Actor-Maps.
+
+**Keine Statusänderung** der Feature-IDs. Trümmerimpulse und kreisförmige
+Festkörperabfragen verwenden gemeinsame Geometrie- und Radiusfunktionen.
+Drohnen behalten ihren kompakten Radius, Kampf-Konturphysik und
+Rammregeln bleiben unverändert.
+
+**Keine Statusänderung** der Feature-IDs. Gemeinsame konservative
+Kreis-Broadphase für Schild-, Trümmer- und Verkehrskontakte, gemeinsame
+Segmentprojektion und regulärer Feldzutritt einschließlich bewaffneter
+Schiffe. Ausfahrende Schiffe reservieren nur die kurze Torannäherung.
+Standalone-Fallbacks bleiben für ungebundene Aufrufer erhalten.
+
+**Keine Statusänderung** der Feature-IDs. Statische Kreis-Hindernisse
+werden ab 32 Einträgen räumlich vorausgewählt; erneute Abfragen nach
+Korrekturen erhalten Kontaktreihenfolge und Kettenkontakte. Native
+Kampfschiffe bleiben bei ihrer bisherigen dynamischen Kontaktauflösung.
+
+**Keine Statusänderung** der Feature-IDs. Abschlussprüfung: transitive
+Verkehrsrangfolge (Viertelsekunden-Buckets), Gegenverkehr und Vier-Wege-
+Kreuzung in beiden Tick-Reihenfolgen sowie wiederholte gefechtsübergreifende
+Kontakte. Standalone-Fallbacks und native Hull-/Ram-Physik bleiben bewusst
+getrennt von zivilen Schildkontakten. Der Index bleibt auf statische
+Hindernisse begrenzt; bewegte Objekte werden live geprüft.
+
+**Keine Statusänderung** der Feature-IDs. Zielbelegungen durch abfahrende
+Schiffe verhindern nicht mehr den Routenstart. Stehende Arbeitsschiffe
+bleiben Hindernisse; alle beweglichen Schiffe bleiben in der unmittelbaren
+Kontaktprüfung. Der unveränderte Kreuzungs-Stresstest ist maßgeblich.

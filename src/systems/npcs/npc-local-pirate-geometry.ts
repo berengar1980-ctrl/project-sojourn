@@ -1,6 +1,6 @@
 import type { WorldPoint } from '../../core/world-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
-import type { FieldRouteState } from '../navigation/field-ship-routing';
+import type { FieldRouteObstacle, FieldRouteState } from '../navigation/field-ship-routing';
 import { hashId } from './npc-mining-targets';
 
 export interface PirateRuntime {
@@ -62,4 +62,21 @@ export function separateCoincidentSpawn(
     };
     delete pirate.routeState;
   }
+}
+
+/** Standalone callers without a field authority retain their original routing inputs. */
+export function standalonePirateObstacles(
+  selfId: string,
+  targetId: string,
+  ships: ReadonlyMap<string, PirateRuntime>,
+  workers: ReadonlyArray<{ npcId: string; position: WorldPoint }>
+): FieldRouteObstacle[] {
+  return [
+    ...[...ships.values()]
+      .filter((other) => other.npcId !== selfId)
+      .map((other) => ({ id: other.npcId, position: other.position, radius: 40 })),
+    ...workers
+      .filter((worker) => worker.npcId !== targetId)
+      .map((worker) => ({ id: worker.npcId, position: worker.position, radius: 45 })),
+  ];
 }

@@ -11,6 +11,8 @@ const mapPanel = fs.readFileSync(path.join(root, 'src/ui/map/star-map-panel.ts')
 const mapRenderer = readModuleSource(root, 'src/ui/map/topdown-map-renderer.ts');
 const miningNpc = readModuleSource(root, 'src/systems/npcs/npc-local-mining-service.ts');
 const miningContacts = readModuleSource(root, 'src/systems/npcs/npc-local-mining-contacts.ts');
+const rockFootprint = readModuleSource(root, 'src/systems/local-space/local-asteroid-footprint.ts');
+const debrisContact = readModuleSource(root, 'src/systems/local-space/field-debris-contact.ts');
 const salvageNpc = fs.readFileSync(
   path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
   'utf8'
@@ -28,8 +30,10 @@ assert(
 assert(
   miningNpc.includes('resolveMinerCollisions(') &&
     miningContacts.includes('resolveShipShieldObstacleCollisions') &&
-    miningContacts.includes('filter((asteroid) => asteroid.routeBlocking)') &&
-    miningContacts.includes('resolveFieldDebrisContacts'),
+    miningContacts.includes('solidFieldRockObstacles(rocks)') &&
+    rockFootprint.includes('filter((rock) => rock.routeBlocking)') &&
+    miningContacts.includes('resolveShipFieldDebrisContacts') &&
+    debrisContact.includes('return resolveFieldDebrisContacts('),
   'NPC miners must collide with local asteroids'
 );
 assert(

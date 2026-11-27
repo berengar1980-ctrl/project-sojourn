@@ -5,10 +5,7 @@ import { permanentSalvageField } from './game-controller-salvage-stocks';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
-import {
-  createSalvageSecurityDrone,
-  salvageDroneBystanders,
-} from './game-controller-salvage-drone';
+import { createSalvageSecurityDrone } from './game-controller-salvage-drone';
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
 import {
   salvageFieldCombatArena,
@@ -22,7 +19,11 @@ import {
 } from '../systems/salvage/salvage-container-motion';
 import { syncFieldTrafficImpulses } from '../systems/combat/field-combat-arena';
 import { isSecurityDrone } from '../core/security-drone';
-import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
+import {
+  bindSalvageArmedTraffic,
+  createNpcSalvageRuntime,
+} from './game-controller-salvage-npc-runtime';
+import { liveFieldBystanders, visitArmedFieldTraffic } from './game-controller-field-traffic';
 import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
 import type { WorldPoint } from '../core/world-types';
 
@@ -74,6 +75,14 @@ export function careerSalvageDrone(
       field
     );
     active.set(field.sourceLocationId, { field, drone, salvagers });
+    bindSalvageArmedTraffic(field, (add) =>
+      visitArmedFieldTraffic(
+        field.sourceLocationId,
+        context.economy.localPirates.get(field.sourceLocationId),
+        drone,
+        add
+      )
+    );
   }
   context.economy.wreckClaims.rememberField(field, drone.exportState());
   return drone;
@@ -280,13 +289,7 @@ function advanceSalvageField(
   const currentCombat = context.engagements.fieldCombat?.(
     locationId,
     world.field.seed,
-    salvageDroneBystanders(
-      null,
-      world.salvagers.ships,
-      world.drone,
-      locationId,
-      traffic.snapshot(npcs)
-    )
+    liveFieldBystanders(world.field, 'player')
   );
   if (currentCombat)
     syncFieldTrafficImpulses(salvageFieldPhysicsBodies(world.field), currentCombat.arena);

@@ -37,11 +37,12 @@ async function readSavedCareer(page) {
   }, storageKey);
 }
 
-async function saveFromSystemMenu(page) {
+async function saveFromSystemMenu(page, frozen = false) {
+  const clickOptions = { force: frozen };
   if ((await page.locator('.settings-menu__toggle').getAttribute('aria-expanded')) !== 'true') {
-    await page.locator('.settings-menu__toggle').click();
+    await page.locator('.settings-menu__toggle').click(clickOptions);
   }
-  await page.locator('[data-career-save]').click();
+  await page.locator('[data-career-save]').click(clickOptions);
   try {
     await page.getByText('Spielstand erfolgreich gespeichert.').waitFor({ timeout: 10000 });
   } catch {
@@ -54,8 +55,23 @@ async function saveFromSystemMenu(page) {
   assert.equal(saved.envelope.formatVersion, 1);
   assert.equal(saved.snapshot.version, 1);
   assert.deepEqual(Object.keys(saved.snapshot.sections).sort(), [...required].sort());
-  await page.locator('.settings-menu__close').click();
+  await page.locator('.settings-menu__close').click(clickOptions);
   return saved;
+}
+
+// Compare snapshots at the same simulation instant, not after arbitrary CI
+// rendering delays. The real launch uses two animation frames to mount the
+// controller; the next frame would begin simulation.
+async function reloadFrozenCareer(page) {
+  const now = await page.evaluate(() => Date.now());
+  await page.clock.pauseAt(new Date(now + 100));
+  await page.reload();
+  const resume = page.locator('[data-action="continue"]');
+  await resume.waitFor();
+  assert.equal(await resume.isEnabled(), true, 'Saved career must enable Continue after reload');
+  await resume.click({ force: true });
+  await page.clock.runFor(32);
+  await page.locator('.settings-menu__toggle').waitFor({ timeout: 45000 });
 }
 
 // Measure responsiveness during a real running campaign, not on the title screen.
@@ -113,10 +129,9 @@ async function verifyExtendedCareer(page, errors, after) {
   const advancedBefore = await saveFromSystemMenu(page);
   verifyAdvancedSnapshot(advancedBefore, fieldIds);
 
-  await page.reload();
-  await page.locator('[data-action="continue"]').click();
-  await page.locator('.settings-menu__toggle').waitFor({ timeout: 45000 });
-  const resumed = await saveFromSystemMenu(page);
+  await reloadFrozenCareer(page);
+  const resumed = await saveFromSystemMenu(page, true);
+  await page.clock.resume();
   verifyAdvancedSnapshot(resumed, fieldIds);
   assert.deepEqual(
     resumed.snapshot.sections.claims,
@@ -164,6 +179,7 @@ async function run() {
 
   try {
     await verifyFleetFieldLayout(page);
+    await page.clock.install();
     await page.goto(url);
     await page.locator('[data-action="campaign"]').click();
     await page.locator('[name="captainName"]').fill('Reload Browser Tester');
@@ -181,16 +197,12 @@ async function run() {
     );
 
     // A genuine document reload destroys every JS module, controller, and service.
-    await page.reload();
-    const resume = page.locator('[data-action="continue"]');
-    await resume.waitFor();
-    assert.equal(await resume.isEnabled(), true, 'Saved career must enable Continue after reload');
-    await resume.click();
-    await page.locator('.settings-menu__toggle').waitFor({ timeout: 45000 });
+    await reloadFrozenCareer(page);
     await page.getByText('Reload Browser Tester').first().waitFor();
 
     // Save again using the newly reconstructed controller, not the old instance.
-    const after = await saveFromSystemMenu(page);
+    const after = await saveFromSystemMenu(page, true);
+    await page.clock.resume();
     assert.equal(after.snapshot.sections.player.profile.captainName, 'Reload Browser Tester');
     assert.equal(after.snapshot.sections.player.profile.shipName, 'Persistent Voyager');
     assert.deepEqual(

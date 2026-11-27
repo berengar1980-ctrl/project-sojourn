@@ -11,6 +11,7 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { BoardingOutcome } from '../../core/boarding-types';
 import { settleNpcCombatPirateLoot } from './npc-combatant-setup';
 import type { EngagementRuntime } from './star-map-engagement-runtime-types';
+import { registerFieldCombatActors, resetFieldContactStep } from './field-contact-authority';
 
 function fieldCombatServices(runtime: EngagementRuntime, locationId: string, seed: number) {
   const services: CareerFleetEncounter[] = [];
@@ -113,11 +114,22 @@ export function removeFieldCombatWrecks(
 }
 
 export function resetFieldCombatSteps(runtime: EngagementRuntime): void {
-  const playerWorld = runtime.playerCombat?.getArena().fieldWorld;
-  if (playerWorld) playerWorld.advanced = false;
-  for (const entry of runtime.backgroundCombats.values()) {
-    const world = entry.combat.getArena().fieldWorld;
-    if (world) world.advanced = false;
+  const encounters = [
+    ...(runtime.playerFleet ? [runtime.playerFleet] : []),
+    ...[...runtime.backgroundCombats.values()].map((entry) => entry.fleet),
+  ];
+  const reset = new Set<NonNullable<StrategicCombatArenaOptions['fieldWorld']>>();
+  for (const encounter of encounters) {
+    const world = encounter.combat.getArena().fieldWorld;
+    if (!world) continue;
+    if (!reset.has(world)) {
+      reset.add(world);
+      world.advanced = false;
+      resetFieldContactStep(world);
+    }
+    registerFieldCombatActors(world, encounter.fleet.fieldActors(), (id) =>
+      encounter.fleet.hasEscaped(id)
+    );
   }
 }
 

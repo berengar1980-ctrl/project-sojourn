@@ -7,11 +7,7 @@ import { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import { advanceSalvagePirateResponse } from './game-controller-salvage-pirates';
 import { completeSalvageSectorEvent } from './game-controller-salvage-event-progress';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
-import {
-  createSalvageSecurityDrone,
-  salvageDroneBystanders,
-  salvageDroneCanSee,
-} from './game-controller-salvage-drone';
+import { createSalvageSecurityDrone, salvageDroneCanSee } from './game-controller-salvage-drone';
 import {
   advanceDistressRamming,
   createDistressRammingState,
@@ -42,6 +38,7 @@ import {
 import { returnToStarMapFromSalvage } from './game-controller-salvage-exit';
 import { createWreckClaimActions, wreckClaimOwners } from './game-controller-salvage-claims';
 import {
+  bindSalvageArmedTraffic,
   createNpcSalvageRuntime,
   detachNpcSalvagePlayer,
   hasNpcSalvageRuntime,
@@ -50,6 +47,7 @@ import {
   requestDistressDiagnosis,
   tickDistressDiagnosis,
 } from './game-controller-salvage-diagnosis';
+import { liveFieldBystanders, visitArmedFieldTraffic } from './game-controller-field-traffic';
 import type { SalvageSceneOptions, SalvageSceneController } from './game-controller-salvage-types';
 export type { SalvageSceneOptions, SalvageSceneController } from './game-controller-salvage-types';
 type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
@@ -270,7 +268,6 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     (duel) => duel.arena.backdropSeed === context.field.seed
   );
   const fieldCombat = combat ?? duels[0];
-  const playerBody = service.getSnapshot().ship;
   if (fieldCombat) syncSalvageCombatField(context.field, fieldCombat);
   tickSalvageTraffic(context, deltaSeconds, combat, duels);
   if (combat) {
@@ -329,26 +326,9 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     );
   }
   if (fieldCombat) {
-    const contacts = salvageDroneBystanders(
-      null,
-      npcSalvage.ships,
-      context.drone,
-      context.field.sourceLocationId,
-      context.pirates.snapshot(options.sectorNpcs)
-    );
     options.onCombatBystanders?.(
       context.field,
-      combat
-        ? contacts
-        : [
-            ...contacts,
-            {
-              id: 'player',
-              shipId: options.ship.id,
-              position: playerBody.position,
-              headingRadians: playerBody.headingRadians,
-            },
-          ]
+      liveFieldBystanders(context.field, combat ? 'player' : undefined)
     );
     syncFieldTrafficImpulses(salvageFieldPhysicsBodies(context.field), fieldCombat.arena);
   }
@@ -360,14 +340,6 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     lastSalvagePresentation.set(context, now);
     measurePerformance('scene.salvage.presentation', () => refreshSalvageScene(context));
   }
-}
-
-function announceSalvageScene(
-  options: SalvageSceneOptions,
-  runtime: ReturnType<typeof resolveShipRuntimeSetup>
-): void {
-  options.log.write('SALVAGE OPS > ' + options.location.name.toUpperCase());
-  if (!runtime.salvage.available) options.log.write('BERGUNG > KEIN EINSATZFÄHIGES BERGUNGSSYSTEM');
 }
 
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
@@ -430,9 +402,15 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       panel: null,
     },
   };
+  bindSalvageArmedTraffic(
+    field,
+    (add) => visitArmedFieldTraffic(field.sourceLocationId, context.pirates, context.drone, add),
+    true
+  );
   context.state.panel = createSalvagePanel(context);
 
-  announceSalvageScene(options, runtime);
+  options.log.write('SALVAGE OPS > ' + options.location.name.toUpperCase());
+  if (!runtime.salvage.available) options.log.write('BERGUNG > KEIN EINSATZFÄHIGES BERGUNGSSYSTEM');
   return sceneController(context);
 }
 function sceneController(context: SalvageSceneRuntime): SalvageSceneController {

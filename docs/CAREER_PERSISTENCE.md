@@ -1490,3 +1490,115 @@ bleiben erhalten. Die geänderte Reihenfolge sektorweiter Ereignisse ist
 durch Ressourcen-, Verlust- und Wrackbilanztests zu überprüfen. Die
 Gefechtsindizes und Performance-Messpunkte sind rein flüchtig. Kein neues
 Save-Schema und keine neuen Persistenz-Owner.
+
+## Gemeinsame Navigationsgeometrie (PR #407)
+
+Rotation, Streckenabstand, Kollisionsvorhersage und Schildabmessungen werden
+in zustandslosen Kernfunktionen berechnet. Der Schildcache ist aus unveränderlichen
+Schiffsdefinitionen ableitbar und enthält keine Live-Positionen. Kampftaktik,
+Kontaktreaktionen, Bewegungszuständigkeit und gespeicherte Routen bleiben
+unverändert. Keine neuen Checkpoint-Felder oder Persistenz-Owner.
+
+Die feldbezogenen Verkehrsprovider lesen ausschließlich aktuelle Körper aus
+den vorhandenen Mining- und Bergungsdiensten. Bei Szenenwechsel wird die
+Spielerbindung gelöst; die Hintergrundquelle bleibt bestehen. Die Provider
+sind aus dem Feldzustand ableitbar. Keine neuen Save-Daten. Die bisherige
+Wegpunkt-Persistenz bleibt unverändert; geänderte Bergungsrouten erfordern
+Wiederlade- und Langzeitregressionen.
+
+Frachter, Patrouillen, Piraten und Sicherheitsdrohnen beziehen ihre
+Navigationshindernisse aus der bestehenden Feldabfrage. Das Interzeptionsziel
+bleibt von der regulären Hindernisprüfung ausgenommen, wo es das Manöver
+erfordert. Die momentane Geschwindigkeit wird als abgeleitete Information
+übergeben; sie ist kein zusätzlicher gespeicherter Zustand. Keine Änderung
+an Kampfentscheidungen, Kollisionsreaktionen oder Integrationsintervallen.
+
+Die gemeinsame Kontaktachse, Weltposition des Schildzentrums und bisherige
+Kampfhüllenform sind reine Ableitungen ohne gespeicherten Zustand. Die
+bestehenden Kontaktregeln, Grenzwerte und Zuständigkeiten bleiben erhalten.
+
+Vorausschauende zivile Verkehrsprüfung verwendet nur die vorhandene
+Route, Position und abgeleitete Geschwindigkeit. Ein wartendes Schiff
+behält seinen gespeicherten Routenindex; kein neuer Timer, kein zweiter
+Physikschritt und keine Änderung des Speicherformats.
+
+Zivile Routen werden bei dauerhaftem Verkehrshindernis mit dem bestehenden
+Routenplaner überprüft. Die Überprüfung der Spielerrouten ist wie die
+bestehende Gefahrenprüfung flüchtig; NPC-Routen behalten ihre bisherigen
+Checkpoint-Felder. Kein neuer persistenter Zustand.
+
+Reguläre Miner- und Bergungsankünfte werden erst am freien vorhandenen
+Feldtor materialisiert. Ein wartender NPC bleibt im vorhandenen Sektorstatus;
+keine zusätzliche Warteschlange wird gespeichert. Explizite Startpositionen,
+gespeicherte Arbeiter und Kampfrückkehrpositionen werden nicht verschoben.
+
+Der Feldhindernisvertrag liegt unabhängig von den Routen- und
+Verkehrsmodulen im Core. Damit besteht keine zyklische Importabhängigkeit.
+
+Die zivile Vorfahrts- und Fortschrittsprüfung hält nur flüchtige Informationen
+pro lebender Pose. Eine Ausweichposition wird nicht als zweite Position
+geführt. Gespeicherte Routen und die reguläre Physik bleiben unverändert.
+
+Die Ausweichpunkte werden auf die bekannten Feldgrenzen und realen
+Routenhindernisse geprüft. Spieler-Autopilot und NPC-Feldfahrt verwenden
+dieselbe Fortschritts- und Vorfahrtsentscheidung; der bestehende
+Autopilot behält seine Bewegungsintegration und den Routenindex.
+
+Begegnungsentscheidungen sind symmetrisch und nur per lebender Pose
+referenziert. Wartezeit und Ausweichplanung sind flüchtig; beim Laden
+werden sie aus den aktuellen Posen und Aufträgen neu aufgebaut.
+
+Neutrale Kampfhindernisse verwenden die aus Schiffsdefinitionen abgeleitete
+Schildgrundfläche und bisherige Hüllenkontaktregel. Native Kampfbeteiligte
+bleiben Eigentümer ihrer Positionen und taktischen Radien; doppelte
+Bystander-Einträge werden entfernt. Keine Änderung des Speicherformats.
+
+Zivile Navigation und Kampf-Bystander-Abfrage lesen dieselbe flüchtige
+feldgebundene Quelle lebender Schiffsposen. Die Bystander-Sicht kopiert
+nur die momentane Position; sie ist keine zweite Bewegungsautorität.
+
+Die Segmentprojektion für bestehende zivile und taktische Routen sowie
+Drohnen-Sensorstrahlen ist eine zustandslose Core-Funktion. Die bisherigen
+Kurze-Segment-Regeln und Kontaktgrenzen bleiben bei den jeweiligen Aufrufern.
+
+Gemischte Schiffskontakte erhalten einen flüchtigen Korrektur-Handle auf
+die lebende Feldpose. Der Feldbesitzer validiert ID, aktuelle Pose und
+Kampfzustand vor der Positions- und Geschwindigkeitskorrektur. Der Handle
+wird nicht gespeichert; die existierende Feldposition bleibt maßgeblich.
+
+Die Geschwindigkeitskorrektur gemischter Kontakte respektiert die vorhandene
+skalare Vorwärtsgeschwindigkeit ziviler Schiffe. Kein zusätzlicher
+lateraler Geschwindigkeitszustand wird angelegt oder gespeichert.
+
+Feldweite Kontaktzuständigkeit referenziert ausschließlich die lebenden
+nativen Kampfschiffe. Paaransprüche werden pro Engagement-Schritt auf der
+vorhandenen gemeinsamen Feldinstanz zurückgesetzt. Keine Save-Felder.
+
+Feldweite Kontaktansprüche werden nur am expliziten Kampagnen-Schritt aktiviert.
+Standalone-Flotten ohne diese Schrittgrenze behalten ihre lokale Paarliste.
+Zerstörte oder entkommene native Actor-IDs sperren veraltete Feldspiegel.
+
+Die native Flotten-Schrittfunktion delegiert die Hindernislisten an eine
+separate Abfrage. Einzelne Kontaktpartner werden ohne temporäre Vollkarte
+aufgelöst. Unveränderte Schrittgrenzen und Speicherzuständigkeiten.
+
+Miner und bewaffnete Feldschiffe nutzen denselben definitionsgebundenen
+Trümmerkontakt-Adapter. Der gemeinsame Festkörperfilter wird auch von
+Sicherheitsdrohnen verwendet. Keine neuen Zustände oder Save-Felder.
+
+Gemeinsame Kreis-Broadphase, Segmentprojektion und Zutrittsprüfung sind
+zustandslos. Reguläre bewaffnete Feldankünfte nutzen dieselbe Zutrittsprüfung
+wie Miner und Berger; explizite Kampf-Rückkehrposen bleiben erhalten.
+
+Statische Festkörper werden nur innerhalb eines einzelnen Solver-Aufrufs
+räumlich indiziert. Nach jeder Korrektur wird erneut gesucht, wobei die
+bisherige Eingabereihenfolge erhalten bleibt. Keine persistenten Indizes.
+
+Die Verkehrsrangfolge nutzt flüchtige Wartezeit-Buckets, keine neuen
+Save-Felder. Save-/Load-Prüfung umfasst die vorhandenen Checkpoint-Tests
+und einen realen Browser-Neustart. Die Feld-Kontaktliste wird nach
+jedem Engagement-Schritt neu gebunden.
+
+Bewegliche Schiffe am Ziel werden nur bei der geometrischen Routenplanung
+als vorübergehende Belegung behandelt. Der tatsächliche Bewegungsschritt
+prüft weiterhin alle Kontakte. Keine Änderung des Checkpointformats.
