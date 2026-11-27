@@ -98,21 +98,9 @@ function closestVisiblePirate(
   );
 }
 
-function advanceDroneInterception(
-  options: SalvagePirateResponseOptions,
-  pirateShips: readonly LocalPirateContact[],
-  combatants: ReadonlySet<string>
-): void {
-  const { drone, field, sectorNpcs, salvagers } = options;
-  const defender = sectorNpcs.find((npc) => npc.id === 'security-drone:' + field.sourceLocationId);
-  const busy = Boolean(defender?.combatMovement || combatants.has(defender?.id ?? ''));
-  if (!busy) drone.syncAvailability(defender);
-  const target = closestVisiblePirate(options, pirateShips);
-  let pursuit: WorldPoint | undefined;
-  if (target && !busy) {
-    pursuit = securityPirateApproach(drone.position, target.position);
-  }
-  const obstacles =
+function salvageInterceptionObstacles(options: SalvagePirateResponseOptions) {
+  const { field, sectorNpcs, salvagers } = options;
+  return (
     fieldTrafficProvider(field)?.('security-drone:' + field.sourceLocationId) ??
     salvageDroneShipObstacles(
       [
@@ -123,7 +111,25 @@ function advanceDroneInterception(
       ],
       options.playerPosition,
       options.playerRadius
-    );
+    )
+  );
+}
+
+function advanceDroneInterception(
+  options: SalvagePirateResponseOptions,
+  pirateShips: readonly LocalPirateContact[],
+  combatants: ReadonlySet<string>
+): void {
+  const { drone, field, sectorNpcs } = options;
+  const defender = sectorNpcs.find((npc) => npc.id === 'security-drone:' + field.sourceLocationId);
+  const busy = Boolean(defender?.combatMovement || combatants.has(defender?.id ?? ''));
+  if (!busy) drone.syncAvailability(defender);
+  const target = closestVisiblePirate(options, pirateShips);
+  let pursuit: WorldPoint | undefined;
+  if (target && !busy) {
+    pursuit = securityPirateApproach(drone.position, target.position);
+  }
+  const obstacles = salvageInterceptionObstacles(options);
   if (!busy) tickSalvageSecurityDrone(drone, field, options.dt, obstacles, pursuit);
   if (!target || !defender || defender.hullHp <= 0 || busy) return;
   const npc = sectorNpcs.find((entry) => entry.id === target.npcId);
