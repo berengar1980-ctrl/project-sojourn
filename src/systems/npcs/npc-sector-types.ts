@@ -17,6 +17,7 @@ export interface NpcSectorServiceOptions {
 
 export interface NpcSectorService {
   readonly npcs: readonly SectorNpcState[];
+  indexById?(): ReadonlyMap<string, SectorNpcState>;
   requestTravel(npc: SectorNpcState, destinationId: string, reason?: string): boolean;
   quoteTravel(
     npc: SectorNpcState,
