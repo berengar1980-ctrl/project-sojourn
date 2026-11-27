@@ -55,6 +55,21 @@ class SectorService implements NpcSectorService {
     prepareNpcOrbitBerths(world, npcs);
   }
   private currentDay = 0;
+  private readonly npcIndex = new Map<string, SectorNpcState>();
+
+  /** The roster is shared with population and restore services. Check membership
+   * before reuse, including replacements at the same array length. */
+  indexById(): ReadonlyMap<string, SectorNpcState> {
+    if (
+      this.npcIndex.size !== this.npcs.length ||
+      this.npcs.some((npc) => this.npcIndex.get(npc.id) !== npc)
+    ) {
+      this.npcIndex.clear();
+      for (const npc of this.npcs) this.npcIndex.set(npc.id, npc);
+    }
+    return this.npcIndex;
+  }
+
   advanceDay = (day: number): void => {
     this.currentDay = Math.max(this.currentDay, Math.floor(day));
     this.options.population?.advanceDay(this.currentDay);
