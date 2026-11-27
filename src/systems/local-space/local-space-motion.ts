@@ -1,3 +1,4 @@
+import { wrapAngle } from '../../core/numeric-geometry';
 import type { WorldPoint } from '../../core/world-types';
 
 export function distance(a: WorldPoint, b: WorldPoint): number {
@@ -9,10 +10,7 @@ export function heading(a: WorldPoint, b: WorldPoint): number {
 }
 
 export function angleDelta(current: number, target: number): number {
-  let delta = target - current;
-  while (delta > Math.PI) delta -= Math.PI * 2;
-  while (delta < -Math.PI) delta += Math.PI * 2;
-  return delta;
+  return wrapAngle(target - current);
 }
 
 export function turnToward(current: number, target: number, maximumDelta: number): number {

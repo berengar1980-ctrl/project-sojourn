@@ -229,8 +229,7 @@ class SectorService implements NpcSectorService {
       destinationId === npc.locationId ||
       npc.hullHp <= 0 ||
       (npcNeedsSafeReturn(npc) &&
-        destinationId !==
-          (npc.pirate ? pirateHomePort(npc.factionId) : npc.homePortId)) ||
+        destinationId !== (npc.pirate ? pirateHomePort(npc.factionId) : npc.homePortId)) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;

@@ -1,7 +1,8 @@
+import { clamp } from '../../core/numeric-geometry';
 export { stableHash as hash } from '../../core/stable-hash';
 
 export function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value));
+  return clamp(value, 0, 1);
 }
 
 import type { ShipWeaponFamily } from '../../core/ship-types';

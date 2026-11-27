@@ -56,12 +56,7 @@ export function normalize(dx: number, dy: number): { x: number; y: number } {
   return length <= 0.0001 ? { x: 1, y: 0 } : { x: dx / length, y: dy / length };
 }
 
-export function wrapAngle(value: number): number {
-  let angle = value;
-  while (angle > Math.PI) angle -= Math.PI * 2;
-  while (angle < -Math.PI) angle += Math.PI * 2;
-  return angle;
-}
+export { wrapAngle } from '../../core/numeric-geometry';
 
 export { rotatePoint as rotate } from '../../core/field-geometry';
 

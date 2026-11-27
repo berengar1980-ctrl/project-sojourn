@@ -64,10 +64,12 @@ assert.deepEqual(
   Array.from({ length: 4 }, () => createMulberryRandomSample() * 4294967296),
   [1144304738, 1416247, 958946056, 627933444]
 );
-const { clamp } = load('src/core/numeric-geometry.ts');
+const { clamp, wrapAngle } = load('src/core/numeric-geometry.ts');
 assert.equal(clamp(-1, 0, 1), 0);
 assert.equal(clamp(0.5, 0, 1), 0.5);
 assert.equal(clamp(2, 0, 1), 1);
+assert.equal(wrapAngle(3 * Math.PI), Math.PI);
+assert.equal(wrapAngle(-3 * Math.PI), -Math.PI);
 
 const { pirateHomePort, piratePortFaction } = load('src/core/pirate-ports.ts');
 assert.equal(pirateHomePort('pirates'), 'blackjaw-outpost');
