@@ -8,6 +8,7 @@ import {
 } from '../../core/field-geometry';
 import { shieldWorldCenter, shipShieldGeometry } from '../../core/ship-contact-geometry';
 import type { FieldRouteObstacle } from '../../core/field-traffic-types';
+import { trafficIntent, yieldsToTraffic } from './field-traffic-priority';
 import {
   planPointRoute,
   type PointRoutePlanningOptions,
@@ -30,6 +31,7 @@ export function shipTrafficObstacle(
     position: shieldWorldCenter(pose.position, pose.headingRadians, geometry),
     radius: Math.max(geometry.radiusX, geometry.radiusY),
     velocity,
+    intent: trafficIntent(pose, id),
   };
 }
 
@@ -100,7 +102,8 @@ function trafficContactAllowsStep(
   to: WorldPoint,
   seconds: number,
   clearance: number,
-  obstacle: FieldRouteObstacle
+  obstacle: FieldRouteObstacle,
+  yieldRequired: boolean
 ): boolean {
   const velocity = obstacle.velocity;
   if (!velocity) return true;
@@ -115,7 +118,7 @@ function trafficContactAllowsStep(
     Math.hypot(velocity.x, velocity.y) * horizon;
   if (start.x * start.x + start.y * start.y > reach * reach) return true;
   if (!relativeMotionClear(start, displacement, velocity, seconds, radius)) return false;
-  if (velocity.x === 0 && velocity.y === 0) return true;
+  if (!yieldRequired || (velocity.x === 0 && velocity.y === 0)) return true;
   const projected = {
     x: displacement.x * (horizon / seconds),
     y: displacement.y * (horizon / seconds),
@@ -134,11 +137,12 @@ export function trafficStepClear(
   to: WorldPoint,
   seconds: number,
   obstacles: readonly FieldRouteObstacle[],
-  clearance: number
+  clearance: number,
+  pose?: Parameters<typeof yieldsToTraffic>[0]
 ): boolean {
   if (seconds <= 0) return true;
   return obstacles.every((obstacle) =>
-    trafficContactAllowsStep(from, to, seconds, clearance, obstacle)
+    trafficContactAllowsStep(from, to, seconds, clearance, obstacle, !pose || yieldsToTraffic(pose, obstacle))
   );
 }
 

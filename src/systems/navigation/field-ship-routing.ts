@@ -4,6 +4,12 @@ import { measurePerformance } from '../../core/performance-diagnostics';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
 import { trafficDestinationOccupied, trafficStepClear } from './field-traffic-obstacles';
+import {
+  beginTrafficLeg,
+  endTrafficLeg,
+  noteTrafficProgress,
+  trafficEscapeWaypoint,
+} from './field-traffic-priority';
 
 import type { FieldRouteObstacle } from '../../core/field-traffic-types';
 export type { FieldRouteObstacle } from '../../core/field-traffic-types';
@@ -137,9 +143,12 @@ export function moveFieldShip(
   clearance: number,
   mode: 'grid' | 'patrol' = 'grid'
 ): boolean {
-  const waypoint = fieldRouteTarget(ship, target, obstacles, clearance, mode);
+  beginTrafficLeg(ship, target);
+  const escape = trafficEscapeWaypoint(ship, obstacles, clearance);
+  const waypoint = escape ?? fieldRouteTarget(ship, target, obstacles, clearance, mode);
   if (!waypoint) {
     ship.speed = 0;
+    noteTrafficProgress(ship, dt, true);
     return false;
   }
   const dx = waypoint.x - ship.position.x;
@@ -153,23 +162,31 @@ export function moveFieldShip(
         x: ship.position.x + (dx / remaining) * step,
         y: ship.position.y + (dy / remaining) * step,
       };
-  if (!trafficStepClear(ship.position, next, dt, obstacles, clearance)) {
+  if (!trafficStepClear(ship.position, next, dt, obstacles, clearance, ship)) {
     ship.speed = 0;
+    noteTrafficProgress(ship, dt, true);
     return false;
   }
   ship.headingRadians = Math.atan2(dy, dx);
   if (arrives) {
     ship.position = { ...waypoint };
     ship.speed = 0;
+    if (escape) {
+      delete ship.routeState;
+      noteTrafficProgress(ship, dt, false);
+      return false;
+    }
     const route = ship.routeState!;
     route.index += 1;
     if (route.index >= route.points.length) {
       delete ship.routeState;
+      endTrafficLeg(ship);
       return distance(ship.position, target) < 2;
     }
     return false;
   }
   ship.position = next;
   ship.speed = speed;
+  noteTrafficProgress(ship, dt, false);
   return false;
 }

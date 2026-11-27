@@ -2,6 +2,7 @@ import type { SectorNpcState } from '../core/npc-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { FieldRouteObstacle } from '../systems/navigation/field-ship-routing';
 import { shipTrafficObstacle } from '../systems/navigation/field-traffic-obstacles';
+import { registerTrafficPose } from '../systems/navigation/field-traffic-priority';
 import type { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import { getShipDefinition } from '../systems/ships';
@@ -26,14 +27,16 @@ export function collectFieldTraffic(
   const result: FieldRouteObstacle[] = [];
   const added = new Set<string>([excludedId]);
   visit((id, pose) => {
-    if (added.has(id)) return;
     const npc = byId.get(id);
     if (!npc || npc.hullHp <= 0 || npc.travel || npc.locationId !== locationId) return;
+    registerTrafficPose(pose, id, Boolean(npc.combatMovement));
+    if (added.has(id)) return;
     const ship = getShipDefinition(npc.shipId);
     if (!ship) return;
     added.add(id);
     result.push(shipTrafficObstacle(id, ship, pose));
   });
+  if (player) registerTrafficPose(player.pose, 'player');
   if (player && !added.has('player')) {
     result.push(shipTrafficObstacle('player', player.ship, player.pose));
   }

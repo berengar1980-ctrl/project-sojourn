@@ -1534,3 +1534,7 @@ gespeicherte Arbeiter und Kampfrückkehrpositionen werden nicht verschoben.
 
 Der Feldhindernisvertrag liegt unabhängig von den Routen- und
 Verkehrsmodulen im Core. Damit besteht keine zyklische Importabhängigkeit.
+
+Die zivile Vorfahrts- und Fortschrittsprüfung hält nur flüchtige Informationen
+pro lebender Pose. Eine Ausweichposition wird nicht als zweite Position
+geführt. Gespeicherte Routen und die reguläre Physik bleiben unverändert.

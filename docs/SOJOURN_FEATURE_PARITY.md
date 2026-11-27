@@ -2115,3 +2115,7 @@ Auswirkung auf Wirtschaftsfluss und mögliche Wartezustände ist zu testen.
 
 **Keine Statusänderung** der Feature-IDs. Gemeinsamer Feldhindernisvertrag
 ausgelagert, um zyklische Modulimporte zu verhindern.
+
+**Keine Statusänderung** der Feature-IDs. Zivile Vorfahrt nach Ausflugstatus
+und stabiler ID, kurze Fortschrittsüberwachung und ein gebundener lokaler
+Ausweichpunkt bei ausbleibender Bewegung. Aktive Gefechte sind ausgenommen.
