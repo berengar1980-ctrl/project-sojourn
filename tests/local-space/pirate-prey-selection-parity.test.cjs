@@ -70,3 +70,12 @@ rival.hullHp = 100;
 traffic.ships.get(rival.id).position = { x: 200, y: 0 };
 compare();
 console.log('PASS local pirate prey selection preserves target eligibility and stable ties');
+
+const { protectedFromPirate, npcAvailableForCombat } = load('src/systems/npcs/npc-combat-ai.ts');
+const marked = { ...actor, factionId: undefined, pirateMark: 'black-tide' };
+const canonical = { ...rival, factionId: 'pirates2' };
+assert.equal(rivalPirateGroups(marked, canonical), false);
+assert.equal(protectedFromPirate(marked, { smugglingProtectionFaction: 'pirates2' }), true);
+assert.equal(protectedFromPirate(marked, {}), false);
+assert.equal(npcAvailableForCombat({ hullHp: 100, combatMovement: {} }), false);
+assert.equal(npcAvailableForCombat({ hullHp: 100, combatMovement: {} }, true), true);

@@ -1629,3 +1629,6 @@ abgeleitet. Keine Änderung der gespeicherten Sensor- oder Kontaktdaten.
 
 Gemeinsame Worker-Scanfortschritte und Arbeitsbedingungen verwenden weiterhin
 die existierenden lokalen Worker-Felder; keine neuen Checkpoint-Felder.
+
+Piratenzugehörigkeit wird aus vorhandener Fraktions-ID oder Legacy-Markierung
+abgeleitet; Schutzgeld nutzt weiterhin das bestehende Fraktionsfeld.

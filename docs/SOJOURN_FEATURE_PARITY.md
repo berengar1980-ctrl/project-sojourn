@@ -2234,3 +2234,6 @@ Sektorkontakte und industrielle Scans behalten ihre eigenen Maßstäbe.
 Miner und Berger teilen Scanfortschritt, Schrittgrenze, Arbeitszulassung,
 Kampfunterbrechung und Abreise bei vollem Frachtraum. Individuelle Erträge,
 Ereignisse und Zielwahl bleiben in ihren jeweiligen Diensten.
+
+NPC-Zielzulassung und Piratenschutz sind gemeinsame Regeln für lokale und
+strategische Begegnungen. Unterschiedliche Auftrags- und Gebietsregeln bleiben.

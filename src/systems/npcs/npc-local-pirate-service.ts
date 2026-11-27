@@ -1,3 +1,4 @@
+import { pirateGroupMark } from '../../core/pirate-ports';
 import {
   resolvePirateCollisions,
   separateCoincidentSpawn,
@@ -24,6 +25,7 @@ import {
   fieldInterceptRange,
   localArmedTraffic,
   npcMayTargetNpc,
+  protectedFromPirate,
   rivalPirateGroups,
 } from './npc-combat-ai';
 import { edgePoint, hashId } from './npc-mining-targets';
@@ -129,8 +131,7 @@ export class LocalPirateTraffic {
         npcId: npc.id,
         pirate: npc.pirate === true,
         ...(npc.pirate && {
-          pirateMark:
-            npc.pirateMark ?? (npc.factionId === 'pirates2' ? 'black-tide' : 'broken-spear'),
+          pirateMark: npc.pirateMark ?? pirateGroupMark(npc.factionId),
         }),
         shipId: npc.shipId,
         name: npc.name,
@@ -301,13 +302,16 @@ export class LocalPirateTraffic {
         other &&
         other.job === 'freighter' &&
         npcMayTargetNpc(npc, other) &&
-        other.smugglingProtectionFaction !== npc.factionId &&
+        !protectedFromPirate(npc, other) &&
         Object.values(other.cargo).some((amount) => amount > 0)
       )
         consider(other.id, ship.position);
     }
     for (const miner of miners) {
-      if (!miner.inCombat && miner.npcId !== pirate.npcId) consider(miner.npcId, miner.position);
+      const worker = byId.get(miner.npcId);
+      if (miner.inCombat || miner.npcId === pirate.npcId) continue;
+      if (worker && protectedFromPirate(npc, worker)) continue;
+      consider(miner.npcId, miner.position);
     }
     if (player) consider('player', player);
     return nearest;

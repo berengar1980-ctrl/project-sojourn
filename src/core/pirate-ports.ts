@@ -13,3 +13,15 @@ export function piratePortFaction(locationId: string): keyof typeof PIRATE_PORTS
   if (locationId === PIRATE_PORTS.pirates2) return 'pirates2';
   return null;
 }
+
+/** Older NPCs may only carry a pirate mark rather than an explicit faction ID. */
+export function pirateGroupId(pirate: {
+  readonly factionId?: string;
+  readonly pirateMark?: 'broken-spear' | 'black-tide';
+}): string {
+  return pirate.factionId ?? (pirate.pirateMark === 'black-tide' ? 'pirates2' : 'pirates');
+}
+
+export function pirateGroupMark(factionId: string | undefined): 'broken-spear' | 'black-tide' {
+  return factionId === 'pirates2' ? 'black-tide' : 'broken-spear';
+}
