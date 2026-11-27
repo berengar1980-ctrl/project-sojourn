@@ -126,7 +126,7 @@ export function createNpcSalvageRuntime(
   runtimes.set(field, { runtime, binding });
   bindFieldTraffic(field, (excludedId) => {
     const byId = new Map(options.sectorNpcs.map((npc) => [npc.id, npc]));
-    const player = binding.player;
+    const activePlayer = binding.player;
     return collectFieldTraffic(
       field.sourceLocationId,
       byId,
@@ -135,7 +135,9 @@ export function createNpcSalvageRuntime(
         for (const ship of runtime.ships) add(ship.npcId, ship);
         (binding.sceneTraffic ?? binding.backgroundTraffic)?.(add);
       },
-      player ? { ship: player.ship, pose: player.service.getSnapshot().ship } : undefined
+      activePlayer
+        ? { ship: activePlayer.ship, pose: activePlayer.service.getSnapshot().ship }
+        : undefined
     );
   });
   return runtime;
