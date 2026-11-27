@@ -1469,3 +1469,24 @@ Der Kampagnenadapter übernimmt zerstörte Flottenakteure vor deren Ersatz.
 Die Rumpfkonvertierung erhält die Lebendig/Tot-Grenze der nativen Engine.
 Wracks nutzen bestehende persistierte Feldzustände und NPC-Ersatzgenerationen;
 die Duplikatprüfung ist sitzungsgebunden. Kein neues Save-Schema.
+
+## Zeitversetzte Feldsimulation (PR #406)
+
+Die Mining-Hintergrundfelder werden in stabiler Feldreihenfolge innerhalb
+des bestehenden 250-ms-Zyklus aktualisiert. Die Phase wird aus dem vorhandenen
+persistierten `backgroundAccumulator` und der Feldreihenfolge abgeleitet.
+Es entstehen keine zusätzlichen Checkpoint-Felder. Ältere Spielstände bleiben
+lesbar; die Ausführungszeitpunkte innerhalb des Zyklus ändern sich.
+
+Permanente Bergungsfelder werden innerhalb des bestehenden Sekundenzyklus
+zeitversetzt aktualisiert. Der bisher flüchtige Bergungsakkumulator bleibt
+flüchtig und beginnt nach dem Laden erneut bei null. Aktive Felder werden
+weiterhin durch ihre lokale Laufzeit aktualisiert; die Hintergrundschritte
+werden bei aktiver Szene übersprungen. Szenenwechsel können den Zeitpunkt
+einzelner Hintergrundschritte innerhalb eines Zyklus verändern.
+
+Die vier Mining-Teilschritte und die bisherigen Bergungs-Integrationsschritte
+bleiben erhalten. Die geänderte Reihenfolge sektorweiter Ereignisse ist
+durch Ressourcen-, Verlust- und Wrackbilanztests zu überprüfen. Die
+Gefechtsindizes und Performance-Messpunkte sind rein flüchtig. Kein neues
+Save-Schema und keine neuen Persistenz-Owner.
