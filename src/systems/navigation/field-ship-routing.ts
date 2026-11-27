@@ -59,14 +59,17 @@ function makeRoute(
 
   // Use the native campaign/PvP field planner rather than ad-hoc flank picking.
   // RouteBlocking and contact radius are the only obstacle fields used by it.
-  const rocks = obstacles.map((rock) => ({
-    ...rock,
-    routeBlocking: true,
-    collisionRadius: rock.radius,
-  })) as unknown as LocalAsteroid[];
-
-  const maxX = Math.max(start.x, target.x, ...obstacles.map((rock) => rock.position.x));
-  const maxY = Math.max(start.y, target.y, ...obstacles.map((rock) => rock.position.y));
+  let maxX = Math.max(start.x, target.x);
+  let maxY = Math.max(start.y, target.y);
+  const rocks = obstacles.map((rock) => {
+    maxX = Math.max(maxX, rock.position.x);
+    maxY = Math.max(maxY, rock.position.y);
+    return {
+      ...rock,
+      routeBlocking: true,
+      collisionRadius: rock.radius,
+    };
+  }) as unknown as LocalAsteroid[];
   const planned = planPointRoute({
     start,
     target,
