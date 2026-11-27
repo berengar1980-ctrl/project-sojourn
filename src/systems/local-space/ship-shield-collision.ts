@@ -28,7 +28,10 @@ function rotate(point: WorldPoint, angle: number): WorldPoint {
   };
 }
 
-const shieldGeometries = new WeakMap<ShipDefinition, ReturnType<typeof createShieldWorldGeometry>>();
+const shieldGeometries = new WeakMap<
+  ShipDefinition,
+  ReturnType<typeof createShieldWorldGeometry>
+>();
 
 function shieldGeometry(ship: ShipDefinition): ReturnType<typeof createShieldWorldGeometry> {
   let geometry = shieldGeometries.get(ship);
