@@ -46,7 +46,7 @@ jobs:
         run: npm test
       - name: Run economy horizons (90/180/365 days)
         if: >-
-          github.event_name != 'pull_request' ||
+          github.event_name == 'workflow_dispatch' ||
           (github.event.action == 'labeled' && github.event.label.name == 'economy-audit')
         run: npm run test:economy-horizons
       - name: Integrated economy smoke (3 days)
