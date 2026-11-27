@@ -57,7 +57,10 @@ for (const role of cases) {
     }
   );
   assert(calls.length > 0, role.id + ' must use the common route planner');
-  assert(calls.every((call) => call.obstacles.includes(neutral)), role.id + ' must see workers');
+  assert(
+    calls.every((call) => call.obstacles.includes(neutral)),
+    role.id + ' must see workers'
+  );
   assert(
     calls.every((call) => call.obstacles.includes(prey) === !role.pirate),
     role.id + ' must preserve intentional interception'
