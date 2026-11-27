@@ -240,7 +240,8 @@ function releasePrimaryEnemy(
         ' KAMPFUNFÄHIG · BESATZUNG UND SCHIFF WERDEN GEBORGEN'
     );
   } else if (primaryStillOwned) {
-    const reason = boardingOpponent === enemy ? 'Besatzung nach Enterkampf besiegt' : 'Nach Gefecht';
+    const reason =
+      boardingOpponent === enemy ? 'Besatzung nach Enterkampf besiegt' : 'Nach Gefecht';
     releaseNpc(runtime, runtime.playerFleet, enemy, reason);
   }
 }
