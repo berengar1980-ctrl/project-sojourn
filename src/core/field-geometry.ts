@@ -75,9 +75,9 @@ export function contactAxis(
   readonly distance: number;
   readonly normal: WorldPoint;
 } {
-  const distance = Math.hypot(dx, dy);
-  const normal = distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
-  return { distance, normal };
+  const length = Math.hypot(dx, dy);
+  const normal = length > 0.001 ? { x: dx / length, y: dy / length } : { x: 1, y: 0 };
+  return { distance: length, normal };
 }
 
 /** Conservative circular broadphase; callers retain their own margin and narrow phase. */

@@ -6,7 +6,6 @@ import type { ShipHardpoints, ShipWeaponFamily } from '../../core/ship-types';
 import { createShieldWorldGeometry } from '../../core/ship-contact-geometry';
 
 import type {
-  CombatPoint,
   CombatShieldGeometry,
   StrategicCombatantSetup,
   StrategicCombatSide,
