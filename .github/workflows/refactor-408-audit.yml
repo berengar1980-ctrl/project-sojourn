@@ -1,0 +1,55 @@
+name: Refactor 408 - integrated 90 day isolation
+
+on:
+  pull_request:
+    branches: [refactor/shared-project-rules]
+    paths:
+      - '.github/workflows/refactor-408-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  compare:
+    strategy:
+      fail-fast: false
+      matrix:
+        revision:
+          - { name: baseline-repeat, sha: da892c0c3b0f3eccf78dceaa9029a4eb01faeca2 }
+          - { name: p2, sha: f77ad031b6a55f80d2b741206bcabddda6cb2148 }
+          - { name: p3-rng, sha: 364c7451ea62223a83ff28e7eef9ee9084c12747 }
+          - { name: p3-obstacles, sha: 48677a465eab58fcabe84e11860c950754b3fa6b }
+          - { name: p3-angle, sha: 964a1126abb90b038e69b6887387dc3a4406acf7 }
+          - { name: p3-distance, sha: e5141840b8e6bcd0aae61e18d5178ced126b6b31 }
+          - { name: p6-workers, sha: 780a8284c3821ab4708950414d7c37c580b09d99 }
+          - { name: p6-factions, sha: 4a52d9f536fb3d523d7d1205ad8ac62b66e2be8f }
+          - { name: final-repeat, sha: 8b854699d7320cb19524a1e0ab9474051173e53d }
+    name: ${{ matrix.revision.name }} / integrated / 90d
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SOJOURN_INTEGRATED_FIELDS: '1'
+      SOJOURN_LONGRUN_DAYS: '90'
+      SOJOURN_PROFILE: '0'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.revision.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Run original unchanged integrated audit
+        shell: bash
+        run: |
+          git rev-parse HEAD
+          set -o pipefail
+          node tests/economy/npc-economy-longrun.test.cjs | tee audit-report.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: isolation-${{ matrix.revision.name }}
+          path: audit-report.log
+          if-no-files-found: warn
