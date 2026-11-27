@@ -401,6 +401,21 @@ function syncFinishedFieldPoses(
   });
 }
 
+function shouldTickFieldDrone(
+  locationId: string,
+  activeCombat: StrategicCombatSnapshot | null,
+  finished: readonly StrategicCombatSnapshot[],
+  duels: readonly StrategicCombatSnapshot[]
+): boolean {
+  const droneId = 'security-drone:' + locationId;
+  const droneInDuel = (duel: StrategicCombatSnapshot) =>
+    (duel.attacker.id === droneId && duel.attacker.hullHp > 0) ||
+    (duel.defender.id === droneId && duel.defender.hullHp > 0);
+  return (
+    activeCombat?.defender.id !== droneId && !finished.some(droneInDuel) && !duels.some(droneInDuel)
+  );
+}
+
 /** All field operations advance on the campaign clock, not only during local rendering. */
 export function advanceControllerFieldWorld(
   context: ControllerRuntimeContext,
@@ -458,12 +473,7 @@ export function advanceControllerFieldWorld(
     );
     // The combat engine owns drone motion while it is fighting.
     // A second patrol tick would jump its sprite away from the hitbox.
-    const droneId = 'security-drone:' + field.locationId;
-    const droneInDuel = (duel: StrategicCombatSnapshot) =>
-      (duel.attacker.id === droneId && duel.attacker.hullHp > 0) ||
-      (duel.defender.id === droneId && duel.defender.hullHp > 0);
-    const droneFightingNpc = finishedHere.some(droneInDuel) || duels.some(droneInDuel);
-    if (activeCombat?.defender.id !== droneId && !droneFightingNpc) {
+    if (shouldTickFieldDrone(field.locationId, activeCombat, finishedHere, duels)) {
       measurePerformance('sim.field.security', () => tickFieldSecurity(context, seconds, field));
     }
     if (fieldCombat) {
