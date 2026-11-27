@@ -212,6 +212,7 @@ export interface EconomySimulationService {
   getResourceTotal(resourceId: EconomyResourceId): number;
   getResourceBalance(): readonly ResourceBalanceReport[];
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+  returnAllocatedResource(resourceId: EconomyResourceId, amount: number): void;
   fundPhysicalStock(
     resourceId: EconomyResourceId,
     sourceId: string,
@@ -417,6 +418,10 @@ export function createEconomySimulationService(
       );
     },
     allocatePhysicalResource,
+    returnAllocatedResource(resourceId, amount) {
+      const pool = pools[resourceId];
+      if (pool) pool.reserve += quantity(amount);
+    },
     ...physicalStocks,
     createMinedResource,
     advanceDay,

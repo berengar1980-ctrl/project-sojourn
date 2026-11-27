@@ -1,4 +1,8 @@
-import { hiddenQuantityAfterRemoval, playerCargoFree, playerCargoUsed } from '../../core/player-cargo';
+import {
+  hiddenQuantityAfterRemoval,
+  playerCargoFree,
+  playerCargoUsed,
+} from '../../core/player-cargo';
 import {
   applyMarketPurchase,
   applyMarketSale,

@@ -1,6 +1,10 @@
 {
   "version": 1,
   "modules": {
+    "src/systems/economy/player-resource-transfer.ts": {
+      "mode": "derived",
+      "reason": "Coordinates synchronous transfers between existing player cargo and physical resource owners; no independent checkpoint state."
+    },
     "src/systems/combat/campaign-combat-hull.ts": {
       "mode": "derived",
       "reason": "Pure hull conversion preserves the native alive/dead boundary in the existing checkpointed NPC state; owns no independent state."

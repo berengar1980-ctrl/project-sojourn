@@ -2215,3 +2215,7 @@ Keine Änderung der Fraktions- oder Kollisionsregeln.
 
 Normaler Frachtraum berücksichtigt bei Handel, Mining, Bergung und Kampagnen
 verdeckte Waren, reservierte Kapazität und den Schmuggelabzug konsistent.
+
+Mining und Bergung nutzen denselben synchronen Ressourcentransfer mit
+kapazitätsbegrenzter Entnahme und Rückgabe nicht angenommener Reservemengen.
+Die unterschiedliche Behandlung nicht registrierter Vorkommen bleibt erhalten.

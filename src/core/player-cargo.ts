@@ -7,7 +7,10 @@ export function visibleCargoQuantity(lot: PlayerCargoLot): number {
 
 /** Normal hold occupancy excludes concealed goods and includes reserved component space. */
 export function playerCargoUsed(player: PlayerEconomyState): number {
-  const cargo = Object.values(player.cargo).reduce((sum, lot) => sum + visibleCargoQuantity(lot), 0);
+  const cargo = Object.values(player.cargo).reduce(
+    (sum, lot) => sum + visibleCargoQuantity(lot),
+    0
+  );
   return cargo + wholeQuantity(player.reservedCargoTons ?? 0);
 }
 

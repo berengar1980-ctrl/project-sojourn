@@ -1614,3 +1614,6 @@ und Wiederherstellungsverfahren bleiben erhalten. Keine neuen persistenten Daten
 
 Frachtraum bleibt im Spielerwirtschaftszustand und Komponentenbestand verankert.
 Gemeinsame Kapazitätsberechnung ist abgeleitet; keine neuen Checkpoint-Felder.
+
+Gemeinsame physische Ressourcentransfers speichern keinen separaten Zustand;
+nicht angenommene Mengen gehen in den bestehenden Reservepool zurück.
