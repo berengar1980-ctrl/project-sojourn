@@ -112,17 +112,18 @@ function advanceDroneInterception(
   if (target && !busy) {
     pursuit = securityPirateApproach(drone.position, target.position);
   }
-  const obstacles = fieldTrafficProvider(field)?.('security-drone:' + field.sourceLocationId) ??
+  const obstacles =
+    fieldTrafficProvider(field)?.('security-drone:' + field.sourceLocationId) ??
     salvageDroneShipObstacles(
-    [
-      ...salvagers.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
-      ...options.pirates
-        .snapshot(sectorNpcs)
-        .map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
-    ],
-    options.playerPosition,
-    options.playerRadius
-  );
+      [
+        ...salvagers.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
+        ...options.pirates
+          .snapshot(sectorNpcs)
+          .map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
+      ],
+      options.playerPosition,
+      options.playerRadius
+    );
   if (!busy) tickSalvageSecurityDrone(drone, field, options.dt, obstacles, pursuit);
   if (!target || !defender || defender.hullHp <= 0 || busy) return;
   const npc = sectorNpcs.find((entry) => entry.id === target.npcId);

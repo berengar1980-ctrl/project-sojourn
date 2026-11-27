@@ -4,6 +4,7 @@ import type { SalvageField } from '../core/salvage-types';
 import type { ShipDefinition } from '../core/ship-types';
 import type { WorldLocation, WorldPoint } from '../core/world-types';
 import type { SectorNpcState } from '../core/npc-types';
+import { refreshNpcIndex } from '../systems/npcs/npc-sector-types';
 import type { SalvageEconomyService } from '../systems/economy/salvage-economy-service';
 import type { NpcEconomyService } from '../systems/economy/npc-economy-service';
 import {
@@ -124,8 +125,9 @@ export function createNpcSalvageRuntime(
       binding.player?.service.recordShipShieldContact(normal, overlap),
   });
   runtimes.set(field, { runtime, binding });
+  const index = new Map<string, SectorNpcState>();
   bindFieldTraffic(field, (excludedId) => {
-    const byId = new Map(options.sectorNpcs.map((npc) => [npc.id, npc]));
+    const byId = refreshNpcIndex(options.sectorNpcs, index);
     const activePlayer = binding.player;
     return collectFieldTraffic(
       field.sourceLocationId,
