@@ -8,9 +8,7 @@ const load = (file) => loadStandaloneTypeScriptModule(root, file);
 const { rotatePoint, pointToSegmentDistanceSquared, predictsClosingContact } = load(
   'src/core/field-geometry.ts'
 );
-const { createShieldWorldGeometry, shipShieldGeometry } = load(
-  'src/core/ship-contact-geometry.ts'
-);
+const { createShieldWorldGeometry, shipShieldGeometry } = load('src/core/ship-contact-geometry.ts');
 
 const rotated = rotatePoint({ x: 10, y: 0 }, Math.PI / 2);
 assert(Math.abs(rotated.x) < 1e-10);

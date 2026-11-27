@@ -5,12 +5,17 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 const load = (file) => loadStandaloneTypeScriptModule(root, file);
-const { bindFieldTraffic, fieldTrafficObstacles } = load(
-  'src/systems/navigation/field-traffic-obstacles.ts'
-);
-const { planSalvageRoute } = load('src/systems/salvage/salvage-work-navigation.ts');
-const { salvageFieldPhysicsBodies } = load(
-  'src/systems/salvage/salvage-container-motion.ts'
+const traffic = load('src/systems/navigation/field-traffic-obstacles.ts');
+const motion = load('src/systems/salvage/salvage-container-motion.ts');
+const { bindFieldTraffic, fieldTrafficObstacles } = traffic;
+const { salvageFieldPhysicsBodies } = motion;
+const { planSalvageRoute } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/salvage/salvage-work-navigation.ts',
+  {
+    'src/systems/navigation/field-traffic-obstacles.ts': traffic,
+    'src/systems/salvage/salvage-container-motion.ts': motion,
+  }
 );
 const field = {
   id: 'field-a',

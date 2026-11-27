@@ -24,8 +24,7 @@ function collectMiningTraffic(
   const byId = sector.indexById?.() ?? new Map(sector.npcs.map((npc) => [npc.id, npc]));
   const state = context.state;
   const player =
-    state.mode === 'local-space' &&
-    state.localSpace?.getSnapshot().instance === field.instance
+    state.mode === 'local-space' && state.localSpace?.getSnapshot().instance === field.instance
       ? { ship: state.activeShip, pose: field.instance.ship }
       : undefined;
   return collectFieldTraffic(

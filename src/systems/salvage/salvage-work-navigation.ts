@@ -5,10 +5,7 @@ import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { routeAroundDistressShip } from './distress-navigation';
 import { salvageFieldPhysicsBodies } from './salvage-container-motion';
-import {
-  fieldTrafficObstacles,
-  trafficRouteBodies,
-} from '../navigation/field-traffic-obstacles';
+import { fieldTrafficObstacles, trafficRouteBodies } from '../navigation/field-traffic-obstacles';
 
 export const WORK_STANDOFF = 105;
 export const DISTRESS_DIAGNOSIS_STANDOFF = 70;
