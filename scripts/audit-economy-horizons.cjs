@@ -29,7 +29,10 @@ function auditStrategic() {
     .filter((line) => line.startsWith('{'))
     .map((line) => JSON.parse(line))
     .filter((value) => value.automaticCombat && !value.integratedFields);
-  assert.deepEqual(reports.map((report) => report.days), horizons);
+  assert.deepEqual(
+    reports.map((report) => report.days),
+    horizons
+  );
   for (const summary of reports) {
     const days = summary.days;
     assert(summary, 'Missing economic audit report at day ' + days);
