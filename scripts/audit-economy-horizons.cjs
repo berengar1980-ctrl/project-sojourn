@@ -43,6 +43,7 @@ for (const days of horizons) {
       combat: summary.combat,
       smuggling: summary.smuggling,
       population: summary.population,
+      lossAudit: summary.lossAudit,
       hullUpgrades: summary.report.reduce((sum, group) => sum + group.hullUpgrades, 0),
       completedLegs: summary.report.reduce((sum, group) => sum + group.completedLegs, 0),
       resourceBalance: summary.resourceBalance,
@@ -80,7 +81,14 @@ console.log('PASS 90/180/365-day physical resource balance audit');
 
 const integratedRun = spawnSync(process.execPath, [test], {
   cwd: path.resolve(__dirname, '..'),
-  env: { ...process.env, SOJOURN_LONGRUN_DAYS: '365', SOJOURN_INTEGRATED_FIELDS: '1' },
+  env: {
+    ...process.env,
+    SOJOURN_LONGRUN_DAYS: '365',
+    SOJOURN_INTEGRATED_FIELDS: '1',
+    SOJOURN_PROFILE: process.env.SOJOURN_PROFILE ?? '1',
+  },
+  // Keep JSON reports on stdout, but stream progress and failures immediately.
+  stdio: ['ignore', 'pipe', 'inherit'],
   encoding: 'utf8',
   maxBuffer: 8 * 1024 * 1024,
 });
@@ -106,7 +114,27 @@ for (const report of integratedReports) {
   assert(combatWrecksCreated > 0, 'integrated combat must create wrecks');
   assert(combatWrecksExpired > 0, 'integrated combat wrecks must be removed');
   assert(combatWrecksExpired <= combatWrecksCreated, 'cannot remove more wrecks than created');
+  assert.equal(
+    combatWrecksCreated,
+    combatWrecksExpired + report.fieldActivity.combatWrecksActive,
+    'unique wreck lifecycle must reconcile'
+  );
+  assert.equal(
+    report.lossAudit.scheduledLosses,
+    report.population.replacementCount + report.population.outstanding
+  );
   console.log(JSON.stringify({ ...report, unexplainedResources: discrepancies }));
+}
+for (const report of integratedReports) {
+  const loss = report.lossAudit;
+  assert.equal(loss.multipleWrecksForGeneration, 0, 'one wreck per destroyed generation');
+  assert.equal(loss.observedWithoutWreck, 0, 'every reported destruction must create a wreck');
+  assert.equal(loss.scheduledWithoutWreck, 0, 'every retired combat ship must have a wreck');
+  assert.equal(
+    loss.wreckWithoutRetirement,
+    loss.wreckAwaitingRetirement,
+    'every regular NPC wreck must reconcile with retirement'
+  );
 }
 assert(integratedReports[2].fieldActivity.minedUnits > 0);
 assert(integratedReports[2].fieldActivity.recoveredUnits > 0);

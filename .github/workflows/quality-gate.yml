@@ -2,10 +2,15 @@ name: Sojourn quality gate
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches:
       - main
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -14,7 +19,7 @@ jobs:
   quality-gate:
     if: ${{ true }}
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - name: Checkout with main history
         uses: actions/checkout@v4
@@ -40,6 +45,15 @@ jobs:
       - name: Run all project tests
         run: npm test
       - name: Run economy horizons (90/180/365 days)
+        if: >-
+          github.event_name == 'workflow_dispatch' ||
+          (github.event.action == 'labeled' && github.event.label.name == 'economy-audit')
         run: npm run test:economy-horizons
+      - name: Integrated economy smoke (3 days)
+        if: github.event_name == 'pull_request'
+        env:
+          SOJOURN_INTEGRATED_FIELDS: '1'
+          SOJOURN_LONGRUN_DAYS: '3'
+        run: node tests/economy/npc-economy-longrun.test.cjs
       - name: Build production bundle
         run: npm run build

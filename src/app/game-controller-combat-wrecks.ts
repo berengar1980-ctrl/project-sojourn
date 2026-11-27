@@ -5,6 +5,8 @@ import type {
   StrategicCombatSnapshot,
 } from '../systems/combat/strategic-combat-types';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
+import { backgroundSalvagePatrol } from './game-controller-salvage-drone-world';
+import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { addDestroyedShipWreck } from '../systems/salvage/combat-destruction-wreck';
 import { combatBufferTarget } from '../systems/economy/physical-reserve-policy';
@@ -35,10 +37,6 @@ function adoptNativeWreckPose(wreck: SalvageWreck, native: CombatVisualAsteroid)
 
 export function controllerCombatWreckHooks(getContext: () => ControllerRuntimeContext | null) {
   return {
-    onNpcCombatEnded(snapshot: StrategicCombatSnapshot, attacker: { locationId: string }) {
-      const context = getContext();
-      if (context) recordCareerCombatWrecks(context, snapshot, attacker.locationId);
-    },
     onFieldFleetLosses(
       snapshot: StrategicCombatSnapshot,
       losses: readonly StrategicCombatSnapshot['attacker'][],
@@ -102,11 +100,20 @@ export function recordCareerCombatWrecks(
   for (const ship of losses) {
     if (ship.hullHp > 0) continue;
     const nativeWreck = bodies?.find((body) => body.id === 'fleet-wreck:' + ship.id);
-    if (recorded.has(ship.id)) continue;
-    const wreck = addDestroyedShipWreck(field, ship, encounterId, snapshot.elapsedSeconds);
+    const npc = context.economy.sectorNpcs?.npcs.find((entry) => entry.id === ship.id);
+    const generation = npc?.replacementGeneration ?? 0;
+    const droneGeneration = ship.id.startsWith('security-drone:') ? (npc?.combatDefeats ?? 0) : 0;
+    const key = JSON.stringify([ship.id, generation, droneGeneration]);
+    if (recorded.has(key)) continue;
+    const wreck = addDestroyedShipWreck(
+      field,
+      ship,
+      encounterId + '-' + generation + '-' + droneGeneration,
+      snapshot.elapsedSeconds
+    );
     if (wreck) {
       if (nativeWreck) adoptNativeWreckPose(wreck, nativeWreck);
-      recorded.add(ship.id);
+      recorded.add(key);
       fundCombatWreck(context, wreck);
       created.push(wreck);
       if (snapshot.arena.backdropSeed !== undefined) {
@@ -120,7 +127,23 @@ export function recordCareerCombatWrecks(
     }
   }
   world.registerCombatWrecks(locationId, created);
-  const liveField = context.state.salvageScene?.getField();
+  publishLiveWrecks(context, locationId, created);
+  for (const wreck of created) {
+    context.systemLog.write('BERGUNG > NEUES KAMPFWRACK: ' + wreck.name.toUpperCase());
+  }
+  return created;
+}
+
+function publishLiveWrecks(
+  context: ControllerRuntimeContext,
+  locationId: string,
+  created: readonly SalvageWreck[]
+): void {
+  const mounted = context.state.salvageScene?.getField();
+  const liveField =
+    mounted?.sourceLocationId === locationId
+      ? mounted
+      : backgroundSalvagePatrol(context, locationId)?.field;
   if (liveField?.sourceLocationId === locationId) {
     const ids = new Set(liveField.wrecks.map((wreck) => wreck.id));
     for (const wreck of created) {
@@ -128,9 +151,6 @@ export function recordCareerCombatWrecks(
       liveField.wrecks.push(wreck);
       ids.add(wreck.id);
     }
+    invalidateSalvagePhysics(liveField);
   }
-  for (const wreck of created) {
-    context.systemLog.write('BERGUNG > NEUES KAMPFWRACK: ' + wreck.name.toUpperCase());
-  }
-  return created;
 }

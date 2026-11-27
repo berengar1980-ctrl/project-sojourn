@@ -30,7 +30,7 @@ export function createMiningLocalSpace(
   persistentField?: LocalSpaceInstance,
   wreckPhysics?: Pick<
     LocalSpaceServiceOptions,
-    'additionalObstacles' | 'onAdditionalObstacleContact'
+    'additionalObstacles' | 'onAdditionalObstacleContact' | 'getTrafficObstacles'
   >
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);

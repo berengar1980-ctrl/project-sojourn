@@ -101,11 +101,11 @@ export function resolveShieldCollisions(
       x: asteroid.position.x - center.x,
       y: asteroid.position.y - center.y,
     };
-    const local = rotate(relative, -ship.headingRadians);
     const contactRadius = localAsteroidContactRadius(asteroid);
     const maximumDistance = contactRadius + Math.max(shield.radiusX, shield.radiusY);
     if (relative.x * relative.x + relative.y * relative.y > maximumDistance * maximumDistance)
       continue;
+    const local = rotate(relative, -ship.headingRadians);
     const contact =
       asteroid.contactGeometry === 'silhouette'
         ? compoundContact(
@@ -256,21 +256,21 @@ function resolvePairImpulse(
 
 const COLLISION_CELL_SIZE = 160;
 
-function cellKey(column: number, row: number): string {
-  return column + ':' + row;
-}
-
-function collisionBuckets(asteroids: readonly LocalAsteroid[]): Map<string, number[]> {
-  const buckets = new Map<string, number[]>();
+function collisionBuckets(asteroids: readonly LocalAsteroid[]): Map<number, Map<number, number[]>> {
+  const rows = new Map<number, Map<number, number[]>>();
   asteroids.forEach((asteroid, index) => {
     const column = Math.floor(asteroid.position.x / COLLISION_CELL_SIZE);
     const row = Math.floor(asteroid.position.y / COLLISION_CELL_SIZE);
-    const key = cellKey(column, row);
-    const bucket = buckets.get(key);
+    let columns = rows.get(row);
+    if (!columns) {
+      columns = new Map();
+      rows.set(row, columns);
+    }
+    const bucket = columns.get(column);
     if (bucket) bucket.push(index);
-    else buckets.set(key, [index]);
+    else columns.set(column, [index]);
   });
-  return buckets;
+  return rows;
 }
 
 function resolveCollisionPair(a: LocalAsteroid, b: LocalAsteroid): void {
@@ -313,8 +313,11 @@ export function resolveAsteroidCollisions(asteroids: readonly LocalAsteroid[]): 
     const reachDistance = localAsteroidContactRadius(asteroid) + maxRadius;
     const reach = Math.max(1, Math.ceil(reachDistance / COLLISION_CELL_SIZE));
     for (let rowOffset = -reach; rowOffset <= reach; rowOffset += 1) {
+      const columns = buckets.get(row + rowOffset);
+      if (!columns) continue;
       for (let columnOffset = -reach; columnOffset <= reach; columnOffset += 1) {
-        const candidates = buckets.get(cellKey(column + columnOffset, row + rowOffset)) ?? [];
+        const candidates = columns.get(column + columnOffset);
+        if (!candidates) continue;
         for (const second of candidates) {
           if (second <= first) continue;
           resolveCollisionPair(asteroid, asteroids[second]!);

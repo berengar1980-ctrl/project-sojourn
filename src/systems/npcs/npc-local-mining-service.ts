@@ -1,4 +1,5 @@
 import { planMiningApproachRoute } from '../local-space/local-space-navigation';
+import { trafficRouteBodies } from '../navigation/field-traffic-obstacles';
 import { moveFieldShip } from '../navigation/field-ship-routing';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { cloneCareerJson } from '../persistence/career-save-contract';
@@ -131,7 +132,10 @@ function assignTarget(
     start: ship.position,
     target: asteroid,
     surfaceDistance: NPC_MINING_SURFACE_DISTANCE,
-    asteroids: runtime.options.getAsteroids(),
+    asteroids: [
+      ...runtime.options.getAsteroids(),
+      ...trafficRouteBodies(runtime.options.getTrafficObstacles?.(npc.id) ?? []),
+    ],
     clearance: 65,
     width: runtime.options.width,
     height: runtime.options.height,

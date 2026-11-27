@@ -1,3 +1,9 @@
+import {
+  resolvePirateCollisions,
+  separateCoincidentSpawn,
+  type PirateRuntime,
+} from './npc-local-pirate-geometry';
+import { DRONE_PATROL_SPEED, isSecurityDrone } from '../../core/security-drone';
 import { resolveFieldDebrisContacts } from '../local-space/field-debris-contact';
 import { createShieldWorldGeometry } from '../local-space/local-space-collision';
 import { droneSeesTarget, securityPirateApproach } from '../operations/asteroid-security-drone';
@@ -12,13 +18,14 @@ import {
   type LocalShieldShipBody,
   type ShipShieldCollision,
 } from '../local-space/ship-shield-collision';
-import { fieldInterceptRange, localArmedTraffic, rivalPirateGroups } from './npc-combat-ai';
-import { edgePoint, hashId } from './npc-mining-targets';
 import {
-  moveFieldShip,
-  type FieldRouteShip,
-  type FieldRouteState,
-} from '../navigation/field-ship-routing';
+  fieldInterceptRange,
+  localArmedTraffic,
+  npcMayTargetNpc,
+  rivalPirateGroups,
+} from './npc-combat-ai';
+import { edgePoint, hashId } from './npc-mining-targets';
+import { moveFieldShip, type FieldRouteShip } from '../navigation/field-ship-routing';
 import {
   stageLocalPirateCheckpoint,
   type LocalPirateCheckpoint,
@@ -34,67 +41,6 @@ export interface LocalPirateContact {
   readonly headingRadians: number;
   readonly speed: number;
 }
-interface PirateRuntime {
-  readonly npcId: string;
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
-  awaitingCombat: boolean;
-  routeState?: FieldRouteState;
-}
-
-/**
- * A pirate must physically arrive in the sector field before appearing here.
- * Player attacks use the existing local AI battle; miner raids use background
- * strategic combat with the same asteroid arena.
- */
-function resolvePirateCollisions(
-  position: WorldPoint,
-  asteroids: readonly LocalAsteroid[],
-  width: number,
-  height: number
-): WorldPoint {
-  let result = { ...position };
-  for (const rock of asteroids) {
-    if (!rock.routeBlocking) continue;
-    const dx = result.x - rock.position.x;
-    const dy = result.y - rock.position.y;
-    const gap = Math.hypot(dx, dy);
-    const minimum = rock.radius + 35;
-    if (gap >= minimum) continue;
-    const ux = gap > 0 ? dx / gap : 1;
-    const uy = gap > 0 ? dy / gap : 0;
-    result = {
-      x: rock.position.x + ux * minimum,
-      y: rock.position.y + uy * minimum,
-    };
-  }
-  return { x: Math.max(0, Math.min(width, result.x)), y: Math.max(0, Math.min(height, result.y)) };
-}
-
-/** Resolve only exact overlapping spawn poses. Ordinary traffic separation
- * remains with the shared route planner; this is never run on duel ships.
- */
-function separateCoincidentSpawn(
-  pirate: PirateRuntime,
-  others: ReadonlyMap<string, PirateRuntime>
-): void {
-  for (const other of others.values()) {
-    if (other.npcId === pirate.npcId || other.awaitingCombat) continue;
-    const gap = Math.hypot(
-      pirate.position.x - other.position.x,
-      pirate.position.y - other.position.y
-    );
-    if (gap > 1) continue;
-    const heading = (hashId(pirate.npcId + ':' + other.npcId) % 6283) / 1000;
-    pirate.position = {
-      x: other.position.x + Math.cos(heading) * 100,
-      y: other.position.y + Math.sin(heading) * 100,
-    };
-    delete pirate.routeState;
-  }
-}
-
 export class LocalPirateTraffic {
   private readonly ships = new Map<string, PirateRuntime>();
   private readonly combatReturnPositions = new Map<string, WorldPoint>();
@@ -104,6 +50,10 @@ export class LocalPirateTraffic {
     private readonly height: number,
     private readonly seed: number
   ) {}
+
+  matchesField(width: number, height: number, seed: number): boolean {
+    return this.width === width && this.height === height && this.seed === seed;
+  }
 
   /** Save authoritative local poses, pending engagements and combat return locations. */
   exportState(): LocalPirateCheckpoint {
@@ -178,18 +128,11 @@ export class LocalPirateTraffic {
 
   reconcile(pirates: readonly SectorNpcState[], _combatantId?: string): void {
     const active = new Set<string>();
-    for (const npc of pirates) {
-      if (localArmedTraffic(npc) && npc.hullHp > 0 && (!npc.travel || npc.combatMovement)) {
-        active.add(npc.id);
-      }
-    }
+    for (const npc of pirates) if (availableLocalTraffic(npc)) active.add(npc.id);
     for (const [id, ship] of this.ships) {
       if (active.has(id)) continue;
       const npc = pirates.find((candidate) => candidate.id === id);
-      if (
-        !id.startsWith('security-drone:') &&
-        (npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0)
-      ) {
+      if (keepCombatReturn(id, npc)) {
         this.combatReturnPositions.set(id, { ...ship.position });
       } else {
         this.combatReturnPositions.delete(id);
@@ -207,11 +150,13 @@ export class LocalPirateTraffic {
         }
         continue;
       }
+      const npc = pirates.find((entry) => entry.id === id);
+      const spawnKey = isSecurityDrone(id) ? id + ':' + (npc?.combatDefeats ?? 0) : id;
       this.ships.set(id, {
         npcId: id,
         position:
           this.combatReturnPositions.get(id) ??
-          edgePoint(id + ':' + this.seed, this.width, this.height),
+          edgePoint(spawnKey + ':' + this.seed, this.width, this.height),
         headingRadians: 0,
         speed: 0,
         awaitingCombat: false,
@@ -320,30 +265,39 @@ export class LocalPirateTraffic {
     miners: ReadonlyArray<{ npcId: string; position: WorldPoint; inCombat?: boolean }>,
     player: WorldPoint | null
   ) {
-    const rivals = this.snapshot(
-      npcs.filter((other) => rivalPirateGroups(npc, other) && !other.combatRecoverySeconds)
-    );
-    const targets = [
-      ...rivals.map((other) => ({ id: other.npcId, position: other.position })),
-      ...this.snapshot(
-        npcs.filter(
-          (other) => other.job === 'freighter' && !other.pirate && !other.combatRecoverySeconds
-        )
-      ).map((other) => ({ id: other.npcId, position: other.position })),
-      ...miners
-        .filter((miner) => miner.npcId !== pirate.npcId)
-        .map((miner) => ({
-          id: miner.npcId,
-          position: miner.position,
-        })),
-      ...(player ? [{ id: 'player', position: player }] : []),
-    ];
-    targets.sort(
-      (a, b) =>
-        Math.hypot(a.position.x - pirate.position.x, a.position.y - pirate.position.y) -
-        Math.hypot(b.position.x - pirate.position.x, b.position.y - pirate.position.y)
-    );
-    return targets[0];
+    const byId = new Map(npcs.map((other) => [other.id, other]));
+    let nearest: { id: string; position: WorldPoint } | undefined;
+    let bestDistance = Infinity;
+    const consider = (id: string, position: WorldPoint): void => {
+      const distance = Math.hypot(position.x - pirate.position.x, position.y - pirate.position.y);
+      if (!nearest || distance < bestDistance) {
+        nearest = { id, position };
+        bestDistance = distance;
+      }
+    };
+    // Preserve the original stable sort's tie order: rivals, loaded freighters,
+    // workers, then the player. Map iteration is the snapshot's original order.
+    for (const ship of this.ships.values()) {
+      const other = byId.get(ship.npcId);
+      if (other && rivalPirateGroups(npc, other) && npcMayTargetNpc(npc, other))
+        consider(other.id, ship.position);
+    }
+    for (const ship of this.ships.values()) {
+      const other = byId.get(ship.npcId);
+      if (
+        other &&
+        other.job === 'freighter' &&
+        npcMayTargetNpc(npc, other) &&
+        other.smugglingProtectionFaction !== npc.factionId &&
+        Object.values(other.cargo).some((amount) => amount > 0)
+      )
+        consider(other.id, ship.position);
+    }
+    for (const miner of miners) {
+      if (!miner.inCombat && miner.npcId !== pirate.npcId) consider(miner.npcId, miner.position);
+    }
+    if (player) consider('player', player);
+    return nearest;
   }
   private advanceFreighter(
     pirate: PirateRuntime,
@@ -372,23 +326,27 @@ export class LocalPirateTraffic {
     dt: number,
     intercept: (attacker: string, target: string, position: WorldPoint) => boolean
   ): void {
-    const drone = ship.npcId.startsWith('security-drone:');
+    const drone = isSecurityDrone(ship.npcId);
     const hostiles = this.snapshot(
       npcs.filter(
         (npc) =>
           npc.pirate &&
           npc.hullHp > 0 &&
+          (npc.combatRecoverySeconds ?? 0) <= 0 &&
           (!npc.combatMovement || (drone && npc.combatMovement.mode === 'engaged'))
       )
     );
     const distance = (p: WorldPoint) => Math.hypot(p.x - ship.position.x, p.y - ship.position.y);
-    const target = hostiles
+    const visible = hostiles
       .filter((contact) =>
         drone
           ? droneSeesTarget(ship.position, contact.position, rocks)
           : distance(contact.position) < 650
       )
-      .sort((a, b) => distance(a.position) - distance(b.position))[0];
+      .sort((a, b) => distance(a.position) - distance(b.position));
+    const target =
+      visible.find((contact) => !npcs.find((npc) => npc.id === contact.npcId)?.combatMovement) ??
+      visible[0];
     if (target && distance(target.position) <= fieldInterceptRange(ship.npcId, false)) {
       // The fleet coordinator will join the existing fight from this live pose.
       if (npcs.find((npc) => npc.id === target.npcId)?.combatMovement?.mode === 'engaged') return;
@@ -407,7 +365,15 @@ export class LocalPirateTraffic {
         x: this.width * (0.5 + 0.3 * Math.cos(angle)),
         y: this.height * (0.5 + 0.3 * Math.sin(angle)),
       };
-      const arrived = moveFieldShip(ship, point, 118, dt, blockers, 40, 'patrol');
+      const arrived = moveFieldShip(
+        ship,
+        point,
+        drone ? DRONE_PATROL_SPEED : 118,
+        dt,
+        blockers,
+        40,
+        'patrol'
+      );
       if (arrived || ship.routeState) return;
     }
   }
@@ -495,4 +461,20 @@ export class LocalPirateTraffic {
     delete ship.routeState;
     // Keep the interception latch until the engagement has recovered.
   }
+}
+
+function availableLocalTraffic(npc: SectorNpcState): boolean {
+  return Boolean(
+    localArmedTraffic(npc) &&
+    npc.hullHp > 0 &&
+    (!isSecurityDrone(npc.id) || (npc.combatRecoverySeconds ?? 0) <= 0) &&
+    npc.retiredUntilDay === undefined &&
+    (!npc.travel || npc.combatMovement)
+  );
+}
+
+function keepCombatReturn(id: string, npc: SectorNpcState | undefined): boolean {
+  return (
+    !isSecurityDrone(id) && Boolean(npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0)
+  );
 }

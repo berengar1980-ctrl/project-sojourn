@@ -1,4 +1,5 @@
 import type { PlanetBiome, WorldPoint } from '../../core/world-types';
+import { measurePerformance } from '../../core/performance-diagnostics';
 import {
   createAsteroidSurface,
   createAsteroidTexture,
@@ -39,26 +40,14 @@ function normalize(light: SpaceLight): SpaceLight {
   return { x: light.x / length, y: light.y / length };
 }
 
-function rotate(point: WorldPoint, angle: number): WorldPoint {
-  const cosine = Math.cos(angle);
-  const sine = Math.sin(angle);
-  return {
-    x: point.x * cosine - point.y * sine,
-    y: point.x * sine + point.y * cosine,
-  };
-}
-
 export class ProceduralSpaceBodyRenderer {
   private readonly asteroidSurfaceCache = new Map<string, AsteroidSurface>();
-  private readonly asteroidTextureCache = new Map<string, HTMLCanvasElement>();
   private readonly asteroidSpriteCache = new Map<string, HTMLCanvasElement>();
   private readonly planetTextureCache = new Map<string, HTMLCanvasElement>();
 
   constructor(private readonly context: CanvasRenderingContext2D) {}
 
   drawAsteroid(options: DrawAsteroidOptions): void {
-    const light = normalize(options.light);
-    const surface = this.asteroidSurface(options.id, options.kind);
     const detail = this.asteroidDetail(options.radius);
     const sprite = this.asteroidSprite(options.id, options.kind, detail);
     const context = this.context;
@@ -79,22 +68,21 @@ export class ProceduralSpaceBodyRenderer {
     // Avoid per-frame clipping and gradient creation at this LOD.
     if (options.radius < 5) return;
 
+    const surface = this.asteroidSurface(options.id, options.kind);
+    const light = normalize(options.light);
     context.save();
     context.translate(options.x, options.y);
     this.traceOutline(surface.outline, options.radius, options.rotation);
+    // The current path is not part of the Canvas drawing state. Restoring
+    // the clip preserves the exact path for the unclipped rim stroke.
+    context.save();
     context.clip();
     this.drawSphereLight(options.radius, light, options.kind === 'debris' ? 0.72 : 0.84);
     context.restore();
-
-    if (options.radius >= 5) {
-      context.save();
-      context.translate(options.x, options.y);
-      this.traceOutline(surface.outline, options.radius, options.rotation);
-      context.strokeStyle = 'rgba(205, 198, 188, .12)';
-      context.lineWidth = Math.max(0.7, Math.min(1.15, options.radius * 0.025));
-      context.stroke();
-      context.restore();
-    }
+    context.strokeStyle = 'rgba(205, 198, 188, .12)';
+    context.lineWidth = Math.max(0.7, Math.min(1.15, options.radius * 0.025));
+    context.stroke();
+    context.restore();
   }
 
   drawPlanet(options: DrawPlanetOptions): void {
@@ -155,20 +143,6 @@ export class ProceduralSpaceBodyRenderer {
     return 'normal';
   }
 
-  private asteroidTexture(
-    id: string,
-    kind: 'resource' | 'debris',
-    detail: AsteroidTextureDetail
-  ): HTMLCanvasElement {
-    const key = id + ':' + kind + ':' + detail;
-    const cached = this.asteroidTextureCache.get(key);
-    if (cached) return cached;
-
-    const texture = createAsteroidTexture(id, kind, detail);
-    this.asteroidTextureCache.set(key, texture);
-    return texture;
-  }
-
   private asteroidSprite(
     id: string,
     kind: 'resource' | 'debris',
@@ -197,7 +171,10 @@ export class ProceduralSpaceBodyRenderer {
     if (!context) throw new Error('Asteroid sprite canvas unavailable.');
 
     const surface = this.asteroidSurface(id, kind);
-    const texture = this.asteroidTexture(id, kind, detail);
+    // The finished sprite owns the baked texture. Do not retain a second canvas.
+    const texture = measurePerformance('canvas.asteroid.texture-build', () =>
+      createAsteroidTexture(id, kind, detail)
+    );
     const radius = size * 0.5;
     context.save();
     context.translate(radius, radius);
@@ -362,7 +339,12 @@ export class ProceduralSpaceBodyRenderer {
   private traceOutline(outline: readonly WorldPoint[], radius: number, rotation: number): void {
     if (outline.length < 3) return;
 
-    const rotated = outline.map((point) => rotate(point, rotation));
+    const cosine = Math.cos(rotation);
+    const sine = Math.sin(rotation);
+    const rotated = outline.map((point) => ({
+      x: point.x * cosine - point.y * sine,
+      y: point.x * sine + point.y * cosine,
+    }));
     const first = rotated[0]!;
     const last = rotated[rotated.length - 1]!;
     this.context.beginPath();

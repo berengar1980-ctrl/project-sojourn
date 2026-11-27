@@ -194,6 +194,8 @@ export function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): vo
           delete existing.combatMovement;
           delete existing.orbit;
         }
+        existing.cargoCapacity = 0;
+        existing.normalCargoCapacity = 0;
         equipSecurityDroneMk3(existing);
         continue;
       }
@@ -207,10 +209,16 @@ export function registerSecurityDroneCombatants(npcStates: SectorNpcState[]): vo
         marketIntel: {},
         workResourceIds: [],
         credits: 0,
+        cargoCapacity: 0,
+        normalCargoCapacity: 0,
         hullHp: patrolTemplate.hullMaxHp,
         activityId: 'patrol',
         activity: 'Lokale Konzessionsüberwachung',
       };
+      delete drone.autonomy;
+      delete drone.sideTradePlan;
+      delete drone.workLocationId;
+      delete drone.lastWorkLocationId;
       delete drone.travel;
       delete drone.combatMovement;
       delete drone.orbit;

@@ -38,6 +38,8 @@ export interface StarMapEngagementService {
     seed: number,
     bystanders?: readonly StrategicCombatBystander[]
   ): StrategicCombatSnapshot | null;
+  /** Lightweight ownership query; does not serialize combat state. */
+  hasFieldCombat?(locationId: string, seed: number): boolean;
   registerFieldCombatWreck(
     locationId: string,
     seed: number,
@@ -62,6 +64,10 @@ export interface StarMapEngagementOptions {
   readonly protectsNpc?: (attacker: SectorNpcState, defender: SectorNpcState) => boolean;
   readonly onPlayerAttack?: (npc: SectorNpcState) => void;
   readonly onPlayerVictory?: (id: string) => void;
+  /** Optional diagnostics; not involved in combat decisions. */
+  readonly onNpcFleetStarted?: () => void;
+  readonly onNpcFleetFinished?: () => void;
+  /** All newly destroyed NPC fleet actors, in local fields and sector encounters. */
   readonly onFieldFleetLosses?: (
     snapshot: StrategicCombatSnapshot,
     losses: readonly StrategicCombatSnapshot['attacker'][],

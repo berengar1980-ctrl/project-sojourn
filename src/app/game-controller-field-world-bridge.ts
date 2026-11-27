@@ -2,12 +2,14 @@ import { recoverNpcEventField } from './game-controller-npc-event-stocks';
 import {
   balancePermanentSalvageStocks,
   permanentSalvageField,
-  recoverBackgroundSalvage,
   regionalSalvageResourceIds,
 } from './game-controller-salvage-stocks';
 import { installNpcWorkPlanning, reviewNpcMiningClaims } from './game-controller-npc-work-planning';
 import { balanceAsteroidStocks } from './game-controller-asteroid-stocks';
-import { invalidateSalvagePhysics } from '../systems/salvage/salvage-container-motion';
+import {
+  advanceFieldWreckLifetime,
+  advanceRemainingWreckMotion,
+} from './game-controller-field-wreck-lifecycle';
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { LocalSpaceInstance } from '../core/local-space-types';
 import type { SectorNpcState } from '../core/npc-types';
@@ -28,6 +30,7 @@ import {
   recordNpcAsteroidTheft,
 } from './game-controller-field-miner-events';
 import { tickFieldPirates, tickFieldSecurity } from './game-controller-security';
+import { bindMiningTraffic, miningTrafficObstacles } from './game-controller-mining-traffic';
 import type {
   CombatVisualAsteroid,
   StrategicCombatSnapshot,
@@ -36,7 +39,7 @@ import type {
 import type { FieldWitness } from '../systems/combat/career-fleet-encounter';
 import { droneSeesTarget } from '../systems/operations/asteroid-security-drone';
 import { salvageDroneObstacleAsteroids, salvageDroneCanSee } from './game-controller-salvage-drone';
-import { careerSalvageDrone } from './game-controller-salvage-drone-world';
+import { backgroundSalvagePatrol, careerSalvageDrone } from './game-controller-salvage-drone-world';
 
 function escortWitness(
   context: ControllerRuntimeContext,
@@ -44,7 +47,11 @@ function escortWitness(
   id: string,
   target: Parameters<FieldWitness>[2]
 ) {
-  const salvage = context.state.salvageScene?.getField();
+  const mounted = context.state.salvageScene?.getField();
+  const salvage =
+    mounted?.sourceLocationId === locationId
+      ? mounted
+      : backgroundSalvagePatrol(context, locationId)?.field;
   const field = fieldWorldFor(context).field(locationId);
   const body = context.economy.localPirates.get(locationId)?.body(id);
   const rocks =
@@ -58,7 +65,11 @@ export function fieldWitnessFor(
   ...[locationId, npc, target]: Parameters<FieldWitness>
 ): ReturnType<FieldWitness> {
   if (!context || npc.locationId !== locationId || npc.travel) return null;
-  const salvage = context.state.salvageScene?.getField();
+  const mounted = context.state.salvageScene?.getField();
+  const salvage =
+    mounted?.sourceLocationId === locationId
+      ? mounted
+      : backgroundSalvagePatrol(context, locationId)?.field;
   const field = fieldWorldFor(context).field(locationId);
   if (npc.id.startsWith('security-drone:')) {
     if (npc.id !== 'security-drone:' + locationId) {
@@ -124,7 +135,13 @@ function balanceDailySalvage(context: ControllerRuntimeContext, day: number): vo
       continue;
     }
     const field = permanentSalvageField(context, location);
-    balancePermanentSalvageStocks(simulation, field, (id) => !wreckClaims.claim(field.id, id, day));
+    const workers = backgroundSalvagePatrol(context, location.id)?.salvagers.ships ?? [];
+    balancePermanentSalvageStocks(
+      simulation,
+      field,
+      (id) =>
+        !workers.some((ship) => ship.targetWreckId === id) && !wreckClaims.claim(field.id, id, day)
+    );
     wreckClaims.rememberField(field);
   }
 }
@@ -138,14 +155,9 @@ function installPermanentSalvageEconomy(context: ControllerRuntimeContext): void
   for (const location of locations) {
     wreckClaims.rememberField(permanentSalvageField(context, location));
   }
-  npcs.setPhysicalSalvageWorker((npc, day) => {
-    const location = locations.find((entry) => entry.id === npc.locationId);
-    if (!location) return;
-    const mounted = context.state.salvageScene?.getField();
-    if (context.state.mode === 'salvage-space' && mounted?.sourceLocationId === location.id) return;
-    const field = permanentSalvageField(context, location);
-    recoverBackgroundSalvage(context, npc, field, day);
-  });
+  // The shared local salvage runtime owns extraction at all permanent sites.
+  // A registered callback suppresses the economy service's abstract extraction.
+  npcs.setPhysicalSalvageWorker(() => {});
 }
 
 function registerInitialAsteroidStocks(
@@ -189,6 +201,7 @@ export function bindCareerFieldWorld(
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
     if (!field) continue;
+    bindMiningTraffic(context, field);
     context.economy.securityDrones.set(location.id, field.drone);
     context.economy.localPirates.set(location.id, field.pirates);
   }
@@ -219,6 +232,7 @@ export function fieldWorldFor(
         },
         dynamicRoster: true,
         getAsteroids: () => instance.asteroids,
+        getTrafficObstacles: (id) => miningTrafficObstacles(instance, id),
         initialPosition: (id) => context.fieldExerciseSpawns?.get(id),
         mine: (npc, resourceId, requested, asteroidId) =>
           economy.npcs.mineLocal(
@@ -260,6 +274,7 @@ export function fieldWorldFor(
   for (const location of narrowsSector.locations) {
     const field = fields.field(location.id);
     if (!field) continue;
+    bindMiningTraffic(context, field);
     economy.securityDrones.set(location.id, field.drone);
     const npc = economy.sectorNpcs.npcs.find(
       (entry) => entry.id === 'security-drone:' + location.id
@@ -393,19 +408,7 @@ export function advanceControllerFieldWorld(
   const fieldWorld = fieldWorldFor(context);
   syncFinishedFieldPoses(context, fieldWorld, finished);
   balanceDailyAsteroids(context, fieldWorld, localId);
-  fieldWorld.advanceCombatWreckLifetime(deltaSeconds, (locationId, ids) => {
-    for (const id of ids) context.economy.simulation.releasePhysicalStock(id);
-    context.engagements.removeFieldCombatWrecks(ids);
-    const sceneField = context.state.salvageScene?.getField();
-    const fields = new Set([sceneField, ...context.state.salvageEventFields.values()]);
-    for (const field of fields) {
-      if (field?.sourceLocationId !== locationId) continue;
-      for (let i = field.wrecks.length - 1; i >= 0; i--) {
-        if (ids.has(field.wrecks[i]!.id)) field.wrecks.splice(i, 1);
-      }
-      invalidateSalvagePhysics(field);
-    }
-  });
+  advanceFieldWreckLifetime(context, fieldWorld, deltaSeconds);
   const combatLocations = new Set<string>();
   for (const duel of background) {
     if (duel.arena.backdropSeed === undefined) continue;
@@ -459,20 +462,23 @@ export function advanceControllerFieldWorld(
       );
     }
   });
-  const salvageLocation =
-    context.state.mode === 'salvage-space'
-      ? context.state.salvageScene?.getField().sourceLocationId
-      : null;
-  fieldWorld.advanceCombatWreckMotion(
-    deltaSeconds,
-    context.state.embeddedCombat === 'local-space' ? localId : salvageLocation,
-    combatLocations
-  );
+  advanceRemainingWreckMotion(context, fieldWorld, deltaSeconds, localId, combatLocations);
 }
 
 function activeFieldContact(context: ControllerRuntimeContext | null, npc: SectorNpcState) {
   if (!context || npc.travel) return false;
+  // Both the primary drone and its escort belong to the local field runtime.
+  if (
+    npc.id.startsWith('security-drone:') &&
+    narrowsSector.locations.some(
+      (location) =>
+        location.id === npc.locationId && (location.activities.mine || location.activities.salvage)
+    )
+  ) {
+    return true;
+  }
   if (npc.id === 'security-drone:' + npc.locationId) return true;
+  if (backgroundSalvagePatrol(context, npc.locationId)) return true;
   if (context.state.mode !== 'local-space' && context.state.mode !== 'salvage-space') return false;
   return npc.locationId === context.navigation.getSnapshot().currentLocationId;
 }

@@ -1,4 +1,5 @@
 import { createStartMenu, type StartMenuAction } from '../ui/start/start-menu';
+import { measurePerformance, recordPerformance } from '../core/performance-diagnostics';
 import { createCampaignSelectionMenu } from '../ui/start/campaign-selection-menu';
 import { campaignPackages } from '../data/campaigns/manifest';
 import {
@@ -47,7 +48,9 @@ function launchCampaign(
     if (!running || !game) return;
     const deltaSeconds = (time - previousTime) / 1000;
     previousTime = time;
-    game.tick(deltaSeconds);
+    recordPerformance('frame.interval', deltaSeconds * 1000);
+    const currentGame = game;
+    measurePerformance('frame.controller', () => currentGame.tick(deltaSeconds));
     requestAnimationFrame(frame);
   };
 

@@ -52,24 +52,6 @@ export function applyImpulseAtPoint(
   asteroid.physics.angularVelocity += cross(lever, impulse) / asteroid.physics.momentOfInertia;
 }
 
-function integrateAxis(
-  position: number,
-  velocity: number,
-  radius: number,
-  extent: number
-): { position: number; velocity: number } {
-  const minimum = radius;
-  const maximum = extent - radius;
-
-  if (position < minimum) {
-    return { position: minimum, velocity: Math.abs(velocity) * 0.58 };
-  }
-  if (position > maximum) {
-    return { position: maximum, velocity: -Math.abs(velocity) * 0.58 };
-  }
-  return { position, velocity };
-}
-
 export function integrateAsteroids(
   asteroids: readonly LocalAsteroid[],
   deltaSeconds: number,
@@ -77,13 +59,28 @@ export function integrateAsteroids(
   height: number
 ): void {
   for (const asteroid of asteroids) {
-    const nextX = asteroid.position.x + asteroid.physics.velocity.x * deltaSeconds;
-    const nextY = asteroid.position.y + asteroid.physics.velocity.y * deltaSeconds;
-    const x = integrateAxis(nextX, asteroid.physics.velocity.x, asteroid.radius, width);
-    const y = integrateAxis(nextY, asteroid.physics.velocity.y, asteroid.radius, height);
-
-    asteroid.position = { x: x.position, y: y.position };
-    asteroid.physics.velocity = { x: x.velocity, y: y.velocity };
+    let vx = asteroid.physics.velocity.x;
+    let vy = asteroid.physics.velocity.y;
+    let x = asteroid.position.x + vx * deltaSeconds;
+    let y = asteroid.position.y + vy * deltaSeconds;
+    const radius = asteroid.radius;
+    // Preserve the old boundary precedence and arithmetic; avoid two temporary axis objects.
+    if (x < radius) {
+      x = radius;
+      vx = Math.abs(vx) * 0.58;
+    } else if (x > width - radius) {
+      x = width - radius;
+      vx = -Math.abs(vx) * 0.58;
+    }
+    if (y < radius) {
+      y = radius;
+      vy = Math.abs(vy) * 0.58;
+    } else if (y > height - radius) {
+      y = height - radius;
+      vy = -Math.abs(vy) * 0.58;
+    }
+    asteroid.position = { x, y };
+    asteroid.physics.velocity = { x: vx, y: vy };
     asteroid.rotation += asteroid.physics.angularVelocity * deltaSeconds;
   }
 }

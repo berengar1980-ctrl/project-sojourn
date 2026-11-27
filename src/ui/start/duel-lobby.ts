@@ -3,7 +3,8 @@ import { duelCombatant, duelInstalledComponents, type DuelDraft } from './duel-c
 import { calculateShipModeEnergy } from '../../systems/ships/ship-component-service';
 import type { ShipComponentType } from '../../core/ship-types';
 import { buildDuelWeaponSections } from './duel-weapon-cards';
-import { getAllShipDefinitions, type ShipDefinition } from '../../systems/ships';
+import { getAllShipDefinitions, getShipDefinition, type ShipDefinition } from '../../systems/ships';
+import { campaignCombatPresets, campaignPresetDraft } from './campaign-combat-preset';
 import { createStrategicCombatService } from '../../systems/combat';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
 import { createGameAudioService } from '../../systems/audio/game-audio-service';
@@ -39,6 +40,7 @@ function shipSelector(
   }
   select.value = draft.shipId;
   select.addEventListener('change', () => {
+    delete draft.campaignNpcId;
     draft.shipId = select.value;
     draft.weapons = [];
     rerender();
@@ -159,6 +161,29 @@ function crewSelector(draft: DuelDraft): HTMLLabelElement {
   return createLabel('Crew / Kommandant', select);
 }
 
+function campaignPresetSelector(draft: DuelDraft, rerender: () => void): HTMLLabelElement {
+  const select = document.createElement('select');
+  select.append(new Option('Manuelle Konfiguration', ''));
+  for (const npc of campaignCombatPresets()) {
+    const name = getShipDefinition(npc.shipId)?.name ?? npc.shipId;
+    select.append(new Option(name + ' · ' + npc.name, npc.id));
+  }
+  select.value = draft.campaignNpcId ?? '';
+  select.addEventListener('change', () => {
+    if (select.value) Object.assign(draft, campaignPresetDraft(select.value));
+    else {
+      delete draft.campaignNpcId;
+      draft.shipId = getAllShipDefinitions()[0]!.id;
+      draft.crewId = crewDefinitions[0]!.id;
+      draft.weapons = [];
+      draft.mines = [];
+      for (const [, key] of COMPONENT_SELECTORS) delete draft[key];
+    }
+    rerender();
+  });
+  return createLabel('Kampfprofil', select);
+}
+
 function playerCard(
   index: number,
   draft: DuelDraft,
@@ -170,7 +195,22 @@ function playerCard(
   const heading = document.createElement('h2');
   heading.textContent = 'Spieler ' + (index + 1);
   const ship = ships.find((entry) => entry.id === draft.shipId) ?? ships[0]!;
-  card.append(heading, shipSelector(draft, ships, rerender));
+  card.append(heading, campaignPresetSelector(draft, rerender));
+  if (draft.campaignNpcId) {
+    const setup = duelCombatant(index, draft, getShipDefinition(draft.shipId)!);
+    const summary = document.createElement('p');
+    summary.textContent =
+      setup.name +
+      ' · Hülle ' +
+      setup.hullHp +
+      ' · Schild ' +
+      setup.shieldHp +
+      ' · ' +
+      setup.weapons.map((weapon) => weapon.name).join(', ');
+    card.append(summary, powerBudget(draft));
+    return card;
+  }
+  card.append(shipSelector(draft, ships, rerender));
   card.append(...buildDuelWeaponSections(draft, ship, rerender));
   for (const [type, key, label] of COMPONENT_SELECTORS) {
     card.append(equipmentSelector(draft, type, key, label, rerender));
@@ -232,7 +272,7 @@ function duelSetups(
   ships: ReturnType<typeof getAllShipDefinitions>
 ) {
   return drafts.map((draft, index) =>
-    duelCombatant(index, draft, ships.find((ship) => ship.id === draft.shipId) ?? ships[0]!)
+    duelCombatant(index, draft, getShipDefinition(draft.shipId) ?? ships[0]!)
   );
 }
 

@@ -16,7 +16,15 @@ import {
 } from '../local-space/local-space-collision';
 
 type SalvageBody = SalvageDebris | SalvageSection | SalvageWreck;
+interface FieldRoster {
+  readonly wrecks: readonly SalvageWreck[];
+  readonly dynamic: readonly boolean[];
+  readonly debris: readonly SalvageDebris[];
+  readonly sections: readonly SalvageSection[];
+}
+
 interface WorldPhysics {
+  readonly roster: FieldRoster;
   readonly owners: readonly SalvageBody[];
   readonly bodies: readonly LocalAsteroid[];
 }
@@ -80,17 +88,44 @@ function toLocalAsteroid(owner: SalvageBody): LocalAsteroid {
   };
 }
 
-function getPhysics(field: SalvageField): WorldPhysics {
-  const owners = ownersForField(field);
-  const previous = physicsByField.get(field);
-  if (
-    previous &&
-    previous.owners.length === owners.length &&
-    previous.owners.every((owner, i) => owner === owners[i])
-  ) {
-    return previous;
+function sameRoster<T>(saved: readonly T[], live: readonly T[] | undefined): boolean {
+  if (saved.length !== (live?.length ?? 0)) return false;
+  for (let index = 0; index < saved.length; index++) {
+    if (saved[index] !== live?.[index]) return false;
   }
-  const fresh: WorldPhysics = { owners, bodies: owners.map(toLocalAsteroid) };
+  return true;
+}
+
+function rosterMatches(roster: FieldRoster, field: SalvageField): boolean {
+  if (
+    !sameRoster(roster.wrecks, field.wrecks) ||
+    !sameRoster(roster.debris, field.debris) ||
+    !sameRoster(roster.sections, field.sections)
+  )
+    return false;
+  // An existing wreck can become dynamic (or stationary) without being replaced.
+  for (let index = 0; index < field.wrecks.length; index++) {
+    if (roster.dynamic[index] !== isDynamicWreck(field.wrecks[index]!)) return false;
+  }
+  return true;
+}
+
+function getPhysics(field: SalvageField): WorldPhysics {
+  const previous = physicsByField.get(field);
+  // The hot path allocates nothing. Validate contents, not only array identity:
+  // combat, recovery and save restoration can splice or replace individual owners.
+  if (previous && rosterMatches(previous.roster, field)) return previous;
+
+  const owners = ownersForField(field);
+  const roster: FieldRoster = {
+    wrecks: [...field.wrecks],
+    dynamic: field.wrecks.map(isDynamicWreck),
+    debris: [...(field.debris ?? [])],
+    sections: [...(field.sections ?? [])],
+  };
+  const bodies =
+    previous && sameRoster(previous.owners, owners) ? previous.bodies : owners.map(toLocalAsteroid);
+  const fresh: WorldPhysics = { roster, owners, bodies };
   physicsByField.set(field, fresh);
   return fresh;
 }

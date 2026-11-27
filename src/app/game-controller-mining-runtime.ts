@@ -4,6 +4,7 @@ import { controllerShipRuntimeOptions } from './game-controller-models';
 import { createMiningLocalSpace } from './game-controller-mining';
 import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { resolveShipRuntimeSetup } from '../systems/ships';
+import { miningTrafficObstacles } from './game-controller-mining-traffic';
 
 /** Keep original mutable field/traffic objects when returning from boarding. */
 export function ensureMiningCombatWorld(
@@ -43,6 +44,7 @@ export function ensureMiningCombatWorld(
     field.instance,
     {
       additionalObstacles: () => fieldWorldFor(context).combatWreckPhysicsBodies(location.id),
+      getTrafficObstacles: () => miningTrafficObstacles(field.instance, 'player'),
       onAdditionalObstacleContact: () =>
         fieldWorldFor(context).syncCombatWreckContacts(location.id),
     }

@@ -5,6 +5,8 @@ import { cloneCareerJson } from '../persistence/career-save-contract';
 export interface SecurityDroneCheckpoint {
   readonly version: 1;
   readonly position: WorldPoint;
+  readonly headingRadians?: number;
+  readonly speed?: number;
   readonly routeState?: FieldRouteState;
   readonly scanRadius: number;
   readonly operational: boolean;
@@ -48,6 +50,7 @@ export function stageSecurityDroneCheckpoint(
   if (!record(point) || !validNumber(point.x, -Infinity) || !validNumber(point.y, -Infinity)) {
     throw new Error('Ungültige Drohnenposition.');
   }
+  verifyDroneMotion(value);
   if (value.routeState !== undefined && !validRouteState(value.routeState)) {
     throw new Error('Ungültige gespeicherte Drohnenroute.');
   }
@@ -70,4 +73,12 @@ export function stageSecurityDroneCheckpoint(
     throw new Error('Doppelte Drohnen-Beobachtung.');
   }
   return value as unknown as SecurityDroneCheckpoint;
+}
+
+function verifyDroneMotion(value: Record<string, unknown>): void {
+  if (
+    (value.headingRadians !== undefined && !validNumber(value.headingRadians, -Infinity)) ||
+    (value.speed !== undefined && !validNumber(value.speed))
+  )
+    throw new Error('Ungültige gespeicherte Drohnenbewegung.');
 }

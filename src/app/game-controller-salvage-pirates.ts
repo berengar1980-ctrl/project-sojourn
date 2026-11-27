@@ -1,3 +1,5 @@
+import { pirateHuntAllowedAt } from '../systems/npcs/npc-pirate-classes';
+import { narrowsSector } from '../data/maps/narrows-sector';
 import type { LocalShieldShipBody } from '../systems/local-space/ship-shield-collision';
 import { getShipDefinition } from '../systems/ships';
 import { syncSalvagePhysicsContacts } from '../systems/salvage/salvage-container-motion';
@@ -26,7 +28,7 @@ export interface SalvagePirateResponseOptions {
   readonly pirates: LocalPirateTraffic;
   readonly sectorNpcs: readonly SectorNpcState[];
   readonly salvagers: NpcLocalSalvageService['ships'];
-  readonly playerPosition: WorldPoint;
+  readonly playerPosition: WorldPoint | null;
   readonly playerRadius: number;
   readonly playerBody?: LocalShieldShipBody;
   readonly onFreighterExit?: (npc: SectorNpcState) => void;
@@ -45,7 +47,10 @@ export interface SalvagePirateResponseOptions {
 function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> {
   const { field, drone, pirates, salvagers, sectorNpcs } = options;
   const combatants = new Set<string>();
-  for (const duel of options.npcCombats ?? []) {
+  for (const duel of [
+    ...(options.npcCombats ?? []),
+    ...(options.playerCombat ? [options.playerCombat] : []),
+  ]) {
     for (const ship of [duel.attacker, duel.defender]) {
       const npc = sectorNpcs.find((entry) => entry.id === ship.id);
       if (npc?.locationId !== field.sourceLocationId) continue;
@@ -53,7 +58,12 @@ function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> 
       combatants.add(npc.id);
       pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians, ship.speed);
       for (const salvager of salvagers) {
-        if (salvager.npcId === npc.id) salvager.position = { ...ship.position };
+        if (salvager.npcId === npc.id) {
+          salvager.position = { ...ship.position };
+          salvager.headingRadians = ship.headingRadians;
+          salvager.speed = ship.speed;
+          delete salvager.routeState;
+        }
       }
       if (npc.id === 'security-drone:' + field.sourceLocationId) {
         drone.syncCombatPose(ship.position, ship.headingRadians, ship.speed, ship.hullHp > 0);
@@ -70,7 +80,15 @@ function closestVisiblePirate(
   const dronePosition = options.drone.position;
   return (
     pirateShips
-      .filter((pirate) => salvageDroneCanSee(options.drone, options.field, pirate.position))
+      .filter((pirate) => {
+        const npc = options.sectorNpcs.find((entry) => entry.id === pirate.npcId);
+        return Boolean(
+          npc &&
+          !npc.combatMovement &&
+          (npc.combatRecoverySeconds ?? 0) <= 0 &&
+          salvageDroneCanSee(options.drone, options.field, pirate.position)
+        );
+      })
       .sort(
         (a, b) =>
           Math.hypot(a.position.x - dronePosition.x, a.position.y - dronePosition.y) -
@@ -86,9 +104,9 @@ function advanceDroneInterception(
 ): void {
   const { drone, field, sectorNpcs, salvagers } = options;
   const defender = sectorNpcs.find((npc) => npc.id === 'security-drone:' + field.sourceLocationId);
-  drone.syncAvailability(defender);
-  const target = closestVisiblePirate(options, pirateShips);
   const busy = Boolean(defender?.combatMovement || combatants.has(defender?.id ?? ''));
+  if (!busy) drone.syncAvailability(defender);
+  const target = closestVisiblePirate(options, pirateShips);
   let pursuit: WorldPoint | undefined;
   if (target && !busy) {
     pursuit = securityPirateApproach(drone.position, target.position);
@@ -96,7 +114,9 @@ function advanceDroneInterception(
   const obstacles = salvageDroneShipObstacles(
     [
       ...salvagers.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
-      ...pirateShips.map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
+      ...options.pirates
+        .snapshot(sectorNpcs)
+        .map((ship) => ({ id: ship.npcId, position: ship.position, radius: 35 })),
     ],
     options.playerPosition,
     options.playerRadius
@@ -158,11 +178,20 @@ function advancePirateTraffic(
   pirates.tick(
     options.dt,
     livePirates,
-    options.playerPosition,
+    options.playerCombat ? null : options.playerPosition,
     salvagers.map((ship) => ({
       npcId: ship.npcId,
       position: ship.position,
-      inCombat: combatants.has(ship.npcId),
+      inCombat:
+        combatants.has(ship.npcId) ||
+        options.sectorNpcs.some(
+          (npc) =>
+            npc.id === ship.npcId &&
+            (npc.hullHp <= 0 ||
+              Boolean(npc.travel) ||
+              Boolean(npc.combatMovement) ||
+              (npc.combatRecoverySeconds ?? 0) > 0)
+        ),
     })),
     rocks,
     (pirateId, targetId, position) => {
@@ -184,9 +213,15 @@ function advancePirateTraffic(
 
 /** Combat owns fighting ship poses; regular traffic owns everyone else. */
 export function advanceSalvagePirateResponse(options: SalvagePirateResponseOptions): void {
+  const location = narrowsSector.locations.find(
+    (entry) => entry.id === options.field.sourceLocationId
+  );
   const livePirates = options.sectorNpcs.filter(
     (npc) =>
-      localArmedTraffic(npc) && npc.locationId === options.field.sourceLocationId && npc.hullHp > 0
+      localArmedTraffic(npc) &&
+      npc.locationId === options.field.sourceLocationId &&
+      npc.hullHp > 0 &&
+      (!location || pirateHuntAllowedAt(npc, location))
   );
   options.pirates.reconcile(livePirates);
   const combatants = mirrorSalvageDuels(options);

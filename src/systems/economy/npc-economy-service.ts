@@ -1,3 +1,5 @@
+import { measurePerformance } from '../../core/performance-diagnostics';
+import { validateNpcEconomyCheckpoint } from './npc-economy-checkpoint';
 import type { EconomyResourceDefinition, NpcEconomyState } from '../../core/economy-types';
 
 import {
@@ -34,7 +36,7 @@ import {
 import { observeNpcMarket, initializeNpcMarketIntel } from './npc-market-knowledge';
 
 import { npcCargoUsed, cargoFree, quantity } from './npc-cargo';
-import { maxAffordableShipment } from './npc-operating-decisions';
+import { decisionTravelQuotes, maxAffordableShipment } from './npc-operating-decisions';
 import { chargeNpcDailyOperatingExpenses } from './npc-operating-expenses';
 import { finishNpcWorksite } from './npc-work-planning';
 
@@ -193,25 +195,18 @@ function chooseReadyAction(
     return;
   }
 
+  const quoteTravel = decisionTravelQuotes(options.travel?.quoteTravel);
   if (npc.role === 'trader' || npc.role === 'freighter') {
-    chooseTraderAction(npc, markets, resources, positions, day, options.travel?.quoteTravel);
+    chooseTraderAction(npc, markets, resources, positions, day, quoteTravel);
     return;
   }
   if (npc.role === 'miner' || npc.role === 'salvager') {
-    chooseWorkerAction(
-      npc,
-      markets,
-      resources,
-      positions,
-      day,
-      options.travel?.quoteTravel,
-      options.workPlanning
-    );
+    chooseWorkerAction(npc, markets, resources, positions, day, quoteTravel, options.workPlanning);
     return;
   }
   if (npc.role === 'patrol') {
     const pirate = 'pirate' in npc && npc.pirate;
-    if (!pirate && handleCargoSale(npc, positions, day, options.travel?.quoteTravel)) return;
+    if (!pirate && handleCargoSale(npc, positions, day, quoteTravel)) return;
     const accepted = options.travel?.requestPatrol?.(npc) ?? false;
     if (accepted) markNpcTravelStarted(npc);
     else beginNpcAutonomyPhase(npc, 'patrol-rest');
@@ -222,6 +217,9 @@ function chooseReadyAction(
 
 function advanceWorkingPhase(npc: NpcEconomyState, options: NpcEconomyServiceOptions): void {
   const misplaced = options.workPlanning && npc.workLocationId !== npc.locationId;
+  // A physical salvager must fly to the field exit before the economy may
+  // dispatch its loaded cargo. The local service calls dispatchLoadedWorker.
+  if (!misplaced && npc.role === 'salvager' && options.physicalSalvageWorker) return;
   if (misplaced || npcCargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity))) {
     if (options.workPlanning) finishNpcWorksite(npc);
     beginNpcAutonomyPhase(npc, 'thinking');
@@ -261,7 +259,9 @@ function advanceNpcActivity(
   }
 
   if (autonomy.phase === 'ready') {
-    chooseReadyAction(npc, markets, resources, positions, day, options);
+    measurePerformance('sim.npcs.decision', () =>
+      chooseReadyAction(npc, markets, resources, positions, day, options)
+    );
     return;
   }
 
@@ -275,14 +275,18 @@ function advanceNpcActivity(
     beginNpcAutonomyPhase(npc, 'thinking');
   } else if (autonomy.phase === 'thinking') {
     beginNpcAutonomyPhase(npc, 'ready', 0);
-    chooseReadyAction(npc, markets, resources, positions, day, options);
+    measurePerformance('sim.npcs.decision', () =>
+      chooseReadyAction(npc, markets, resources, positions, day, options)
+    );
   } else if (autonomy.phase === 'loading') {
     completeLoading(npc, markets, day, options);
   } else if (autonomy.phase === 'launch-prep') {
     startPendingTravel(npc, options);
   } else if (autonomy.phase === 'patrol-rest') {
     beginNpcAutonomyPhase(npc, 'ready', 0);
-    chooseReadyAction(npc, markets, resources, positions, day, options);
+    measurePerformance('sim.npcs.decision', () =>
+      chooseReadyAction(npc, markets, resources, positions, day, options)
+    );
   }
 }
 
@@ -319,29 +323,6 @@ function abstractWorkerDay(
     if (npc.role === 'miner') options.onMined?.(npc, resourceId, allocated);
   }
   if (cargoFree(npc) <= 0) beginNpcAutonomyPhase(npc, 'thinking');
-}
-
-function validateNpcEconomyCheckpoint(
-  checkpoint: NpcEconomyCheckpoint,
-  npcs: readonly NpcEconomyState[]
-): void {
-  if (
-    checkpoint.version !== 1 ||
-    !Number.isSafeInteger(checkpoint.lastDay) ||
-    checkpoint.lastDay < -1 ||
-    !Array.isArray(checkpoint.npcIds) ||
-    checkpoint.npcIds.length !== npcs.length
-  ) {
-    throw new Error('Invalid NPC economy checkpoint');
-  }
-  const known = new Set(npcs.map((npc) => npc.id));
-  if (
-    known.size !== npcs.length ||
-    new Set(checkpoint.npcIds).size !== checkpoint.npcIds.length ||
-    checkpoint.npcIds.some((id) => !known.has(id))
-  ) {
-    throw new Error('NPC economy checkpoint identity mismatch');
-  }
 }
 
 function initializeNpcEconomy(
@@ -457,8 +438,10 @@ export function createNpcEconomyService(
       if (wanted <= 0) return 0;
       const stock = sourceId ? allocator.getPhysicalStock?.(resourceId, sourceId) : undefined;
       const allocated =
-        sourceId && stock !== undefined && allocator.withdrawPhysicalStock
-          ? allocator.withdrawPhysicalStock(resourceId, sourceId, wanted)
+        sourceId && allocator.getPhysicalStock && allocator.withdrawPhysicalStock
+          ? stock === undefined
+            ? 0
+            : allocator.withdrawPhysicalStock(resourceId, sourceId, wanted)
           : allocator.allocatePhysicalResource(resourceId, wanted);
       if (allocated <= 0) return 0;
       npc.cargo[resourceId] = quantity(npc.cargo[resourceId] ?? 0) + allocated;

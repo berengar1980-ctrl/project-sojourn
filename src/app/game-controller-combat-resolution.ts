@@ -190,7 +190,11 @@ export function resolveControllerCombat(
   } else {
     state.salvageScene?.finishCombat(snapshot);
   }
-  recordCareerCombatWrecks(context, snapshot, originLocationId ?? null);
+  // NPC fleet actors already publish their destruction at the native hull boundary.
+  const losses = context.engagements.activePlayerFleet?.()
+    ? [snapshot.attacker].filter((ship) => ship.id === 'player')
+    : [snapshot.attacker, snapshot.defender];
+  recordCareerCombatWrecks(context, snapshot, originLocationId ?? null, losses);
   emitCampaignCombatEnded(context.campaignEvents, snapshot);
   context.engagements.finishPlayerCombat();
   restoreSurvivingDrone(context, snapshot);

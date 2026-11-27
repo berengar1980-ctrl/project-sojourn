@@ -81,6 +81,8 @@ export interface NpcEconomyService {
 export interface NpcTravelOperatingQuote {
   readonly distance: number;
   readonly refuelCost: number;
+  /** Certified direct flight using only fuel already aboard; valid for any nonnegative budget. */
+  readonly budgetIndependent?: true;
   /** Economic cost of consumed fuel, including fuel already aboard. */
   readonly fuelExpense: number;
 }

@@ -41,7 +41,11 @@ import {
 } from './game-controller-salvage-combat-return';
 import { returnToStarMapFromSalvage } from './game-controller-salvage-exit';
 import { createWreckClaimActions, wreckClaimOwners } from './game-controller-salvage-claims';
-import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
+import {
+  createNpcSalvageRuntime,
+  detachNpcSalvagePlayer,
+  hasNpcSalvageRuntime,
+} from './game-controller-salvage-npc-runtime';
 import {
   requestDistressDiagnosis,
   tickDistressDiagnosis,
@@ -371,7 +375,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
   const field =
     options.field ??
     generateSalvageField(options.location.id, options.seed, options.location.dangerLevel);
-  options.wreckClaims.restoreField(field);
+  if (!hasNpcSalvageRuntime(field)) options.wreckClaims.restoreField(field);
   if (options.sectorEvent) options.economy.prepareEventField?.(field);
   const service = createSalvageLocalSpaceService({
     field,
@@ -381,6 +385,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     sensorModifier: runtime.sensorModifier,
     sensorCrewSkill: runtime.sensorCrewSkill,
     collect: options.economy.recover,
+    onWreckEventResolved: (wreck, result) =>
+      options.economy.reconcileWreckEvent?.(field, wreck, result) ?? result,
     collectComponent(type, componentId, sourceWreckId, cargoCapacityTons) {
       return (
         options.componentInventory.store(type, componentId, sourceWreckId, cargoCapacityTons) !==
@@ -483,6 +489,7 @@ function sceneController(context: SalvageSceneRuntime): SalvageSceneController {
       tickSalvageScene(context, deltaSeconds);
     },
     destroy() {
+      detachNpcSalvagePlayer(field);
       options.onLeaveField?.(field);
       options.wreckClaims.rememberField(field, context.drone.exportState());
       context.state.panel?.destroy();

@@ -30,7 +30,7 @@ assert(scene.includes('LOCAL_MAP_MIN_FRAME_MS'));
 assert(scene.includes('COMBAT_MAP_MIN_FRAME_MS'));
 assert(scene.includes('shouldUpdate(lastCombatUpdate'));
 assert(scene.includes('shouldUpdate(lastLocalUpdate'));
-assert(scene.includes('state.localSpace.tick(deltaSeconds, Boolean(engagement))'));
+assert(/state\.localSpace!?\.tick\(deltaSeconds, Boolean\(engagement\)\)/.test(scene));
 assert(scene.includes('state.salvageScene?.tick(deltaSeconds)'));
 const models = file('src/app/game-controller-models.ts');
 assert(models.includes('journey || nav.isTravelling ? null : forecastPlayerFuelRoute(context)'));

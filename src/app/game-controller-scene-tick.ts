@@ -2,6 +2,7 @@ import { syncFieldTrafficImpulses } from '../systems/combat/field-combat-arena';
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import { controllerLocalModel, controllerStarModel } from './game-controller-models';
+import { fieldWorldFor } from './game-controller-field-world-bridge';
 import { advanceCareerSalvageDrones } from './game-controller-salvage-drone-world';
 
 // The simulation still runs every animation frame. The full-resolution canvas
@@ -27,7 +28,9 @@ function shouldUpdate(
 /** Presentation tick: the campaign engine never owns or mutates these scene services. */
 export function tickControllerScene(context: ControllerRuntimeContext, deltaSeconds: number): void {
   const { state } = context;
-  advanceCareerSalvageDrones(context, deltaSeconds);
+  measurePerformance('sim.salvage-world', () =>
+    advanceCareerSalvageDrones(context, deltaSeconds, fieldWorldFor(context))
+  );
   if (state.mode === 'combat') {
     if (shouldUpdate(lastCombatUpdate, context, COMBAT_MAP_MIN_FRAME_MS))
       measurePerformance('scene.combat.update', () => state.combatPanel?.update());
@@ -37,7 +40,7 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
     if (shouldUpdate(lastStarMapUpdate, context, STAR_MAP_MIN_FRAME_MS))
       measurePerformance('scene.star.update', () => {
         const model = measurePerformance('scene.star.model', () => controllerStarModel(context));
-        state.panels.star?.update(model);
+        measurePerformance('scene.star.panel', () => state.panels.star?.update(model));
       });
     return;
   }
@@ -48,11 +51,15 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
   if (state.mode !== 'local-space' || !state.localSpace) return;
   if (state.embeddedCombat === 'local-space') {
     // Keep non-navigation local systems alive; the duel owns ship and asteroid motion.
-    state.localSpace.tickCombatEnvironment(deltaSeconds);
+    measurePerformance('scene.local.combat-environment', () =>
+      state.localSpace!.tickCombatEnvironment(deltaSeconds)
+    );
   } else {
     const field = state.localSpace.getSnapshot().instance;
     const engagement = context.engagements.fieldCombat?.(field.sourceLocationId, field.seed);
-    state.localSpace.tick(deltaSeconds, Boolean(engagement));
+    measurePerformance('scene.local.physics', () =>
+      state.localSpace!.tick(deltaSeconds, Boolean(engagement))
+    );
     if (engagement) syncFieldTrafficImpulses(field.asteroids, engagement.arena);
     const localSnapshot = state.localSpace.getSnapshot();
     context.shipOperations.recordHull(
@@ -69,6 +76,6 @@ export function tickControllerScene(context: ControllerRuntimeContext, deltaSeco
   if (shouldUpdate(lastLocalUpdate, context, LOCAL_MAP_MIN_FRAME_MS))
     measurePerformance('scene.local.update', () => {
       const model = measurePerformance('scene.local.model', () => controllerLocalModel(context));
-      state.panels.local?.update(model);
+      measurePerformance('scene.local.panel', () => state.panels.local?.update(model));
     });
 }

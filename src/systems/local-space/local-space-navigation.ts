@@ -221,6 +221,9 @@ function findGridRoute(
   const cost = new Map<string, number>();
   const estimate = new Map<string, number>();
   const closed = new Set<string>();
+  // Obstacles and clearance are fixed throughout this synchronous search.
+  // A rejected node can be encountered from up to eight neighbors.
+  const pointAvailability = new Uint8Array(columns * rows);
   const startKey = key(startNode.column, startNode.row);
   const endKey = key(endNode.column, endNode.row);
   const startEstimate = distance(startNode, endNode);
@@ -248,7 +251,13 @@ function findGridRoute(
       if (closed.has(neighborKey)) continue;
       const tentative = (cost.get(entry.key) ?? Infinity) + distance(current, neighbor);
       if (tentative >= (cost.get(neighborKey) ?? Infinity)) continue;
-      if (!pointClear(neighbor, obstacles, clearance)) continue;
+      const cell = neighbor.row * columns + neighbor.column;
+      let availability = pointAvailability[cell];
+      if (!availability) {
+        availability = pointClear(neighbor, obstacles, clearance) ? 1 : 2;
+        pointAvailability[cell] = availability;
+      }
+      if (availability === 2) continue;
       if (!segmentClear(current, neighbor, obstacles, clearance * 0.92)) continue;
 
       const priority = tentative + distance(neighbor, endNode);

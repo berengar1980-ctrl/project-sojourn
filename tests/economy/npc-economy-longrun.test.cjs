@@ -4,6 +4,53 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 
+const profiling = process.env.SOJOURN_PROFILE === '1';
+const profileStarted = performance.now();
+const profileCpu = process.cpuUsage();
+const timings = new Map();
+
+function profile(name, work) {
+  if (!profiling) return work;
+  return (...args) => {
+    const started = performance.now();
+    try {
+      return work(...args);
+    } finally {
+      const entry = timings.get(name) ?? { calls: 0, totalMs: 0, maxMs: 0 };
+      const elapsed = performance.now() - started;
+      entry.calls += 1;
+      entry.totalMs += elapsed;
+      entry.maxMs = Math.max(entry.maxMs, elapsed);
+      timings.set(name, entry);
+    }
+  };
+}
+
+function printProgress(day, days, setupMs) {
+  const cpu = process.cpuUsage(profileCpu);
+  const memory = process.memoryUsage();
+  console.error(
+    '[economy-profile] ' +
+      JSON.stringify({
+        day,
+        days,
+        setupMs: Math.round(setupMs),
+        wallMs: Math.round(performance.now() - profileStarted),
+        cpuMs: Math.round((cpu.user + cpu.system) / 1000),
+        rssMiB: Math.round(memory.rss / 1048576),
+        heapUsedMiB: Math.round(memory.heapUsed / 1048576),
+        timings: [...timings.entries()]
+          .map(([name, entry]) => ({
+            name,
+            calls: entry.calls,
+            totalMs: Math.round(entry.totalMs),
+            maxMs: Number(entry.maxMs.toFixed(2)),
+          }))
+          .sort((a, b) => b.totalMs - a.totalMs),
+      })
+  );
+}
+
 const root = path.resolve(__dirname, '../..');
 const load = (file, replacements) => loadStandaloneTypeScriptModule(root, file, replacements);
 const { createSectorNpcEconomyStates } = load('src/data/economy/sector-npc-economy.ts');
@@ -28,6 +75,8 @@ const days = Number(process.env.SOJOURN_LONGRUN_DAYS ?? 90);
 assert(Number.isInteger(days));
 assert(days >= 1 && days <= 365);
 const ships = createSectorNpcEconomyStates();
+const isDrone = (ship) => ship.id.startsWith('security-drone:');
+if (integrated) load('src/app/game-controller-economy.ts').registerSecurityDroneCombatants(ships);
 const markets = createEconomyMarketService(sectorPorts, economyResources);
 const player = { credits: 0, cargo: {} };
 const physical = simulationModule.createEconomySimulationService(
@@ -41,6 +90,9 @@ const population = createNpcPopulationService(ships, markets, (id, units) => {
   const pool = physical.pools[id];
   if (pool) pool.recordedLosses += units;
 });
+const { createNpcLossAudit } = require('./npc-loss-audit.cjs');
+const lossAudit = createNpcLossAudit(ships);
+lossAudit.observePopulation(population);
 const sector = createNpcSectorService(narrowsSector, ships, { markets, population });
 const positions = {};
 for (const location of narrowsSector.locations) {
@@ -71,11 +123,14 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
   },
   positions,
   isManaged: (npc) =>
-    integrated &&
-    npc.role === 'miner' &&
-    npc.workLocationId === npc.locationId &&
-    npc.autonomy?.phase === 'working' &&
-    narrowsSector.locations.some((entry) => entry.id === npc.locationId && entry.activities.mine),
+    isDrone(npc) ||
+    (integrated &&
+      npc.role === 'miner' &&
+      npc.workLocationId === npc.locationId &&
+      npc.autonomy?.phase === 'working' &&
+      narrowsSector.locations.some(
+        (entry) => entry.id === npc.locationId && entry.activities.mine
+      )),
   travel: {
     requestTravel: (npc, destination, reason) => sector.requestTravel(npc, destination, reason),
     requestPatrol: (npc) => sector.requestPatrol(npc),
@@ -86,17 +141,28 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
 
 const { createIntegratedFieldAudit } = require('./integrated-field-audit.cjs');
 const fieldAudit = integrated
-  ? createIntegratedFieldAudit(load, narrowsSector, physical, economy, sector, player)
+  ? createIntegratedFieldAudit(
+      load,
+      narrowsSector,
+      physical,
+      economy,
+      sector,
+      player,
+      lossAudit,
+      profile
+    )
   : null;
 
 const combatStats = {
   encounters: 0,
   resolved: 0,
+  contactLogMessages: 0,
+  otherCombatLogMessages: 0,
 };
 const combatLog = (message) => {
-  if (message.startsWith('NPC COMBAT > KONTAKT')) combatStats.encounters += 1;
+  if (message.startsWith('NPC COMBAT > KONTAKT')) combatStats.contactLogMessages += 1;
   else if (message.startsWith('NPC COMBAT > ') && !message.includes('VERFOLGT')) {
-    combatStats.resolved += 1;
+    combatStats.otherCombatLogMessages += 1;
   }
 };
 const engagements = createStarMapEngagementService({
@@ -114,8 +180,12 @@ const engagements = createStarMapEngagementService({
     throw new Error('Player combat is excluded from this NPC-only audit');
   },
   log: combatLog,
-  ...(fieldAudit ? { onNpcCombatEnded: fieldAudit.combatEnded } : {}),
+  onNpcFleetStarted: () => combatStats.encounters++,
+  onNpcFleetFinished: () => combatStats.resolved++,
+  ...(fieldAudit ? fieldAudit.hooks : {}),
 });
+
+fieldAudit?.bindEngagements(engagements);
 
 const initial = {};
 const activity = {};
@@ -183,10 +253,11 @@ function workerStatus(ship) {
 }
 
 function printReport(elapsedDays) {
+  const losses = fieldAudit ? fieldAudit.lossReport(population) : lossAudit.report(population);
   const roles = ['freighter', 'miner', 'salvager', 'patrol', 'pirate'];
   const report = [];
   for (const role of roles) {
-    const members = ships.filter((ship) => ship.job === role);
+    const members = ships.filter((ship) => ship.job === role && !isDrone(ship));
     const sum = (fn) => members.reduce((total, ship) => total + fn(ship), 0);
     report.push({
       role,
@@ -205,7 +276,8 @@ function printReport(elapsedDays) {
       civilianOperatingExpenses: sum((ship) => ship.civilianOperatingExpenses ?? 0),
       hullUpgrades: sum((ship) => ship.hullUpgradeCount ?? 0),
       replacements: sum((ship) => ship.replacementGeneration ?? 0),
-      defeats: sum((ship) => ship.combatDefeats ?? 0),
+      defeats: losses.lossesByRole[role] ?? 0,
+      currentGenerationDefeats: sum((ship) => ship.combatDefeats ?? 0),
       smugglingFines: sum((ship) => ship.smugglingFinesPaid ?? 0),
       smugglingConfiscated: sum((ship) => ship.smugglingConfiscated ?? 0),
       smugglingProtectionFees: sum((ship) => ship.smugglingProtectionFees ?? 0),
@@ -214,7 +286,7 @@ function printReport(elapsedDays) {
       ),
     });
   }
-  assert.equal(ships.length, 33);
+  assert.equal(ships.filter((ship) => !isDrone(ship)).length, 33);
   assert.equal(report.find((group) => group.role === 'pirate').ships, 9);
   const workers = ships.filter((ship) => ship.job === 'miner' || ship.job === 'salvager');
   console.log(
@@ -223,7 +295,17 @@ function printReport(elapsedDays) {
       automaticCombat: true,
       integratedFields: integrated,
       secondsPerDay,
-      ...(fieldAudit ? { fieldActivity: { ...fieldAudit.stats } } : {}),
+      ...(fieldAudit
+        ? {
+            fieldActivity: {
+              ...fieldAudit.stats,
+              combatWrecksCreated: losses.uniqueWrecks,
+              combatWrecksExpired: losses.removedWrecks,
+              combatWrecksActive: losses.activeWrecks,
+            },
+          }
+        : {}),
+      lossAudit: losses,
       combat: combatStats,
       smuggling: smuggling.stats,
       population: {
@@ -233,11 +315,26 @@ function printReport(elapsedDays) {
         externalFunding: population.externalFunding,
       },
       report,
+      securityDrones: {
+        count: ships.filter(isDrone).length,
+        defeated: ships.filter(isDrone).reduce((sum, ship) => sum + (ship.combatDefeats ?? 0), 0),
+        recovering: ships.filter((ship) => isDrone(ship) && ship.hullHp <= 0).length,
+      },
       workerStatus: integrated ? workers.map(workerStatus) : [],
       resourceBalance: physical.getResourceBalance(),
     })
   );
 }
+
+const tickEconomy = profile('economy.tick', (dt) => economy.tick(dt));
+const tickSector = profile('sector.tick', (dt) => sector.tick(dt));
+const tickSmuggling = profile('smuggling.tick', (dt) => smuggling.tick(dt));
+const tickCombat = profile('combat.tick', (dt) => engagements.tick(dt));
+const tickFields = profile('fields.tick', (dt) => fieldAudit?.tick(dt));
+const validateDay = profile('validate.day', validate);
+const validateFields = profile('validate.fields', () => fieldAudit?.validate());
+const setupMs = performance.now() - profileStarted;
+if (profiling) printProgress(0, days, setupMs);
 
 for (let day = 0; day < days; day += 1) {
   physical.advanceDay(day);
@@ -246,15 +343,18 @@ for (let day = 0; day < days; day += 1) {
   sector.advanceDay(day);
   smuggling.advanceDay(day);
   fieldAudit?.balanceDay();
-  if (day > 0) fieldAudit?.validate();
+  if (day > 0) validateFields();
   for (let step = 0; step < secondsPerDay * 4; step += 1) {
-    economy.tick(0.25);
-    sector.tick(0.25);
-    smuggling.tick(0.25);
-    engagements.tick(0.25);
-    fieldAudit?.tick(0.25);
+    tickEconomy(0.25);
+    tickSector(0.25);
+    tickSmuggling(0.25);
+    tickCombat(0.25);
+    tickFields(0.25);
   }
-  validate(day);
+  validateDay(day);
+  if (profiling && ((day + 1) % 5 === 0 || day === 0 || day + 1 === days)) {
+    printProgress(day + 1, days, setupMs);
+  }
   if (integrated && [90, 180, 365].includes(day + 1) && day + 1 !== days) {
     printReport(day + 1);
   }

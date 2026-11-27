@@ -26,7 +26,11 @@ import {
 } from '../../systems/crew/crew-skill-effects';
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 
+import { campaignCombatPreset, campaignPresetIsDrone } from './campaign-combat-preset';
+import { npcCombatant } from '../../systems/combat/npc-combatant-setup';
+
 export interface DuelDraft {
+  campaignNpcId?: string;
   shipId: string;
   weapons: string[];
   mines: string[];
@@ -67,6 +71,13 @@ export function duelCombatant(
   draft: DuelDraft,
   ship: ShipDefinition
 ): StrategicCombatantSetup {
+  if (draft.campaignNpcId) {
+    const npc = campaignCombatPreset(draft.campaignNpcId);
+    const id = (campaignPresetIsDrone(npc) ? 'security-drone:' : '') + 'duelist-' + index;
+    const setup = npcCombatant({ ...npc, id });
+    if (!setup) throw new Error('Missing campaign combatant: ' + npc.shipId);
+    return setup;
+  }
   const points = ship.sprite.hardpoints;
   const equipped = combatEquippedWeapons(ship, draft.weapons);
   const mounts = combatWeaponMounts(ship, equipped);

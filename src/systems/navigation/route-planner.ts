@@ -1,4 +1,5 @@
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
+import { measurePerformance } from '../../core/performance-diagnostics';
 import { curatedZoneWaypoints, fixedDangerAtPoint } from './fixed-danger-geography';
 
 export type RouteProfile = 'fast' | 'balanced' | 'safe';
@@ -94,11 +95,13 @@ function routeRelevantContacts(
   contacts: readonly RouteThreatContact[]
 ): readonly RouteThreatContact[] {
   if (points.length < 2) return [];
-  return contacts.filter((contact) =>
-    points
-      .slice(1)
-      .some((point, index) => distanceToSegment(contact.position, points[index]!, point) <= 650)
-  );
+  return contacts.filter((contact) => {
+    for (let index = 1; index < points.length; index++) {
+      if (distanceToSegment(contact.position, points[index - 1]!, points[index]!) <= 650)
+        return true;
+    }
+    return false;
+  });
 }
 
 function pointDanger(world: WorldMap, point: WorldPoint): 0 | 1 | 2 | 3 {
@@ -131,7 +134,7 @@ function segmentMetrics(
       y: from.y + (to.y - from.y) * t,
     };
     const danger = pointDanger(world, point);
-    dangerLevel = Math.max(dangerLevel, danger) as 0 | 1 | 2 | 3;
+    if (danger > dangerLevel) dangerLevel = danger;
     cost +=
       (distance / samples) *
       (weights[danger] +
@@ -233,21 +236,23 @@ function routePoints(
   const nodes = candidateNodes(world, from, to, contacts);
   const distances = nodes.map(() => Number.POSITIVE_INFINITY);
   const previous: (number | null)[] = nodes.map(() => null);
-  const visited = new Set<number>();
+  const visited = new Uint8Array(nodes.length);
+  let visitedCount = 0;
   // Every segment costs at least its straight-line length at the cheapest zone weight.
   const lowerBound = (a: WorldPoint, b: WorldPoint): number =>
     distanceBetween(a, b) * PROFILE_WEIGHTS[profile][0];
+  const remainingBounds = nodes.map((node) => lowerBound(node, to));
   distances[0] = 0;
   // A valid direct path provides an initial upper bound for the optimal cost.
   distances[1] = segmentMetrics(world, from, to, profile, contacts).cost;
   previous[1] = 0;
 
-  while (visited.size < nodes.length) {
+  while (visitedCount < nodes.length) {
     let current = -1;
     let bestEstimate = Number.POSITIVE_INFINITY;
     for (let index = 0; index < nodes.length; index++) {
-      if (visited.has(index)) continue;
-      const estimate = distances[index]! + lowerBound(nodes[index]!, to);
+      if (visited[index]) continue;
+      const estimate = distances[index]! + remainingBounds[index]!;
       if (estimate < bestEstimate) {
         current = index;
         bestEstimate = estimate;
@@ -255,13 +260,14 @@ function routePoints(
     }
     // A* cannot improve the best route once all remaining lower bounds reach its cost.
     if (current < 0 || current === 1 || bestEstimate >= distances[1]!) break;
-    visited.add(current);
+    visited[current] = 1;
+    visitedCount++;
 
     for (let next = 0; next < nodes.length; next++) {
-      if (next === current || visited.has(next)) continue;
+      if (next === current || visited[next]) continue;
       const minimumScore = distances[current]! + lowerBound(nodes[current]!, nodes[next]!);
       if (minimumScore >= distances[next]!) continue;
-      if (minimumScore + lowerBound(nodes[next]!, to) >= distances[1]!) continue;
+      if (minimumScore + remainingBounds[next]! >= distances[1]!) continue;
       const metrics = segmentMetrics(world, nodes[current]!, nodes[next]!, profile, contacts);
       const score = distances[current]! + metrics.cost;
       if (score < distances[next]!) {
@@ -288,7 +294,10 @@ function createPlan(
   endpointDanger: readonly [0 | 1 | 2 | 3, 0 | 1 | 2 | 3],
   contacts: readonly RouteThreatContact[] = []
 ): RoutePlan {
-  const points = routePoints(world, from, to, profile, contacts);
+  const points = measurePerformance(
+    contacts.length ? 'sim.routes.dynamic-search' : 'sim.routes.static-search',
+    () => routePoints(world, from, to, profile, contacts)
+  );
   return {
     fromId,
     toId,

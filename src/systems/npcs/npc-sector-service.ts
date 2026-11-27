@@ -1,4 +1,5 @@
-import { isSecurityDrone } from '../../core/security-drone';
+import { isSecurityDrone, SECURITY_DRONE_SHIP_ID } from '../../core/security-drone';
+import { measurePerformance } from '../../core/performance-diagnostics';
 import type {
   NpcCombatMovementMode,
   NpcCombatTargetKind,
@@ -6,6 +7,7 @@ import type {
 } from '../../core/npc-types';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { getShipDefinition } from '../ships';
+import { equipSecurityDroneMk3 } from '../ships/security-drone-weapon-loadout';
 import { npcOperationalSpeed } from './npc-upgrade-service';
 import { replanNpcTravel } from './npc-sector-live-replan';
 import { advanceNpcCombatRecovery, beginNpcCombatRecovery } from './npc-sector-combat-recovery';
@@ -178,17 +180,19 @@ class SectorService implements NpcSectorService {
       locationPosition: (id: string) =>
         id === npc.locationId ? this.livePosition(npc) : npcOrbitDestination(this.world, npc, id),
     };
-    const planned = planFuelRoute(request);
+    const planned = measurePerformance('sim.npcs.route-plan', () => planFuelRoute(request));
     if (planned) return { planned, emergency: { units: 0, cost: 0 } };
     const location = this.world.locations.find((entry) => entry.id === npc.locationId);
     if (isServicedPort(location)) return null;
     const emergency = quoteEmergencyRefuel(npc.fuel, npc.fuelCapacity, availableCredits);
     if (emergency.units <= 0) return null;
-    const rescued = planFuelRoute({
-      ...request,
-      fuel: Math.min(npc.fuelCapacity, npc.fuel + emergency.units),
-      credits: availableCredits - emergency.cost,
-    });
+    const rescued = measurePerformance('sim.npcs.route-plan-emergency', () =>
+      planFuelRoute({
+        ...request,
+        fuel: Math.min(npc.fuelCapacity, npc.fuel + emergency.units),
+        credits: availableCredits - emergency.cost,
+      })
+    );
     return rescued ? { planned: rescued, emergency } : null;
   }
   quoteTravel = (npc: SectorNpcState, destinationId: string, availableCredits = npc.credits) => {
@@ -202,6 +206,9 @@ class SectorService implements NpcSectorService {
       distance: planned.totalDistance,
       refuelCost: planned.fuelCost + emergency.cost,
       fuelExpense: Math.ceil(planned.totalFuel * FUEL_PRICE_PER_UNIT) + emergency.cost,
+      ...(planned.stopIds.length === 0 && emergency.units === 0
+        ? { budgetIndependent: true as const }
+        : {}),
     };
   };
   requestTravel = (
@@ -210,6 +217,7 @@ class SectorService implements NpcSectorService {
     reason: string | undefined = 'Flug'
   ): boolean => {
     if (
+      isSecurityDrone(npc.id) ||
       npc.travel ||
       npc.combatMovement ||
       destinationId === npc.locationId ||
@@ -245,6 +253,7 @@ class SectorService implements NpcSectorService {
   };
   requestPatrol = (npc: SectorNpcState): boolean => {
     if (
+      isSecurityDrone(npc.id) ||
       (npc.job !== 'patrol' && !npc.pirate) ||
       npc.travel ||
       npc.combatMovement ||
@@ -254,42 +263,48 @@ class SectorService implements NpcSectorService {
     ) {
       return false;
     }
-    if (npc.pirate) {
-      const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
-      const lootUnits = Object.values(npc.cargo).reduce(
-        (sum, amount) => sum + Math.max(0, Math.floor(amount)),
-        0
-      );
-      if (lootUnits > 0 && npc.locationId !== homeId) {
-        return this.requestTravel(npc, homeId, 'Rückflug · Beute verkaufen');
-      }
-      const target = pirateHuntDestination(
-        this.world,
-        npc,
-        this.npcs,
-        this.livePosition,
-        (destinationId) => this.quoteTravel(npc, destinationId)
-      );
-      if (!target) {
-        npc.activityId = 'dock';
-        npc.activity = 'Kein wirtschaftlich tragfähiges Jagdrevier';
-        return false;
-      }
-      const retreating = target === homeId;
-      const accepted = this.requestTravel(
-        npc,
-        target,
-        retreating ? 'Rückzug · Betriebsmittel sichern' : 'Auf Beutezug · Jagdrevier'
-      );
-      if (!accepted && retreating) {
-        npc.activityId = 'maintenance';
-        npc.activity = 'Rückzug nicht finanzierbar';
-      }
-      return accepted;
-    }
+    if (npc.pirate) return this.requestPirateHunt(npc);
     const target = patrolDestination(this.world, npc);
     return target ? this.requestTravel(npc, target, 'Sicherheitspatrouille') : false;
   };
+  private requestPirateHunt(npc: SectorNpcState): boolean {
+    const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+    const lootUnits = Object.values(npc.cargo).reduce(
+      (sum, amount) => sum + Math.max(0, Math.floor(amount)),
+      0
+    );
+    if (lootUnits > 0 && npc.locationId !== homeId) {
+      return this.requestTravel(npc, homeId, 'Rückflug · Beute verkaufen');
+    }
+    const target = pirateHuntDestination(
+      this.world,
+      npc,
+      this.npcs,
+      this.livePosition,
+      (destinationId) => this.quoteTravel(npc, destinationId)
+    );
+    if (!target) {
+      if (npc.pirateHuntZoneId === npc.locationId && npc.locationId !== homeId) {
+        npc.activityId = 'raiding';
+        npc.activity = 'Auf Beutezug · Jagdrevier halten';
+        return false;
+      }
+      npc.activityId = 'dock';
+      npc.activity = 'Kein wirtschaftlich tragfähiges Jagdrevier';
+      return false;
+    }
+    const retreating = target === homeId;
+    const accepted = this.requestTravel(
+      npc,
+      target,
+      retreating ? 'Rückzug · Betriebsmittel sichern' : 'Auf Beutezug · Jagdrevier'
+    );
+    if (!accepted && retreating) {
+      npc.activityId = 'maintenance';
+      npc.activity = 'Rückzug nicht finanzierbar';
+    }
+    return accepted;
+  }
   startPursuit = (
     npc: SectorNpcState,
     targetKind: NpcCombatTargetKind,
@@ -367,11 +382,13 @@ class SectorService implements NpcSectorService {
   };
   private advanceTravel = (npc: SectorNpcState, dt: number): void => {
     if (npc.travel)
-      replanNpcTravel(
-        this.world,
-        npc,
-        () => npcRouteThreats(npc, this.npcs, this.livePosition),
-        dt
+      measurePerformance('sim.npcs.route-replan', () =>
+        replanNpcTravel(
+          this.world,
+          npc,
+          () => npcRouteThreats(npc, this.npcs, this.livePosition),
+          dt
+        )
       );
     const travel = npc.travel;
     if (!travel) {
@@ -433,11 +450,18 @@ class SectorService implements NpcSectorService {
   tick = (deltaSeconds: number): void => {
     if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
     const dt = Math.min(deltaSeconds, 0.25);
-    const npcPositions = new Map(this.npcs.map((npc) => [npc.id, this.livePosition(npc)]));
+    const npcPositions = measurePerformance(
+      'sim.npcs.positions',
+      () => new Map(this.npcs.map((npc) => [npc.id, this.livePosition(npc)]))
+    );
     const playerPosition = this.options.getPlayerPosition?.() ?? null;
 
     for (const npc of this.npcs) {
       if (npc.retiredUntilDay !== undefined) continue;
+      // Do not alter a restored legacy battle's loadout mid-fight. Migrate the
+      // drone as soon as the existing combat engine releases its ownership.
+      if (isSecurityDrone(npc.id) && npc.shipId !== SECURITY_DRONE_SHIP_ID && !npc.combatMovement)
+        equipSecurityDroneMk3(npc);
       if (advanceNpcCombatRecovery(this.world, npc, dt)) continue;
       if (npc.hullHp <= 0) {
         if (!isSecurityDrone(npc.id) || !npc.combatMovement)
@@ -451,6 +475,10 @@ class SectorService implements NpcSectorService {
         continue;
       }
 
+      if (isSecurityDrone(npc.id)) {
+        delete npc.travel;
+        continue;
+      }
       if (!npc.travel) advanceNpcOrbit(this.world, npc, dt);
       this.advanceTravel(npc, dt);
     }

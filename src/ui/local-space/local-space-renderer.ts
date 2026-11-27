@@ -140,7 +140,6 @@ export class LocalSpaceRenderer extends LocalSpaceSceneLayers {
     // Retain the same native sprite/asteroid/camera renderer for later contacts.
     // Do not destroy and reload it after every duel or reinforcement.
     this.ensureShipImage(model.ship.spriteUrl);
-    for (const npc of model.npcShips) this.ensureNpcImage(npc.spriteUrl);
     this.draw();
   }
   resize(): void {

@@ -302,18 +302,30 @@ export function planFuelRoute(request: FuelRouteRequest): FuelRoutePlan | null {
     berthPositions.set(id, position);
     return position;
   };
+  const distances = new Map<string, Map<string, number>>();
   const minimumDistance = (fromId: string, toId: string): number => {
+    let row = distances.get(fromId);
+    if (!row) {
+      row = new Map();
+      distances.set(fromId, row);
+    }
+    const cached = row.get(toId);
+    if (cached !== undefined) return cached;
     const from = berth(fromId);
     const to = berth(toId);
-    return Math.hypot(to.x - from.x, to.y - from.y);
+    const distance = Math.hypot(to.x - from.x, to.y - from.y);
+    row.set(toId, distance);
+    return distance;
   };
   const available = Math.min(request.fuel, request.capacity) + request.credits / FUEL_PRICE;
   const needed = minimumDistance(origin, request.destinationId) * request.fuelPerDistance;
   // Total paid fuel cannot overcome an insufficient straight-line budget.
   if (needed * FUEL_RESERVE > available + 1e-6) return null;
-  if (!hasOptimisticFuelPath(request, origin, candidates, minimumDistance)) return null;
+  // A feasible direct leg also proves optimistic reachability. If even its
+  // straight-line fuel bound fails, directFuelPlan never invokes the pathfinder.
   const direct = directFuelPlan(request, origin, routeLeg, minimumDistance);
   if (direct) return direct;
+  if (!hasOptimisticFuelPath(request, origin, candidates, minimumDistance)) return null;
   const queue: SearchState[] = [
     {
       at: origin,

@@ -52,21 +52,20 @@ export function pointInsideDangerRegion(region: WorldRegion, point: WorldPoint):
   const [minX, minY, maxX, maxY] = boundsForRegion(region);
   if (point.x < minX || point.x > maxX || point.y < minY || point.y > maxY) return false;
   const scale = region.scale ?? 1;
-  if (
-    region.lobes?.some((lobe) => {
+  if (region.lobes) {
+    for (const lobe of region.lobes) {
       const dx = (point.x - lobe.center.x) / Math.max(1, lobe.radiusX * scale);
       const dy = (point.y - lobe.center.y) / Math.max(1, lobe.radiusY * scale);
-      return dx * dx + dy * dy <= 1;
-    })
-  )
-    return true;
-
-  return (
-    region.corridors?.some(
-      (corridor) =>
-        distanceToDangerCorridor(point, corridor.from, corridor.to) <= corridor.width * scale
-    ) ?? false
-  );
+      if (dx * dx + dy * dy <= 1) return true;
+    }
+  }
+  if (region.corridors) {
+    for (const corridor of region.corridors) {
+      if (distanceToDangerCorridor(point, corridor.from, corridor.to) <= corridor.width * scale)
+        return true;
+    }
+  }
+  return false;
 }
 
 export function fixedDangerAtPoint(

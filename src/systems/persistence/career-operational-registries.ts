@@ -1,3 +1,4 @@
+import { validLocalTrafficSceneData } from '../npcs/npc-local-pirate-checkpoint';
 import { AsteroidClaimRegistry } from '../operations/asteroid-claim-registry';
 import { stageSecurityDroneCheckpoint } from '../operations/asteroid-security-drone-checkpoint';
 import { WreckClaimRegistry, type WreckClaimCheckpoint } from '../operations/wreck-claim-registry';
@@ -152,7 +153,52 @@ function verifyWreckRecord(wreck: unknown, ids: Set<string>): void {
   ) {
     throw new Error('Ungültiger Wrackzustand.');
   }
+  verifyWreckCapacities(wreck);
   ids.add(wreck.id);
+}
+
+function verifyWreckCapacities(wreck: Record<string, unknown>): void {
+  if (wreck.capacities === undefined) return;
+  if (!isRecord(wreck.capacities) || !isRecord(wreck.resources))
+    throw new Error('Ungültige Wrackkapazitäten.');
+  const capacities = wreck.capacities;
+  for (const [id, amount] of Object.entries(wreck.resources)) {
+    const capacity = capacities[id];
+    if (!validFinite(capacity) || !validFinite(amount) || amount > capacity)
+      throw new Error('Ungültige Wrackressourcenkapazität.');
+  }
+  if (Object.keys(capacities).length !== Object.keys(wreck.resources).length)
+    throw new Error('Ungültige Wrackressourcen-IDs.');
+}
+
+function verifySalvageWorkers(value: unknown): void {
+  if (value === undefined) return;
+  if (!Array.isArray(value) || value.length > 1000)
+    throw new Error('Ungültige Bergungsschiff-Liste.');
+  const seen = new Set<string>();
+  for (const ship of value) {
+    if (
+      !isRecord(ship) ||
+      !validIdentity(ship, ['npcId', 'shipId', 'name']) ||
+      typeof ship.npcId !== 'string' ||
+      seen.has(ship.npcId) ||
+      !salvagePoint(ship.position) ||
+      !salvagePoint(ship.exitPoint) ||
+      !validFinite(ship.headingRadians, -Infinity) ||
+      !validFinite(ship.speed) ||
+      !['entering', 'approaching', 'scanning', 'salvaging', 'exiting'].includes(
+        ship.phase as string
+      ) ||
+      (ship.targetWreckId !== null && typeof ship.targetWreckId !== 'string') ||
+      typeof ship.salvageActive !== 'boolean' ||
+      !validFinite(ship.scanProgress) ||
+      ship.scanProgress > 1 ||
+      !validFinite(ship.workAccumulator, -Infinity)
+    )
+      throw new Error('Ungültiger physischer Bergungsschiff-Zustand.');
+    verifySalvageRoute(ship.routeState);
+    seen.add(ship.npcId);
+  }
 }
 
 function verifyWreckField(pair: unknown, fields: Set<string>): void {
@@ -172,6 +218,8 @@ function verifyWreckField(pair: unknown, fields: Set<string>): void {
   if (pair[1].drone !== undefined) {
     stageSecurityDroneCheckpoint(pair[1].drone, 460, 8);
   }
+  verifySalvageWorkers(pair[1].workers);
+  verifySalvageEscorts(pair[1].securityEscorts, pair[1].seed, pair[0]);
   const ids = new Set<string>();
   for (const wreck of pair[1].wrecks) verifyWreckRecord(wreck, ids);
 }
@@ -343,4 +391,44 @@ export function stageCareerLegalAndClaims(candidate: unknown): {
   const savedClaims = saved.claims as CareerLegalAndClaims['claims'];
   if (savedClaims.wreckClaims) wreckClaims.restoreState(savedClaims.wreckClaims);
   return { claims, legal, wreckClaims };
+}
+
+const salvagePoint = (candidate: unknown) =>
+  isRecord(candidate) && validFinite(candidate.x, -Infinity) && validFinite(candidate.y, -Infinity);
+
+function verifySalvageRoute(route: unknown): void {
+  if (
+    route !== undefined &&
+    (!isRecord(route) ||
+      !salvagePoint(route.target) ||
+      !Array.isArray(route.points) ||
+      !route.points.length ||
+      route.points.length > 1000 ||
+      !route.points.every(salvagePoint) ||
+      !validFinite(route.index) ||
+      !Number.isInteger(route.index) ||
+      route.index >= route.points.length)
+  )
+    throw new Error('Ungültige gespeicherte Bergungsroute.');
+}
+
+function verifySalvageEscorts(escorts: unknown, seed: number, locationId: string): void {
+  if (escorts !== undefined) {
+    if (
+      !isRecord(escorts) ||
+      escorts.version !== 1 ||
+      escorts.seed !== seed ||
+      !validFinite(escorts.width, 1) ||
+      !validFinite(escorts.height, 1) ||
+      !validLocalTrafficSceneData(escorts, escorts.width, escorts.height) ||
+      !Array.isArray(escorts.ships) ||
+      escorts.ships.length > 1 ||
+      !Array.isArray(escorts.combatReturns) ||
+      escorts.combatReturns.length !== 0 ||
+      !escorts.ships.every(
+        (ship) => isRecord(ship) && ship.npcId === 'security-drone:' + locationId + ':escort-2'
+      )
+    )
+      throw new Error('Ungültiger Sicherheitsdrohnen-Spielstand.');
+  }
 }

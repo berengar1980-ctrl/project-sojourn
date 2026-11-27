@@ -335,9 +335,13 @@ export function createParallelNativeDuels(
   const services = [...pairs, ...supporters];
   const actors = nativeTeamActors(pairs, supporters);
   const recordedWrecks = new Set(
-    asteroidWorld
-      .filter((rock) => rock.id.startsWith('fleet-wreck:'))
-      .map((rock) => rock.id.slice('fleet-wreck:'.length))
+    actors
+      .filter(
+        (actor) =>
+          actor.hullHp <= 0 &&
+          asteroidWorld.some((rock) => rock.id === 'fleet-wreck:' + actor.setup.id)
+      )
+      .map((actor) => actor.setup.id)
   );
   const escapedRecords = new Set<string>();
   const ramContacts = new Map<string, number>();

@@ -1,14 +1,13 @@
-import { securityDroneMk3WeaponIds } from '../../systems/ships/security-drone-weapon-loadout';
+import {
+  campaignCombatPresets,
+  campaignPresetDraft,
+  SECURITY_DRONE_PRESET_ID,
+} from './campaign-combat-preset';
+import { npcJobShipRole } from '../../core/npc-types';
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 import { SHIP_COMPONENT_CATALOG } from '../../data/ships/ship-component-catalog';
 import { crewDefinitions } from '../../data/crew/crew-definitions';
-import {
-  fitsWeaponHardpoint,
-  getAllShipDefinitions,
-  getShipDefinition,
-  calculateShipModeEnergy,
-  createShipyardVariantId,
-} from '../../systems/ships';
+import { fitsWeaponHardpoint, getAllShipDefinitions } from '../../systems/ships';
 import type { DuelDraft } from './duel-combatant-setup';
 
 export type FleetScenarioGroup = 'npc' | 'pirates-yellow' | 'pirates-red' | 'drone';
@@ -57,26 +56,8 @@ function randomDraft(
   group: FleetScenarioRole,
   workRole?: 'mining' | 'salvage' | 'freighter' | 'patrol'
 ): { name: string; draft: DuelDraft } {
-  const ships = getAllShipDefinitions();
-  const pirateShips = [
-    getShipDefinition('pirate-raider-60m'),
-    getShipDefinition('pirate-reaver-80m'),
-    getShipDefinition('pirate-marauder-120m'),
-  ].filter((ship): ship is NonNullable<typeof ship> => ship !== null);
-  const civilianShips = ships.filter(
-    (candidate) =>
-      !candidate.id.startsWith('pirate-') && !candidate.name.toLowerCase().includes('korsaren')
-  );
-  const workShips = workRole ? civilianShips.filter((ship) => ship.role === workRole) : [];
-  const matching =
-    group === 'drone'
-      ? ships.filter((ship) => ship.role === 'patrol')
-      : group === 'pirates-yellow' || group === 'pirates-red'
-        ? pirateShips
-        : workShips.length > 0
-          ? workShips
-          : civilianShips;
-  const ship = pick(matching);
+  if (group !== 'player') return campaignDraft(group, workRole);
+  const ship = pick(getAllShipDefinitions());
   const weapons = (SHIP_COMPONENT_CATALOG.weapon ?? []).filter((item) => item.tier === 1);
   const mines = SHIP_MINE_CATALOG.filter((item) => item.tier === 1);
   const weaponIds = (ship.sprite.hardpoints.weaponMounts ?? []).map((mount) => {
@@ -85,35 +66,41 @@ function randomDraft(
     );
     return compatible.length ? pick(compatible).id : '';
   });
-  const securityDrone = group === 'drone';
-  const equipped = securityDrone ? securityDroneMk3WeaponIds(ship) : weaponIds;
-  const reactor = securityDrone ? 'reactor3' : 'reactor4';
-  const reactorId =
-    securityDrone &&
-    calculateShipModeEnergy({
-      reactor: [reactor],
-      engine: ['engine1'],
-      hull: ['hull3'],
-      shield: ['shield3'],
-      weapon: equipped.filter(Boolean),
-    }).combat > calculateShipModeEnergy({ reactor: [reactor] }).output
-      ? (createShipyardVariantId('reactor', reactor, 'performance', 100) ?? reactor)
-      : reactor;
   return {
-    name: securityDrone ? 'Sicherheitsdrohne GC-87' : ship.name,
+    name: ship.name,
     draft: {
       shipId: ship.id,
-      weapons: equipped,
-      mines: securityDrone ? [] : [pick(mines).id],
+      weapons: weaponIds,
+      mines: [pick(mines).id],
       crewId: pick(crewDefinitions).id,
-      reactorId,
+      reactorId: 'reactor4',
       engineId: 'engine1',
-      shieldId: group === 'drone' ? 'shield3' : 'shield1',
-      hullId: group === 'drone' ? 'hull3' : 'hull1',
+      shieldId: 'shield1',
+      hullId: 'hull1',
       sensorId: 'sensor1',
       tractorId: 'tractor1',
     },
   };
+}
+
+function campaignDraft(
+  group: FleetScenarioGroup,
+  workRole?: 'mining' | 'salvage' | 'freighter' | 'patrol'
+): { name: string; draft: DuelDraft } {
+  const roster = campaignCombatPresets();
+  const candidates = roster.filter((npc) => {
+    if (group === 'drone') return npc.id === SECURITY_DRONE_PRESET_ID;
+    if (group === 'pirates-yellow')
+      return npc.pirate && npc.pirateClass !== 'marauder' && npc.factionId === 'pirates';
+    if (group === 'pirates-red') return npc.pirate && npc.factionId === 'pirates2';
+    return (
+      !npc.pirate &&
+      npc.id !== SECURITY_DRONE_PRESET_ID &&
+      (!workRole || npcJobShipRole(npc.job) === workRole)
+    );
+  });
+  const npc = pick(candidates);
+  return { name: npc.name, draft: campaignPresetDraft(npc.id) };
 }
 
 /** Generate all combatants, including future reinforcements, before battle start. */

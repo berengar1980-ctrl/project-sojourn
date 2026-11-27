@@ -1,3 +1,4 @@
+import { isSecurityDrone, SECURITY_DRONE_THREAT_WEIGHT } from '../../core/security-drone';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
 import { fixedDangerAtPoint } from '../navigation/fixed-danger-geography';
@@ -27,21 +28,9 @@ export function canPirateOperateAt(pirate: SectorNpcState, danger: number): bool
 }
 
 export function worldDangerAt(world: WorldMap, point: WorldPoint): 0 | 1 | 2 | 3 {
-  let danger: 0 | 1 | 2 | 3 = fixedDangerAtPoint(
-    world.regions,
-    point,
-    world.defaultDangerLevel ?? 0
-  );
-  // Location danger is authoritative near its real berth, even between region circles.
-  for (const location of world.locations) {
-    if (
-      Math.hypot(point.x - location.position.x, point.y - location.position.y) <
-      Math.max(125, location.radius * 2.5)
-    ) {
-      danger = location.dangerLevel;
-    }
-  }
-  return danger as 0 | 1 | 2 | 3;
+  // The map and route planner share this geographic authority. Location centres
+  // are validated against it by the sector consistency regression.
+  return fixedDangerAtPoint(world.regions, point, world.defaultDangerLevel ?? 0);
 }
 
 export function pirateHuntAllowedAt(
@@ -53,7 +42,8 @@ export function pirateHuntAllowedAt(
 
 /** Stronger pirate hulls count more heavily in risk-aware course planning. */
 export function pirateThreatStrength(npc: SectorNpcState): number {
-  const condition = Math.max(0.4, npc.hullHp / Math.max(1, npc.hullMaxHp));
+  const condition = Math.max(0, Math.min(1, npc.hullHp / Math.max(1, npc.hullMaxHp)));
+  if (isSecurityDrone(npc.id)) return condition * SECURITY_DRONE_THREAT_WEIGHT;
   const classWeight =
     npc.pirateClass === 'marauder'
       ? 1.85
@@ -62,5 +52,5 @@ export function pirateThreatStrength(npc: SectorNpcState): number {
         : npc.pirateClass === 'raider'
           ? 0.8
           : 1;
-  return condition * classWeight;
+  return Math.max(0.4, condition) * classWeight;
 }

@@ -1,6 +1,6 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import { edgePoint } from '../npcs/npc-mining-targets';
-import { DRONE_SCAN_RADIUS } from '../../core/security-drone';
+import { DRONE_SCAN_RADIUS, DRONE_PATROL_SPEED } from '../../core/security-drone';
 import {
   moveFieldShip,
   type FieldRouteObstacle,
@@ -26,7 +26,6 @@ export interface SecurityDroneSnapshot {
   readonly operational: boolean;
   readonly shieldContactSeconds: number;
 }
-const DRONE_CRUISE = 115;
 
 /** Physical patrol and line-of-sight based claim enforcement.
  * A ship is reported only while it is actively mining a protected asteroid.
@@ -75,6 +74,8 @@ export class AsteroidSecurityDrone {
     return {
       version: 1,
       position: { ...this.position },
+      headingRadians: this.headingRadians,
+      speed: this.speed,
       ...(this.routeState ? { routeState: structuredClone(this.routeState) } : {}),
       scanRadius: this.scanRadius,
       operational: this.operational,
@@ -95,6 +96,8 @@ export class AsteroidSecurityDrone {
     const instance = new AsteroidSecurityDrone(width, height, asteroids, scanRadius);
     const data = stageSecurityDroneCheckpoint(checkpoint, scanRadius, instance.patrol.length);
     instance.position = { ...data.position };
+    instance.headingRadians = data.headingRadians ?? 0;
+    instance.speed = data.speed ?? 0;
     if (data.routeState) instance.routeState = structuredClone(data.routeState);
     instance.operational = data.operational;
     instance.nextWaypoint = data.nextWaypoint;
@@ -110,8 +113,10 @@ export class AsteroidSecurityDrone {
       shieldContactSeconds: this.shieldContactSeconds,
     };
   }
-  syncAvailability(npc?: Pick<SectorNpcState, 'id' | 'hullHp' | 'combatDefeats'>): void {
-    if (!npc || npc.hullHp <= 0) this.destroy();
+  syncAvailability(
+    npc?: Pick<SectorNpcState, 'id' | 'hullHp' | 'combatDefeats' | 'combatRecoverySeconds'>
+  ): void {
+    if (!npc || npc.hullHp <= 0 || (npc.combatRecoverySeconds ?? 0) > 0) this.destroy();
     else if (!this.operational) {
       const key = npc.id + ':' + (npc.combatDefeats ?? 0);
       this.restore(edgePoint(key, this.width, this.height), true);
@@ -234,7 +239,7 @@ export class AsteroidSecurityDrone {
       const arrived = moveFieldShip(
         this,
         destination,
-        DRONE_CRUISE,
+        DRONE_PATROL_SPEED,
         Math.max(0, Math.min(dt, 0.25)),
         obstacles,
         40,

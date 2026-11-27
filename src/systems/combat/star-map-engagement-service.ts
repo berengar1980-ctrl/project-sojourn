@@ -1,3 +1,4 @@
+import { updateNpcChases } from './star-map-npc-chases';
 import { reactToPlayerAttack } from './player-attack-reaction';
 import { createCareerFleetEncounter, createNpcFleetEncounter } from './career-fleet-encounter';
 import type {
@@ -29,6 +30,7 @@ import { npcCombatant } from './npc-combatant-setup';
 import {
   finishPlayerCombat,
   fieldCombat,
+  hasFieldCombat,
   prepareFieldCombatArena,
   resetFieldCombatSteps,
   registerFieldCombatWreck,
@@ -44,7 +46,6 @@ import { distance, engagementRange, pairKey } from './npc-engagement-geometry';
 const PLAYER_ID = 'player';
 
 const NPC_ATTACK_SCAN_RANGE = 650;
-
 const FLEE_GAIN_REQUIRED = 520;
 
 function engagementNpc(runtime: EngagementRuntime, id: string): SectorNpcState | null {
@@ -311,39 +312,11 @@ function beginBackgroundCombat(
     combat: fleet.combat,
     fleet,
   });
+  runtime.options.onNpcFleetStarted?.();
   runtime.npcChases.delete(attacker.id);
   runtime.options.log(
     'NPC COMBAT > KONTAKT · ' + attacker.name.toUpperCase() + ' VS ' + defender.name.toUpperCase()
   );
-}
-
-function updateNpcChases(runtime: EngagementRuntime): void {
-  for (const [attackerId, chase] of [...runtime.npcChases]) {
-    const attacker = engagementNpc(runtime, attackerId);
-    const target = engagementNpc(runtime, chase.targetId);
-    if (!attacker || !target || attacker.hullHp <= 0 || target.hullHp <= 0) {
-      runtime.npcChases.delete(attackerId);
-      continue;
-    }
-    const attackerPosition = runtime.options.sectorNpcs.livePosition(attacker);
-    const targetPosition = runtime.options.sectorNpcs.livePosition(target);
-    const currentDistance = distance(attackerPosition, targetPosition);
-    const attackerShip = getShipDefinition(attacker.shipId);
-    const targetShip = getShipDefinition(target.shipId);
-    if (!attackerShip || !targetShip) continue;
-    if (currentDistance <= engagementRange(attackerShip, targetShip)) {
-      beginBackgroundCombat(runtime, attacker, target);
-      continue;
-    }
-    if (
-      runtime.options.sectorNpcs.combatMode(target) === 'flee' &&
-      currentDistance >= chase.initialDistance + FLEE_GAIN_REQUIRED
-    ) {
-      runtime.options.sectorNpcs.recoverFromCombat(attacker, 'Abfangversuch abgebrochen');
-      runtime.options.sectorNpcs.recoverFromCombat(target, 'Flucht gelungen');
-      runtime.npcChases.delete(attackerId);
-    }
-  }
 }
 
 function engageNpc(
@@ -404,7 +377,7 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
   }
   updatePiratePlayerChase(runtime);
   updatePlayerChase(runtime);
-  updateNpcChases(runtime);
+  updateNpcChases(runtime, beginBackgroundCombat);
   resolveBackgroundCombats(runtime, deltaSeconds);
   if (runtime.playerFleet) {
     runtime.playerFleet.joinNearby(
@@ -414,8 +387,8 @@ function tickEngagements(runtime: EngagementRuntime, deltaSeconds: number): void
       (npc) => runtime.options.sectorNpcs.markEngaged(npc, 'player', PLAYER_ID, 'Flottengefecht')
     );
     runtime.playerFleet.tick(deltaSeconds);
-    reportFieldFleetLosses(runtime, runtime.playerFleet);
     reportNpcBoardingResults(runtime, runtime.playerFleet);
+    reportFieldFleetLosses(runtime, runtime.playerFleet);
   }
 }
 
@@ -474,15 +447,16 @@ export function createStarMapEngagementService(
       ]),
     fieldCombat: (locationId, seed, bystanders) =>
       fieldCombat(runtime, locationId, seed, bystanders),
+    hasFieldCombat: (locationId, seed) => hasFieldCombat(runtime, locationId, seed),
     registerFieldCombatWreck: (locationId, seed, destroyedId, body) =>
       registerFieldCombatWreck(runtime, locationId, seed, destroyedId, body),
     removeFieldCombatWrecks: (ids) => removeFieldCombatWrecks(runtime, ids),
     finishedFieldCombatSnapshots: () => runtime.finishedFieldDuels,
     activeNpcCombatSnapshots: () =>
-      [...runtime.backgroundCombats.values()].flatMap((entry) => [
-        ...entry.fleet.fleet.getSnapshot().duels,
-        ...entry.fleet.fleet.getSnapshot().supporters,
-      ]),
+      [...runtime.backgroundCombats.values()].flatMap((entry) => {
+        const snapshot = entry.fleet.fleet.getSnapshot();
+        return [...snapshot.duels, ...snapshot.supporters];
+      }),
     activePlayerEnemy: () => runtime.playerEnemy,
     restorePlayerCareerCombat(combat, enemyId) {
       if (runtime.playerCombat || runtime.playerEnemy) {

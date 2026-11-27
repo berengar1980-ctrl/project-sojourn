@@ -1388,3 +1388,84 @@ Worksite and concession valuation and worker side-trade forecasts now use the sa
 All civilian cargo carriers (freighters, miners, salvagers and patrols) now compare every cargo lot against known reachable sales markets. Route ranking accounts for estimated travel distance as well as net value and information age; freighters retain purchase-route evaluation. Resource workers retain one fixed work destination per side-trade decision, use ordinary cargo space only, and compare the actual fuel-aware outbound and onward route quotations with the direct work route. The detour is capped at 25% of the direct distance and 600 map-distance units, whichever is smaller; incremental fuel expense is deducted from the age-adjusted profit forecast. The onward quote conservatively assumes an empty tank and available refueling. Patrols sell existing cargo but do not buy goods speculatively (matching VOIDBOUND's resource-worker restriction); pirates retain their separate loot policy. No new saved state is introduced.
 
 Trade and sale ranking retain the existing personality-dependent distance penalty; applying an additional universal distance divisor would suppress risk-tolerant long-distance trading. The scripted pirate resale regression uses a separate live pirate and fresh market fixture after the long-run audit, so retirement of simulated ships does not invalidate the transaction test. No checkpoint changes.
+
+## Permanente Wrackfelder und Sicherheitsdrohnen (PR #405)
+
+- Der bestehende `claims.wreckClaims`-Checkpoint erhält optionale `workers`- und
+  `securityEscorts`-Daten pro Feld und Seed. Gespeichert werden lokale Position,
+  Ausrichtung, Route und Arbeitsfortschritt; Hülle und Ersatzzeit verbleiben
+  ausschließlich im sektorweiten NPC-Zustand.
+- Ältere Spielstände ohne diese optionalen Daten initialisieren die lokalen
+  Arbeits- und Patrouillenpositionen aus den vorhandenen NPC-Zuständen. Die
+  GC-87-Ausrüstung wird außerhalb laufender Gefechte migriert.
+- Permanente Wrackfelder teilen ihre Laufzeit beim Szenenwechsel; die abstrakte
+  Ressourcenentnahme ist deaktiviert. Temporäre Ereignisfelder bleiben separat.
+- Die vorhandene Versionsnummer bleibt unverändert. Die neuen optionalen
+  Zustände werden bei der Validierung geprüft; Regressionstests müssen den
+  neuen Save/Restore-Pfad bestätigen.
+
+Wrackereignisse: zusätzlich gefundene Ressourcen werden aus dem bestehenden
+Pool finanziert; Verluste werden sofort gebucht. Optionale `capacities` je
+Wrack erhalten die tatsächlichen Lagerkapazitäten und neue Ressourcen-IDs beim
+Laden. Alte Spielstände ohne `capacities` bleiben lesbar.
+
+Die ausgelagerten Module für NPC-Verfolgung, NPC-Wirtschaftsvalidierung,
+Piratengeometrie und Bergungs-Serviceverträge besitzen keine eigenen
+Save-Register. Die bestehenden autoritativen NPC-, Kampf- und Feldzustände
+bleiben unverändert zuständig. Alle fünf neuen Domainmodule sind im
+Persistenz-Owner-Register einzeln klassifiziert.
+
+## Laufzeitoptimierung und Mining-Verkehr (PR #405)
+
+Die Navigationshindernisse sind aus vorhandenen Schiffspositionen und
+Schildgeometrien abgeleitet und besitzen keinen eigenen Save-Zustand. Die
+Bergungsphysik prüft ihren flüchtigen Körpercache anhand der aktuellen
+Wrack-, Fragment- und Abschnittslisten einschließlich dynamischer Mitgliedschaft.
+Unveränderte Körper und deren IDs werden wiederverwendet; beim Laden wird der
+Cache aus den autoritativen Feldobjekten neu aufgebaut. Das Save-Format,
+Integrationsschritte und die physische Kollisionsreaktion bleiben unverändert.
+
+Die räumliche Vorauswahl der gemeinsamen Asteroiden-/Wrackkollisionen
+verwendet numerische Zeilen- und Spaltenindizes statt String-Schlüsseln.
+Kandidatenreihenfolge, Radien, Kontaktformeln und Integrationsschritte bleiben
+unverändert. Nicht erreichbare Schildkontakte werden vor der Rotation
+verworfen. Die temporären Indizes sind nicht Teil des Spielstands.
+
+Die Hintergrund-Bergungsphysik fragt die bestehende Kampfzuständigkeit
+ohne vollständigen Kampfsnapshot ab. Besitzprüfung, Feld/Seed-Zuordnung,
+Simulationsreihenfolge, Zeitschritte und Save-Zustände bleiben unverändert.
+
+Der Treibstoffplaner speichert unveränderliche Luftlinienabstände nur innerhalb
+einer Anfrage und prüft einen finanzierbaren Direktflug vor der optimistischen
+Tankstellensuche. Der A*-Routenplaner berechnet die identische untere Schranke
+zum Ziel pro Knoten einmal. Suchreihenfolge, Kostenformeln, Gefahrenprofile,
+Tankregeln und persistierte Routen bleiben unverändert. Keine neuen Save-Daten.
+
+Die lokale Frachtanzeige hält ihre DOM-Zeilen bei gleicher Ressourcen-ID und
+Reihenfolge montiert und schreibt nur geänderte Anzeigewerte. Diese rein
+visuellen Referenzen besitzen keinen Spielzustand und werden nicht gespeichert.
+Die zusätzlichen Messpunkte ändern keine Aktualisierungsintervalle.
+
+Der gemeinsame prozedurale Renderer verwendet dieselbe gezeichnete Kontur
+für Beleuchtung und Rand; der Clip wird vor dem Rand aufgehoben. Fertige
+Asteroidensprites behalten keine zweite, unbenutzte Rohtextur. Die Änderung
+betrifft ausschließlich flüchtige Darstellung, keine Geometrie der Physik,
+Spielzustände oder Save-Daten.
+
+Die gemeinsame Asteroidenintegration vermeidet temporäre Achsenobjekte bei
+identischen Rand- und Impulsformeln. Der strategische Routenplaner verwendet
+numerische Besuchsmarkierungen und unveränderte Gefahrenprüfungen. Die
+Texturgenerierung berechnet dieselben Lattice-Werte pro Raster einmal.
+Die Zeitverteilung autoritativer Feld-Ticks bleibt bis zu einer sicheren
+modulübergreifenden Lösung unverändert. Keine neuen Save-Daten.
+
+Lokale Rasterrouten speichern die Prüfung eines Gitterpunkts ausschließlich
+innerhalb derselben synchronen Suche. Piraten wählen das nächste zulässige
+Ziel ohne Render-Snapshots und Sortierung, bei identischer Priorität im
+Gleichstand. Leere Kampfwracklisten erzeugen keinen temporären ID-Index.
+Die autoritative Reihenfolge der Feld-Ticks und Save-Daten bleiben unverändert.
+
+Der Kampagnenadapter übernimmt zerstörte Flottenakteure vor deren Ersatz.
+Die Rumpfkonvertierung erhält die Lebendig/Tot-Grenze der nativen Engine.
+Wracks nutzen bestehende persistierte Feldzustände und NPC-Ersatzgenerationen;
+die Duplikatprüfung ist sitzungsgebunden. Kein neues Save-Schema.

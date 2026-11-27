@@ -1,16 +1,22 @@
+import type {
+  LocalNpcSalvagerState,
+  NpcLocalSalvageService,
+  NpcLocalSalvageOptions,
+} from './npc-local-salvage-types';
+export type {
+  LocalNpcSalvagePhase,
+  LocalNpcSalvagerState,
+  NpcLocalSalvageService,
+  NpcLocalSalvageOptions,
+} from './npc-local-salvage-types';
 import { salvageStockId } from '../salvage/salvage-stock-id';
 import { salvageDroneObstacleAsteroids } from '../salvage/salvage-patrol-geometry';
-import {
-  moveFieldShip,
-  type FieldRouteState,
-  type FieldRouteObstacle,
-} from '../navigation/field-ship-routing';
+import { moveFieldShip } from '../navigation/field-ship-routing';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { resolveSalvageShieldContacts } from '../salvage/salvage-container-motion';
 import type { LocalShipState } from '../../core/local-space-types';
 import type { SectorNpcState } from '../../core/npc-types';
-import type { ShipDefinition } from '../../core/ship-types';
-import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
+import type { SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createSalvageEventController } from '../salvage/salvage-event-service';
 import { createSalvageFieldService } from '../salvage/salvage-field-service';
@@ -35,53 +41,6 @@ import {
   recoveryAmount,
 } from './npc-local-salvage-helpers';
 
-export type LocalNpcSalvagePhase =
-  'entering' | 'approaching' | 'scanning' | 'salvaging' | 'exiting';
-
-export interface LocalNpcSalvagerState {
-  readonly npcId: string;
-  readonly name: string;
-  readonly shipId: string;
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
-  routeState?: FieldRouteState;
-  phase: LocalNpcSalvagePhase;
-  targetWreckId: string | null;
-  salvageActive: boolean;
-  scanProgress: number;
-  workAccumulator: number;
-  exitPoint: WorldPoint;
-}
-
-export interface NpcLocalSalvageService {
-  readonly ships: readonly LocalNpcSalvagerState[];
-  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
-  tick(deltaSeconds: number, combatantId?: string, skipPlayer?: boolean): void;
-}
-
-export interface NpcLocalSalvageOptions {
-  readonly locationId: string;
-  readonly field: SalvageField;
-  readonly salvagers: readonly SectorNpcState[];
-  readonly initialPosition?: (id: string) => WorldPoint | undefined;
-  /** Disable internal contacts when the shared world solves all physical ships once. */
-  readonly resolveLocalCollisions?: boolean;
-  readonly getTrafficObstacles?: (npcId: string) => readonly FieldRouteObstacle[];
-  readonly recover: (
-    npc: SectorNpcState,
-    resourceId: string,
-    requested: number,
-    sourceId?: string
-  ) => number;
-  readonly depart: (npc: SectorNpcState) => boolean;
-  readonly canWorkWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
-  readonly registerWreck?: (npc: SectorNpcState, wreck: SalvageWreck) => boolean;
-  readonly playerShip?: ShipDefinition;
-  readonly getPlayerShipState?: () => LocalShipState;
-  readonly onPlayerShieldContact?: (normal: WorldPoint, overlap: number) => void;
-}
-
 function localCruiseSpeed(npc: SectorNpcState): number {
   const ship = getShipDefinition(npc.shipId);
   return ship ? resolveShipLocalCruiseSpeed(ship, ensureNpcInstalledComponents(npc)) : FLIGHT_SPEED;
@@ -99,10 +58,26 @@ class LocalSalvageService implements NpcLocalSalvageService {
         createSalvageEventController(hashId(options.locationId + ':' + npc.id)),
       ])
     );
+    for (const saved of options.initialWorkers ?? []) {
+      const npc = this.byId.get(saved.npcId);
+      if (!npc || !eligible(npc, options.locationId) || npc.shipId !== saved.shipId) continue;
+      const ship = structuredClone(saved);
+      if (
+        ship.targetWreckId &&
+        !options.field.wrecks.some((wreck) => wreck.id === ship.targetWreckId)
+      ) {
+        ship.phase = 'approaching';
+        ship.targetWreckId = null;
+        ship.salvageActive = false;
+        delete ship.routeState;
+      }
+      this.ships.push(ship);
+    }
     this.syncArrivals();
   }
   private beginExit = (ship: LocalNpcSalvagerState): void => {
     ship.phase = 'exiting';
+    delete ship.routeState;
     ship.targetWreckId = null;
     ship.salvageActive = false;
     ship.scanProgress = 0;
@@ -115,7 +90,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
   private syncArrivals = (): void => {
     const active = new Set(this.ships.map((ship) => ship.npcId));
     for (const npc of this.options.salvagers) {
-      if (!this.byId.has(npc.id)) {
+      if (this.byId.get(npc.id) !== npc) {
         this.byId.set(npc.id, npc);
         this.events.set(
           npc.id,
@@ -135,7 +110,8 @@ class LocalSalvageService implements NpcLocalSalvageService {
         position: { ...(this.options.initialPosition?.(npc.id) ?? entry) },
         headingRadians: 0,
         speed: localCruiseSpeed(npc),
-        phase: 'entering',
+        phase:
+          cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) ? 'exiting' : 'entering',
         targetWreckId: null,
         salvageActive: false,
         scanProgress: 0,
@@ -161,6 +137,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       return false;
     }
     ship.targetWreckId = wreck.id;
+    delete ship.routeState;
     ship.phase = 'approaching';
     ship.salvageActive = false;
     ship.scanProgress = 0;
@@ -176,8 +153,9 @@ class LocalSalvageService implements NpcLocalSalvageService {
     if (!controller || !pending) return;
     const choice = chooseEventChoice(npc, pending.choices);
     if (!choice) return;
-    const result = controller.resolve(wreck, choice.id);
-    if (!result) return;
+    const resolved = controller.resolve(wreck, choice.id);
+    if (!resolved) return;
+    const result = this.options.onWreckEventResolved?.(wreck, resolved) ?? resolved;
     npc.lastWorkEvent = {
       kind: 'salvage',
       title: result.title,
@@ -365,7 +343,13 @@ class LocalSalvageService implements NpcLocalSalvageService {
       const npc = this.byId.get(ship.npcId);
       // Keep the combatant under duel authority; do not remove or move it.
       if (ship.npcId === combatantId) continue;
-      if (!npc || npc.hullHp <= 0 || npc.locationId !== this.options.locationId) {
+      if (
+        !npc ||
+        npc.hullHp <= 0 ||
+        npc.retiredUntilDay !== undefined ||
+        npc.travel ||
+        npc.locationId !== this.options.locationId
+      ) {
         this.ships.splice(index, 1);
         continue;
       }
@@ -373,7 +357,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       // The native PvP combat actor owns this ship while engaged. Suspend
       // work without moving the salvager or losing its field identity.
       if (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
-        ship.speed = 0;
+        // The duel pose was mirrored before this tick; preserve its velocity.
         ship.salvageActive = false;
         ship.targetWreckId = null;
         ship.phase = 'approaching';
@@ -381,49 +365,60 @@ class LocalSalvageService implements NpcLocalSalvageService {
         continue;
       }
 
-      if (ship.phase === 'entering') {
-        if (!this.assignTarget(ship, npc)) continue;
-      }
-
-      if (ship.phase === 'approaching') {
-        this.advanceApproaching(ship, npc, dt);
-        continue;
-      }
-
-      if (ship.phase === 'scanning') {
-        this.advanceScanning(ship, npc, dt);
-        continue;
-      }
-
-      if (ship.phase === 'salvaging') {
-        this.advanceSalvaging(ship, npc, dt);
-        continue;
-      }
-
-      ship.salvageActive = false;
-      if (
-        moveFieldShip(
-          ship,
-          ship.exitPoint,
-          localCruiseSpeed(npc),
-          dt,
-          [
-            ...salvageDroneObstacleAsteroids(this.options.field).filter(
-              (entry) => entry.routeBlocking
-            ),
-            ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
-          ],
-          65
-        )
-      ) {
+      if (npc.workLocationId !== this.options.locationId || npc.autonomy?.phase !== 'working') {
         this.ships.splice(index, 1);
-        this.options.depart(npc);
+        continue;
       }
+      if (cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) && ship.phase !== 'exiting')
+        this.beginExit(ship);
+
+      if (this.advanceWorker(ship, npc, dt)) this.ships.splice(index, 1);
     }
 
     if (this.options.resolveLocalCollisions !== false)
       this.resolveLocalCollisions(combatantId, skipPlayer);
   };
+  private advanceWorker(ship: LocalNpcSalvagerState, npc: SectorNpcState, dt: number): boolean {
+    if (ship.phase === 'entering') {
+      if (!this.assignTarget(ship, npc)) return false;
+    }
+
+    if (ship.phase === 'approaching') {
+      this.advanceApproaching(ship, npc, dt);
+      return false;
+    }
+
+    if (ship.phase === 'scanning') {
+      this.advanceScanning(ship, npc, dt);
+      return false;
+    }
+
+    if (ship.phase === 'salvaging') {
+      this.advanceSalvaging(ship, npc, dt);
+      return false;
+    }
+
+    ship.salvageActive = false;
+    if (
+      moveFieldShip(
+        ship,
+        ship.exitPoint,
+        localCruiseSpeed(npc),
+        dt,
+        [
+          ...salvageDroneObstacleAsteroids(this.options.field).filter(
+            (entry) => entry.routeBlocking
+          ),
+          ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
+        ],
+        65
+      )
+    ) {
+      this.options.depart(npc);
+      return true;
+    }
+    return false;
+  }
   private resolveLocalCollisions = (combatantId?: string, skipPlayer = false): void => {
     const playerState = skipPlayer ? undefined : this.options.getPlayerShipState?.();
     const bodies: LocalShieldShipBody[] = this.ships.flatMap((local) => {

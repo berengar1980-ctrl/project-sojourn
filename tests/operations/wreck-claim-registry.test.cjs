@@ -81,6 +81,102 @@ assert.equal(regenerated.wrecks[0].scanLevel, 'analyzed');
 assert.equal(registry.abandon(field.id, wreck.id, 'player'), false);
 assert.equal(registry.abandon(field.id, wreck.id, 'npc-1'), true);
 
+// Refreshing wreck stock must preserve isolated worker and security snapshots.
+const isolated = new WreckClaimRegistry();
+const worker = { npcId: 'npc-1', position: { x: 5, y: 6 } };
+const drone = { position: { x: 7, y: 8 } };
+const escorts = { seed: field.seed, ships: [{ npcId: 'escort', position: { x: 9, y: 10 } }] };
+isolated.rememberField(field, drone);
+isolated.rememberWorkers(field, [worker]);
+isolated.rememberSecurityEscorts(field.sourceLocationId, escorts);
+worker.position.x = 50;
+drone.position.x = 70;
+escorts.ships[0].position.x = 90;
+isolated.rememberField(field);
+assert.equal(isolated.workerCheckpoint(field)[0].position.x, 5);
+assert.equal(isolated.droneCheckpoint(field.sourceLocationId).position.x, 7);
+assert.equal(isolated.securityEscortCheckpoint(field.sourceLocationId).ships[0].position.x, 9);
+const exported = isolated.exportState().fields[0][1];
+exported.workers[0].position.x = 500;
+exported.drone.position.x = 700;
+exported.securityEscorts.ships[0].position.x = 900;
+isolated.rememberField(field);
+assert.equal(isolated.workerCheckpoint(field)[0].position.x, 5);
+assert.equal(isolated.droneCheckpoint(field.sourceLocationId).position.x, 7);
+assert.equal(isolated.securityEscortCheckpoint(field.sourceLocationId).ships[0].position.x, 9);
+isolated.rememberField({ ...field, seed: field.seed + 1 });
+assert.deepEqual(isolated.workerCheckpoint({ ...field, seed: field.seed + 1 }), []);
+assert.equal(isolated.droneCheckpoint(field.sourceLocationId), null);
+assert.equal(isolated.securityEscortCheckpoint(field.sourceLocationId), null);
+
+function assertIncrementalWreckSnapshots() {
+  const claims = new WreckClaimRegistry();
+  const first = structuredClone(wreck);
+  const second = { ...structuredClone(wreck), id: 'wreck-2' };
+  const live = { ...field, wrecks: [first, second] };
+  const read = () => claims.exportState().fields[0][1];
+  // Inspect the private runtime storage solely to verify actual reference reuse.
+  const cached = () => claims.fields.get(live.sourceLocationId).wrecks;
+
+  claims.rememberField(live);
+  const initial = cached();
+  const before = read();
+  claims.rememberField(live);
+  assert.equal(cached(), initial);
+
+  first.resources[0].remainingAmount = 4;
+  first.resources[0].initialAmount = 25;
+  first.resources.push({ resourceId: 'alloys', initialAmount: 6, remainingAmount: 3 });
+  first.inspected = false;
+  first.scanLevel = 'unscanned';
+  first.componentStatus = 'available';
+  claims.rememberField(live);
+  assert.notEqual(cached()[0], initial[0]);
+  assert.equal(cached()[1], initial[1]);
+  assert.equal(before.wrecks[0].resources.steel, 7);
+  assert.deepEqual(read().wrecks[0].resources, { steel: 4, alloys: 3 });
+  assert.deepEqual(read().wrecks[0].capacities, { steel: 25, alloys: 6 });
+  assert.equal(read().wrecks[0].scanLevel, 'unscanned');
+  assert.equal(read().wrecks[0].inspected, false);
+  assert.equal(read().wrecks[0].componentStatus, 'available');
+
+  const updated = cached();
+  live.wrecks.reverse();
+  claims.rememberField(live);
+  assert.equal(cached()[0], updated[1]);
+  assert.equal(cached()[1], updated[0]);
+  live.wrecks.shift();
+  claims.rememberField(live);
+  assert.deepEqual(
+    read().wrecks.map((entry) => entry.id),
+    [first.id]
+  );
+
+  const saved = claims.exportState();
+  const reloaded = new WreckClaimRegistry();
+  reloaded.restoreState(saved);
+  const fresh = { ...live, wrecks: [structuredClone(wreck)] };
+  reloaded.restoreField(fresh);
+  assert.deepEqual(fresh.wrecks[0].resources, first.resources);
+  assert.equal(fresh.wrecks[0].scanLevel, first.scanLevel);
+  assert.equal(fresh.wrecks[0].componentStatus, first.componentStatus);
+
+  saved.fields[0][1].wrecks[0].resources.steel = 999;
+  saved.fields[0][1].wrecks[0].capacities.steel = 999;
+  assert.equal(read().wrecks[0].resources.steel, 4);
+  assert.equal(read().wrecks[0].capacities.steel, 25);
+  assert.equal(reloaded.exportState().fields[0][1].wrecks[0].resources.steel, 4);
+
+  first.resources.pop();
+  claims.rememberField(live);
+  assert.deepEqual(read().wrecks[0].resources, { steel: 4 });
+  const oldSeed = cached();
+  claims.rememberField({ ...live, seed: live.seed + 1 });
+  assert.notEqual(cached()[0], oldSeed[0]);
+}
+
+assertIncrementalWreckSnapshots();
+
 for (const role of ['mining', 'freighter', 'salvage', 'patrol']) {
   assert.equal(operationalRoleAllowed(role, 'salvage'), role === 'salvage');
   assert.equal(operationalRoleAllowed(role, 'mining'), role === 'mining');

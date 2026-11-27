@@ -69,6 +69,25 @@ const direct = planFuelRoute({ ...input, destinationId: 'refuel-a', credits: 0 }
 assert(direct);
 assert.deepEqual(direct.stopIds, []);
 assert.equal(direct.fuelCost, 0);
+const requestedBerths = new Set();
+const directWithBerths = planFuelRoute({
+  ...input,
+  destinationId: 'refuel-b',
+  fuel: 100,
+  capacity: 100,
+  credits: 0,
+  locationPosition(id) {
+    requestedBerths.add(id);
+    return locations.find((entry) => entry.id === id).position;
+  },
+});
+assert.deepEqual(directWithBerths.stopIds, []);
+assert.equal(directWithBerths.totalFuel, 80);
+assert.deepEqual(
+  [...requestedBerths].sort(),
+  ['origin', 'refuel-b'],
+  'a direct flight must not inspect unrelated refueling berths'
+);
 const route = planFuelRoute(input);
 assert(route, 'two funded fuel stops must make the long route reachable');
 assert.deepEqual(route.stopIds, ['refuel-a', 'refuel-b']);
