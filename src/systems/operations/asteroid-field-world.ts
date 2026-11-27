@@ -1,3 +1,4 @@
+import { measurePerformance } from '../../core/performance-diagnostics';
 import { isCombatWreckVariant } from '../../core/combat-wreck-variant';
 import type { LocalAsteroid, LocalSpaceInstance, MiningChunk } from '../../core/local-space-types';
 import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
@@ -377,14 +378,19 @@ export class AsteroidFieldWorld {
     const dt = Math.min(0.25, Math.max(0, deltaSeconds));
     if (dt <= 0) return;
     const active = activeLocationId ? this.fields.get(activeLocationId) : null;
-    if (active) onStep(active, Math.min(dt, 0.08));
+    if (active)
+      measurePerformance('sim.field.active-step', () => onStep(active, Math.min(dt, 0.08)));
     this.backgroundAccumulator += dt;
     if (this.backgroundAccumulator < 0.25) return;
     this.backgroundAccumulator -= 0.25;
-    for (const field of this.fields.values()) {
-      if (field === active) continue;
-      // The NPC mining physics already caps each step at 0.08s.
-      for (let i = 0; i < 4; i++) onStep(field, 0.0625);
-    }
+    measurePerformance('sim.field.background-batch', () => {
+      for (const field of this.fields.values()) {
+        if (field === active) continue;
+        // The NPC mining physics already caps each step at 0.08s.
+        measurePerformance('sim.field.background-field', () => {
+          for (let i = 0; i < 4; i++) onStep(field, 0.0625);
+        });
+      }
+    });
   }
 }
