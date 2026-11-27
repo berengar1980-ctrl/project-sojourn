@@ -1,6 +1,8 @@
+export { moveToward, cargoUsed, chooseEventChoice } from './npc-worker-primitives';
+import { stableHash as hashId } from '../../core/stable-hash';
 import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
 import type { SectorNpcState } from '../../core/npc-types';
-import type { SalvageEventChoice, SalvageField, SalvageWreck } from '../../core/salvage-types';
+import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
 import { getShipDefinition, resolveShipRuntimeSetup, stationFactor } from '../ships';
 
@@ -9,41 +11,7 @@ export const FLIGHT_SPEED = 82;
 export const SCAN_SECONDS = 5;
 export const BASE_CYCLE_SECONDS = 1.4;
 
-export function hashId(id: string): number {
-  let hash = 2166136261;
-  for (const char of id) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
-export function moveToward(
-  ship: { position: WorldPoint; headingRadians: number; speed: number },
-  target: WorldPoint,
-  speed: number,
-  dt: number
-): boolean {
-  const dx = target.x - ship.position.x;
-  const dy = target.y - ship.position.y;
-  const remaining = Math.hypot(dx, dy);
-  ship.headingRadians = Math.atan2(dy, dx);
-  ship.speed = speed;
-  if (remaining <= Math.max(2, speed * dt)) {
-    ship.position = { ...target };
-    ship.speed = 0;
-    return true;
-  }
-  ship.position = {
-    x: ship.position.x + (dx / remaining) * speed * dt,
-    y: ship.position.y + (dy / remaining) * speed * dt,
-  };
-  return false;
-}
-
-export function cargoUsed(npc: SectorNpcState): number {
-  return Object.values(npc.cargo).reduce((sum, amount) => sum + Math.max(0, Math.floor(amount)), 0);
-}
+export { stableHash as hashId } from '../../core/stable-hash';
 
 export function eligible(npc: SectorNpcState, locationId: string): boolean {
   return (
@@ -91,20 +59,6 @@ export function workPoint(npcId: string, wreck: SalvageWreck): WorldPoint {
     x: wreck.position.x + Math.cos(angle) * range,
     y: wreck.position.y + Math.sin(angle) * range,
   };
-}
-
-export function chooseEventChoice(
-  npc: SectorNpcState,
-  choices: readonly SalvageEventChoice[]
-): SalvageEventChoice | null {
-  if (choices.length === 0) return null;
-  const rank = { safe: 0, controlled: 1, risky: 2, high_risk: 3 } as const;
-  const risky = npc.workRiskPreference === 'risky';
-  return (
-    [...choices].sort((a, b) =>
-      risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
-    )[0] ?? null
-  );
 }
 
 export function recoveryAmount(npc: SectorNpcState, wreck: SalvageWreck): number {

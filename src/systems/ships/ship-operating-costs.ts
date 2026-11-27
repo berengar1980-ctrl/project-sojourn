@@ -1,19 +1,15 @@
+import { quoteRefuel, type FuelQuote } from '../../core/fuel-pricing';
+export { FUEL_PRICE_PER_UNIT, quoteRefuel, type FuelQuote } from '../../core/fuel-pricing';
 import type { ShipDefinition } from '../../core/ship-types';
 import { getShipRoleProfile } from '../../data/ships/ship-role-profiles';
 import type { PlayerTradeService } from '../economy/player-trade-service';
 import { FUEL_DISTANCE_SCALE } from '../npcs/npc-sector-routing';
 import { getShipDefinition } from './ship-registry';
 
-export const FUEL_PRICE_PER_UNIT = 10;
 export const REPAIR_PRICE_PER_HULL_HP = 100;
 export const EMERGENCY_FUEL_PRICE_PER_UNIT = 30;
 export const EMERGENCY_FUEL_CALL_OUT = 500;
 export const SHIPYARD_REPAIR_MULTIPLIER = 0.8;
-
-export interface FuelQuote {
-  readonly units: number;
-  readonly cost: number;
-}
 
 export interface RepairQuote {
   readonly points: number;
@@ -30,13 +26,6 @@ export function fuelForDistance(
   if (values.some((value) => !Number.isFinite(value) || value < 0)) return 0;
   const base = distance * shipFuelUse * FUEL_DISTANCE_SCALE;
   return base * pilotingFuelMultiplier * engineeringFuelMultiplier;
-}
-
-/** Credit-precise tenths: ten credits buy one fuel unit at every inhabited port. */
-export function quoteRefuel(fuel: number, capacity: number, credits: number): FuelQuote {
-  const missingTenths = Math.max(0, Math.ceil((capacity - fuel) * FUEL_PRICE_PER_UNIT - 1e-8));
-  const payable = Math.min(missingTenths, Math.max(0, Math.floor(credits)));
-  return { units: payable / FUEL_PRICE_PER_UNIT, cost: payable };
 }
 
 /** Remote tanker service: pay a call-out fee and triple the normal fuel price. */

@@ -2200,3 +2200,8 @@ Kontaktprüfung. Der unveränderte Kreuzungs-Stresstest ist maßgeblich.
 strukturelle Hindernisse für die Routenplanung und gemeinsame Marktbestands-
 und Nachfragebuchungen für Spieler und NPCs. Gebühren, Frachtbuchhaltung,
 Routenstrategien und bestehende Zufallsfolgen bleiben unverändert.
+
+**Keine Statusänderung** der Feature-IDs. Gemeinsame Mengenvalidierung in
+Ressourcenbilanz, Mining, Bergung und Piratenverkauf; gemeinsame lokale
+Arbeiterbewegung, Ereignis-Risikowahl, Port-Servicefähigkeit und Tankpreis-
+Berechnung. Bestehende Rollenparameter, Gebühren und Routen bleiben erhalten.

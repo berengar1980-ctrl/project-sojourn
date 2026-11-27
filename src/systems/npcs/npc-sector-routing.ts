@@ -1,3 +1,4 @@
+import { stableHash as hashId } from '../../core/stable-hash';
 import { isSecurityDrone } from '../../core/security-drone';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { RouteThreatContact } from '../navigation/route-planner';
@@ -9,14 +10,7 @@ import { type RoutePlan, type RouteProfile } from '../navigation/route-planner';
 
 export const FUEL_DISTANCE_SCALE = 0.025;
 
-export function hashId(id: string): number {
-  let hash = 2166136261;
-  for (const char of id) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { stableHash as hashId } from '../../core/stable-hash';
 
 export function routeProfile(npc: SectorNpcState): RouteProfile {
   if (npc.pirate) return 'fast';

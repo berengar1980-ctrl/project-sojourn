@@ -1,3 +1,4 @@
+import { wholeQuantity as quantity } from '../../core/economy-quantity';
 import type {
   EconomyCargoHold,
   EconomyMarketState,
@@ -17,11 +18,6 @@ import {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
-}
-
-function quantity(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.floor(value));
 }
 
 function seededRandom(seed: number): () => number {

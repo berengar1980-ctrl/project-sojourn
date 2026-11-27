@@ -1,3 +1,4 @@
+import { wholeQuantity as quantity } from '../../core/economy-quantity';
 import type { EconomyResourceId, PlayerEconomyState } from '../../core/economy-types';
 import type { SalvageField, SalvageWreck, SalvageEventResolution } from '../../core/salvage-types';
 import { salvageStockId } from '../salvage/salvage-stock-id';
@@ -18,11 +19,6 @@ interface PlayerCargoReceiver {
     cargoCapacityTons: number,
     originId?: string
   ): number;
-}
-
-function quantity(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.floor(value));
 }
 
 function cargoUsed(player: PlayerEconomyState): number {

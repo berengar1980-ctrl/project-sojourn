@@ -100,10 +100,7 @@ function key(column: number, row: number): string {
   return column + ':' + row;
 }
 
-function obstacleList(
-  asteroids: readonly RouteObstacle[],
-  targetId: string
-): readonly RouteObstacle[] {
+function obstacleList(asteroids: readonly RouteObstacle[], targetId: string): readonly RouteObstacle[] {
   return asteroids.filter((asteroid) => asteroid.id !== targetId && asteroid.routeBlocking);
 }
 

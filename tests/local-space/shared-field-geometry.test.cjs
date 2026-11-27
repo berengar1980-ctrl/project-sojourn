@@ -39,6 +39,13 @@ applyMarketSale(entry, 5);
 assert.equal(entry.stock, 20);
 assert.equal(entry.demand, 0.5);
 
+const { quoteRefuel } = load('src/core/fuel-pricing.ts');
+assert.deepEqual(quoteRefuel(0, 10, 37), { units: 3.7, cost: 37 });
+assert.deepEqual(quoteRefuel(10, 10, 100), { units: 0, cost: 0 });
+const { isServicedPort } = load('src/core/port-service-policy.ts');
+assert(isServicedPort({ kind: 'station', activities: { dock: true } }));
+assert(!isServicedPort({ kind: 'wreck', activities: { dock: true } }));
+
 const rotated = rotatePoint({ x: 10, y: 0 }, Math.PI / 2);
 assert(Math.abs(rotated.x) < 1e-10);
 assert.equal(rotated.y, 10);

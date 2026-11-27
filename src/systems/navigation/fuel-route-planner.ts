@@ -1,4 +1,7 @@
-import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
+import { isServicedPort as canFuelAt } from '../../core/port-service-policy';
+export { isServicedPort as canFuelAt } from '../../core/port-service-policy';
+import { FUEL_PRICE_PER_UNIT as FUEL_PRICE, quoteRefuel } from '../../core/fuel-pricing';
+import type { WorldMap, WorldPoint } from '../../core/world-types';
 import {
   planRouteFromPoint,
   planRouteWithProfile,
@@ -9,7 +12,6 @@ import {
 } from './route-planner';
 
 const FUEL_RESERVE = 1.02;
-const FUEL_PRICE = 10;
 const MAX_STOPS = 8;
 const MAX_SEARCH_STATES = 2500;
 
@@ -59,17 +61,9 @@ interface SearchState {
   readonly legs: readonly FuelRouteLeg[];
 }
 
-export function canFuelAt(location: WorldLocation | undefined): boolean {
-  if (!location) return false;
-  if (!['planet', 'moon', 'station'].includes(location.kind)) return false;
-  const facilities = location.activities;
-  return Boolean(facilities.refuel || facilities.dock || facilities.trade || facilities.shipyard);
-}
-
 function purchaseFuel(fuel: number, capacity: number, credits: number) {
-  const missing = Math.max(0, Math.ceil((capacity - fuel) * FUEL_PRICE - 1e-8));
-  const cost = Math.min(missing, Math.max(0, Math.floor(credits)));
-  return { fuel: Math.min(capacity, fuel + cost / FUEL_PRICE), cost };
+  const quote = quoteRefuel(fuel, capacity, credits);
+  return { fuel: Math.min(capacity, fuel + quote.units), cost: quote.cost };
 }
 
 /**
