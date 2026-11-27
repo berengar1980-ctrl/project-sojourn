@@ -55,10 +55,7 @@ const second = {
   speed: 80,
 };
 resolveCombatBystanderContacts(second, [civilian]);
-assert(
-  Math.abs(
-    civilian.position.x - second.position.x - (80 * 0.5 * 0.88 + hull.radiusX + 0.5)
-  ) < 1e-8
-);
+const expectedGap = 80 * 0.5 * 0.88 + hull.radiusX + 0.5;
+assert(Math.abs(civilian.position.x - second.position.x - expectedGap) < 1e-8);
 
 console.log('PASS PvP combat ship cannot pass through noncombat miner');
