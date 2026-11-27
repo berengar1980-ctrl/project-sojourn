@@ -207,18 +207,9 @@ export function controllerLocalModel(context: ControllerRuntimeContext) {
   );
   const locationId = context.state.localSpace?.getSnapshot().instance.sourceLocationId;
   const asteroidId = model.selectedAsteroid?.id;
-  const owner =
-    locationId && asteroidId
-      ? (context.economy.asteroidClaims
-          .snapshot()
-          .claims.find(
-            (entry) => entry.locationId === locationId && entry.asteroidId === asteroidId
-          )?.ownerId ?? null)
-      : null;
-  const knownClaims = context.economy.asteroidClaims
-    .snapshot()
-    .claims.filter((claim) => claim.locationId === locationId);
+  const knownClaims = locationId ? context.economy.asteroidClaims.claimsAt(locationId) : [];
   const claimByAsteroid = new Map(knownClaims.map((claim) => [claim.asteroidId, claim]));
+  const owner = asteroidId ? (claimByAsteroid.get(asteroidId)?.ownerId ?? null) : null;
   const pirateShips = locationId
     ? (
         context.economy.localPirates.get(locationId)?.snapshot(context.economy.sectorNpcs.npcs) ??
