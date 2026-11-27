@@ -65,6 +65,26 @@ export function fieldCombatActors(
   return result;
 }
 
+/** Single-ID lookup for the collision hot path, without rebuilding a map. */
+export function fieldCombatActor(
+  world: SharedFieldCombatWorld,
+  id: string
+): MutableCombatant | undefined {
+  let result: MutableCombatant | undefined;
+  for (const [actors, escaped] of step(world).sources) {
+    const actor = actors.find((entry) => entry.setup.id === id);
+    if (actor && actor.hullHp > 0 && !escaped(id)) result = actor;
+  }
+  return result;
+}
+
+export function fieldCombatOwnsId(world: SharedFieldCombatWorld, id: string): boolean {
+  for (const actors of step(world).sources.keys()) {
+    if (actors.some((actor) => actor.setup.id === id)) return true;
+  }
+  return false;
+}
+
 export function fieldCombatOwnedIds(world: SharedFieldCombatWorld): ReadonlySet<string> {
   const ids = new Set<string>();
   for (const actors of step(world).sources.keys()) {

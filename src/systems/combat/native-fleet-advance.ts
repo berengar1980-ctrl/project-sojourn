@@ -16,6 +16,8 @@ import {
   contactPairKey as pairKey,
   claimFieldContact,
   fieldCombatActors,
+  fieldCombatActor,
+  fieldCombatOwnsId,
   fieldCombatOwnedIds,
   hasFieldContactStep,
   recordForeignContact,
@@ -106,8 +108,8 @@ function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): F
     },
     resolveFleetBystander(ship, bystanderId) {
       const local = actors.get(bystanderId);
-      const other = local ?? (world ? fieldCombatActors(world).get(bystanderId) : undefined);
-      if (!other) return Boolean(world && fieldCombatOwnedIds(world).has(bystanderId));
+      const other = local ?? (world ? fieldCombatActor(world, bystanderId) : undefined);
+      if (!other) return Boolean(world && fieldCombatOwnsId(world, bystanderId));
       // Active opponents run their own ram and hull phases. Applying a
       // bystander correction first would swallow that pair's ram impact.
       const active = activePairs.has(pairKey(ship.setup.id, bystanderId));
@@ -160,6 +162,63 @@ function stepWorld(frame: NativeFleetFrame): void {
   materializeNativeFleetWrecks(actors, asteroidWorld, recordedWrecks, seed, elapsed);
 }
 
+interface FrameTraffic {
+  readonly actorIds: ReadonlySet<string>;
+  readonly world: StrategicCombatArenaOptions['fieldWorld'];
+  readonly neutral: readonly StrategicCombatBystander[];
+}
+
+function frameTraffic(frame: NativeFleetFrame): FrameTraffic {
+  const actorIds = new Set(frame.actors.map((actor) => actor.setup.id));
+  const world = hasFieldContactStep(frame.arena.fieldWorld) ? frame.arena.fieldWorld : undefined;
+  if (world) registerFieldCombatActors(world, frame.actors, (id) => frame.escapedRecords.has(id));
+  const ownedIds = world ? fieldCombatOwnedIds(world) : actorIds;
+  return {
+    actorIds,
+    world,
+    neutral: frame.bystanders.filter((ship) => !ownedIds.has(ship.id)),
+  };
+}
+
+function refreshDuelTraffic(
+  frame: NativeFleetFrame,
+  traffic: FrameTraffic,
+  service: StrategicCombatService,
+  index: number,
+  duelIds: ReadonlySet<string>,
+  escaped: ReadonlySet<string>,
+  wreckBlockers: readonly StrategicCombatObstacle[]
+): void {
+  const foreign = traffic.world
+    ? [...fieldCombatActors(traffic.world).values()].filter(
+        (actor) => !traffic.actorIds.has(actor.setup.id)
+      )
+    : [];
+  const others = [...frame.actors, ...foreign]
+    .filter(
+      (actor) => !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)
+    )
+    .map((actor) => ({
+      id: actor.setup.id,
+      shipId: actor.setup.shipId,
+      position: actor.position,
+      headingRadians: actor.headingRadians,
+    }));
+  const blockers = frame.allObstacles[index]!;
+  blockers.length = 0;
+  blockers.push(
+    ...frame.baseObstacles,
+    ...wreckBlockers,
+    ...traffic.neutral.map((ship) => neutralFleetBlocker(ship, frame.radiusById)),
+    ...others.map((ship) => ({
+      id: 'ship:' + ship.id,
+      position: ship.position,
+      radius: frame.radiusById.get(ship.id) ?? 35,
+    }))
+  );
+  service.setBystanders([...others, ...traffic.neutral]);
+}
+
 /** One asteroid tick, one native actor tick, one recorded wreck per vessel. */
 export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   const {
@@ -171,18 +230,12 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     arena,
     recordedWrecks,
     escapedRecords,
-    radiusById,
     seed,
     elapsed,
     dt,
-    bystanders,
   } = frame;
   stepWorld(frame);
-  const actorIds = new Set(actors.map((actor) => actor.setup.id));
-  const world = hasFieldContactStep(arena.fieldWorld) ? arena.fieldWorld : undefined;
-  if (world) registerFieldCombatActors(world, actors, (id) => escapedRecords.has(id));
-  const ownedIds = world ? fieldCombatOwnedIds(world) : actorIds;
-  const neutralBystanders = bystanders.filter((ship) => !ownedIds.has(ship.id));
+  const traffic = frameTraffic(frame);
   const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
   for (const id of escaped) escapedRecords.add(id);
   frame.boarding.resolve(elapsed, true);
@@ -199,32 +252,7 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     if (service.getStatus().winner || escaped.has(source.setup.id) || escaped.has(target.setup.id))
       continue;
     const duelIds = new Set([source.setup.id, target.setup.id]);
-    const foreign = world
-      ? [...fieldCombatActors(world).values()].filter((actor) => !actorIds.has(actor.setup.id))
-      : [];
-    const others = [...actors, ...foreign]
-      .filter(
-        (actor) => !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)
-      )
-      .map((actor) => ({
-        id: actor.setup.id,
-        shipId: actor.setup.shipId,
-        position: actor.position,
-        headingRadians: actor.headingRadians,
-      }));
-    const blockers = allObstacles[index]!;
-    blockers.length = 0;
-    blockers.push(
-      ...baseObstacles,
-      ...wreckBlockers,
-      ...neutralBystanders.map((ship) => neutralFleetBlocker(ship, radiusById)),
-      ...others.map((ship) => ({
-        id: 'ship:' + ship.id,
-        position: ship.position,
-        radius: radiusById.get(ship.id) ?? 35,
-      }))
-    );
-    service.setBystanders([...others, ...neutralBystanders]);
+    refreshDuelTraffic(frame, traffic, service, index, duelIds, escaped, wreckBlockers);
     const rockCount = asteroidWorld.length;
     service.advance(dt, contacts);
     const state = service.getStatus();

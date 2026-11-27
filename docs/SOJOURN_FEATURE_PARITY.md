@@ -2163,3 +2163,7 @@ Stand-alone-Duelle behalten ihre lokale Zuständigkeit.
 **Keine Statusänderung** der Feature-IDs. Ein Regressionstest prüft zwei
 unabhängige Flotten, echte Actor-Referenzen, einmalige Paarauflösung,
 Snapshot-Aktualisierung und getrennte Feldinstanzen.
+
+**Keine Statusänderung** der Feature-IDs. Flotten-Hindernisabfragen
+sind aus der Schrittkoordination extrahiert; Einzel-ID-Kontaktabfragen
+vermeiden den wiederholten Aufbau aller Actor-Maps.

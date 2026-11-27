@@ -1577,3 +1577,7 @@ vorhandenen gemeinsamen Feldinstanz zurückgesetzt. Keine Save-Felder.
 Feldweite Kontaktansprüche werden nur am expliziten Kampagnen-Schritt aktiviert.
 Standalone-Flotten ohne diese Schrittgrenze behalten ihre lokale Paarliste.
 Zerstörte oder entkommene native Actor-IDs sperren veraltete Feldspiegel.
+
+Die native Flotten-Schrittfunktion delegiert die Hindernislisten an eine
+separate Abfrage. Einzelne Kontaktpartner werden ohne temporäre Vollkarte
+aufgelöst. Unveränderte Schrittgrenzen und Speicherzuständigkeiten.
