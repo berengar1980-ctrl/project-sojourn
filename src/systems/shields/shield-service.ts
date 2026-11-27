@@ -32,11 +32,10 @@ export function applyShieldHit(
   impactId: number
 ): ShieldDamageResult {
   const damage = rawDamage(hit, state);
-  const { absorbed: absorbedDamage, overflow: overflowDamage, remaining } = absorbDamage(
-    state.currentHp,
-    damage
-  );
-  state.currentHp = remaining;
+  const absorption = absorbDamage(state.currentHp, damage);
+  const absorbedDamage = absorption.absorbed;
+  const overflowDamage = absorption.overflow;
+  state.currentHp = absorption.remaining;
 
   const visualStrength = Math.sqrt(clamp(damage / state.maxHp, 0, 1));
   const impact: ShieldImpactEffect = {
