@@ -36,7 +36,8 @@ export function createShipTestSwitcher(options: ShipTestSwitcherOptions): ShipTe
     const nextDisabled = disabled || options.ships.length < 2;
     if (select.value !== activeShipId) select.value = activeShipId;
     if (select.disabled !== nextDisabled) select.disabled = nextDisabled;
-    wrapper.classList.toggle('is-disabled', nextDisabled);
+    if (wrapper.classList.contains('is-disabled') !== nextDisabled)
+      wrapper.classList.toggle('is-disabled', nextDisabled);
   };
 
   select.addEventListener('change', () => options.onSelect(select.value));
