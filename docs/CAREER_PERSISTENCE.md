@@ -1611,3 +1611,6 @@ NPC-Checkpoints bleiben autoritativ; keine Änderung des Save-Schemas.
 
 Die Zufallsgeneratoren bleiben pro Aufruf instanziiert; ihre bisherigen Seeds
 und Wiederherstellungsverfahren bleiben erhalten. Keine neuen persistenten Daten.
+
+Frachtraum bleibt im Spielerwirtschaftszustand und Komponentenbestand verankert.
+Gemeinsame Kapazitätsberechnung ist abgeleitet; keine neuen Checkpoint-Felder.

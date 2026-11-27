@@ -1,3 +1,4 @@
+import { hiddenQuantityAfterRemoval, playerCargoFree, playerCargoUsed } from '../../core/player-cargo';
 import {
   applyMarketPurchase,
   applyMarketSale,
@@ -24,13 +25,7 @@ export function playerSaleUnitPrice(marketPrice: number, feeRate = DEFAULT_SALE_
   return Math.max(1, Math.round(price * (1 - fee)));
 }
 
-export function playerCargoUsed(player: PlayerEconomyState): number {
-  const cargo = Object.values(player.cargo).reduce(
-    (sum, lot) => sum + Math.max(0, finiteInteger(lot.qty) - finiteInteger(lot.hiddenQty ?? 0)),
-    0
-  );
-  return cargo + finiteInteger(player.reservedCargoTons ?? 0);
-}
+export { playerCargoUsed } from '../../core/player-cargo';
 
 function weightedCostAfterPurchase(
   lot: PlayerCargoLot | undefined,
@@ -80,12 +75,7 @@ export function createPlayerTradeService(
       if (!entry) return null;
 
       const requested = finiteInteger(requestedQuantity);
-      const cargoFree = Math.max(
-        0,
-        finiteInteger(cargoCapacityTons) -
-          (player.smugglingNormalPenalty ?? 0) -
-          playerCargoUsed(player)
-      );
+      const cargoFree = playerCargoFree(player, cargoCapacityTons);
       const affordable = Math.floor(player.credits / Math.max(1, entry.price));
       const quantity = Math.min(requested, finiteInteger(entry.stock), cargoFree, affordable);
       if (quantity <= 0) return null;
@@ -114,12 +104,7 @@ export function createPlayerTradeService(
 
     receiveCargo(resourceId, requestedQuantity, cargoCapacityTons, originId) {
       const requested = finiteInteger(requestedQuantity);
-      const cargoFree = Math.max(
-        0,
-        finiteInteger(cargoCapacityTons) -
-          (player.smugglingNormalPenalty ?? 0) -
-          playerCargoUsed(player)
-      );
+      const cargoFree = playerCargoFree(player, cargoCapacityTons);
       const quantity = Math.min(requested, cargoFree);
       if (quantity <= 0) return 0;
 
@@ -150,9 +135,7 @@ export function createPlayerTradeService(
 
       player.credits += revenue;
       applyMarketSale(entry, quantity);
-      const visibleQuantity = Math.max(0, lot.qty - (lot.hiddenQty ?? 0));
-      const hiddenSold = Math.max(0, quantity - visibleQuantity);
-      if (hiddenSold > 0) lot.hiddenQty = Math.max(0, (lot.hiddenQty ?? 0) - hiddenSold);
+      if (lot.hiddenQty !== undefined) lot.hiddenQty = hiddenQuantityAfterRemoval(lot, quantity);
       lot.qty -= quantity;
       lot.totalCost = Math.max(0, lot.totalCost - averageCost * quantity);
       if (lot.qty <= 0) delete player.cargo[resourceId];

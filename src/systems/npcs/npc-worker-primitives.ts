@@ -1,6 +1,5 @@
 import type { WorldPoint } from '../../core/world-types';
 import type { SectorNpcState } from '../../core/npc-types';
-import { wholeQuantity } from '../../core/economy-quantity';
 
 export const WORKER_SCAN_SECONDS = 5;
 
@@ -27,9 +26,7 @@ export function moveToward(
   return false;
 }
 
-export function cargoUsed(npc: SectorNpcState): number {
-  return Object.values(npc.cargo).reduce((sum, amount) => sum + wholeQuantity(amount), 0);
-}
+export { npcCargoUsed as cargoUsed } from '../economy/npc-cargo';
 
 interface WorkerEventChoice {
   readonly risk: 'safe' | 'controlled' | 'risky' | 'high_risk';

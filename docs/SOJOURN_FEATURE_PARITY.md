@@ -2212,3 +2212,6 @@ Seeds, Aufrufreihenfolgen oder Feature-IDs.
 Piraten-Heimathäfen, NPC-Scanzeit und Treibstoff-Distanzfaktor zentralisiert.
 Verkehrshindernisse enthalten ausschließlich die bisherigen Routengeometriedaten.
 Keine Änderung der Fraktions- oder Kollisionsregeln.
+
+Normaler Frachtraum berücksichtigt bei Handel, Mining, Bergung und Kampagnen
+verdeckte Waren, reservierte Kapazität und den Schmuggelabzug konsistent.

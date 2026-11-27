@@ -4,7 +4,7 @@ import { wholeQuantity as quantity } from '../../core/economy-quantity';
 
 export { wholeQuantity as quantity } from '../../core/economy-quantity';
 
-export function npcCargoUsed(npc: NpcEconomyState): number {
+export function npcCargoUsed(npc: Pick<NpcEconomyState, 'cargo'>): number {
   return Object.values(npc.cargo).reduce((sum, value) => sum + quantity(value), 0);
 }
 

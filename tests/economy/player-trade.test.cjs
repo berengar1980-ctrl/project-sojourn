@@ -133,3 +133,20 @@ function fakeMarkets(initialStock = 20, initialPrice = 100) {
 }
 
 console.log('PASS player trade transactions, cargo limits, cost basis and logistics fees');
+
+{
+  const trade = tradeModule.createPlayerTradeService(fakeMarkets(), 1000);
+  trade.player.cargo.steel = { qty: 8, hiddenQty: 5, totalCost: 80 };
+  trade.player.reservedCargoTons = 2;
+  trade.player.smugglingNormalPenalty = 3;
+  assert.equal(tradeModule.playerCargoUsed(trade.player), 5);
+  assert.equal(trade.grantCargo('steel', 3, 10), false);
+  assert.equal(trade.grantCargo('steel', 2, 10), true);
+  assert.equal(trade.player.cargo.steel.hiddenQty, 5);
+  assert.equal(trade.receiveCargo('steel', 1, 10), 0);
+  assert.equal(trade.removeCargo('steel', 7), true);
+  assert.equal(trade.player.cargo.steel.qty, 3);
+  assert.equal(trade.player.cargo.steel.hiddenQty, 3);
+  assert.equal(trade.sell('haven', 'steel', 1).quantity, 1);
+  assert.equal(trade.player.cargo.steel.hiddenQty, 2);
+}

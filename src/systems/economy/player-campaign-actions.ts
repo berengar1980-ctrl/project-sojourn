@@ -1,3 +1,4 @@
+import { hiddenQuantityAfterRemoval, playerCargoFree } from '../../core/player-cargo';
 import type {
   EconomyResourceId,
   PlayerCargoLot,
@@ -45,12 +46,13 @@ export function createPlayerCampaignEconomyActions(
       }
       const used = cargoUsed();
       const lot = player.cargo[resourceId];
-      if (!Number.isSafeInteger(used) || used > capacity - quantity) return false;
+      if (!Number.isSafeInteger(used) || quantity > playerCargoFree(player, capacity)) return false;
       if (!Number.isSafeInteger(lot?.qty ?? 0)) return false;
       if ((lot?.qty ?? 0) > Number.MAX_SAFE_INTEGER - quantity) return false;
       const next: PlayerCargoLot = {
         qty: (lot?.qty ?? 0) + quantity,
         totalCost: lot?.totalCost ?? 0,
+        ...(lot?.hiddenQty !== undefined ? { hiddenQty: lot.hiddenQty } : {}),
       };
       const source = originId ?? lot?.lastOriginId;
       if (source) next.lastOriginId = source;
@@ -71,6 +73,9 @@ export function createPlayerCampaignEconomyActions(
       player.cargo[resourceId] = {
         ...lot,
         qty: lot.qty - quantity,
+        ...(lot.hiddenQty !== undefined
+          ? { hiddenQty: hiddenQuantityAfterRemoval(lot, quantity) }
+          : {}),
         totalCost: Math.max(0, lot.totalCost * ratio),
       };
       return true;

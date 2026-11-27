@@ -1,3 +1,4 @@
+import { playerCargoFree } from '../../core/player-cargo';
 import { wholeQuantity as quantity } from '../../core/economy-quantity';
 import type { EconomyResourceId, PlayerEconomyState } from '../../core/economy-types';
 import type { SalvageField, SalvageWreck, SalvageEventResolution } from '../../core/salvage-types';
@@ -19,11 +20,6 @@ interface PlayerCargoReceiver {
     cargoCapacityTons: number,
     originId?: string
   ): number;
-}
-
-function cargoUsed(player: PlayerEconomyState): number {
-  const resources = Object.values(player.cargo).reduce((sum, lot) => sum + quantity(lot.qty), 0);
-  return resources + quantity(player.reservedCargoTons ?? 0);
 }
 
 export interface SalvageEconomyService {
@@ -96,7 +92,7 @@ export function createSalvageEconomyService(
     },
     recover(resourceId, requestedQuantity, cargoCapacityTons, originId, sourceId) {
       const requested = quantity(requestedQuantity);
-      const free = Math.max(0, quantity(cargoCapacityTons) - cargoUsed(cargo.player));
+      const free = playerCargoFree(cargo.player, cargoCapacityTons);
       const wanted = Math.min(requested, free);
       if (wanted <= 0) return 0;
 

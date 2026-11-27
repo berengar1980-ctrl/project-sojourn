@@ -1,3 +1,4 @@
+import { playerCargoFree } from '../../core/player-cargo';
 import { wholeQuantity as finiteInteger } from '../../core/economy-quantity';
 import type { EconomyResourceId, PlayerEconomyState } from '../../core/economy-types';
 
@@ -16,10 +17,6 @@ interface PlayerCargoReceiver {
     cargoCapacityTons: number,
     originId?: string
   ): number;
-}
-
-function cargoUsed(player: PlayerEconomyState): number {
-  return Object.values(player.cargo).reduce((sum, lot) => sum + finiteInteger(lot.qty), 0);
 }
 
 export interface MiningEconomyService {
@@ -47,7 +44,7 @@ export function createMiningEconomyService(
     },
     collect(resourceId, requestedQuantity, cargoCapacityTons, originId, sourceId) {
       const requested = finiteInteger(requestedQuantity);
-      const free = Math.max(0, finiteInteger(cargoCapacityTons) - cargoUsed(cargo.player));
+      const free = playerCargoFree(cargo.player, cargoCapacityTons);
       const wanted = Math.min(
         requested,
         free,

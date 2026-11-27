@@ -1,3 +1,4 @@
+import { playerCargoFree, playerCargoUsed, visibleCargoQuantity } from '../../core/player-cargo';
 import { piratePortFaction as pirateBase } from '../../core/pirate-ports';
 import type { PlayerEconomyState } from '../../core/economy-types';
 import { isIllegalResource } from '../../data/economy/economy-resources';
@@ -11,7 +12,7 @@ import {
 
 function cargoVisible(player: PlayerEconomyState, id: string): number {
   const lot = player.cargo[id];
-  return Math.max(0, (lot?.qty ?? 0) - (lot?.hiddenQty ?? 0));
+  return lot ? visibleCargoQuantity(lot) : 0;
 }
 
 export function createSmugglingCargoService(
@@ -54,10 +55,7 @@ export function createSmugglingCargoService(
     },
     install(shipId, locationId, normalCapacity) {
       if (!state.hiddenHoldIntel || installed(shipId) || !pirateBase(locationId)) return false;
-      const normalUsed = Object.values(player.cargo).reduce(
-        (sum, lot) => sum + Math.max(0, lot.qty - (lot.hiddenQty ?? 0)),
-        player.reservedCargoTons ?? 0
-      );
+      const normalUsed = playerCargoUsed(player);
       if (
         player.credits < HIDDEN_CARGO_HOLD.cost ||
         normalCapacity < HIDDEN_CARGO_HOLD.normalCargoPenalty ||
@@ -85,14 +83,10 @@ export function createSmugglingCargoService(
       if (!installed(shipId)) return 0;
       const lot = player.cargo[resourceId];
       if (!lot) return 0;
-      const visibleUsed = Object.values(player.cargo).reduce(
-        (sum, entry) => sum + Math.max(0, entry.qty - (entry.hiddenQty ?? 0)),
-        player.reservedCargoTons ?? 0
-      );
       const moved = Math.min(
         Math.max(0, Math.floor(qty)),
         lot.hiddenQty ?? 0,
-        Math.max(0, normalCapacity - HIDDEN_CARGO_HOLD.normalCargoPenalty - visibleUsed)
+        playerCargoFree(player, normalCapacity, HIDDEN_CARGO_HOLD.normalCargoPenalty)
       );
       if (moved > 0) lot.hiddenQty = (lot.hiddenQty ?? 0) - moved;
       return moved;
