@@ -112,27 +112,33 @@ export function advanceCareerSalvageDrones(
   wreckWorld: AsteroidFieldWorld
 ): void {
   restoreKnownPatrols(context);
-  let accumulator = (accumulators.get(context) ?? 0) + Math.max(0, Math.min(0.25, seconds));
-  if (accumulator < 1) {
-    accumulators.set(context, accumulator);
-    return;
-  }
+  const dt = Math.max(0, Math.min(0.25, seconds));
+  if (!Number.isFinite(dt) || dt <= 0) return;
+  const start = accumulators.get(context) ?? 0;
+  const end = start + dt;
+  accumulators.set(context, end >= 1 ? end - 1 : end);
   const activeLocation =
     context.state.mode === 'salvage-space'
       ? context.state.salvageScene?.getField().sourceLocationId
       : null;
-  const elapsed = Math.min(2, Math.floor(accumulator));
-  accumulator -= elapsed;
-  accumulators.set(context, accumulator);
-  for (const [locationId, world] of worlds(context)) {
-    if (locationId === activeLocation) continue;
-    // One-off event maps retain their existing on-entry lifecycle.
-    const location = narrowsSector.locations.find((entry) => entry.id === locationId);
-    if (!location?.activities.salvage) continue;
-    measurePerformance('sim.salvage-world.field', () =>
-      advanceSalvageField(context, world, wreckWorld, locationId, elapsed)
-    );
-  }
+  const fields = worlds(context);
+  const advanceWindow = (from: number, to: number) => {
+    let index = 0;
+    for (const [locationId, world] of fields) {
+      const phase = ++index / fields.size;
+      if (locationId === activeLocation || phase <= from || phase > to) continue;
+      // One-off event maps retain their existing on-entry lifecycle.
+      const location = narrowsSector.locations.find((entry) => entry.id === locationId);
+      if (!location?.activities.salvage) continue;
+      measurePerformance('sim.salvage-world.field', () =>
+        advanceSalvageField(context, world, wreckWorld, locationId, 1)
+      );
+    }
+  };
+  measurePerformance('sim.salvage-world.background-batch', () => {
+    advanceWindow(start, Math.min(end, 1));
+    if (end > 1) advanceWindow(0, end - 1);
+  });
 }
 
 /** The primary drone is already captured by rememberField; only capture its escorts here. */
