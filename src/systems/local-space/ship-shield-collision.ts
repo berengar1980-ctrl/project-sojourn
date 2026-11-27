@@ -28,12 +28,26 @@ function rotate(point: WorldPoint, angle: number): WorldPoint {
   };
 }
 
+const shieldGeometries = new WeakMap<ShipDefinition, ReturnType<typeof createShieldWorldGeometry>>();
+
+function shieldGeometry(ship: ShipDefinition): ReturnType<typeof createShieldWorldGeometry> {
+  let geometry = shieldGeometries.get(ship);
+  if (!geometry) {
+    geometry = createShieldWorldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters);
+    shieldGeometries.set(ship, geometry);
+  }
+  return geometry;
+}
+
+function maximumShieldRadius(body: LocalShieldShipBody): number {
+  if (isSecurityDrone(body.id)) return DRONE_SHIELD_RADIUS_METERS;
+  const geometry = shieldGeometry(body.ship);
+  return Math.max(0.01, Math.abs(geometry.radiusX), Math.abs(geometry.radiusY));
+}
+
 function shieldCenter(body: LocalShieldShipBody): WorldPoint {
   if (isSecurityDrone(body.id)) return body.state.position;
-  const geometry = createShieldWorldGeometry(
-    body.ship.sprite.hardpoints,
-    body.ship.nominalLengthMeters
-  );
+  const geometry = shieldGeometry(body.ship);
   const offset = rotate(geometry.centerOffset, body.state.headingRadians);
   return {
     x: body.state.position.x + offset.x,
@@ -43,10 +57,7 @@ function shieldCenter(body: LocalShieldShipBody): WorldPoint {
 
 function supportRadius(body: LocalShieldShipBody, directionWorld: WorldPoint): number {
   if (isSecurityDrone(body.id)) return DRONE_SHIELD_RADIUS_METERS;
-  const geometry = createShieldWorldGeometry(
-    body.ship.sprite.hardpoints,
-    body.ship.nominalLengthMeters
-  );
+  const geometry = shieldGeometry(body.ship);
   const direction = rotate(directionWorld, -body.state.headingRadians);
   const length = Math.max(0.0001, Math.hypot(direction.x, direction.y));
   const ux = direction.x / length;
@@ -85,6 +96,8 @@ export function resolveShipShieldCollisions(
       const secondCenter = shieldCenter(second);
       const dx = secondCenter.x - firstCenter.x;
       const dy = secondCenter.y - firstCenter.y;
+      const maximum = maximumShieldRadius(first) + maximumShieldRadius(second);
+      if (dx * dx + dy * dy > (maximum + 0.000001) ** 2) continue;
       const distance = Math.hypot(dx, dy);
       const normal = distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
       const firstRadius = supportRadius(first, normal);
@@ -146,6 +159,8 @@ export function resolveShipShieldObstacleCollisions(
       const center = shieldCenter(body);
       const dx = obstacle.position.x - center.x;
       const dy = obstacle.position.y - center.y;
+      const maximum = maximumShieldRadius(body) + Math.max(0, obstacle.radius);
+      if (dx * dx + dy * dy > (maximum + 0.000001) ** 2) continue;
       const distance = Math.hypot(dx, dy);
       const towardObstacle =
         distance > 0.001 ? { x: dx / distance, y: dy / distance } : { x: 1, y: 0 };
