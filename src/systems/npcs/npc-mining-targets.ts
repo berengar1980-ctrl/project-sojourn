@@ -4,10 +4,7 @@ import { stableHash as hashId } from '../../core/stable-hash';
 import { distance } from '../../core/field-geometry';
 import type { FieldRouteState, FieldRouteObstacle } from '../navigation/field-ship-routing';
 import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
-import type {
-  LocalAsteroid,
-  LocalShipState,
-} from '../../core/local-space-types';
+import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
 
 import type { ShipDefinition } from '../../core/ship-types';
 

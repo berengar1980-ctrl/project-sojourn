@@ -29,7 +29,9 @@ export function cargoUsed(npc: SectorNpcState): number {
   return Object.values(npc.cargo).reduce((sum, amount) => sum + wholeQuantity(amount), 0);
 }
 
-export function chooseEventChoice<T extends { readonly risk: 'safe' | 'controlled' | 'risky' | 'high_risk' }>(
+export function chooseEventChoice<
+  T extends { readonly risk: 'safe' | 'controlled' | 'risky' | 'high_risk' }
+>(
   npc: SectorNpcState,
   choices: readonly T[]
 ): T | null {

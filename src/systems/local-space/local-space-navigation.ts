@@ -1,6 +1,10 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
-import { distance, pointToSegmentDistanceSquared, squaredDistance } from '../../core/field-geometry';
+import {
+  distance,
+  pointToSegmentDistanceSquared,
+  squaredDistance,
+} from '../../core/field-geometry';
 import { localAsteroidContactRadius } from './local-asteroid-footprint';
 
 /** The point-route planner needs geometry, not a simulated asteroid body. */
@@ -100,7 +104,10 @@ function key(column: number, row: number): string {
   return column + ':' + row;
 }
 
-function obstacleList(asteroids: readonly RouteObstacle[], targetId: string): readonly RouteObstacle[] {
+function obstacleList(
+  asteroids: readonly RouteObstacle[],
+  targetId: string
+): readonly RouteObstacle[] {
   return asteroids.filter((asteroid) => asteroid.id !== targetId && asteroid.routeBlocking);
 }
 

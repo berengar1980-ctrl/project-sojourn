@@ -1602,3 +1602,9 @@ jedem Engagement-Schritt neu gebunden.
 Bewegliche Schiffe am Ziel werden nur bei der geometrischen Routenplanung
 als vorübergehende Belegung behandelt. Der tatsächliche Bewegungsschritt
 prüft weiterhin alle Kontakte. Keine Änderung des Checkpointformats.
+
+### Gemeinsame Projektregeln (PR #408)
+
+Die gemeinsamen mathematischen, Handels-, Treibstoff- und Arbeiterfunktionen
+besitzen keinen unabhängigen Zustand. Vorhandene Cargo-, Markt-, Schiffs- und
+NPC-Checkpoints bleiben autoritativ; keine Änderung des Save-Schemas.
