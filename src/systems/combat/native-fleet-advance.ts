@@ -16,6 +16,8 @@ import {
   contactPairKey as pairKey,
   claimFieldContact,
   fieldCombatActors,
+  fieldCombatOwnedIds,
+  hasFieldContactStep,
   recordForeignContact,
   registerFieldCombatActors,
 } from './field-contact-authority';
@@ -88,7 +90,7 @@ function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): F
     const status = service.getStatus();
     if (!status.winner) activePairs.add(pairKey(status.attackerId, status.defenderId));
   }
-  const world = frame.arena.fieldWorld;
+  const world = hasFieldContactStep(frame.arena.fieldWorld) ? frame.arena.fieldWorld : undefined;
   const claimHullContact = (first: string, second: string) =>
     world ? claimFieldContact(world, first, second) : claimPair(hullContacts, first, second);
   return {
@@ -105,7 +107,7 @@ function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): F
     resolveFleetBystander(ship, bystanderId) {
       const local = actors.get(bystanderId);
       const other = local ?? (world ? fieldCombatActors(world).get(bystanderId) : undefined);
-      if (!other) return false;
+      if (!other) return Boolean(world && fieldCombatOwnedIds(world).has(bystanderId));
       // Active opponents run their own ram and hull phases. Applying a
       // bystander correction first would swallow that pair's ram impact.
       const active = activePairs.has(pairKey(ship.setup.id, bystanderId));
@@ -177,12 +179,10 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   } = frame;
   stepWorld(frame);
   const actorIds = new Set(actors.map((actor) => actor.setup.id));
-  const world = arena.fieldWorld;
+  const world = hasFieldContactStep(arena.fieldWorld) ? arena.fieldWorld : undefined;
   if (world) registerFieldCombatActors(world, actors, (id) => escapedRecords.has(id));
-  const foreignActors = world ? fieldCombatActors(world) : new Map<string, MutableCombatant>();
-  const neutralBystanders = bystanders.filter(
-    (ship) => !actorIds.has(ship.id) && !foreignActors.has(ship.id)
-  );
+  const ownedIds = world ? fieldCombatOwnedIds(world) : actorIds;
+  const neutralBystanders = bystanders.filter((ship) => !ownedIds.has(ship.id));
   const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
   for (const id of escaped) escapedRecords.add(id);
   frame.boarding.resolve(elapsed, true);
@@ -199,7 +199,9 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     if (service.getStatus().winner || escaped.has(source.setup.id) || escaped.has(target.setup.id))
       continue;
     const duelIds = new Set([source.setup.id, target.setup.id]);
-    const foreign = [...foreignActors.values()].filter((actor) => !actorIds.has(actor.setup.id));
+    const foreign = world
+      ? [...fieldCombatActors(world).values()].filter((actor) => !actorIds.has(actor.setup.id))
+      : [];
     const others = [...actors, ...foreign]
       .filter(
         (actor) => !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)

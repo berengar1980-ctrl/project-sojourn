@@ -1573,3 +1573,7 @@ lateraler Geschwindigkeitszustand wird angelegt oder gespeichert.
 Feldweite Kontaktzuständigkeit referenziert ausschließlich die lebenden
 nativen Kampfschiffe. Paaransprüche werden pro Engagement-Schritt auf der
 vorhandenen gemeinsamen Feldinstanz zurückgesetzt. Keine Save-Felder.
+
+Feldweite Kontaktansprüche werden nur am expliziten Kampagnen-Schritt aktiviert.
+Standalone-Flotten ohne diese Schrittgrenze behalten ihre lokale Paarliste.
+Zerstörte oder entkommene native Actor-IDs sperren veraltete Feldspiegel.

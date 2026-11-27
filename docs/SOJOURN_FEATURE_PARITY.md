@@ -2159,3 +2159,7 @@ prüfen beidseitige Korrektur, Paar-Deduplizierung und Eigentümerwechsel.
 Feldinstanz teilen eine Kontakt-Paarliste und native Live-Actor-Referenzen.
 Kampfschiffe anderer Gefechte sind Hindernisse, keine zusätzlichen Ziele.
 Stand-alone-Duelle behalten ihre lokale Zuständigkeit.
+
+**Keine Statusänderung** der Feature-IDs. Ein Regressionstest prüft zwei
+unabhängige Flotten, echte Actor-Referenzen, einmalige Paarauflösung,
+Snapshot-Aktualisierung und getrennte Feldinstanzen.

@@ -37,6 +37,11 @@ export function resetFieldContactStep(world: SharedFieldCombatWorld): void {
   entry.claimed.clear();
 }
 
+/** Only the campaign's explicit step boundary enables shared claims. */
+export function hasFieldContactStep(world?: SharedFieldCombatWorld): boolean {
+  return Boolean(world && steps.has(world));
+}
+
 export function registerFieldCombatActors(
   world: SharedFieldCombatWorld,
   actors: ActorSource,
@@ -60,6 +65,14 @@ export function fieldCombatActors(
   return result;
 }
 
+export function fieldCombatOwnedIds(world: SharedFieldCombatWorld): ReadonlySet<string> {
+  const ids = new Set<string>();
+  for (const actors of step(world).sources.keys()) {
+    for (const actor of actors) ids.add(actor.setup.id);
+  }
+  return ids;
+}
+
 export function claimFieldContact(
   world: SharedFieldCombatWorld,
   first: string,
@@ -69,7 +82,7 @@ export function claimFieldContact(
 }
 
 export function fieldContactRevision(world?: SharedFieldCombatWorld): number {
-  return world ? step(world).revision : 0;
+  return world ? (steps.get(world)?.revision ?? 0) : 0;
 }
 
 export function recordForeignContact(world: SharedFieldCombatWorld): void {
