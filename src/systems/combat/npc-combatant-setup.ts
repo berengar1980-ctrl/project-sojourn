@@ -84,6 +84,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     id: npc.id,
     name: npc.name,
     shipId: ship.id,
+    nominalLengthMeters: ship.nominalLengthMeters,
     shieldHp: Math.max(1, shieldMax),
     shieldGeometry: drone
       ? {

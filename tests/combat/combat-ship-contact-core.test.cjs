@@ -55,3 +55,16 @@ assert(flankContact.required < actual.required, 'ship contact depends on hull or
 assert.equal(collisionThreat(wide, ship(700, 600, 0, -90)), true);
 
 console.log('PASS real oriented hull contact, no phantom wall, proper impulse and ram boundary');
+
+// Physical definitions, not naming conventions, determine fallback hull size.
+const namedHull = {
+  position: { x: 0, y: 0 },
+  setup: { shipId: 'custom-20m', nominalLengthMeters: 100 },
+};
+const sameHull = {
+  position: { x: 100, y: 0 },
+  setup: { shipId: 'no-length-in-id', nominalLengthMeters: 100 },
+};
+assert.equal(shipContact(namedHull, sameHull).required, 88);
+const legacyHull = { ...sameHull, setup: { shipId: 'legacy-60m' } };
+assert(Math.abs(shipContact(legacyHull, legacyHull).required - 52.8) < 1e-9);

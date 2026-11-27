@@ -2223,3 +2223,6 @@ Die unterschiedliche Behandlung nicht registrierter Vorkommen bleibt erhalten.
 Treibstoffverbrauch und Routenreserve zentralisiert; Spieler respektieren wie
 NPCs die Schiffs-Overrides. Reparaturprognosen verwenden die tatsächliche
 aufgerundete Reparaturmenge. NPC-Mindestverbrauch und Crew-Modifikatoren bleiben.
+
+Kampf-Kontaktgeometrie bezieht die Rumpflänge aus der Schiffsdefinition statt
+primär aus der ID; vorhandene Schildgeometrie und Legacy-Fallback bleiben.

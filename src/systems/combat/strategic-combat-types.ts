@@ -87,6 +87,7 @@ export interface StrategicCombatantSetup {
   readonly id: string;
   readonly name: string;
   readonly shipId: string;
+  readonly nominalLengthMeters?: number;
   readonly shieldHp: number;
   readonly shieldGeometry?: CombatShieldGeometry;
   readonly hullHp: number;

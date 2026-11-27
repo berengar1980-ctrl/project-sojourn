@@ -93,6 +93,7 @@ export function duelCombatant(
     id: 'duelist-' + index,
     name: 'Spieler ' + (index + 1) + ' · ' + ship.name,
     shipId: ship.id,
+    nominalLengthMeters: ship.nominalLengthMeters,
     shieldHp: shipShieldMaxHp(ship) + componentShieldBonus(installed),
     shieldGeometry: createCombatShieldGeometry(points, ship.nominalLengthMeters),
     hullHp: shipHullMaxHp(ship, componentHullBonus(installed)),

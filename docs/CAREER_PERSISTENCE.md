@@ -1620,3 +1620,6 @@ nicht angenommene Mengen gehen in den bestehenden Reservepool zurück.
 
 Tankkapazität und Verbrauch werden aus der aufgelösten Schiffsdefinition
 abgeleitet; bestehende Tank- und Schadensdaten bleiben im bisherigen Checkpoint.
+
+Kampfaufbauten erhalten die nominelle Rumpflänge aus der Schiffsdefinition;
+diese wird wie der übrige Setup beim Laden neu abgeleitet, nicht gespeichert.

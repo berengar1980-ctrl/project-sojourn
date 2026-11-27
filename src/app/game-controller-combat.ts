@@ -37,6 +37,7 @@ export function createPlayerCombatant(
     id: 'player',
     name: ship.name,
     shipId: ship.id,
+    nominalLengthMeters: ship.nominalLengthMeters,
     shieldHp: runtime.shieldMaxHp,
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: runtime.hullMaxHp,
