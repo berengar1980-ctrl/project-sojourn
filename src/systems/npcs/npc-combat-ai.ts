@@ -30,11 +30,8 @@ export function npcDefenseReaction(npc: SectorNpcState): NpcDefenseReaction {
 }
 
 export function npcAvailableForCombat(npc: SectorNpcState, allowEngaged = false): boolean {
-  return (
-    npc.hullHp > 0 &&
-    (allowEngaged || !npc.combatMovement) &&
-    (npc.combatRecoverySeconds ?? 0) <= 0
-  );
+  const recovered = (npc.combatRecoverySeconds ?? 0) <= 0;
+  return npc.hullHp > 0 && (allowEngaged || !npc.combatMovement) && recovered;
 }
 
 export function npcMayInitiateAttack(npc: SectorNpcState): boolean {
@@ -52,11 +49,8 @@ export function npcLooksHostileToPatrol(npc: SectorNpcState): boolean {
 }
 
 export function npcIsPiratePrey(npc: SectorNpcState): boolean {
-  return (
-    npcAvailableForCombat(npc) &&
-    !npc.pirate &&
-    (npc.job === 'freighter' || npc.job === 'miner' || npc.job === 'salvager')
-  );
+  const civilianWorker = npc.job === 'freighter' || npc.job === 'miner' || npc.job === 'salvager';
+  return npcAvailableForCombat(npc) && !npc.pirate && civilianWorker;
 }
 
 /** Hostile pirate outfits can encounter and attack one another on the sector map. */
