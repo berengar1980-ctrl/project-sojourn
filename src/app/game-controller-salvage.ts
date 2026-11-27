@@ -268,7 +268,6 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     (duel) => duel.arena.backdropSeed === context.field.seed
   );
   const fieldCombat = combat ?? duels[0];
-  const playerBody = service.getSnapshot().ship;
   if (fieldCombat) syncSalvageCombatField(context.field, fieldCombat);
   tickSalvageTraffic(context, deltaSeconds, combat, duels);
   if (combat) {

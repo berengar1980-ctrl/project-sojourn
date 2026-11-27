@@ -1560,3 +1560,8 @@ nur die momentane Position; sie ist keine zweite Bewegungsautorität.
 Die Segmentprojektion für bestehende zivile und taktische Routen sowie
 Drohnen-Sensorstrahlen ist eine zustandslose Core-Funktion. Die bisherigen
 Kurze-Segment-Regeln und Kontaktgrenzen bleiben bei den jeweiligen Aufrufern.
+
+Gemischte Schiffskontakte erhalten einen flüchtigen Korrektur-Handle auf
+die lebende Feldpose. Der Feldbesitzer validiert ID, aktuelle Pose und
+Kampfzustand vor der Positions- und Geschwindigkeitskorrektur. Der Handle
+wird nicht gespeichert; die existierende Feldposition bleibt maßgeblich.

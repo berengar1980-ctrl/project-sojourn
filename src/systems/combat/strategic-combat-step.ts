@@ -137,7 +137,8 @@ function advanceCombatContacts(
     resolveCombatBystanderContacts(
       runtimeCombatant(runtime, side),
       bystanders,
-      contacts?.resolveFleetBystander
+      contacts?.resolveFleetBystander,
+      contacts?.claimHullContact
     );
   }
   for (const side of sides) resolveArenaObstacles(runtimeCombatant(runtime, side), runtime.arena);

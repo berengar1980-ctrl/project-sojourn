@@ -26,6 +26,7 @@ interface SalvageNpcRuntimeOptions {
   readonly npcEconomy: NpcEconomyService;
   readonly economy?: SalvageEconomyService;
   readonly ship?: ShipDefinition;
+  readonly isCombatActive?: () => boolean;
   readonly wreckClaims: WreckClaimRegistry;
   readonly getCurrentDay: () => number;
 }
@@ -33,7 +34,9 @@ interface SalvageNpcRuntimeOptions {
 interface SharedSalvageRuntime {
   readonly runtime: NpcLocalSalvageService;
   readonly binding: {
-    player: { ship: ShipDefinition; service: SalvageLocalSpaceService } | undefined;
+    player:
+      | { ship: ShipDefinition; service: SalvageLocalSpaceService; fixed: () => boolean }
+      | undefined;
     sceneTraffic: FieldTrafficSource | undefined;
     backgroundTraffic: FieldTrafficSource | undefined;
   };
@@ -71,7 +74,10 @@ export function createNpcSalvageRuntime(
   service?: SalvageLocalSpaceService
 ): NpcLocalSalvageService {
   const existing = runtimes.get(field);
-  const player = service && options.ship ? { ship: options.ship, service } : undefined;
+  const player =
+    service && options.ship
+      ? { ship: options.ship, service, fixed: () => Boolean(options.isCombatActive?.()) }
+      : undefined;
   if (existing) {
     if (player) existing.binding.player = player;
     return existing.runtime;
@@ -138,7 +144,11 @@ export function createNpcSalvageRuntime(
         (binding.sceneTraffic ?? binding.backgroundTraffic)?.(add);
       },
       activePlayer
-        ? { ship: activePlayer.ship, pose: activePlayer.service.getSnapshot().ship }
+        ? {
+            ship: activePlayer.ship,
+            pose: activePlayer.service.getSnapshot().ship,
+            fixed: activePlayer.fixed(),
+          }
         : undefined,
       field
     );

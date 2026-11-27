@@ -3,7 +3,11 @@ import type { LocalShipState } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
 import { contactAxis, rotatePoint as rotate } from '../../core/field-geometry';
-import { shieldWorldCenter, shipShieldGeometry } from '../../core/ship-contact-geometry';
+import {
+  shieldWorldCenter,
+  shipShieldGeometry,
+  weightedContactSeparation,
+} from '../../core/ship-contact-geometry';
 
 export interface LocalShieldShipBody {
   readonly id: string;
@@ -84,9 +88,11 @@ export function resolveShipShieldCollisions(
       const overlap = required - distance + 0.5;
       const firstWeight = Math.max(0.05, first.pushWeight ?? 1);
       const secondWeight = Math.max(0.05, second.pushWeight ?? 1);
-      const totalWeight = firstWeight + secondWeight;
-      const firstMove = overlap * (secondWeight / totalWeight);
-      const secondMove = overlap * (firstWeight / totalWeight);
+      const { first: firstMove, second: secondMove } = weightedContactSeparation(
+        overlap,
+        firstWeight,
+        secondWeight
+      );
 
       first.state.position = {
         x: first.state.position.x - normal.x * firstMove,

@@ -2143,3 +2143,10 @@ bleiben in FleetCombat von der neutralen Liste ausgeschlossen.
 **Keine Statusänderung** der Feature-IDs. Identische Segmentprojektion
 wird von den bestehenden zivilen, taktischen und Drohnen-Planern verwendet;
 Routenwahl, Abstände, Zeitintervalle und Sensorregeln bleiben unverändert.
+
+**Keine Statusänderung** der Feature-IDs. Kampfschiff-zu-Feldschiff-Kontakte
+verteilen die Korrektur nach gemeinsamer gewichteter Kontaktgeometrie.
+Der Feldbesitzer prüft die aktuelle Zuständigkeit, die Fleet-Kontaktliste
+verhindert doppelte Paare innerhalb des Flottenschritts. Ungebundene
+Test-/Standalone-Hindernisse bleiben unveränderliche Kollisionspartner.
+Keine neue Schadensregel oder Änderung der aktiven Duellphysik.

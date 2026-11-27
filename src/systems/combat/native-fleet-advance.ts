@@ -63,10 +63,11 @@ export function neutralFleetBlocker(
 ): StrategicCombatObstacle {
   const configured = radiusById.get(ship.id);
   const definition = getShipDefinition(ship.shipId);
+  const pose = ship.fieldContact?.pose ?? ship;
   const footprint =
     configured === undefined && definition
-      ? shipShieldFootprint(definition, ship.position, ship.headingRadians)
-      : { position: ship.position, radius: configured ?? 30 };
+      ? shipShieldFootprint(definition, pose.position, pose.headingRadians)
+      : { position: pose.position, radius: configured ?? 30 };
   return { id: 'ship:' + ship.id, ...footprint };
 }
 
@@ -177,7 +178,6 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   stepWorld(frame);
   const actorIds = new Set(actors.map((actor) => actor.setup.id));
   const neutralBystanders = bystanders.filter((ship) => !actorIds.has(ship.id));
-  const bystanderBlockers = neutralBystanders.map((ship) => neutralFleetBlocker(ship, radiusById));
   const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
   for (const id of escaped) escapedRecords.add(id);
   frame.boarding.resolve(elapsed, true);
@@ -209,7 +209,7 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     blockers.push(
       ...baseObstacles,
       ...wreckBlockers,
-      ...bystanderBlockers.filter((ship) => !duelIds.has(ship.id.slice('ship:'.length))),
+      ...neutralBystanders.map((ship) => neutralFleetBlocker(ship, radiusById)),
       ...others.map((ship) => ({
         id: 'ship:' + ship.id,
         position: ship.position,
