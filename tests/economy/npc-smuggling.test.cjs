@@ -107,8 +107,47 @@ assert(
   'combat must use the shared pirate interception policy'
 );
 assert(
-  interceptionPolicy.includes('civilian.smugglingProtectionFaction !== pirate.factionId'),
-  'pirates must still honor existing smuggler protection agreements'
+  interceptionPolicy.includes('protectedFromPirate(pirate, civilian)'),
+  'interception must delegate to the shared protection policy'
+);
+const { canRaidCivilianCargo } = load('src/systems/combat/pirate-interception-policy.ts');
+const protectedFreighter = {
+  ...trader,
+  cargo: { 'stolen-data': 4 },
+  autonomy: { phase: 'working' },
+};
+const position = { x: 0, y: 0 };
+assert(allied.length > 0 && rival.length > 0);
+for (const pirate of allied) {
+  assert.equal(
+    canRaidCivilianCargo(undefined, pirate, protectedFreighter, position),
+    false,
+    'pirates must honor existing smuggler protection agreements'
+  );
+  const { factionId, ...markedPirate } = pirate;
+  markedPirate.pirateMark = factionId === 'pirates2' ? 'black-tide' : 'broken-spear';
+  assert.equal(
+    canRaidCivilianCargo(undefined, markedPirate, protectedFreighter, position),
+    false,
+    'legacy pirate marks must honor the same agreement'
+  );
+}
+for (const pirate of rival) {
+  assert.equal(
+    canRaidCivilianCargo(undefined, pirate, protectedFreighter, position),
+    true,
+    'protection must not extend to rival pirate factions'
+  );
+}
+assert.equal(
+  canRaidCivilianCargo(
+    undefined,
+    allied[0],
+    { ...protectedFreighter, smugglingProtectionFaction: undefined },
+    position
+  ),
+  true,
+  'unprotected loaded workers remain valid raid targets'
 );
 assert(events.includes('showUnderworldContactNotice(context.root)'));
 assert(events.includes('hiddenHoldIntelContacted = true'));
