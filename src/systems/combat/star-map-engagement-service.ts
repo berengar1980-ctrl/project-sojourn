@@ -312,6 +312,7 @@ function beginBackgroundCombat(
     combat: fleet.combat,
     fleet,
   });
+  runtime.options.onNpcFleetStarted?.();
   runtime.npcChases.delete(attacker.id);
   runtime.options.log(
     'NPC COMBAT > KONTAKT · ' + attacker.name.toUpperCase() + ' VS ' + defender.name.toUpperCase()

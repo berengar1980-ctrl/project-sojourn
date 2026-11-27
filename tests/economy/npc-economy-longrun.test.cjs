@@ -90,6 +90,9 @@ const population = createNpcPopulationService(ships, markets, (id, units) => {
   const pool = physical.pools[id];
   if (pool) pool.recordedLosses += units;
 });
+const { createNpcLossAudit } = require('./npc-loss-audit.cjs');
+const lossAudit = createNpcLossAudit(ships);
+lossAudit.observePopulation(population);
 const sector = createNpcSectorService(narrowsSector, ships, { markets, population });
 const positions = {};
 for (const location of narrowsSector.locations) {
@@ -138,17 +141,28 @@ const economy = createNpcEconomyService(markets, physical, economyResources, shi
 
 const { createIntegratedFieldAudit } = require('./integrated-field-audit.cjs');
 const fieldAudit = integrated
-  ? createIntegratedFieldAudit(load, narrowsSector, physical, economy, sector, player, profile)
+  ? createIntegratedFieldAudit(
+      load,
+      narrowsSector,
+      physical,
+      economy,
+      sector,
+      player,
+      lossAudit,
+      profile
+    )
   : null;
 
 const combatStats = {
   encounters: 0,
   resolved: 0,
+  contactLogMessages: 0,
+  otherCombatLogMessages: 0,
 };
 const combatLog = (message) => {
-  if (message.startsWith('NPC COMBAT > KONTAKT')) combatStats.encounters += 1;
+  if (message.startsWith('NPC COMBAT > KONTAKT')) combatStats.contactLogMessages += 1;
   else if (message.startsWith('NPC COMBAT > ') && !message.includes('VERFOLGT')) {
-    combatStats.resolved += 1;
+    combatStats.otherCombatLogMessages += 1;
   }
 };
 const engagements = createStarMapEngagementService({
@@ -166,6 +180,8 @@ const engagements = createStarMapEngagementService({
     throw new Error('Player combat is excluded from this NPC-only audit');
   },
   log: combatLog,
+  onNpcFleetStarted: () => combatStats.encounters++,
+  onNpcFleetFinished: () => combatStats.resolved++,
   ...(fieldAudit ? { onNpcCombatEnded: fieldAudit.combatEnded, ...fieldAudit.hooks } : {}),
 });
 
@@ -237,6 +253,7 @@ function workerStatus(ship) {
 }
 
 function printReport(elapsedDays) {
+  const losses = fieldAudit ? fieldAudit.lossReport(population) : lossAudit.report(population);
   const roles = ['freighter', 'miner', 'salvager', 'patrol', 'pirate'];
   const report = [];
   for (const role of roles) {
@@ -259,7 +276,8 @@ function printReport(elapsedDays) {
       civilianOperatingExpenses: sum((ship) => ship.civilianOperatingExpenses ?? 0),
       hullUpgrades: sum((ship) => ship.hullUpgradeCount ?? 0),
       replacements: sum((ship) => ship.replacementGeneration ?? 0),
-      defeats: sum((ship) => ship.combatDefeats ?? 0),
+      defeats: losses.lossesByRole[role] ?? 0,
+      currentGenerationDefeats: sum((ship) => ship.combatDefeats ?? 0),
       smugglingFines: sum((ship) => ship.smugglingFinesPaid ?? 0),
       smugglingConfiscated: sum((ship) => ship.smugglingConfiscated ?? 0),
       smugglingProtectionFees: sum((ship) => ship.smugglingProtectionFees ?? 0),
@@ -277,7 +295,17 @@ function printReport(elapsedDays) {
       automaticCombat: true,
       integratedFields: integrated,
       secondsPerDay,
-      ...(fieldAudit ? { fieldActivity: { ...fieldAudit.stats } } : {}),
+      ...(fieldAudit
+        ? {
+            fieldActivity: {
+              ...fieldAudit.stats,
+              combatWrecksCreated: losses.uniqueWrecks,
+              combatWrecksExpired: losses.removedWrecks,
+              combatWrecksActive: losses.activeWrecks,
+            },
+          }
+        : {}),
+      lossAudit: losses,
       combat: combatStats,
       smuggling: smuggling.stats,
       population: {

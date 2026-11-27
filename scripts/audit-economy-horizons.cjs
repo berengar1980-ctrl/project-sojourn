@@ -43,6 +43,7 @@ for (const days of horizons) {
       combat: summary.combat,
       smuggling: summary.smuggling,
       population: summary.population,
+      lossAudit: summary.lossAudit,
       hullUpgrades: summary.report.reduce((sum, group) => sum + group.hullUpgrades, 0),
       completedLegs: summary.report.reduce((sum, group) => sum + group.completedLegs, 0),
       resourceBalance: summary.resourceBalance,
@@ -113,6 +114,15 @@ for (const report of integratedReports) {
   assert(combatWrecksCreated > 0, 'integrated combat must create wrecks');
   assert(combatWrecksExpired > 0, 'integrated combat wrecks must be removed');
   assert(combatWrecksExpired <= combatWrecksCreated, 'cannot remove more wrecks than created');
+  assert.equal(
+    combatWrecksCreated,
+    combatWrecksExpired + report.fieldActivity.combatWrecksActive,
+    'unique wreck lifecycle must reconcile'
+  );
+  assert.equal(
+    report.lossAudit.scheduledLosses,
+    report.population.replacementCount + report.population.outstanding
+  );
   console.log(JSON.stringify({ ...report, unexplainedResources: discrepancies }));
 }
 assert(integratedReports[2].fieldActivity.minedUnits > 0);

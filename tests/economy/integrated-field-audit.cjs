@@ -38,6 +38,7 @@ function createIntegratedFieldAudit(
   npcs,
   sector,
   player,
+  lossAudit,
   profile = (_name, work) => work
 ) {
   const { salvageStockId } = load('src/systems/salvage/salvage-stock-id.ts');
@@ -98,8 +99,6 @@ function createIntegratedFieldAudit(
   const stats = {
     minedUnits: 0,
     recoveredUnits: 0,
-    combatWrecksCreated: 0,
-    combatWrecksExpired: 0,
     miningSitesByNpc: {},
     salvageSitesByNpc: {},
     miningFields: miningLocations.length,
@@ -122,7 +121,7 @@ function createIntegratedFieldAudit(
     events,
     balanceDailyAsteroids,
     fields,
-    world,
+    lossAudit,
     tickEvents,
     tickMining,
     tickSalvage,
@@ -141,7 +140,7 @@ function createFieldAuditCallbacks({
   events,
   balanceDailyAsteroids,
   fields,
-  world,
+  lossAudit,
   tickEvents,
   tickMining,
   tickSalvage,
@@ -151,9 +150,25 @@ function createFieldAuditCallbacks({
   salvageStockId,
   stocks,
 }) {
+  const recordLosses = (snapshot, locationId, losses) => {
+    const created = recordCareerCombatWrecks(context, snapshot, locationId, losses);
+    for (const wreck of created) {
+      const registered = fields.combatWrecks(locationId);
+      assert(registered.includes(wreck), 'creation and expiry must share the same field world');
+    }
+    lossAudit.observeWrecks(losses, created, locationId);
+  };
   return {
     stats,
-    hooks: bridge.fieldEngagementHooks(() => context),
+    hooks: {
+      ...bridge.fieldEngagementHooks(() => context),
+      onFieldFleetLosses(snapshot, losses, locationId) {
+        recordLosses(snapshot, locationId, losses);
+      },
+    },
+    lossReport(population) {
+      return lossAudit.report(population, (locationId) => fields.combatWrecks(locationId));
+    },
     bindEngagements(engagements) {
       context.engagements = engagements;
     },
@@ -166,20 +181,11 @@ function createFieldAuditCallbacks({
     },
     tick(dt) {
       tickEvents();
-      const count = () =>
-        world.locations.reduce((sum, location) => sum + fields.combatWrecks(location.id).length, 0);
-      const before = count();
       tickMining(dt);
       tickSalvage(dt);
-      stats.combatWrecksExpired += Math.max(0, before - count());
     },
     combatEnded(snapshot, attacker) {
-      const created = recordCareerCombatWrecks(context, snapshot, attacker.locationId);
-      for (const wreck of created) {
-        const registered = fields.combatWrecks(attacker.locationId);
-        assert(registered.includes(wreck), 'creation and expiry must share the same field world');
-      }
-      stats.combatWrecksCreated += created.length;
+      recordLosses(snapshot, attacker.locationId, [snapshot.attacker, snapshot.defender]);
     },
     validate() {
       validateFieldStocks(fields, physical, salvageLocations, context, salvageStockId, stocks);

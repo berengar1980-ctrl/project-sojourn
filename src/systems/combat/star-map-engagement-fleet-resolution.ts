@@ -205,6 +205,7 @@ export function resolveBackgroundCombats(runtime: EngagementRuntime, deltaSecond
       releaseNpc(runtime, entry.fleet, npc, 'Nach Gefecht');
     }
     runtime.backgroundCombats.delete(key);
+    runtime.options.onNpcFleetFinished?.();
     runtime.options.log('NPC COMBAT > ' + model.lastEvent.toUpperCase());
   }
 }
