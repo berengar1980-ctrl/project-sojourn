@@ -1,15 +1,7 @@
 import type { DistressActionResult, SectorSalvageEvent } from '../../core/salvage-types';
 import type { WorldLocation, WorldMap, WorldPoint } from '../../core/world-types';
 
-export function randomFrom(seed: number): () => number {
-  let state = seed >>> 0 || 1;
-  return () => {
-    state ^= state << 13;
-    state ^= state >>> 17;
-    state ^= state << 5;
-    return (state >>> 0) / 4294967296;
-  };
-}
+export { createXorshiftRandom as randomFrom } from '../../core/seeded-random';
 
 export function clampPoint(world: WorldMap, point: WorldPoint): WorldPoint {
   return {

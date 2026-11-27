@@ -46,6 +46,29 @@ const { isServicedPort } = load('src/core/port-service-policy.ts');
 assert(isServicedPort({ kind: 'station', activities: { dock: true } }));
 assert(!isServicedPort({ kind: 'wreck', activities: { dock: true } }));
 
+const { createLcgRandom, createXorshiftRandom, createMulberryRandom } = load(
+  'src/core/seeded-random.ts'
+);
+const createLcgRandomSample = createLcgRandom(0);
+assert.deepEqual(
+  Array.from({ length: 4 }, () => createLcgRandomSample() * 4294967296),
+  [1013904223, 1196435762, 3519870697, 2868466484]
+);
+const createXorshiftRandomSample = createXorshiftRandom(0);
+assert.deepEqual(
+  Array.from({ length: 4 }, () => createXorshiftRandomSample() * 4294967296),
+  [270369, 67634689, 2647435461, 307599695]
+);
+const createMulberryRandomSample = createMulberryRandom(0);
+assert.deepEqual(
+  Array.from({ length: 4 }, () => createMulberryRandomSample() * 4294967296),
+  [1144304738, 1416247, 958946056, 627933444]
+);
+const { clamp } = load('src/core/numeric-geometry.ts');
+assert.equal(clamp(-1, 0, 1), 0);
+assert.equal(clamp(0.5, 0, 1), 0.5);
+assert.equal(clamp(2, 0, 1), 1);
+
 const rotated = rotatePoint({ x: 10, y: 0 }, Math.PI / 2);
 assert(Math.abs(rotated.x) < 1e-10);
 assert.equal(rotated.y, 10);

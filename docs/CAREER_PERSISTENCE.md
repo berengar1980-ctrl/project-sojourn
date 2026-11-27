@@ -1608,3 +1608,6 @@ prüft weiterhin alle Kontakte. Keine Änderung des Checkpointformats.
 Die gemeinsamen mathematischen, Handels-, Treibstoff- und Arbeiterfunktionen
 besitzen keinen unabhängigen Zustand. Vorhandene Cargo-, Markt-, Schiffs- und
 NPC-Checkpoints bleiben autoritativ; keine Änderung des Save-Schemas.
+
+Die Zufallsgeneratoren bleiben pro Aufruf instanziiert; ihre bisherigen Seeds
+und Wiederherstellungsverfahren bleiben erhalten. Keine neuen persistenten Daten.

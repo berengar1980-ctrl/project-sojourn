@@ -2205,3 +2205,6 @@ Routenstrategien und bestehende Zufallsfolgen bleiben unverändert.
 Ressourcenbilanz, Mining, Bergung und Piratenverkauf; gemeinsame lokale
 Arbeiterbewegung, Ereignis-Risikowahl, Port-Servicefähigkeit und Tankpreis-
 Berechnung. Bestehende Rollenparameter, Gebühren und Routen bleiben erhalten.
+
+Gemeinsame reine Zufalls- und Clamp-Funktionen ohne Änderung der Algorithmen,
+Seeds, Aufrufreihenfolgen oder Feature-IDs.

@@ -30,21 +30,11 @@ export const DEFAULT_TURN_RATE = 0.72;
 
 export const DEFAULT_ACCELERATION = 34;
 
-export function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.max(minimum, Math.min(maximum, value));
-}
+export { clamp } from '../../core/numeric-geometry';
 
 export { stableHash as hashSeed } from '../../core/stable-hash';
 
-export function createRng(seed: number): () => number {
-  let state = seed >>> 0 || 1;
-  return () => {
-    state ^= state << 13;
-    state ^= state >>> 17;
-    state ^= state << 5;
-    return (state >>> 0) / 4294967296;
-  };
-}
+export { createXorshiftRandom as createRng } from '../../core/seeded-random';
 
 export { distance } from '../../core/field-geometry';
 

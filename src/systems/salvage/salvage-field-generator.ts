@@ -1,3 +1,4 @@
+import { createMulberryRandom as createRandom } from '../../core/seeded-random';
 import { COMBAT_MAP_WIDTH, COMBAT_MAP_HEIGHT } from '../../core/combat-map-dimensions';
 import type {
   SalvageField,
@@ -16,17 +17,6 @@ import { seededLocalGate } from '../../core/local-space-exit';
 const COMMON_RESOURCES = ['steel', 'composite-plate', 'machine-parts'] as const;
 const GOOD_RESOURCES = ['electronics', 'ship-parts', 'industrial-ceramics'] as const;
 const PREMIUM_RESOURCES = ['reactor-parts', 'processor-modules', 'rare-tech'] as const;
-
-function createRandom(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let value = state;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 function qualityFromRoll(roll: number, dangerLevel: number): SalvageWreckQuality {
   const adjusted = roll + Math.max(0, dangerLevel) * 0.08;
