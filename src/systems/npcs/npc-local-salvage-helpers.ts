@@ -15,10 +15,7 @@ export const BASE_CYCLE_SECONDS = 1.4;
 export { stableHash as hashId } from '../../core/stable-hash';
 
 export function eligible(npc: SectorNpcState, locationId: string): boolean {
-  return (
-    npcOperationalRoleAllowed(npc, 'salvage') &&
-    workerAtAssignment(npc, locationId)
-  );
+  return npcOperationalRoleAllowed(npc, 'salvage') && workerAtAssignment(npc, locationId);
 }
 
 export function wreckRemaining(wreck: SalvageWreck): number {
