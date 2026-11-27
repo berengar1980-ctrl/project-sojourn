@@ -1,9 +1,10 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
-import { pointToSegmentDistanceSquared, rotatePoint } from '../../core/field-geometry';
+import { pointToSegmentDistanceSquared, rotatePoint, squaredDistance } from '../../core/field-geometry';
 import { shieldWorldCenter, shipShieldGeometry } from '../../core/ship-contact-geometry';
 import type { FieldRouteObstacle } from './field-ship-routing';
+import { planPointRoute, type PointRoutePlanningOptions } from '../local-space/local-space-navigation';
 
 /** Navigation only. The real ship remains owned by its normal physics service. */
 export function shipTrafficObstacle(
@@ -132,4 +133,54 @@ export function trafficStepClear(
   return obstacles.every((obstacle) =>
     trafficContactAllowsStep(from, to, seconds, clearance, obstacle)
   );
+}
+
+export function trafficDestinationOccupied(
+  target: WorldPoint,
+  obstacles: readonly FieldRouteObstacle[],
+  clearance: number
+): boolean {
+  return obstacles.some(
+    (obstacle) =>
+      obstacle.velocity &&
+      squaredDistance(target, obstacle.position) < (obstacle.radius + clearance) ** 2
+  );
+}
+
+function stationaryTrafficBlocksLeg(
+  start: WorldPoint,
+  target: WorldPoint,
+  obstacle: FieldRouteObstacle,
+  clearance: number
+): boolean {
+  if (!obstacle.velocity || Math.hypot(obstacle.velocity.x, obstacle.velocity.y) >= 1)
+    return false;
+  const radiusSquared = (obstacle.radius + clearance) ** 2;
+  // Let the existing collision solver and route step handle separation.
+  if (squaredDistance(start, obstacle.position) < radiusSquared) return false;
+  return pointToSegmentDistanceSquared(obstacle.position, start, target) < radiusSquared;
+}
+
+/** Replan only for a stationary obstruction of the next leg, not passing traffic. */
+export function reviewFieldTrafficRoute(
+  options: Omit<PointRoutePlanningOptions, 'target'>,
+  route: readonly WorldPoint[],
+  index: number,
+  obstacles: readonly FieldRouteObstacle[]
+): { readonly route: readonly WorldPoint[]; readonly index: number } {
+  const waypoint = route[index];
+  const destination = route[route.length - 1];
+  if (!waypoint || !destination) return { route, index };
+  const blocked = obstacles.some((obstacle) =>
+    stationaryTrafficBlocksLeg(options.start, waypoint, obstacle, options.clearance)
+  );
+  if (!blocked || trafficDestinationOccupied(destination, obstacles, options.clearance))
+    return { route, index };
+  const detour = planPointRoute({
+    ...options,
+    target: destination,
+    asteroids: [...options.asteroids, ...trafficRouteBodies(obstacles)],
+  });
+  if (detour.compromised || detour.route.length < 2) return { route, index };
+  return { route: detour.route, index: 1 };
 }

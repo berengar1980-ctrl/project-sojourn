@@ -1521,3 +1521,8 @@ Vorausschauende zivile Verkehrsprüfung verwendet nur die vorhandene
 Route, Position und abgeleitete Geschwindigkeit. Ein wartendes Schiff
 behält seinen gespeicherten Routenindex; kein neuer Timer, kein zweiter
 Physikschritt und keine Änderung des Speicherformats.
+
+Zivile Routen werden bei dauerhaftem Verkehrshindernis mit dem bestehenden
+Routenplaner überprüft. Die Überprüfung der Spielerrouten ist wie die
+bestehende Gefahrenprüfung flüchtig; NPC-Routen behalten ihre bisherigen
+Checkpoint-Felder. Kein neuer persistenter Zustand.

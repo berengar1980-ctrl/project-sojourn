@@ -5,6 +5,7 @@ import {
   createInitialSalvageShip,
   distressDiagnosisInRange,
   planSalvageRoute,
+  reviewSalvageTrafficRoute,
   salvageWorkInRange,
   workPoint,
 } from './salvage-work-navigation';
@@ -53,6 +54,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   private navigationTarget: WorldPoint | null = null;
   private navigationRoute: readonly WorldPoint[] = [];
   private routeIndex = 0;
+  private trafficReviewElapsed = 0;
   private elapsed = 0;
   private approachPurpose: ApproachPurpose | null = null;
   private lastRecovery: SalvageLocalSpaceSnapshot['lastRecovery'] = null;
@@ -321,9 +323,26 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.options.shipLengthMeters ?? 70
     );
     this.routeIndex = 1;
+    this.trafficReviewElapsed = 0;
+  }
+
+  private reviewTraffic(deltaSeconds: number): void {
+    this.trafficReviewElapsed += deltaSeconds;
+    if (this.trafficReviewElapsed < 0.65) return;
+    this.trafficReviewElapsed = 0;
+    const result = reviewSalvageTrafficRoute(
+      this.options.field,
+      this.ship.position,
+      this.navigationRoute,
+      this.routeIndex,
+      this.options.shipLengthMeters ?? 70
+    );
+    this.navigationRoute = result.route;
+    this.routeIndex = result.index;
   }
 
   private updateRoute(deltaSeconds: number): void {
+    this.reviewTraffic(deltaSeconds);
     const result = advanceAutopilotRoute(
       this.ship,
       this.navigationRoute,

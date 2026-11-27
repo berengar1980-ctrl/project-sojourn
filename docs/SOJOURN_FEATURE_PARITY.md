@@ -2102,3 +2102,8 @@ Schild- und Hüllenkontakt bleiben unterschiedliche Spielregeln.
 bei ziviler Routenfahrt auf einen kurzen relativen Kollisionskurs geprüft.
 Ein sicheres Warten behält den vorhandenen Routenplan. Das aktive
 Kampfflugverhalten bleibt unverändert; Verkehrsdurchsatz ist zu prüfen.
+
+**Keine Statusänderung** der Feature-IDs. Blockierte zivile Ziele lösen
+keine wiederholte vollständige Gittersuche aus. Spielerrouten können bei
+stationärem Verkehr mit dem vorhandenen Planer einen Umweg erhalten;
+bewegter Querverkehr verwendet die kurze Vorhersage und Warteentscheidung.

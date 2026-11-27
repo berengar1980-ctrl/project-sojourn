@@ -5,7 +5,11 @@ import type { SalvageField, SalvageWreck } from '../../core/salvage-types';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { routeAroundDistressShip } from './distress-navigation';
 import { salvageFieldPhysicsBodies } from './salvage-container-motion';
-import { fieldTrafficObstacles, trafficRouteBodies } from '../navigation/field-traffic-obstacles';
+import {
+  fieldTrafficObstacles,
+  reviewFieldTrafficRoute,
+  trafficRouteBodies,
+} from '../navigation/field-traffic-obstacles';
 
 export const WORK_STANDOFF = 105;
 export const DISTRESS_DIAGNOSIS_STANDOFF = 70;
@@ -68,6 +72,30 @@ export function planSalvageRoute(
     width: field.width,
     height: field.height,
   }).route;
+}
+
+export function reviewSalvageTrafficRoute(
+  field: SalvageField,
+  from: WorldPoint,
+  route: readonly WorldPoint[],
+  index: number,
+  shipLengthMeters: number
+): { readonly route: readonly WorldPoint[]; readonly index: number } {
+  // Keep the specialized distress-ship approach geometry.
+  if (field.wrecks.some((wreck) => wreck.id.startsWith('event-wreck-salvage-distress-')))
+    return { route, index };
+  return reviewFieldTrafficRoute(
+    {
+      start: from,
+      asteroids: salvageFieldPhysicsBodies(field),
+      clearance: Math.max(32, shipLengthMeters * 0.46),
+      width: field.width,
+      height: field.height,
+    },
+    route,
+    index,
+    fieldTrafficObstacles(field, 'player')
+  );
 }
 
 export function createInitialSalvageShip(field: SalvageField): LocalShipState {

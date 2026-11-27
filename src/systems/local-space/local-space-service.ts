@@ -95,7 +95,8 @@ class LocalSpaceRuntime implements LocalSpaceService {
       options.hazardCrew ?? { piloting: 0, sensors: 0 },
       options.avoidanceRandom ?? Math.random,
       options.onNavigationNotice ?? (() => {}),
-      options.additionalObstacles
+      options.additionalObstacles,
+      options.getTrafficObstacles
     );
     this.stationKeepingPosition = { ...options.instance.ship.position };
     this.idleStationKeeping = createIdleStationKeepingState(

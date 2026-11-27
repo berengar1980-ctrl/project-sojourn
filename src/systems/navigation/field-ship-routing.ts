@@ -3,7 +3,7 @@ import type { WorldPoint } from '../../core/world-types';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
-import { trafficStepClear } from './field-traffic-obstacles';
+import { trafficDestinationOccupied, trafficStepClear } from './field-traffic-obstacles';
 
 export interface FieldRouteObstacle {
   readonly id: string;
@@ -117,6 +117,8 @@ export function fieldRouteTarget(
   }
   const current = ship.routeState;
   if (!current || distance(current.target, target) > 1 || current.index >= current.points.length) {
+    // An occupied destination cannot be solved by repeated full-field searches.
+    if (trafficDestinationOccupied(target, obstacles, clearance)) return null;
     const points = measurePerformance('sim.field.route-search', () =>
       makeRoute(ship.position, target, obstacles, clearance, mode)
     );
