@@ -89,6 +89,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
     );
   };
   private syncArrivals = (): void => {
+    const { initialPosition, getTrafficObstacles } = this.options;
     const active = new Set(this.ships.map((ship) => ship.npcId));
     for (const npc of this.options.salvagers) {
       if (this.byId.get(npc.id) !== npc) {
@@ -104,10 +105,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
         this.options.field.height,
         this.options.field.seed
       );
-      const explicit = this.options.initialPosition?.(npc.id);
+      const explicit = initialPosition?.(npc.id);
       if (
         !explicit &&
-        !workerGateAvailable(npc.id, npc.shipId, entry, this.ships, this.options.getTrafficObstacles)
+        !workerGateAvailable(npc.id, npc.shipId, entry, this.ships, getTrafficObstacles)
       )
         continue;
       this.ships.push({
@@ -116,7 +117,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
         shipId: npc.shipId,
         position: { ...(explicit ?? entry) },
         headingRadians: 0,
-        speed: explicit || !this.options.getTrafficObstacles ? localCruiseSpeed(npc) : 0,
+        speed: explicit || !getTrafficObstacles ? localCruiseSpeed(npc) : 0,
         phase:
           cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) ? 'exiting' : 'entering',
         targetWreckId: null,

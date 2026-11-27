@@ -84,7 +84,13 @@ function syncArrivals(runtime: MinerRuntime): void {
       runtime.combatReturnPositions.get(npc.id) ?? runtime.options.initialPosition?.(npc.id);
     if (
       !explicit &&
-      !workerGateAvailable(npc.id, npc.shipId, entry, runtime.ships, runtime.options.getTrafficObstacles)
+      !workerGateAvailable(
+        npc.id,
+        npc.shipId,
+        entry,
+        runtime.ships,
+        runtime.options.getTrafficObstacles
+      )
     )
       continue;
     const spawn = explicit ?? entry;

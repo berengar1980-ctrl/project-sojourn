@@ -15,9 +15,7 @@ interface WorkerPose {
 }
 
 function footprintsOverlap(first: FieldRouteObstacle, second: FieldRouteObstacle): boolean {
-  return (
-    squaredDistance(first.position, second.position) < (first.radius + second.radius + 2) ** 2
-  );
+  return squaredDistance(first.position, second.position) < (first.radius + second.radius + 2) ** 2;
 }
 
 /** Hold ordinary arrivals outside the local field until the shared gate is free.

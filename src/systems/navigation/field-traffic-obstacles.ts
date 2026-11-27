@@ -1,10 +1,17 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { WorldPoint } from '../../core/world-types';
-import { pointToSegmentDistanceSquared, rotatePoint, squaredDistance } from '../../core/field-geometry';
+import {
+  pointToSegmentDistanceSquared,
+  rotatePoint,
+  squaredDistance,
+} from '../../core/field-geometry';
 import { shieldWorldCenter, shipShieldGeometry } from '../../core/ship-contact-geometry';
 import type { FieldRouteObstacle } from './field-ship-routing';
-import { planPointRoute, type PointRoutePlanningOptions } from '../local-space/local-space-navigation';
+import {
+  planPointRoute,
+  type PointRoutePlanningOptions,
+} from '../local-space/local-space-navigation';
 
 /** Navigation only. The real ship remains owned by its normal physics service. */
 export function shipTrafficObstacle(
@@ -153,8 +160,7 @@ function stationaryTrafficBlocksLeg(
   obstacle: FieldRouteObstacle,
   clearance: number
 ): boolean {
-  if (!obstacle.velocity || Math.hypot(obstacle.velocity.x, obstacle.velocity.y) >= 1)
-    return false;
+  if (!obstacle.velocity || Math.hypot(obstacle.velocity.x, obstacle.velocity.y) >= 1) return false;
   const radiusSquared = (obstacle.radius + clearance) ** 2;
   // Let the existing collision solver and route step handle separation.
   if (squaredDistance(start, obstacle.position) < radiusSquared) return false;
