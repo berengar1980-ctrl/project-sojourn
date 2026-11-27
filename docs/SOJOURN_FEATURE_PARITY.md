@@ -2226,3 +2226,7 @@ aufgerundete Reparaturmenge. NPC-Mindestverbrauch und Crew-Modifikatoren bleiben
 
 Kampf-Kontaktgeometrie bezieht die Rumpflänge aus der Schiffsdefinition statt
 primär aus der ID; vorhandene Schildgeometrie und Legacy-Fallback bleiben.
+
+Spieler, NPCs und frei konfigurierte Duelle nutzen gemeinsame taktische
+Sensorwerte. Der Duellmodus übernimmt nun den installierten Reichweitenbonus;
+Sektorkontakte und industrielle Scans behalten ihre eigenen Maßstäbe.

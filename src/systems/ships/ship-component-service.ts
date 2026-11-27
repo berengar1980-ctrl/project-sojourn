@@ -342,6 +342,26 @@ export function engineSpeedMultiplier(installed: InstalledShipComponents): numbe
   return 1 + sumField(installed, 'engine', 'speed');
 }
 
+/** Common tactical sensor setup; callers retain their mode-specific power admission. */
+export function combatSensorStats(
+  installed: InstalledShipComponents,
+  crewSkill: number,
+  scanAvailable = true
+): {
+  readonly sensorTier: number;
+  readonly sensorCrewSkill: number;
+  readonly sensorRangeMeters: number;
+  readonly sensorRangeMultiplier: number;
+} {
+  const sensor = installedDefinitions(installed, 'sensor')[0];
+  return {
+    sensorTier: sensor?.tier ?? 0,
+    sensorCrewSkill: crewSkill,
+    sensorRangeMeters: sensor && scanAvailable ? 1000 : 0,
+    sensorRangeMultiplier: sensor && scanAvailable ? sensorRangeMultiplier(installed) || 1 : 1,
+  };
+}
+
 export function sensorRangeMultiplier(installed: InstalledShipComponents): number {
   return 1 + sumField(installed, 'sensor', 'range');
 }

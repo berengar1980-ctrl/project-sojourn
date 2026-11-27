@@ -1623,3 +1623,6 @@ abgeleitet; bestehende Tank- und Schadensdaten bleiben im bisherigen Checkpoint.
 
 Kampfaufbauten erhalten die nominelle Rumpflänge aus der Schiffsdefinition;
 diese wird wie der übrige Setup beim Laden neu abgeleitet, nicht gespeichert.
+
+Taktische Sensorparameter werden aus vorhandenen installierten Komponenten
+abgeleitet. Keine Änderung der gespeicherten Sensor- oder Kontaktdaten.

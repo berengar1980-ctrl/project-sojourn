@@ -1,12 +1,9 @@
+import { clamp } from '../../core/numeric-geometry';
 import type {
   MineDetectionResult,
   MineSensorContext,
   ShipMineDefinition,
 } from '../../core/combat-types';
-
-function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.max(minimum, Math.min(maximum, value));
-}
 
 export function mineDetectionScore(context: MineSensorContext): number {
   if (context.sensorTier <= 0 || context.sensorRangeMeters <= 0) return 0;

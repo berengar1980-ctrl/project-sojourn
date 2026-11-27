@@ -15,6 +15,7 @@ import {
   componentShieldBonus,
   calculateShipModeEnergy,
   getShipComponent,
+  combatSensorStats,
   getShipDefinition,
   resolveShipCombatMovementStats,
   resolveShipArmorProtection,
@@ -72,9 +73,6 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
   const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
   const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
   const skill = npcCombatSkill(npc);
-  const sensor = (installed.sensor ?? [])
-    .map((id) => getShipComponent('sensor', id))
-    .find((component) => component !== null);
   const mines = (installed.mine ?? []).flatMap((id) => {
     const component = getShipComponent('mine', id);
     return component?.mine ? [component.mine, component.mine, component.mine] : [];
@@ -110,10 +108,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     tractorRangeMeters: shipCombatTractorRange(installed),
     power: calculateShipModeEnergy(installed),
     tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
-    sensorCrewSkill: skill,
-    sensorTier: sensor?.tier ?? 0,
-    sensorRangeMeters: sensor ? 1000 : 0,
-    sensorRangeMultiplier: sensor ? 1 + Number(sensor.range ?? 0) : 1,
+    ...combatSensorStats(installed, skill),
     aiControlled: true,
     aiAggression: npc.aggression,
     ...(npc.factionId ? { factionId: npc.factionId } : {}),
