@@ -103,6 +103,11 @@ export class LocalPirateTraffic {
     return this.ships.get(id);
   }
 
+  /** Synchronous navigation visitor: no render metadata or position copies. */
+  visitBodies(visit: (id: string, body: FieldRouteShip) => void): void {
+    for (const ship of this.ships.values()) visit(ship.npcId, ship);
+  }
+
   snapshot(
     npcs: readonly SectorNpcState[],
     index?: ReadonlyMap<string, SectorNpcState>
