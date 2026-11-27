@@ -13,10 +13,7 @@ import {
   resolveAsteroidCollisions,
   type ShieldWorldGeometry,
 } from './local-space-collision';
-import {
-  faceAutopilotTarget,
-  resetAutopilotMotion,
-} from './local-space-autopilot';
+import { faceAutopilotTarget, resetAutopilotMotion } from './local-space-autopilot';
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
 import { localShipVelocity } from './local-space-ship-velocity';

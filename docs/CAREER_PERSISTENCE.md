@@ -1526,3 +1526,8 @@ Zivile Routen werden bei dauerhaftem Verkehrshindernis mit dem bestehenden
 Routenplaner überprüft. Die Überprüfung der Spielerrouten ist wie die
 bestehende Gefahrenprüfung flüchtig; NPC-Routen behalten ihre bisherigen
 Checkpoint-Felder. Kein neuer persistenter Zustand.
+
+Reguläre Miner- und Bergungsankünfte werden erst am freien vorhandenen
+Feldtor materialisiert. Ein wartender NPC bleibt im vorhandenen Sektorstatus;
+keine zusätzliche Warteschlange wird gespeichert. Explizite Startpositionen,
+gespeicherte Arbeiter und Kampfrückkehrpositionen werden nicht verschoben.

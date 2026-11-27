@@ -52,7 +52,10 @@ export function predictsClosingContact(
 }
 
 /** Common contact axis; coincident centers use the existing positive-x normal. */
-export function contactAxis(dx: number, dy: number): {
+export function contactAxis(
+  dx: number,
+  dy: number
+): {
   readonly distance: number;
   readonly normal: WorldPoint;
 } {

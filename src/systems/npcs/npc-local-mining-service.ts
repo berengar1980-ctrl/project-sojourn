@@ -1,6 +1,7 @@
 import { planMiningApproachRoute } from '../local-space/local-space-navigation';
 import { trafficRouteBodies } from '../navigation/field-traffic-obstacles';
 import { moveFieldShip } from '../navigation/field-ship-routing';
+import { workerGateAvailable } from './npc-local-field-arrivals';
 import { seededLocalGate } from '../../core/local-space-exit';
 import { cloneCareerJson } from '../persistence/career-save-contract';
 import { stageLocalMinerCheckpoint } from './npc-local-mining-checkpoint';
@@ -79,17 +80,21 @@ function syncArrivals(runtime: MinerRuntime): void {
       runtime.options.height,
       runtime.options.seed ?? 0
     );
-    const spawn =
-      runtime.combatReturnPositions.get(npc.id) ??
-      runtime.options.initialPosition?.(npc.id) ??
-      entry;
+    const explicit =
+      runtime.combatReturnPositions.get(npc.id) ?? runtime.options.initialPosition?.(npc.id);
+    if (
+      !explicit &&
+      !workerGateAvailable(npc.id, npc.shipId, entry, runtime.ships, runtime.options.getTrafficObstacles)
+    )
+      continue;
+    const spawn = explicit ?? entry;
     runtime.ships.push({
       npcId: npc.id,
       name: npc.name,
       shipId: npc.shipId,
       position: { ...spawn },
       headingRadians: 0,
-      speed: localCruiseSpeed(npc),
+      speed: explicit || !runtime.options.getTrafficObstacles ? localCruiseSpeed(npc) : 0,
       phase: 'entering',
       targetAsteroidId: null,
       laserActive: false,

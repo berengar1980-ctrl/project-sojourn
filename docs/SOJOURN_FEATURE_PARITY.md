@@ -2107,3 +2107,8 @@ Kampfflugverhalten bleibt unverändert; Verkehrsdurchsatz ist zu prüfen.
 keine wiederholte vollständige Gittersuche aus. Spielerrouten können bei
 stationärem Verkehr mit dem vorhandenen Planer einen Umweg erhalten;
 bewegter Querverkehr verwendet die kurze Vorhersage und Warteentscheidung.
+
+**Keine Statusänderung** der Feature-IDs. Reguläre zivile Arbeiterankünfte
+prüfen das gemeinsame Feldtor gegen Schildgeometrie und vorhandene Posen;
+belegte Tore werden abgewartet, ohne einen zweiten Positionszustand anzulegen.
+Auswirkung auf Wirtschaftsfluss und mögliche Wartezustände ist zu testen.

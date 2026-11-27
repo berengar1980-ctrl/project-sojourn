@@ -17,6 +17,10 @@
       "mode": "derived",
       "reason": "Pure physical hull contact solver for transient civilian ships passed into native PvP; stores no checkpoint state."
     },
+    "src/systems/npcs/npc-local-field-arrivals.ts": {
+      "mode": "derived",
+      "reason": "Admission derives from the current worker poses, shared gate, ship geometry and live field traffic; waiting is already represented by a sector worker without a materialized local pose."
+    },
     "src/systems/navigation/field-traffic-obstacles.ts": {
       "mode": "derived",
       "reason": "Navigation-only ship footprints derived from existing live poses and ship hardpoints; no independent checkpoint state."

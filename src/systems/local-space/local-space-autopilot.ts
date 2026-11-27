@@ -103,7 +103,10 @@ export function advanceAutopilotRoute(
   const arrivalDistance = finalWaypoint && brakeAtFinalWaypoint ? 2 : 1;
   const arrived = distance(ship.position, waypoint) <= arrivalDistance;
   const next = arrived ? waypoint : ship.position;
-  if (traffic && !trafficStepClear(start, next, deltaSeconds, traffic.obstacles, traffic.clearance)) {
+  if (
+    traffic &&
+    !trafficStepClear(start, next, deltaSeconds, traffic.obstacles, traffic.clearance)
+  ) {
     ship.position = start;
     ship.speed = 0;
     return { nextIndex: index, completed: false };
