@@ -1,3 +1,4 @@
+import { fuelForDistance } from '../../core/fuel-pricing';
 import { pirateHomePort } from '../../core/pirate-ports';
 import { isSecurityDrone, SECURITY_DRONE_SHIP_ID } from '../../core/security-drone';
 import { measurePerformance } from '../../core/performance-diagnostics';
@@ -20,7 +21,6 @@ import {
   type RoutePlan,
 } from '../navigation/route-planner';
 import {
-  FUEL_DISTANCE_SCALE,
   nearestLocation,
   patrolDestination,
   pirateHuntDestination,
@@ -182,7 +182,7 @@ class SectorService implements NpcSectorService {
       fuel: npc.fuel,
       capacity: npc.fuelCapacity,
       credits: availableCredits,
-      fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
+      fuelPerDistance: fuelForDistance(1, npc.fuelUse),
       locationPosition: (id: string) =>
         id === npc.locationId ? this.livePosition(npc) : npcOrbitDestination(this.world, npc, id),
     };

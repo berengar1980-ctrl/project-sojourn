@@ -2219,3 +2219,7 @@ verdeckte Waren, reservierte Kapazität und den Schmuggelabzug konsistent.
 Mining und Bergung nutzen denselben synchronen Ressourcentransfer mit
 kapazitätsbegrenzter Entnahme und Rückgabe nicht angenommener Reservemengen.
 Die unterschiedliche Behandlung nicht registrierter Vorkommen bleibt erhalten.
+
+Treibstoffverbrauch und Routenreserve zentralisiert; Spieler respektieren wie
+NPCs die Schiffs-Overrides. Reparaturprognosen verwenden die tatsächliche
+aufgerundete Reparaturmenge. NPC-Mindestverbrauch und Crew-Modifikatoren bleiben.

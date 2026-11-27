@@ -1,6 +1,11 @@
 import { isServicedPort as canFuelAt } from '../../core/port-service-policy';
 export { isServicedPort as canFuelAt } from '../../core/port-service-policy';
-import { FUEL_PRICE_PER_UNIT as FUEL_PRICE, quoteRefuel } from '../../core/fuel-pricing';
+import {
+  FUEL_PRICE_PER_UNIT as FUEL_PRICE,
+  FUEL_ROUTE_RESERVE as FUEL_RESERVE,
+  MIN_ROUTE_FUEL,
+  quoteRefuel,
+} from '../../core/fuel-pricing';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import {
   planRouteFromPoint,
@@ -11,7 +16,6 @@ import {
   type RouteThreatContact,
 } from './route-planner';
 
-const FUEL_RESERVE = 1.02;
 const MAX_STOPS = 8;
 const MAX_SEARCH_STATES = 2500;
 
@@ -156,10 +160,13 @@ function nextState(
   // Any route is at least as long as the straight line between its actual
   // departure and arrival berths. Reject impossible fuel legs before invoking
   // the expensive hazard-aware pathfinder.
-  const minimumFuel = Math.max(0.1, minimumDistance(current.at, next) * request.fuelPerDistance);
+  const minimumFuel = Math.max(
+    MIN_ROUTE_FUEL,
+    minimumDistance(current.at, next) * request.fuelPerDistance
+  );
   if (minimumFuel * FUEL_RESERVE > current.fuel + 1e-6) return null;
   const segment = routeLeg(current.at, next);
-  const required = Math.max(0.1, segment.distance * request.fuelPerDistance);
+  const required = Math.max(MIN_ROUTE_FUEL, segment.distance * request.fuelPerDistance);
   if (required * FUEL_RESERVE > current.fuel + 1e-6) return null;
   const remaining = Math.max(0, current.fuel - required);
   const bought =
@@ -211,12 +218,12 @@ function directFuelPlan(
   minimumDistance: (fromId: string, toId: string) => number
 ): FuelRoutePlan | null {
   const straightFuel = Math.max(
-    0.1,
+    MIN_ROUTE_FUEL,
     minimumDistance(origin, request.destinationId) * request.fuelPerDistance
   );
   if (straightFuel * FUEL_RESERVE > Math.min(request.fuel, request.capacity) + 1e-6) return null;
   const route = routeLeg(origin, request.destinationId);
-  const required = Math.max(0.1, route.distance * request.fuelPerDistance);
+  const required = Math.max(MIN_ROUTE_FUEL, route.distance * request.fuelPerDistance);
   const fuel = Math.max(0, Math.min(request.fuel, request.capacity));
   if (required * FUEL_RESERVE > fuel + 1e-6) return null;
   const next: SearchState = {
@@ -254,7 +261,10 @@ function hasOptimisticFuelPath(
     const current = queue[index]!;
     for (const next of candidates) {
       if (visited.has(next)) continue;
-      const needed = Math.max(0.1, minimumDistance(current.at, next) * request.fuelPerDistance);
+      const needed = Math.max(
+        MIN_ROUTE_FUEL,
+        minimumDistance(current.at, next) * request.fuelPerDistance
+      );
       if (needed * FUEL_RESERVE > current.fuel + 1e-6) continue;
       if (next === request.destinationId) return true;
       visited.add(next);

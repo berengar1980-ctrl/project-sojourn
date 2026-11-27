@@ -1,7 +1,17 @@
-import { FUEL_DISTANCE_SCALE, quoteRefuel, type FuelQuote } from '../../core/fuel-pricing';
-export { FUEL_PRICE_PER_UNIT, quoteRefuel, type FuelQuote } from '../../core/fuel-pricing';
+import {
+  fuelForDistance,
+  FUEL_ROUTE_RESERVE,
+  quoteRefuel,
+  type FuelQuote,
+} from '../../core/fuel-pricing';
+export {
+  fuelForDistance,
+  FUEL_PRICE_PER_UNIT,
+  quoteRefuel,
+  type FuelQuote,
+} from '../../core/fuel-pricing';
 import type { ShipDefinition } from '../../core/ship-types';
-import { getShipRoleProfile } from '../../data/ships/ship-role-profiles';
+import { resolveShipGameplayStats } from './ship-stats';
 import type { PlayerTradeService } from '../economy/player-trade-service';
 import { getShipDefinition } from './ship-registry';
 
@@ -13,18 +23,6 @@ export const SHIPYARD_REPAIR_MULTIPLIER = 0.8;
 export interface RepairQuote {
   readonly points: number;
   readonly cost: number;
-}
-
-export function fuelForDistance(
-  distance: number,
-  shipFuelUse: number,
-  pilotingFuelMultiplier = 1,
-  engineeringFuelMultiplier = 1
-): number {
-  const values = [distance, shipFuelUse, pilotingFuelMultiplier, engineeringFuelMultiplier];
-  if (values.some((value) => !Number.isFinite(value) || value < 0)) return 0;
-  const base = distance * shipFuelUse * FUEL_DISTANCE_SCALE;
-  return base * pilotingFuelMultiplier * engineeringFuelMultiplier;
 }
 
 /** Remote tanker service: pay a call-out fee and triple the normal fuel price. */
@@ -47,6 +45,10 @@ export function repairCost(points: number, shipyard: boolean, engineeringMultipl
   return Math.ceil(cost * engineering);
 }
 
+export function missingRepairPoints(currentHp: number, maximumHp: number): number {
+  return Math.max(0, Math.ceil(maximumHp - currentHp));
+}
+
 export function quoteRepair(
   currentHp: number,
   maximumHp: number,
@@ -54,7 +56,7 @@ export function quoteRepair(
   shipyard: boolean,
   engineeringMultiplier = 1
 ): RepairQuote {
-  const missing = Math.max(0, Math.ceil(maximumHp - currentHp));
+  const missing = missingRepairPoints(currentHp, maximumHp);
   const funds = Math.max(0, Math.floor(credits));
   let points = missing;
   while (points > 0 && repairCost(points, shipyard, engineeringMultiplier) > funds) points--;
@@ -122,14 +124,14 @@ export function createShipOperatingService(
   const ensure = (ship: ShipDefinition): HullState => {
     let state = hulls.get(ship.id);
     if (!state) {
-      state = { fuel: getShipRoleProfile(ship.role).fuelCapacity, damage: 0 };
+      state = { fuel: resolveShipGameplayStats(ship).fuelCapacity, damage: 0 };
       hulls.set(ship.id, state);
     }
     return state;
   };
   const snapshot = (ship: ShipDefinition, hullMaxHp: number): ShipOperatingSnapshot => {
     const state = ensure(ship);
-    const fuelCapacity = getShipRoleProfile(ship.role).fuelCapacity;
+    const fuelCapacity = resolveShipGameplayStats(ship).fuelCapacity;
     return {
       fuel: Math.max(0, Math.min(state.fuel, fuelCapacity)),
       fuelCapacity,
@@ -159,13 +161,13 @@ export function createShipOperatingService(
     },
     snapshot,
     hasFuelForRoute(ship, distance, pilotingMultiplier = 1, engineeringMultiplier = 1) {
-      const use = getShipRoleProfile(ship.role).fuelUse;
+      const use = resolveShipGameplayStats(ship).fuelUse;
       const required = fuelForDistance(distance, use, pilotingMultiplier, engineeringMultiplier);
-      return ensure(ship).fuel + 1e-6 >= required * 1.02;
+      return ensure(ship).fuel + 1e-6 >= required * FUEL_ROUTE_RESERVE;
     },
     burn(ship, distance, pilotingMultiplier = 1, engineeringMultiplier = 1) {
       const state = ensure(ship);
-      const use = getShipRoleProfile(ship.role).fuelUse;
+      const use = resolveShipGameplayStats(ship).fuelUse;
       const amount = fuelForDistance(distance, use, pilotingMultiplier, engineeringMultiplier);
       const burned = Math.min(state.fuel, amount);
       state.fuel = Math.max(0, state.fuel - burned);
@@ -173,7 +175,7 @@ export function createShipOperatingService(
     },
     refuel(ship) {
       const state = ensure(ship);
-      const capacity = getShipRoleProfile(ship.role).fuelCapacity;
+      const capacity = resolveShipGameplayStats(ship).fuelCapacity;
       const quote = quoteRefuel(state.fuel, capacity, wallet.player.credits);
       if (quote.cost > 0 && wallet.takeCredits(quote.cost)) {
         state.fuel = Math.min(capacity, state.fuel + quote.units);
@@ -183,7 +185,7 @@ export function createShipOperatingService(
     },
     emergencyRefuel(ship) {
       const state = ensure(ship);
-      const capacity = getShipRoleProfile(ship.role).fuelCapacity;
+      const capacity = resolveShipGameplayStats(ship).fuelCapacity;
       const quote = quoteEmergencyRefuel(state.fuel, capacity, wallet.player.credits);
       if (quote.cost > 0 && wallet.takeCredits(quote.cost)) {
         state.fuel = Math.min(capacity, state.fuel + quote.units);
@@ -223,7 +225,7 @@ export function stageCareerShipOperating(
     }
     const ship = getShipDefinition(record.shipId);
     if (!ship || !owned.has(record.shipId)) throw new Error('Unknown or unowned ship');
-    const capacity = getShipRoleProfile(ship.role).fuelCapacity;
+    const capacity = resolveShipGameplayStats(ship).fuelCapacity;
     if (
       typeof record.fuel !== 'number' ||
       !Number.isFinite(record.fuel) ||

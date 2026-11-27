@@ -1,4 +1,4 @@
-import { FUEL_DISTANCE_SCALE } from '../../core/fuel-pricing';
+import { fuelForDistance, FUEL_PRICE_PER_UNIT, MIN_ROUTE_FUEL } from '../../core/fuel-pricing';
 import { pirateHomePort } from '../../core/pirate-ports';
 import { stableHash as hashId } from '../../core/stable-hash';
 import { isSecurityDrone } from '../../core/security-drone';
@@ -23,7 +23,7 @@ export function routeProfile(npc: SectorNpcState): RouteProfile {
 }
 
 export function routeFuel(npc: SectorNpcState, route: RoutePlan): number {
-  return Math.max(0.1, route.distance * npc.fuelUse * FUEL_DISTANCE_SCALE);
+  return Math.max(MIN_ROUTE_FUEL, fuelForDistance(route.distance, npc.fuelUse));
 }
 
 /** NPC captains weigh nearby real piracy against patrol cover using their own risk preference. */
@@ -188,7 +188,7 @@ export function pirateHuntDestination(
       const homeDistance = home
         ? Math.hypot(home.position.x - location.position.x, home.position.y - location.position.y)
         : 2000;
-      const returnFuelReserve = homeDistance * npc.fuelUse * FUEL_DISTANCE_SCALE * 10;
+      const returnFuelReserve = fuelForDistance(homeDistance, npc.fuelUse) * FUEL_PRICE_PER_UNIT;
       const net = estimatedOpportunity - riskCost - fuelExpense - returnFuelReserve;
       const minimum = available < 1500 ? 350 : 0;
       if (net <= minimum) return null;

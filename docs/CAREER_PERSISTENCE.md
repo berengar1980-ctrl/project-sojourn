@@ -1617,3 +1617,6 @@ Gemeinsame Kapazitätsberechnung ist abgeleitet; keine neuen Checkpoint-Felder.
 
 Gemeinsame physische Ressourcentransfers speichern keinen separaten Zustand;
 nicht angenommene Mengen gehen in den bestehenden Reservepool zurück.
+
+Tankkapazität und Verbrauch werden aus der aufgelösten Schiffsdefinition
+abgeleitet; bestehende Tank- und Schadensdaten bleiben im bisherigen Checkpoint.

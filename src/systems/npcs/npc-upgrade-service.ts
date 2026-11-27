@@ -1,7 +1,7 @@
 import type { ShipComponentDefinition } from '../../data/ships/ship-component-catalog';
 import type { NpcInstalledComponents, SectorNpcState } from '../../core/npc-types';
 import type { ShipComponentType } from '../../core/ship-types';
-import { repairCost, FUEL_PRICE_PER_UNIT } from '../ships/ship-operating-costs';
+import { missingRepairPoints, quoteRefuel, repairCost } from '../ships/ship-operating-costs';
 import {
   npcCanInvestAfterMaintenance,
   npcWorkingCapital,
@@ -203,8 +203,8 @@ export function tryNpcComponentUpgrade(
   const lastUpgradeRun = npc.lastComponentUpgradeRun ?? 0;
   if (npc.successfulRuns < 8 || npc.successfulRuns - lastUpgradeRun < 8) return false;
   const reserve = Math.max(300000, npcWorkingCapital(npc));
-  const maintenance = repairCost(npc.hullMaxHp - npc.hullHp, true);
-  const fuelReserve = Math.ceil((npc.fuelCapacity - npc.fuel) * FUEL_PRICE_PER_UNIT);
+  const maintenance = repairCost(missingRepairPoints(npc.hullHp, npc.hullMaxHp), true);
+  const fuelReserve = quoteRefuel(npc.fuel, npc.fuelCapacity, Number.MAX_SAFE_INTEGER).cost;
   const candidates = UPGRADE_TYPES.map((type) => {
     const ship = getShipDefinition(npc.shipId);
     const maxTier = ship ? resolveShipGameplayStats(ship).maxComponentTier : 1;
@@ -262,8 +262,8 @@ export function tryNpcHullUpgrade(npc: SectorNpcState): boolean {
   if (!ship || npc.shipId === ship.id) return false;
   const price = shipPurchasePrice(ship);
   const reserve = Math.max(350000, npcWorkingCapital(npc));
-  const maintenance = repairCost(npc.hullMaxHp - npc.hullHp, true);
-  const fuelReserve = Math.ceil((npc.fuelCapacity - npc.fuel) * FUEL_PRICE_PER_UNIT);
+  const maintenance = repairCost(missingRepairPoints(npc.hullHp, npc.hullMaxHp), true);
+  const fuelReserve = quoteRefuel(npc.fuel, npc.fuelCapacity, Number.MAX_SAFE_INTEGER).cost;
   if (price <= 0 || npc.credits < price + reserve + maintenance + fuelReserve) return false;
   const capacityUsed = Object.values(npc.cargo).reduce((sum, units) => sum + Math.max(0, units), 0);
   if (capacityUsed > ship.cargoCapacityTons) return false;
