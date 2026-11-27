@@ -1,9 +1,8 @@
+import { distance } from '../../core/field-geometry';
 import { wrapAngle } from '../../core/numeric-geometry';
 import type { WorldPoint } from '../../core/world-types';
 
-export function distance(a: WorldPoint, b: WorldPoint): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
+export { distance } from '../../core/field-geometry';
 
 export function heading(a: WorldPoint, b: WorldPoint): number {
   return Math.atan2(b.y - a.y, b.x - a.x);
