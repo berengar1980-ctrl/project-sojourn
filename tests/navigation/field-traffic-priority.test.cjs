@@ -63,7 +63,10 @@ const ranks = [
 for (const [id1, first] of ranks) {
   for (const [id2, second] of ranks) {
     for (const [id3, third] of ranks) {
-      if (hasTrafficPriority(id1, first, id2, second) && hasTrafficPriority(id2, second, id3, third))
+      if (
+        hasTrafficPriority(id1, first, id2, second) &&
+        hasTrafficPriority(id2, second, id3, third)
+      )
         assert(hasTrafficPriority(id1, first, id3, third), 'traffic ranking must be transitive');
     }
   }
