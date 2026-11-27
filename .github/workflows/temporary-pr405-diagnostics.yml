@@ -94,9 +94,7 @@ jobs:
           done
   performance-benchmark:
     if: >-
-      github.head_ref == 'fix/npc-combat-logic' &&
-      (github.event.action == 'synchronize' ||
-      (github.event.action == 'labeled' && github.event.label.name == 'performance-benchmark'))
+      github.head_ref == 'fix/npc-combat-logic'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
