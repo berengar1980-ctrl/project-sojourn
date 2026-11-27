@@ -30,6 +30,9 @@ export class LocalSpaceAutopilotHazards {
     const [ship, route, index, speed, dt, brake, reverse, turnRate] = args;
     return advanceAutopilotRoute(ship, route, index, speed, dt, brake, reverse, turnRate, {
       obstacles: this.getTraffic(),
+      solids: [...this.instance.asteroids, ...this.additionalObstacles()].filter(
+        (rock) => rock.routeBlocking
+      ),
       clearance: Math.max(this.shield.radiusX, this.shield.radiusY),
     });
   }

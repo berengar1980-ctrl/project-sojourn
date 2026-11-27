@@ -1538,3 +1538,8 @@ Verkehrsmodulen im Core. Damit besteht keine zyklische Importabhängigkeit.
 Die zivile Vorfahrts- und Fortschrittsprüfung hält nur flüchtige Informationen
 pro lebender Pose. Eine Ausweichposition wird nicht als zweite Position
 geführt. Gespeicherte Routen und die reguläre Physik bleiben unverändert.
+
+Die Ausweichpunkte werden auf die bekannten Feldgrenzen und realen
+Routenhindernisse geprüft. Spieler-Autopilot und NPC-Feldfahrt verwenden
+dieselbe Fortschritts- und Vorfahrtsentscheidung; der bestehende
+Autopilot behält seine Bewegungsintegration und den Routenindex.

@@ -139,7 +139,8 @@ export function createNpcSalvageRuntime(
       },
       activePlayer
         ? { ship: activePlayer.ship, pose: activePlayer.service.getSnapshot().ship }
-        : undefined
+        : undefined,
+      field
     );
   });
   return runtime;

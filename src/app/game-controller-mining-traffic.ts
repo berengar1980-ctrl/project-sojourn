@@ -25,7 +25,11 @@ function collectMiningTraffic(
   const state = context.state;
   const player =
     state.mode === 'local-space' && state.localSpace?.getSnapshot().instance === field.instance
-      ? { ship: state.activeShip, pose: field.instance.ship }
+      ? {
+          ship: state.activeShip,
+          pose: field.instance.ship,
+          fixed: Boolean(context.engagements.activePlayerCombat()),
+        }
       : undefined;
   return collectFieldTraffic(
     field.locationId,
@@ -35,7 +39,8 @@ function collectMiningTraffic(
       for (const ship of field.miners.ships) add(ship.npcId, ship);
       visitArmedFieldTraffic(field.locationId, field.pirates, field.drone, add);
     },
-    player
+    player,
+    field.instance
   );
 }
 

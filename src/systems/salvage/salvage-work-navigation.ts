@@ -74,6 +74,10 @@ export function planSalvageRoute(
   }).route;
 }
 
+export function salvageTrafficSolids(field: SalvageField) {
+  return salvageFieldPhysicsBodies(field).filter((rock) => rock.routeBlocking);
+}
+
 export function reviewSalvageTrafficRoute(
   field: SalvageField,
   from: WorldPoint,

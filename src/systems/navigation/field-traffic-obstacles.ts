@@ -142,7 +142,14 @@ export function trafficStepClear(
 ): boolean {
   if (seconds <= 0) return true;
   return obstacles.every((obstacle) =>
-    trafficContactAllowsStep(from, to, seconds, clearance, obstacle, !pose || yieldsToTraffic(pose, obstacle))
+    trafficContactAllowsStep(
+      from,
+      to,
+      seconds,
+      clearance,
+      obstacle,
+      !pose || yieldsToTraffic(pose, obstacle)
+    )
   );
 }
 

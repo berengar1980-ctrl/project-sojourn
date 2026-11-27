@@ -2119,3 +2119,7 @@ ausgelagert, um zyklische Modulimporte zu verhindern.
 **Keine Statusänderung** der Feature-IDs. Zivile Vorfahrt nach Ausflugstatus
 und stabiler ID, kurze Fortschrittsüberwachung und ein gebundener lokaler
 Ausweichpunkt bei ausbleibender Bewegung. Aktive Gefechte sind ausgenommen.
+
+**Keine Statusänderung** der Feature-IDs. Auch Spielerrouten können bei
+fehlendem Fortschritt einen vorübergehenden seitlichen Ausweichpunkt
+anfahren. Bestehende Feldgrenzen und stationäre Hindernisse werden geprüft.

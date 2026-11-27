@@ -22,6 +22,7 @@ interface TrafficProgress {
   sampleDistance: number;
   encounter?: { readonly id: string; readonly yields: boolean };
   escape?: WorldPoint;
+  bounds?: { readonly width: number; readonly height: number };
 }
 
 const progress = new WeakMap<object, TrafficProgress>();
@@ -37,10 +38,17 @@ function state(pose: TrafficPose, id = pose.npcId ?? ''): TrafficProgress {
   return entry;
 }
 
-export function registerTrafficPose(pose: TrafficPose, id: string, fixed = false): void {
+export function registerTrafficPose(
+  pose: TrafficPose,
+  id: string,
+  fixed = false,
+  bounds?: { readonly width: number; readonly height: number },
+  departing = false
+): void {
   const entry = state(pose, id);
   entry.fixed = fixed;
-  entry.priority = pose.phase === 'exiting' ? 2 : 1;
+  if (bounds) entry.bounds = bounds;
+  entry.priority = departing || pose.phase === 'exiting' ? 2 : 1;
   if (fixed || pose.phase === 'mining' || pose.phase === 'salvaging' || pose.phase === 'scanning') {
     delete entry.direction;
     delete entry.escape;
@@ -141,6 +149,12 @@ function escapePathClear(
   });
 }
 
+function insideTrafficBounds(pose: TrafficPose, point: WorldPoint): boolean {
+  if (point.x < 0 || point.y < 0) return false;
+  const bounds = state(pose).bounds;
+  return !bounds || (point.x <= bounds.width && point.y <= bounds.height);
+}
+
 function escapePoint(
   pose: TrafficPose,
   blocker: FieldRouteObstacle,
@@ -154,7 +168,7 @@ function escapePoint(
     const x = direction.x * Math.cos(angle) - direction.y * Math.sin(angle);
     const y = direction.x * Math.sin(angle) + direction.y * Math.cos(angle);
     const point = { x: pose.position.x + x * length, y: pose.position.y + y * length };
-    if (point.x < 0 || point.y < 0) continue;
+    if (!insideTrafficBounds(pose, point)) continue;
     if (escapePathClear(pose.position, point, obstacles, clearance)) return point;
   }
   return undefined;
@@ -168,19 +182,25 @@ export function trafficEscapeWaypoint(
 ): WorldPoint | undefined {
   const entry = state(pose);
   if (entry.escape) {
-    if (squaredDistance(pose.position, entry.escape) > 4) return entry.escape;
+    if (squaredDistance(pose.position, entry.escape) > 4) {
+      if (escapePathClear(pose.position, entry.escape, obstacles, clearance)) return entry.escape;
+      return undefined;
+    }
     delete entry.escape;
     entry.waiting = 0;
     entry.sampleSeconds = 0;
   }
-  if (entry.waiting < 1.5 || !entry.direction) return undefined;
+  if (entry.fixed || entry.waiting < 1.5 || !entry.direction) return undefined;
   const blocker = obstacles
     .filter(
       (other) =>
         other.velocity &&
         squaredDistance(pose.position, other.position) < (clearance + other.radius + 100) ** 2
     )
-    .sort((a, b) => squaredDistance(pose.position, a.position) - squaredDistance(pose.position, b.position))[0];
+    .sort(
+      (a, b) =>
+        squaredDistance(pose.position, a.position) - squaredDistance(pose.position, b.position)
+    )[0];
   if (!blocker) {
     delete entry.encounter;
     return undefined;
@@ -188,6 +208,7 @@ export function trafficEscapeWaypoint(
   const yields = yieldsToTraffic(pose, blocker);
   entry.encounter = { id: blocker.id, yields };
   if (!yields && entry.waiting < 5) return undefined;
-  entry.escape = escapePoint(pose, blocker, obstacles, clearance, entry.direction);
-  return entry.escape;
+  const escape = escapePoint(pose, blocker, obstacles, clearance, entry.direction);
+  if (escape) entry.escape = escape;
+  return escape;
 }
