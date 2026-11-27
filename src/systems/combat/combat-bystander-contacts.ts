@@ -19,7 +19,8 @@ function separateBystander(
   let impulse = Math.max(0, ownClosing);
   if (field) {
     const alongBow =
-      normal.x * Math.cos(field.pose.headingRadians) + normal.y * Math.sin(field.pose.headingRadians);
+      normal.x * Math.cos(field.pose.headingRadians) +
+      normal.y * Math.sin(field.pose.headingRadians);
     const relativeClosing = Math.max(0, ownClosing - (field.pose.speed ?? 0) * alongBow);
     const shares = weightedContactSeparation(overlap, 1, field.pushWeight);
     // Field autopilots store signed forward speed, not arbitrary lateral

@@ -1569,3 +1569,7 @@ wird nicht gespeichert; die existierende Feldposition bleibt maßgeblich.
 Die Geschwindigkeitskorrektur gemischter Kontakte respektiert die vorhandene
 skalare Vorwärtsgeschwindigkeit ziviler Schiffe. Kein zusätzlicher
 lateraler Geschwindigkeitszustand wird angelegt oder gespeichert.
+
+Feldweite Kontaktzuständigkeit referenziert ausschließlich die lebenden
+nativen Kampfschiffe. Paaransprüche werden pro Engagement-Schritt auf der
+vorhandenen gemeinsamen Feldinstanz zurückgesetzt. Keine Save-Felder.

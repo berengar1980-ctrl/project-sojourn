@@ -211,6 +211,10 @@
       "mode": "transient",
       "reason": "Guarded PvP Fleet-only survivor retarget of one existing live actor; no save or career world authority."
     },
+    "src/systems/combat/field-contact-authority.ts": {
+      "mode": "transient",
+      "reason": "Field-scoped live actor references, contact pair claims and snapshot revision; reset each engagement step, never serialized."
+    },
     "src/systems/combat/native-fleet-advance.ts": {
       "mode": "transient",
       "reason": "Disposable PvP-only fleet frame coordinator for one shared asteroid world, original 1vs1 actors, physical wrecks and escape status; it persists nothing."

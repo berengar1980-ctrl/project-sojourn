@@ -35,8 +35,7 @@ interface SharedSalvageRuntime {
   readonly runtime: NpcLocalSalvageService;
   readonly binding: {
     player:
-      | { ship: ShipDefinition; service: SalvageLocalSpaceService; fixed: () => boolean }
-      | undefined;
+      { ship: ShipDefinition; service: SalvageLocalSpaceService; fixed: () => boolean } | undefined;
     sceneTraffic: FieldTrafficSource | undefined;
     backgroundTraffic: FieldTrafficSource | undefined;
   };

@@ -2154,3 +2154,8 @@ Keine neue Schadensregel oder Änderung der aktiven Duellphysik.
 **Keine Statusänderung** der Feature-IDs. Gemischte Kontakte berücksichtigen
 den tatsächlich verfügbaren Freiheitsgrad ziviler Bewegung; Regressionen
 prüfen beidseitige Korrektur, Paar-Deduplizierung und Eigentümerwechsel.
+
+**Keine Statusänderung** der Feature-IDs. Unabhängige Gefechte auf derselben
+Feldinstanz teilen eine Kontakt-Paarliste und native Live-Actor-Referenzen.
+Kampfschiffe anderer Gefechte sind Hindernisse, keine zusätzlichen Ziele.
+Stand-alone-Duelle behalten ihre lokale Zuständigkeit.

@@ -11,6 +11,14 @@ import type {
   StrategicCombatObstacle,
 } from './strategic-combat-types';
 import { resolveCombatantCollision } from './combat-contact-response';
+import {
+  claimContactPair as claimPair,
+  contactPairKey as pairKey,
+  claimFieldContact,
+  fieldCombatActors,
+  recordForeignContact,
+  registerFieldCombatActors,
+} from './field-contact-authority';
 import type { FleetCombatContacts, StrategicCombatService } from './strategic-combat-service-types';
 
 export function escapedNativeFleetShips(services: readonly StrategicCombatService[]): Set<string> {
@@ -71,17 +79,6 @@ export function neutralFleetBlocker(
   return { id: 'ship:' + ship.id, ...footprint };
 }
 
-function pairKey(first: string, second: string): string {
-  return JSON.stringify(first < second ? [first, second] : [second, first]);
-}
-
-function claimPair(pairs: Set<string>, first: string, second: string): boolean {
-  const key = pairKey(first, second);
-  if (pairs.has(key)) return false;
-  pairs.add(key);
-  return true;
-}
-
 function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): FleetCombatContacts {
   const activePairs = new Set<string>();
   const hullContacts = new Set<string>();
@@ -91,8 +88,9 @@ function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): F
     const status = service.getStatus();
     if (!status.winner) activePairs.add(pairKey(status.attackerId, status.defenderId));
   }
+  const world = frame.arena.fieldWorld;
   const claimHullContact = (first: string, second: string) =>
-    claimPair(hullContacts, first, second);
+    world ? claimFieldContact(world, first, second) : claimPair(hullContacts, first, second);
   return {
     elapsedSeconds: frame.elapsed,
     isBoarding: (id) => frame.boarding.includes(id),
@@ -105,13 +103,15 @@ function fleetContacts(frame: NativeFleetFrame, escaped: ReadonlySet<string>): F
       return true;
     },
     resolveFleetBystander(ship, bystanderId) {
-      const other = actors.get(bystanderId);
+      const local = actors.get(bystanderId);
+      const other = local ?? (world ? fieldCombatActors(world).get(bystanderId) : undefined);
       if (!other) return false;
       // Active opponents run their own ram and hull phases. Applying a
       // bystander correction first would swallow that pair's ram impact.
       const active = activePairs.has(pairKey(ship.setup.id, bystanderId));
       if (!active && other.hullHp > 0 && !escaped.has(bystanderId)) {
-        resolveCombatantCollision(ship, other, claimHullContact);
+        const resolved = resolveCombatantCollision(ship, other, claimHullContact);
+        if (resolved && !local && world) recordForeignContact(world);
       }
       return true;
     },
@@ -177,7 +177,12 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
   } = frame;
   stepWorld(frame);
   const actorIds = new Set(actors.map((actor) => actor.setup.id));
-  const neutralBystanders = bystanders.filter((ship) => !actorIds.has(ship.id));
+  const world = arena.fieldWorld;
+  if (world) registerFieldCombatActors(world, actors, (id) => escapedRecords.has(id));
+  const foreignActors = world ? fieldCombatActors(world) : new Map<string, MutableCombatant>();
+  const neutralBystanders = bystanders.filter(
+    (ship) => !actorIds.has(ship.id) && !foreignActors.has(ship.id)
+  );
   const escaped = new Set([...escapedRecords, ...escapedNativeFleetShips(services)]);
   for (const id of escaped) escapedRecords.add(id);
   frame.boarding.resolve(elapsed, true);
@@ -194,7 +199,8 @@ export function advanceNativeFleetFrame(frame: NativeFleetFrame): void {
     if (service.getStatus().winner || escaped.has(source.setup.id) || escaped.has(target.setup.id))
       continue;
     const duelIds = new Set([source.setup.id, target.setup.id]);
-    const others = actors
+    const foreign = [...foreignActors.values()].filter((actor) => !actorIds.has(actor.setup.id));
+    const others = [...actors, ...foreign]
       .filter(
         (actor) => !duelIds.has(actor.setup.id) && actor.hullHp > 0 && !escaped.has(actor.setup.id)
       )

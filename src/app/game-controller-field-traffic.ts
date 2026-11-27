@@ -130,7 +130,9 @@ function fieldContactHandle(field: object, entry: FieldLiveShip): FieldBystander
     pose: entry.pose,
     pushWeight: entry.id === 'player' ? 2.4 : 1,
     apply(normal, distance, velocityDelta) {
-      const current = liveSources.get(field)?.().find((ship) => ship.id === entry.id);
+      const current = liveSources
+        .get(field)?.()
+        .find((ship) => ship.id === entry.id);
       if (!current || current.fixed || current.pose !== entry.pose) return null;
       return applyFieldContact(current, normal, distance, velocityDelta);
     },
