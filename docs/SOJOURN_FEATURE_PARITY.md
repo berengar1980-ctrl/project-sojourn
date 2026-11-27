@@ -2081,3 +2081,9 @@ Schildkontakt und native Kampfengine verwenden gemeinsame mathematische
 Grundfunktionen und Schildabmessungen. Die bestehenden Kontaktarten,
 Vorhersagegrenzen, Manöver, Feld-Ticks und Save-Strukturen bleiben erhalten.
 Die deterministischen Referenzen und Quality Gate prüfen die Parität.
+
+**Keine Statusänderung** der bestehenden Feature-IDs. Mining und Bergung
+nutzen eine gemeinsame feldbezogene Verkehrsabfrage. Bergungsarbeiter und
+die reguläre Spielernavigation beziehen anwesende Schiffe in die Routenplanung
+ein. Die Sondernavigation im Distress-Ereignis bleibt zunächst unverändert.
+Physische Körper, Kollisionsreaktionen und Save-Strukturen bleiben bestehen.

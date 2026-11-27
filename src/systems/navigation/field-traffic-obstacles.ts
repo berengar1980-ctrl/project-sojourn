@@ -43,3 +43,19 @@ export function trafficRouteBodies(obstacles: readonly FieldRouteObstacle[]): Lo
     scanLevel: 'unscanned',
   }));
 }
+
+type FieldTrafficProvider = (excludedId: string) => readonly FieldRouteObstacle[];
+
+// Field instances are authoritative. Providers read live poses and never own physics.
+const providers = new WeakMap<object, FieldTrafficProvider>();
+
+export function bindFieldTraffic(field: object, provider: FieldTrafficProvider): void {
+  providers.set(field, provider);
+}
+
+export function fieldTrafficObstacles(
+  field: object,
+  excludedId: string
+): readonly FieldRouteObstacle[] {
+  return providers.get(field)?.(excludedId) ?? [];
+}

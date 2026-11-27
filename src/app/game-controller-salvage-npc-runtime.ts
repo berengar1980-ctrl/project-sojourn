@@ -11,6 +11,11 @@ import {
   type NpcLocalSalvageService,
 } from '../systems/npcs/npc-local-salvage-service';
 import type { SalvageLocalSpaceService } from '../systems/salvage/salvage-local-space-service';
+import {
+  bindFieldTraffic,
+  fieldTrafficObstacles,
+} from '../systems/navigation/field-traffic-obstacles';
+import { collectFieldTraffic, type FieldTrafficSource } from './game-controller-field-traffic';
 
 interface SalvageNpcRuntimeOptions {
   readonly location: WorldLocation;
@@ -27,6 +32,8 @@ interface SharedSalvageRuntime {
   readonly runtime: NpcLocalSalvageService;
   readonly binding: {
     player: { ship: ShipDefinition; service: SalvageLocalSpaceService } | undefined;
+    sceneTraffic: FieldTrafficSource | undefined;
+    backgroundTraffic: FieldTrafficSource | undefined;
   };
 }
 
@@ -38,7 +45,21 @@ export function hasNpcSalvageRuntime(field: SalvageField): boolean {
 
 export function detachNpcSalvagePlayer(field: SalvageField): void {
   const entry = runtimes.get(field);
-  if (entry) entry.binding.player = undefined;
+  if (!entry) return;
+  entry.binding.player = undefined;
+  entry.binding.sceneTraffic = undefined;
+}
+
+/** Scene sources override background sources only while the scene owns the player. */
+export function bindSalvageArmedTraffic(
+  field: SalvageField,
+  source: FieldTrafficSource,
+  scene = false
+): void {
+  const binding = runtimes.get(field)?.binding;
+  if (!binding) return;
+  if (scene) binding.sceneTraffic = source;
+  else binding.backgroundTraffic = source;
 }
 
 /** Reuse worker positions, targets and timers across scene entry and exit. */
@@ -53,10 +74,15 @@ export function createNpcSalvageRuntime(
     if (player) existing.binding.player = player;
     return existing.runtime;
   }
-  const binding = { player };
+  const binding: SharedSalvageRuntime['binding'] = {
+    player,
+    sceneTraffic: undefined,
+    backgroundTraffic: undefined,
+  };
   const runtime = createNpcLocalSalvageService({
     locationId: options.location.id,
     field,
+    getTrafficObstacles: (id) => fieldTrafficObstacles(field, id),
     initialPosition: (id) => options.spawnPositions?.get(id),
     initialWorkers: options.wreckClaims.workerCheckpoint(field),
     onWreckEventResolved: (wreck, result) =>
@@ -98,5 +124,19 @@ export function createNpcSalvageRuntime(
       binding.player?.service.recordShipShieldContact(normal, overlap),
   });
   runtimes.set(field, { runtime, binding });
+  bindFieldTraffic(field, (excludedId) => {
+    const byId = new Map(options.sectorNpcs.map((npc) => [npc.id, npc]));
+    const player = binding.player;
+    return collectFieldTraffic(
+      field.sourceLocationId,
+      byId,
+      excludedId,
+      (add) => {
+        for (const ship of runtime.ships) add(ship.npcId, ship);
+        (binding.sceneTraffic ?? binding.backgroundTraffic)?.(add);
+      },
+      player ? { ship: player.ship, pose: player.service.getSnapshot().ship } : undefined
+    );
+  });
   return runtime;
 }

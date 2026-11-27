@@ -42,6 +42,7 @@ import {
 import { returnToStarMapFromSalvage } from './game-controller-salvage-exit';
 import { createWreckClaimActions, wreckClaimOwners } from './game-controller-salvage-claims';
 import {
+  bindSalvageArmedTraffic,
   createNpcSalvageRuntime,
   detachNpcSalvagePlayer,
   hasNpcSalvageRuntime,
@@ -50,6 +51,7 @@ import {
   requestDistressDiagnosis,
   tickDistressDiagnosis,
 } from './game-controller-salvage-diagnosis';
+import { visitArmedFieldTraffic } from './game-controller-field-traffic';
 import type { SalvageSceneOptions, SalvageSceneController } from './game-controller-salvage-types';
 export type { SalvageSceneOptions, SalvageSceneController } from './game-controller-salvage-types';
 type SalvageLocalService = ReturnType<typeof createSalvageLocalSpaceService>;
@@ -362,14 +364,6 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
   }
 }
 
-function announceSalvageScene(
-  options: SalvageSceneOptions,
-  runtime: ReturnType<typeof resolveShipRuntimeSetup>
-): void {
-  options.log.write('SALVAGE OPS > ' + options.location.name.toUpperCase());
-  if (!runtime.salvage.available) options.log.write('BERGUNG > KEIN EINSATZFÄHIGES BERGUNGSSYSTEM');
-}
-
 export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneController {
   const runtime = resolveShipRuntimeSetup(options.ship, options.runtimeOptions);
   const field =
@@ -430,9 +424,15 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
       panel: null,
     },
   };
+  bindSalvageArmedTraffic(
+    field,
+    (add) => visitArmedFieldTraffic(field.sourceLocationId, context.pirates, context.drone, add),
+    true
+  );
   context.state.panel = createSalvagePanel(context);
 
-  announceSalvageScene(options, runtime);
+  options.log.write('SALVAGE OPS > ' + options.location.name.toUpperCase());
+  if (!runtime.salvage.available) options.log.write('BERGUNG > KEIN EINSATZFÄHIGES BERGUNGSSYSTEM');
   return sceneController(context);
 }
 function sceneController(context: SalvageSceneRuntime): SalvageSceneController {

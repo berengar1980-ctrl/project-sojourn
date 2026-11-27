@@ -1498,3 +1498,10 @@ in zustandslosen Kernfunktionen berechnet. Der Schildcache ist aus unveränderli
 Schiffsdefinitionen ableitbar und enthält keine Live-Positionen. Kampftaktik,
 Kontaktreaktionen, Bewegungszuständigkeit und gespeicherte Routen bleiben
 unverändert. Keine neuen Checkpoint-Felder oder Persistenz-Owner.
+
+Die feldbezogenen Verkehrsprovider lesen ausschließlich aktuelle Körper aus
+den vorhandenen Mining- und Bergungsdiensten. Bei Szenenwechsel wird die
+Spielerbindung gelöst; die Hintergrundquelle bleibt bestehen. Die Provider
+sind aus dem Feldzustand ableitbar. Keine neuen Save-Daten. Die bisherige
+Wegpunkt-Persistenz bleibt unverändert; geänderte Bergungsrouten erfordern
+Wiederlade- und Langzeitregressionen.

@@ -22,7 +22,11 @@ import {
 } from '../systems/salvage/salvage-container-motion';
 import { syncFieldTrafficImpulses } from '../systems/combat/field-combat-arena';
 import { isSecurityDrone } from '../core/security-drone';
-import { createNpcSalvageRuntime } from './game-controller-salvage-npc-runtime';
+import {
+  bindSalvageArmedTraffic,
+  createNpcSalvageRuntime,
+} from './game-controller-salvage-npc-runtime';
+import { visitArmedFieldTraffic } from './game-controller-field-traffic';
 import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
 import type { WorldPoint } from '../core/world-types';
 
@@ -74,6 +78,14 @@ export function careerSalvageDrone(
       field
     );
     active.set(field.sourceLocationId, { field, drone, salvagers });
+    bindSalvageArmedTraffic(field, (add) =>
+      visitArmedFieldTraffic(
+        field.sourceLocationId,
+        context.economy.localPirates.get(field.sourceLocationId),
+        drone,
+        add
+      )
+    );
   }
   context.economy.wreckClaims.rememberField(field, drone.exportState());
   return drone;
