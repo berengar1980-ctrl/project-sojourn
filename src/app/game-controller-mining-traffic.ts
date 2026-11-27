@@ -28,7 +28,7 @@ function collectMiningTraffic(
       ? {
           ship: state.activeShip,
           pose: field.instance.ship,
-          fixed: Boolean(context.engagements.activePlayerCombat()),
+          fixed: Boolean(context.engagements?.activePlayerCombat?.()),
         }
       : undefined;
   return collectFieldTraffic(

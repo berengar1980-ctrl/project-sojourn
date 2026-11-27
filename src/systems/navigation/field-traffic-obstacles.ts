@@ -148,7 +148,7 @@ export function trafficStepClear(
       seconds,
       clearance,
       obstacle,
-      !pose || yieldsToTraffic(pose, obstacle)
+      !pose || yieldsToTraffic(pose, obstacle, clearance)
     )
   );
 }

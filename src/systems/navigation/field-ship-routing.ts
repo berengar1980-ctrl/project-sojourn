@@ -145,7 +145,8 @@ export function moveFieldShip(
 ): boolean {
   beginTrafficLeg(ship, target);
   const escape = trafficEscapeWaypoint(ship, obstacles, clearance);
-  const waypoint = escape ?? fieldRouteTarget(ship, target, obstacles, clearance, mode);
+  const waypoint =
+    escape === undefined ? fieldRouteTarget(ship, target, obstacles, clearance, mode) : escape;
   if (!waypoint) {
     ship.speed = 0;
     noteTrafficProgress(ship, dt, true);

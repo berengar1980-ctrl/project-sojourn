@@ -33,7 +33,12 @@ const obstacle = (ship) => ({
   velocity: { x: 0, y: 0 },
   intent: trafficIntent(ship, ship.npcId),
 });
+// Freeze the encounter decision before the lower-ranked ship accumulates wait time.
+assert.equal(priority.yieldsToTraffic(b, obstacle(a), 50), true);
+assert.equal(priority.yieldsToTraffic(a, obstacle(b), 50), false);
 for (let i = 0; i < 20; i += 1) priority.noteTrafficProgress(b, 0.1, true);
+assert.equal(priority.yieldsToTraffic(b, obstacle(a), 50), true, 'encounter remains committed');
+assert(hasTrafficPriority('b', trafficIntent(b, 'b'), 'a', trafficIntent(a, 'a')));
 const escape = priority.trafficEscapeWaypoint(b, [obstacle(a)], 50);
 assert(escape, 'lower priority ship must obtain a safe escape');
 assert.deepEqual(escape, priority.trafficEscapeWaypoint(b, [obstacle(a)], 50));

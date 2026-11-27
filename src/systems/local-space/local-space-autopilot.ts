@@ -6,6 +6,7 @@ import {
   beginTrafficLeg,
   endTrafficLeg,
   noteTrafficProgress,
+  needsTrafficEscape,
   trafficEscapeWaypoint,
 } from '../navigation/field-traffic-priority';
 import { angleDelta, distance, heading, moveToward, turnToward } from './local-space-motion';
@@ -69,22 +70,18 @@ function advanceReverseCorrection(
 interface AutopilotTraffic {
   readonly obstacles: readonly FieldRouteObstacle[];
   readonly clearance: number;
-  readonly solids?: readonly FieldRouteObstacle[];
+  readonly solids?: () => readonly FieldRouteObstacle[];
 }
 
 function autopilotEscape(
   ship: LocalShipState,
   target: WorldPoint,
   traffic?: AutopilotTraffic
-): WorldPoint | undefined {
+): WorldPoint | null | undefined {
   if (!traffic) return undefined;
   beginTrafficLeg(ship, target, 'player');
-  if (!traffic.solids) return undefined;
-  return trafficEscapeWaypoint(
-    ship,
-    [...traffic.solids, ...traffic.obstacles],
-    traffic.clearance
-  );
+  if (!traffic.solids || !needsTrafficEscape(ship)) return undefined;
+  return trafficEscapeWaypoint(ship, [...traffic.solids(), ...traffic.obstacles], traffic.clearance);
 }
 
 export function advanceAutopilotRoute(
@@ -102,6 +99,11 @@ export function advanceAutopilotRoute(
 
   const start = ship.position;
   const escape = autopilotEscape(ship, route[route.length - 1]!, traffic);
+  if (escape === null) {
+    ship.speed = 0;
+    noteTrafficProgress(ship, deltaSeconds, true);
+    return { nextIndex: index, completed: false };
+  }
   const waypoint = escape ?? route[index]!;
   const remainingDistance = distance(ship.position, waypoint);
   const finalWaypoint = !escape && index === route.length - 1;

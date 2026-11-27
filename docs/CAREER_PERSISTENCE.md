@@ -1543,3 +1543,7 @@ Die Ausweichpunkte werden auf die bekannten Feldgrenzen und realen
 Routenhindernisse geprüft. Spieler-Autopilot und NPC-Feldfahrt verwenden
 dieselbe Fortschritts- und Vorfahrtsentscheidung; der bestehende
 Autopilot behält seine Bewegungsintegration und den Routenindex.
+
+Begegnungsentscheidungen sind symmetrisch und nur per lebender Pose
+referenziert. Wartezeit und Ausweichplanung sind flüchtig; beim Laden
+werden sie aus den aktuellen Posen und Aufträgen neu aufgebaut.

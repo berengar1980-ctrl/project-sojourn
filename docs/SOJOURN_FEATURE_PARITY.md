@@ -2123,3 +2123,9 @@ Ausweichpunkt bei ausbleibender Bewegung. Aktive Gefechte sind ausgenommen.
 **Keine Statusänderung** der Feature-IDs. Auch Spielerrouten können bei
 fehlendem Fortschritt einen vorübergehenden seitlichen Ausweichpunkt
 anfahren. Bestehende Feldgrenzen und stationäre Hindernisse werden geprüft.
+
+**Keine Statusänderung** der Feature-IDs. Die Vorfahrt wird je Begegnung
+beidseitig festgelegt (Ausflugstatus, Wartezeit, stabile ID) und erst bei
+Trennung bzw. geändertem Auftrag wieder freigegeben. Ein neu versperrter
+Ausweichpunkt wird zunächst abgewartet; die unmittelbare Kontaktprüfung
+bleibt auch für vorfahrtsberechtigte Schiffe zwingend.

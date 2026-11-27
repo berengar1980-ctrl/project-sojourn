@@ -355,7 +355,7 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.options.turnRateMultiplier ?? 1,
       {
         obstacles: fieldTrafficObstacles(this.options.field, 'player'),
-        solids: salvageTrafficSolids(this.options.field),
+        solids: () => salvageTrafficSolids(this.options.field),
         clearance: Math.max(32, (this.options.shipLengthMeters ?? 70) * 0.46),
       }
     );

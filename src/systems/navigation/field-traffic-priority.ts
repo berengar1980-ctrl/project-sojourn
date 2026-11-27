@@ -20,12 +20,14 @@ interface TrafficProgress {
   waiting: number;
   sampleSeconds: number;
   sampleDistance: number;
-  encounter?: { readonly id: string; readonly yields: boolean };
+  encounters: WeakMap<TrafficProgress, string>;
+  escapeBlockedSeconds: number;
   escape?: WorldPoint;
   bounds?: { readonly width: number; readonly height: number };
 }
 
 const progress = new WeakMap<object, TrafficProgress>();
+const intentOwners = new WeakMap<FieldTrafficIntent, TrafficProgress>();
 
 function state(pose: TrafficPose, id = pose.npcId ?? ''): TrafficProgress {
   const existing = progress.get(pose);
@@ -33,7 +35,16 @@ function state(pose: TrafficPose, id = pose.npcId ?? ''): TrafficProgress {
     if (id) existing.id = id;
     return existing;
   }
-  const entry = { id, priority: 0, fixed: false, waiting: 0, sampleSeconds: 0, sampleDistance: 0 };
+  const entry: TrafficProgress = {
+    id,
+    priority: 1,
+    fixed: false,
+    waiting: 0,
+    sampleSeconds: 0,
+    sampleDistance: 0,
+    encounters: new WeakMap(),
+    escapeBlockedSeconds: 0,
+  };
   progress.set(pose, entry);
   return entry;
 }
@@ -52,19 +63,21 @@ export function registerTrafficPose(
   if (fixed || pose.phase === 'mining' || pose.phase === 'salvaging' || pose.phase === 'scanning') {
     delete entry.direction;
     delete entry.escape;
-    delete entry.encounter;
+    entry.encounters = new WeakMap();
     entry.waiting = 0;
   }
 }
 
 export function trafficIntent(pose: TrafficPose, id: string): FieldTrafficIntent {
   const entry = state(pose, id);
-  return {
+  const intent: FieldTrafficIntent = {
     priority: entry.priority,
     movable: !entry.fixed && Boolean(entry.direction),
     waitingSeconds: entry.waiting,
     ...(entry.direction ? { direction: entry.direction } : {}),
   };
+  intentOwners.set(intent, entry);
+  return intent;
 }
 
 export function beginTrafficLeg(pose: TrafficPose, target: WorldPoint, id?: string): void {
@@ -73,7 +86,7 @@ export function beginTrafficLeg(pose: TrafficPose, target: WorldPoint, id?: stri
     entry.waiting = 0;
     entry.sampleSeconds = 0;
     delete entry.escape;
-    delete entry.encounter;
+    entry.encounters = new WeakMap();
   }
   entry.target = target;
   const dx = target.x - pose.position.x;
@@ -89,13 +102,13 @@ export function endTrafficLeg(pose: TrafficPose): void {
   if (!entry) return;
   delete entry.direction;
   delete entry.target;
-  delete entry.encounter;
+  entry.encounters = new WeakMap();
   delete entry.escape;
   entry.waiting = 0;
   entry.sampleSeconds = 0;
 }
 
-/** A total order prevents mutual yield, independent of iteration order. */
+/** A stable tie-breaker for equally ranked ships at the start of an encounter. */
 export function hasTrafficPriority(
   selfId: string,
   self: FieldTrafficIntent,
@@ -103,20 +116,46 @@ export function hasTrafficPriority(
   other: FieldTrafficIntent
 ): boolean {
   if (self.priority !== other.priority) return self.priority > other.priority;
+  if (Math.abs(self.waitingSeconds - other.waitingSeconds) > 0.25)
+    return self.waitingSeconds > other.waitingSeconds;
   return selfId < otherId;
 }
 
-export function yieldsToTraffic(pose: TrafficPose, obstacle: FieldRouteObstacle): boolean {
+export function yieldsToTraffic(
+  pose: TrafficPose,
+  obstacle: FieldRouteObstacle,
+  clearance = 65
+): boolean {
   const entry = state(pose);
   const other = obstacle.intent;
-  if (!entry.id || !other || !other.movable) return true;
-  if (entry.encounter?.id === obstacle.id) return entry.encounter.yields;
-  return !hasTrafficPriority(entry.id, trafficIntent(pose, entry.id), obstacle.id, other);
+  if (!entry.id || !other) return true;
+  const owner = intentOwners.get(other);
+  const nearby =
+    squaredDistance(pose.position, obstacle.position) < (clearance + obstacle.radius + 180) ** 2;
+  if (!nearby || !other.movable) {
+    if (owner) {
+      entry.encounters.delete(owner);
+      owner.encounters.delete(entry);
+    }
+    return true;
+  }
+  if (!owner) return !hasTrafficPriority(entry.id, trafficIntent(pose, entry.id), obstacle.id, other);
+  const winner = entry.encounters.get(owner) ?? owner.encounters.get(entry);
+  if (winner) return winner !== entry.id;
+  const selected = hasTrafficPriority(entry.id, trafficIntent(pose, entry.id), obstacle.id, other)
+    ? entry.id
+    : obstacle.id;
+  entry.encounters.set(owner, selected);
+  owner.encounters.set(entry, selected);
+  return selected !== entry.id;
 }
 
 export function noteTrafficProgress(pose: TrafficPose, dt: number, blocked: boolean): void {
   const entry = state(pose);
-  if (blocked) entry.waiting += dt;
+  if (blocked) {
+    entry.waiting += dt;
+    if (entry.escape) entry.escapeBlockedSeconds += dt;
+  } else entry.escapeBlockedSeconds = 0;
   if (!entry.target) return;
   entry.sampleSeconds += dt;
   if (entry.sampleSeconds < 2) return;
@@ -175,20 +214,26 @@ function escapePoint(
 }
 
 /** One committed local escape, never a teleport or a second movement step. */
+export function needsTrafficEscape(pose: TrafficPose): boolean {
+  const entry = progress.get(pose);
+  return Boolean(entry && !entry.fixed && (entry.escape || entry.waiting >= 1.5));
+}
+
 export function trafficEscapeWaypoint(
   pose: TrafficPose,
   obstacles: readonly FieldRouteObstacle[],
   clearance: number
-): WorldPoint | undefined {
+): WorldPoint | null | undefined {
   const entry = state(pose);
   if (entry.escape) {
     if (squaredDistance(pose.position, entry.escape) > 4) {
       if (escapePathClear(pose.position, entry.escape, obstacles, clearance)) return entry.escape;
-      return undefined;
+      if (entry.escapeBlockedSeconds < 2) return null;
     }
     delete entry.escape;
     entry.waiting = 0;
     entry.sampleSeconds = 0;
+    entry.escapeBlockedSeconds = 0;
   }
   if (entry.fixed || entry.waiting < 1.5 || !entry.direction) return undefined;
   const blocker = obstacles
@@ -202,13 +247,15 @@ export function trafficEscapeWaypoint(
         squaredDistance(pose.position, a.position) - squaredDistance(pose.position, b.position)
     )[0];
   if (!blocker) {
-    delete entry.encounter;
+    entry.encounters = new WeakMap();
     return undefined;
   }
-  const yields = yieldsToTraffic(pose, blocker);
-  entry.encounter = { id: blocker.id, yields };
+  const yields = yieldsToTraffic(pose, blocker, clearance);
   if (!yields && entry.waiting < 5) return undefined;
   const escape = escapePoint(pose, blocker, obstacles, clearance, entry.direction);
-  if (escape) entry.escape = escape;
+  if (escape) {
+    entry.escape = escape;
+    entry.escapeBlockedSeconds = 0;
+  }
   return escape;
 }
