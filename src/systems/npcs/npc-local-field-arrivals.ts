@@ -23,8 +23,7 @@ function gateBlocked(first: FieldRouteObstacle, second: FieldRouteObstacle): boo
   if (!intent || intent.priority < 2 || !intent.direction) return false;
   // Reserve only the short approach of an outbound ship heading toward this gate.
   return (
-    contactCandidate(dx, dy, reach + 120) &&
-    dx * intent.direction.x + dy * intent.direction.y > 0
+    contactCandidate(dx, dy, reach + 120) && dx * intent.direction.x + dy * intent.direction.y > 0
   );
 }
 
