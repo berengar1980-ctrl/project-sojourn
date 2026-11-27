@@ -1,3 +1,4 @@
+import { clamp } from '../../core/numeric-geometry';
 import type { PlayerEconomyState } from '../../core/economy-types';
 import { economyResourceById, isIllegalResource } from '../../data/economy/economy-resources';
 import type {
@@ -11,9 +12,6 @@ import type {
 } from './smuggling-types';
 import { HIDDEN_CARGO_HOLD } from './smuggling-types';
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
 function illegalCargo(player: PlayerEconomyState): ContrabandDetection[] {
   return Object.entries(player.cargo)
     .filter(([id, lot]) => isIllegalResource(id) && lot.qty > 0)

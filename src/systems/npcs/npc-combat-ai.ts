@@ -1,3 +1,4 @@
+import { pirateGroupId } from '../../core/pirate-ports';
 import { DRONE_SCAN_RADIUS, isSecurityDrone } from '../../core/security-drone';
 import type { SectorNpcState } from '../../core/npc-types';
 
@@ -28,38 +29,34 @@ export function npcDefenseReaction(npc: SectorNpcState): NpcDefenseReaction {
   return score >= 72 ? 'fight' : 'flee';
 }
 
+export function npcAvailableForCombat(npc: SectorNpcState, allowEngaged = false): boolean {
+  const recovered = (npc.combatRecoverySeconds ?? 0) <= 0;
+  return npc.hullHp > 0 && (allowEngaged || !npc.combatMovement) && recovered;
+}
+
 export function npcMayInitiateAttack(npc: SectorNpcState): boolean {
-  if (npc.hullHp <= 0 || npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) return false;
+  if (!npcAvailableForCombat(npc)) return false;
   if (npc.pirate) return npc.aggression >= 60;
   // An operational patrol either intercepts known pirates or withdraws when unfit to fight.
   return npc.job === 'patrol' && npcDefenseReaction(npc) === 'fight';
 }
 
 export function npcLooksHostileToPatrol(npc: SectorNpcState): boolean {
-  if (npc.hullHp <= 0 || npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
-    return false;
-  }
+  if (!npcAvailableForCombat(npc)) return false;
   // Aggression is a personality/combat-response trait, not evidence of a crime.
   // Normal freighters, miners and salvagers are never automatic patrol targets.
   return npc.pirate === true;
 }
 
 export function npcIsPiratePrey(npc: SectorNpcState): boolean {
-  return (
-    npc.hullHp > 0 &&
-    !npc.pirate &&
-    !npc.combatMovement &&
-    (npc.combatRecoverySeconds ?? 0) <= 0 &&
-    (npc.job === 'freighter' || npc.job === 'miner' || npc.job === 'salvager')
-  );
+  const civilianWorker = npc.job === 'freighter' || npc.job === 'miner' || npc.job === 'salvager';
+  return npcAvailableForCombat(npc) && !npc.pirate && civilianWorker;
 }
 
 /** Hostile pirate outfits can encounter and attack one another on the sector map. */
 export function rivalPirateGroups(a: SectorNpcState, b: SectorNpcState): boolean {
   if ((!a.pirate && a.job !== 'pirate') || (!b.pirate && b.job !== 'pirate')) return false;
-  const groupA = a.factionId ?? a.pirateMark ?? 'pirates';
-  const groupB = b.factionId ?? b.pirateMark ?? 'pirates';
-  return groupA !== groupB;
+  return pirateGroupId(a) !== pirateGroupId(b);
 }
 
 /** One NPC-versus-NPC target policy for campaign encounters and FleetCombat labs. */
@@ -71,12 +68,17 @@ export function npcMayTargetNpc(
   if (attacker.id === target.id) return false;
   if (!attacker.pirate) {
     if (joiningExistingCombat) {
-      const available = target.hullHp > 0 && (target.combatRecoverySeconds ?? 0) <= 0;
+      const available = npcAvailableForCombat(target, true);
       return target.pirate === true && available;
     }
     return npcLooksHostileToPatrol(target);
   }
-  if (rivalPirateGroups(attacker, target))
-    return target.hullHp > 0 && !target.combatMovement && (target.combatRecoverySeconds ?? 0) <= 0;
+  if (rivalPirateGroups(attacker, target)) return npcAvailableForCombat(target);
   return npcIsPiratePrey(target);
+}
+
+/** Protection is explicit and applies only to the faction actually paid. */
+export function protectedFromPirate(pirate: SectorNpcState, target: SectorNpcState): boolean {
+  const protection = target.smugglingProtectionFaction;
+  return protection !== undefined && protection === pirateGroupId(pirate);
 }

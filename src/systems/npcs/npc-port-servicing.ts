@@ -1,16 +1,9 @@
+import { isServicedPort } from '../../core/port-service-policy';
+export { isServicedPort } from '../../core/port-service-policy';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldLocation } from '../../core/world-types';
 import { quoteRefuel, quoteRepair } from '../ships/ship-operating-costs';
 import { npcRepairPriority } from './npc-operating-policy';
-
-/** Inhabited docks service civilian ships; barren fields and derelicts do not. */
-export function isServicedPort(location: WorldLocation | undefined): boolean {
-  if (!location) return false;
-  const kind = location.kind;
-  if (kind !== 'planet' && kind !== 'moon' && kind !== 'station') return false;
-  const facilities = location.activities;
-  return Boolean(facilities.refuel || facilities.dock || facilities.trade || facilities.shipyard);
-}
 
 function buyNpcFuel(npc: SectorNpcState): void {
   const fuel = quoteRefuel(npc.fuel, npc.fuelCapacity, npc.credits);

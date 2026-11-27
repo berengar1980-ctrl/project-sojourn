@@ -1,3 +1,4 @@
+import { distance } from '../../core/field-geometry';
 import type { WorldPoint } from '../../core/world-types';
 import {
   sensorCivilianTransponderRange,
@@ -27,10 +28,6 @@ export interface SectorSensorContactInfo {
   readonly range: number;
   readonly identifyRange: number;
   readonly source: 'transponder' | 'sensor';
-}
-
-function distance(first: WorldPoint, second: WorldPoint): number {
-  return Math.hypot(second.x - first.x, second.y - first.y);
 }
 
 function worldRange(voidboundAu: number, modifier: number): number {

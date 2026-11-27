@@ -1,3 +1,4 @@
+import { protectedFromPirate } from '../npcs/npc-combat-ai';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { canPirateOperateAt, worldDangerAt } from '../npcs/npc-pirate-classes';
@@ -29,7 +30,7 @@ export function canRaidCivilianCargo(
   );
   return (
     pirateMayIntercept(world, pirate, position) &&
-    civilian.smugglingProtectionFaction !== pirate.factionId &&
+    !protectedFromPirate(pirate, civilian) &&
     cargoUnits > 0 &&
     (Boolean(civilian.travel) || civilian.autonomy?.phase === 'working')
   );

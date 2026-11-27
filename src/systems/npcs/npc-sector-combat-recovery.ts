@@ -17,8 +17,8 @@ export function beginNpcCombatRecovery(
   reason: string,
   retire: () => boolean
 ): boolean {
+  if (npc.retiredUntilDay !== undefined || (npc.combatRecoverySeconds ?? 0) > 0) return true;
   if (isSecurityDrone(npc.id)) {
-    if ((npc.combatRecoverySeconds ?? 0) > 0) return true;
     delete npc.combatMovement;
     delete npc.travel;
     npc.combatDefeats = (npc.combatDefeats ?? 0) + 1;

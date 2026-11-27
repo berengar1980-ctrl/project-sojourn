@@ -10,7 +10,10 @@ interface ContactShip {
   readonly position: { readonly x: number; readonly y: number };
   readonly headingRadians?: number;
   readonly hullShieldGeometry?: ShieldWorldGeometry;
-  readonly setup?: Pick<MutableCombatant['setup'], 'shipId' | 'shieldGeometry'>;
+  readonly setup?: Pick<
+    MutableCombatant['setup'],
+    'shipId' | 'shieldGeometry' | 'nominalLengthMeters'
+  >;
 }
 
 export interface ShipContact {
@@ -27,7 +30,13 @@ export interface ShipContact {
  */
 function hullExtent(ship: ContactShip, nx: number, ny: number): number {
   const nominal = /([0-9]+(?:\.[0-9]+)?)m\b/i.exec(ship.setup?.shipId ?? '');
-  const length = nominal ? Number(nominal[1]) : 60;
+  const configuredLength = ship.setup?.nominalLengthMeters;
+  const length =
+    configuredLength !== undefined && Number.isFinite(configuredLength) && configuredLength > 0
+      ? configuredLength
+      : nominal
+        ? Number(nominal[1])
+        : 60;
   const { radiusX, radiusY } = combatHullRadii(
     length,
     ship.hullShieldGeometry ?? ship.setup?.shieldGeometry

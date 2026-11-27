@@ -111,3 +111,15 @@ assert(
 );
 
 console.log('PASS local civilian transponder range, pirate contacts and independent mining scan');
+
+const { combatSensorStats, sensorRangeMultiplier } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/ships/ship-component-service.ts'
+);
+const installed = { sensor: ['sensor1'] };
+const tactical = combatSensorStats(installed, 50);
+assert.equal(tactical.sensorTier, 1);
+assert.equal(tactical.sensorRangeMeters, 1000);
+assert.equal(tactical.sensorRangeMultiplier, sensorRangeMultiplier(installed));
+assert.equal(combatSensorStats(installed, 50, false).sensorRangeMeters, 0);
+assert.equal(combatSensorStats({}, 50).sensorTier, 0);

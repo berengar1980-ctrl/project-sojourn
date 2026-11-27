@@ -1,7 +1,6 @@
-import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { measurePerformance } from '../../core/performance-diagnostics';
-import { clampedSegmentProjection } from '../../core/field-geometry';
+import { clampedSegmentProjection, distance } from '../../core/field-geometry';
 import { planPointRoute } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
 import {
@@ -31,10 +30,6 @@ export interface FieldRouteShip {
   headingRadians: number;
   speed: number;
   routeState?: FieldRouteState;
-}
-
-function distance(a: WorldPoint, b: WorldPoint): number {
-  return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
 function blocked(
@@ -77,7 +72,7 @@ function makeRoute(
       routeBlocking: true,
       collisionRadius: rock.radius,
     };
-  }) as unknown as LocalAsteroid[];
+  });
   const planned = planPointRoute({
     start,
     target,

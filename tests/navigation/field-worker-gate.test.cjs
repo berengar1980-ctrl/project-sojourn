@@ -67,3 +67,33 @@ assert.equal(waiting.body(npc.id), undefined, 'armed traffic must wait outside a
 waiting.reconcile([npc], undefined, () => []);
 assert.deepEqual(waiting.body(npc.id).position, spawn);
 console.log('PASS field worker admission waits for a free existing gate');
+
+const worker = loadStandaloneTypeScriptModule(root, 'src/systems/npcs/npc-worker-primitives.ts');
+const workerNpc = {
+  hullHp: 100,
+  locationId: 'field',
+  workLocationId: 'field',
+  autonomy: { phase: 'working' },
+  cargo: { ore: 9 },
+  cargoCapacity: 10,
+};
+assert.equal(worker.workerAtAssignment(workerNpc, 'field'), true);
+assert.equal(worker.workerCargoFull(workerNpc), false);
+assert.equal(worker.workerMustExit(workerNpc, 0), true);
+workerNpc.cargo.ore = 10;
+assert.equal(worker.workerMustExit(workerNpc, 1), true);
+workerNpc.combatRecoverySeconds = 1;
+assert.equal(worker.workerAtAssignment(workerNpc, 'field'), false);
+assert.equal(worker.workerStepSeconds(1), 0.08);
+const scan = { speed: 20, scanProgress: 0 };
+assert.equal(worker.advanceWorkerScan(scan, 2.5), false);
+assert.equal(scan.speed, 0);
+assert.equal(worker.advanceWorkerScan(scan, 2.5), true);
+
+const steps = loadStandaloneTypeScriptModule(root, 'src/core/simulation-step.ts');
+assert.equal(steps.boundedSimulationStep(1, steps.COMBAT_STEP_SECONDS), 0.08);
+assert.equal(steps.boundedSimulationStep(1, steps.LOCAL_PHYSICS_STEP_SECONDS), 0.05);
+assert.equal(steps.boundedSimulationStep(1, steps.SECTOR_STEP_SECONDS), 0.25);
+assert.equal(steps.boundedSimulationStep(0.01, steps.COMBAT_STEP_SECONDS), 0.01);
+assert.equal(steps.boundedSimulationStep(-1, steps.COMBAT_STEP_SECONDS), 0);
+assert.equal(steps.boundedSimulationStep(NaN, steps.COMBAT_STEP_SECONDS), 0);

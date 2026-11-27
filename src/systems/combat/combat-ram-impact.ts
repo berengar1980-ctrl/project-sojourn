@@ -1,3 +1,4 @@
+import { absorbDamage } from '../../core/layered-damage';
 import { isSecurityDrone } from '../../core/security-drone';
 import type { MutableCombatant, StrategicCombatRuntime } from './strategic-combat-types';
 import { shipContact } from './combat-ship-contact-geometry';
@@ -48,9 +49,8 @@ export function applyCombatRamImpact(
     [attacker, firstDamage, nx, ny],
     [defender, secondDamage, -nx, -ny],
   ] as const) {
-    const shield = Math.min(ship.shieldHp, impact);
-    ship.shieldHp -= shield;
-    const overflow = impact - shield;
+    const { remaining, overflow } = absorbDamage(ship.shieldHp, impact);
+    ship.shieldHp = remaining;
     const armorAdjusted = directionalHullDamage(
       ship,
       overflow,

@@ -1,7 +1,8 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { npcOperationalSpeed } from './npc-upgrade-service';
-import { FUEL_DISTANCE_SCALE, turnToward } from './npc-sector-routing';
+import { turnToward } from './npc-sector-routing';
+import { fuelForDistance } from '../../core/fuel-pricing';
 
 const COMBAT_TURN_RATE = 1.15;
 
@@ -40,7 +41,7 @@ export function advanceNpcCombatMovement(
       Math.min(world.height, movement.position.y + Math.sin(movement.headingRadians) * moved)
     ),
   };
-  npc.fuel = Math.max(0, npc.fuel - moved * npc.fuelUse * FUEL_DISTANCE_SCALE);
+  npc.fuel = Math.max(0, npc.fuel - fuelForDistance(moved, npc.fuelUse));
 }
 
 const fieldActivityByJob = {

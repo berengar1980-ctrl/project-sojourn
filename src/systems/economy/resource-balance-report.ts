@@ -1,3 +1,4 @@
+import { wholeQuantity as quantity } from '../../core/economy-quantity';
 import type {
   EconomyCargoHold,
   EconomyMarketState,
@@ -27,10 +28,6 @@ export interface ResourceBalanceReport {
   readonly emptyMarkets: number;
   readonly minPrice: number | null;
   readonly maxPrice: number | null;
-}
-
-function quantity(value: number): number {
-  return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
 }
 
 function classifyStock(sourceId: string): keyof PhysicalStockBreakdown {

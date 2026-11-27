@@ -6,7 +6,6 @@ import type { ShipHardpoints, ShipWeaponFamily } from '../../core/ship-types';
 import { createShieldWorldGeometry } from '../../core/ship-contact-geometry';
 
 import type {
-  CombatPoint,
   CombatShieldGeometry,
   StrategicCombatantSetup,
   StrategicCombatSide,
@@ -31,32 +30,13 @@ export const DEFAULT_TURN_RATE = 0.72;
 
 export const DEFAULT_ACCELERATION = 34;
 
-export function clamp(value: number, minimum: number, maximum: number): number {
-  return Math.max(minimum, Math.min(maximum, value));
-}
+export { clamp } from '../../core/numeric-geometry';
 
-export function hashSeed(value: string): number {
-  let hash = 2166136261;
-  for (const char of value) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { stableHash as hashSeed } from '../../core/stable-hash';
 
-export function createRng(seed: number): () => number {
-  let state = seed >>> 0 || 1;
-  return () => {
-    state ^= state << 13;
-    state ^= state >>> 17;
-    state ^= state << 5;
-    return (state >>> 0) / 4294967296;
-  };
-}
+export { createXorshiftRandom as createRng } from '../../core/seeded-random';
 
-export function distance(a: CombatPoint, b: CombatPoint): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
+export { distance } from '../../core/field-geometry';
 
 export function createCombatShieldGeometry(
   hardpoints: ShipHardpoints,
@@ -76,12 +56,7 @@ export function normalize(dx: number, dy: number): { x: number; y: number } {
   return length <= 0.0001 ? { x: 1, y: 0 } : { x: dx / length, y: dy / length };
 }
 
-export function wrapAngle(value: number): number {
-  let angle = value;
-  while (angle > Math.PI) angle -= Math.PI * 2;
-  while (angle < -Math.PI) angle += Math.PI * 2;
-  return angle;
-}
+export { wrapAngle } from '../../core/numeric-geometry';
 
 export { rotatePoint as rotate } from '../../core/field-geometry';
 

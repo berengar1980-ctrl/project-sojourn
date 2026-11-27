@@ -1,3 +1,10 @@
+import {
+  advanceWorkerScan,
+  workerCargoFull,
+  workerCombatSuspended,
+  workerMustExit,
+  workerStepSeconds,
+} from './npc-worker-primitives';
 import { planMiningApproachRoute } from '../local-space/local-space-navigation';
 import { trafficRouteBodies } from '../navigation/field-traffic-obstacles';
 import { moveFieldShip } from '../navigation/field-ship-routing';
@@ -24,10 +31,8 @@ import {
   MINING_AMOUNT,
   NPC_MINING_SURFACE_DISTANCE,
   holdMinerWorkRange,
-  cargoUsed,
   chooseEventChoice,
   approachPoint,
-  SCAN_SECONDS,
   MINING_CYCLE_SECONDS,
   type NpcLocalMiningService,
   hashId,
@@ -54,6 +59,7 @@ interface MinerRuntime {
 
 function beginExit(runtime: MinerRuntime, ship: LocalNpcMinerState): void {
   ship.phase = 'exiting';
+  delete ship.routeState;
   ship.targetAsteroidId = null;
   ship.laserActive = false;
   ship.scanProgress = 0;
@@ -189,7 +195,7 @@ function mine(
     deposit.oreRemaining = Math.max(0, deposit.oreRemaining - accepted);
     runtime.options.onAsteroidMined?.(npc, asteroid, deposit.resourceId, accepted);
   }
-  if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity)) {
+  if (workerMustExit(npc, accepted)) {
     beginExit(runtime, ship);
   } else if (!asteroid.deposits.some((candidate) => candidate.oreRemaining > 0)) {
     assignTarget(runtime, ship, npc);
@@ -312,10 +318,8 @@ function advanceScanning(
       beginExit(runtime, ship);
       return;
     }
-    ship.speed = 0;
     ship.laserActive = false;
-    ship.scanProgress = Math.min(1, ship.scanProgress + dt / SCAN_SECONDS);
-    if (ship.scanProgress < 1) return;
+    if (!advanceWorkerScan(ship, dt)) return;
     runtime.events.get(npc.id)?.begin(asteroid);
     runtime.options.onAsteroidScanned?.(npc, asteroid);
     ship.phase = 'mining';
@@ -404,7 +408,7 @@ function advanceMiner(
 }
 
 function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatantId?: string): void {
-  const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
+  const dt = workerStepSeconds(deltaSeconds);
   if (dt <= 0) return;
   syncArrivals(runtime);
   for (let index = runtime.ships.length - 1; index >= 0; index -= 1) {
@@ -429,7 +433,7 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     }
     // NPC-versus-NPC battles and their recovery never despawn a miner from
     // its local field. Suspend work until the same physical ship may resume.
-    if (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
+    if (workerCombatSuspended(npc)) {
       // Preserve the native duel velocity for exhaust/telemetry while the
       // combat engine alone owns an engaged ship's physical movement.
       if (!npc.combatMovement) ship.speed = 0;
@@ -441,6 +445,7 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
       delete ship.routeState;
       continue;
     }
+    if (workerCargoFull(npc) && ship.phase !== 'exiting') beginExit(runtime, ship);
     if (advanceMiner(runtime, ship, npc, dt)) runtime.ships.splice(index, 1);
   }
   if (runtime.options.resolveLocalCollisions !== false)

@@ -1,3 +1,4 @@
+import { createLcgRandom as createRandom } from '../../core/seeded-random';
 import type {
   LocalAsteroid,
   MiningEventChoice,
@@ -19,14 +20,6 @@ export interface MiningEventDepositResult {
   readonly lostTons: number;
   readonly bonusTons: number;
   readonly bonusResourceName: string;
-}
-
-function createRandom(seed: number): () => number {
-  let value = seed >>> 0;
-  return () => {
-    value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
-    return value / 4294967296;
-  };
 }
 
 function totalOre(asteroid: LocalAsteroid): number {

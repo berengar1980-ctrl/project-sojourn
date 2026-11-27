@@ -3,6 +3,7 @@ import type { ShipDefinition } from '../core/ship-types';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
 import {
   getShipComponent,
+  combatSensorStats,
   calculateShipModeEnergy,
   resolveShipArmorProtection,
   resolveShipRuntimeSetup,
@@ -25,9 +26,6 @@ export function createPlayerCombatant(
   const armor = resolveShipArmorProtection(runtime.installed);
   const equippedWeapons = combatEquippedWeapons(ship, runtime.installed.weapon ?? []);
   const weapons = equippedWeapons.map((entry) => entry.component);
-  const sensor = (runtime.installed.sensor ?? [])
-    .map((id) => getShipComponent('sensor', id))
-    .find((component) => component !== null);
   const mines = (runtime.installed.mine ?? []).flatMap((id) => {
     const component = getShipComponent('mine', id);
     return component?.mine ? [component.mine, component.mine, component.mine] : [];
@@ -37,6 +35,7 @@ export function createPlayerCombatant(
     id: 'player',
     name: ship.name,
     shipId: ship.id,
+    nominalLengthMeters: ship.nominalLengthMeters,
     shieldHp: runtime.shieldMaxHp,
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
     hullHp: runtime.hullMaxHp,
@@ -54,10 +53,7 @@ export function createPlayerCombatant(
     tractorRangeMeters: shipCombatTractorRange(runtime.installed),
     power: calculateShipModeEnergy(runtime.installed),
     tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
-    sensorCrewSkill: runtime.sensorCrewSkill,
-    sensorTier: sensor?.tier ?? 0,
-    sensorRangeMeters: runtime.scanAvailable ? 1000 : 0,
-    sensorRangeMultiplier: runtime.sensorModifier || 1,
+    ...combatSensorStats(runtime.installed, runtime.sensorCrewSkill, runtime.scanAvailable),
   };
 }
 

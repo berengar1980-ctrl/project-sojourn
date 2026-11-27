@@ -1,3 +1,6 @@
+import { fuelForDistance, FUEL_PRICE_PER_UNIT, MIN_ROUTE_FUEL } from '../../core/fuel-pricing';
+import { pirateHomePort } from '../../core/pirate-ports';
+import { stableHash as hashId } from '../../core/stable-hash';
 import { isSecurityDrone } from '../../core/security-drone';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { RouteThreatContact } from '../navigation/route-planner';
@@ -7,16 +10,9 @@ import type { WorldMap, WorldPoint } from '../../core/world-types';
 
 import { type RoutePlan, type RouteProfile } from '../navigation/route-planner';
 
-export const FUEL_DISTANCE_SCALE = 0.025;
+export { FUEL_DISTANCE_SCALE } from '../../core/fuel-pricing';
 
-export function hashId(id: string): number {
-  let hash = 2166136261;
-  for (const char of id) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { stableHash as hashId } from '../../core/stable-hash';
 
 export function routeProfile(npc: SectorNpcState): RouteProfile {
   if (npc.pirate) return 'fast';
@@ -27,7 +23,7 @@ export function routeProfile(npc: SectorNpcState): RouteProfile {
 }
 
 export function routeFuel(npc: SectorNpcState, route: RoutePlan): number {
-  return Math.max(0.1, route.distance * npc.fuelUse * FUEL_DISTANCE_SCALE);
+  return Math.max(MIN_ROUTE_FUEL, fuelForDistance(route.distance, npc.fuelUse));
 }
 
 /** NPC captains weigh nearby real piracy against patrol cover using their own risk preference. */
@@ -97,10 +93,6 @@ interface PirateHuntQuote {
   readonly fuelExpense: number;
 }
 
-function pirateHomeId(npc: SectorNpcState): string {
-  return npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
-}
-
 function activeContact(npc: SectorNpcState): boolean {
   return (
     npc.hullHp > 0 && npc.retiredUntilDay === undefined && (npc.combatRecoverySeconds ?? 0) <= 0
@@ -161,7 +153,7 @@ export function pirateHuntDestination(
   livePosition: (entry: SectorNpcState) => WorldPoint,
   quoteTravel?: (destinationId: string) => PirateHuntQuote | null
 ): string | null {
-  const homeId = pirateHomeId(npc);
+  const homeId = pirateHomePort(npc.factionId);
   const home = world.locations.find((location) => location.id === homeId);
   const available = Math.max(0, npc.credits);
   const hullFraction = npc.hullMaxHp > 0 ? npc.hullHp / npc.hullMaxHp : 0;
@@ -196,7 +188,7 @@ export function pirateHuntDestination(
       const homeDistance = home
         ? Math.hypot(home.position.x - location.position.x, home.position.y - location.position.y)
         : 2000;
-      const returnFuelReserve = homeDistance * npc.fuelUse * FUEL_DISTANCE_SCALE * 10;
+      const returnFuelReserve = fuelForDistance(homeDistance, npc.fuelUse) * FUEL_PRICE_PER_UNIT;
       const net = estimatedOpportunity - riskCost - fuelExpense - returnFuelReserve;
       const minimum = available < 1500 ? 350 : 0;
       if (net <= minimum) return null;

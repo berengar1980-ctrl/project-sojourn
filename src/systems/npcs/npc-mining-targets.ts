@@ -1,10 +1,10 @@
+import { workerAtAssignment, workerCargoFull } from './npc-worker-primitives';
+export { moveToward, cargoUsed, chooseEventChoice } from './npc-worker-primitives';
+import { stableHash as hashId } from '../../core/stable-hash';
+import { distance } from '../../core/field-geometry';
 import type { FieldRouteState, FieldRouteObstacle } from '../navigation/field-ship-routing';
 import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
-import type {
-  LocalAsteroid,
-  LocalShipState,
-  MiningEventChoice,
-} from '../../core/local-space-types';
+import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
 
 import type { ShipDefinition } from '../../core/ship-types';
 
@@ -99,20 +99,13 @@ export const NPC_MINING_SURFACE_DISTANCE = 48;
 
 export const FLIGHT_SPEED = 92;
 
-export const SCAN_SECONDS = 5;
+export { WORKER_SCAN_SECONDS as SCAN_SECONDS } from './npc-worker-primitives';
 
 export const MINING_CYCLE_SECONDS = 1.15;
 
 export const MINING_AMOUNT = 4;
 
-export function hashId(id: string): number {
-  let hash = 2166136261;
-  for (const char of id) {
-    hash ^= char.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { stableHash as hashId } from '../../core/stable-hash';
 
 export function edgePoint(id: string, width: number, height: number, outside = false): WorldPoint {
   const hash = hashId(id);
@@ -123,37 +116,6 @@ export function edgePoint(id: string, width: number, height: number, outside = f
   if (side === 1) return { x: width - (outside ? -margin : margin), y: height * (0.15 + t * 0.7) };
   if (side === 2) return { x: width * (0.15 + t * 0.7), y: outside ? -margin : margin };
   return { x: width * (0.15 + t * 0.7), y: height - (outside ? -margin : margin) };
-}
-
-function distance(a: WorldPoint, b: WorldPoint): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
-
-export function moveToward(
-  ship: LocalNpcMinerState,
-  target: WorldPoint,
-  speed: number,
-  dt: number
-): boolean {
-  const dx = target.x - ship.position.x;
-  const dy = target.y - ship.position.y;
-  const remaining = Math.hypot(dx, dy);
-  ship.headingRadians = Math.atan2(dy, dx);
-  ship.speed = speed;
-  if (remaining <= Math.max(2, speed * dt)) {
-    ship.position = { ...target };
-    ship.speed = 0;
-    return true;
-  }
-  ship.position = {
-    x: ship.position.x + (dx / remaining) * speed * dt,
-    y: ship.position.y + (dy / remaining) * speed * dt,
-  };
-  return false;
-}
-
-export function cargoUsed(npc: SectorNpcState): number {
-  return Object.values(npc.cargo).reduce((sum, amount) => sum + Math.max(0, Math.floor(amount)), 0);
 }
 
 export function chooseAsteroid(
@@ -204,26 +166,8 @@ export function approachPoint(npcId: string, asteroid: LocalAsteroid): WorldPoin
 export function eligibleMiner(npc: SectorNpcState, locationId: string): boolean {
   return (
     npcOperationalRoleAllowed(npc, 'mining') &&
-    npc.workLocationId === locationId &&
-    npc.locationId === locationId &&
-    !npc.travel &&
-    !npc.combatMovement &&
-    npc.autonomy?.phase === 'working' &&
-    cargoUsed(npc) < Math.max(1, Math.floor(npc.cargoCapacity))
-  );
-}
-
-export function chooseEventChoice(
-  npc: SectorNpcState,
-  choices: readonly MiningEventChoice[]
-): MiningEventChoice | null {
-  if (choices.length === 0) return null;
-  const rank = { safe: 0, controlled: 1, risky: 2, high_risk: 3 } as const;
-  const risky = npc.workRiskPreference === 'risky';
-  return (
-    [...choices].sort((a, b) =>
-      risky ? rank[b.risk] - rank[a.risk] : rank[a.risk] - rank[b.risk]
-    )[0] ?? null
+    workerAtAssignment(npc, locationId) &&
+    !workerCargoFull(npc)
   );
 }
 

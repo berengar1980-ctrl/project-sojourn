@@ -1,3 +1,4 @@
+import { absorbDamage } from '../../core/layered-damage';
 import { isSecurityDrone } from '../../core/security-drone';
 import { usesNaturalCombatContour } from './combat-visible-collider';
 import type { ShieldDamageSource } from '../../core/shield-types';
@@ -166,10 +167,10 @@ export function applyDamage(
   // Armor is for hull HP. Targeted subsystem attacks retain their own balancing.
   const effective = directed ? scaled : directionalHullDamage(target, scaled, sourcePosition);
   const remaining = directed ? target.subsystems[targetSubsystem] : target.hullHp;
-  const damage = Math.min(remaining, effective);
-  if (directed)
-    target.subsystems[targetSubsystem] = Math.max(0, target.subsystems[targetSubsystem] - damage);
-  else target.hullHp = Math.max(0, target.hullHp - damage);
+  const hit = absorbDamage(remaining, effective);
+  const damage = hit.absorbed;
+  if (directed) target.subsystems[targetSubsystem] = hit.remaining;
+  else target.hullHp = hit.remaining;
   return {
     layer: 'hull',
     damage,

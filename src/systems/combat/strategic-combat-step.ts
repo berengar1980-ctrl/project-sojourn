@@ -1,3 +1,4 @@
+import { boundedSimulationStep, COMBAT_STEP_SECONDS } from '../../core/simulation-step';
 import type { FleetCombatContacts } from './strategic-combat-service-types';
 import { reviewShipContact } from './combat-contact-review';
 import { advanceCombatAsteroids } from './combat-asteroid-motion';
@@ -224,7 +225,7 @@ export function tickStrategicCombat(
     resolveRuntimeWinner(runtime);
     return;
   }
-  const dt = Math.min(deltaSeconds, 0.08);
+  const dt = boundedSimulationStep(deltaSeconds, COMBAT_STEP_SECONDS);
   const driven = drivenSide ? [drivenSide] : duelSides;
   const { coupled, sides } = boardingDrivers(runtime, driven, contacts?.isBoarding);
   if (sides.length === 0) return;

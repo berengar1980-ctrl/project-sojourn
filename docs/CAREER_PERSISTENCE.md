@@ -1602,3 +1602,41 @@ jedem Engagement-Schritt neu gebunden.
 Bewegliche Schiffe am Ziel werden nur bei der geometrischen Routenplanung
 als vorübergehende Belegung behandelt. Der tatsächliche Bewegungsschritt
 prüft weiterhin alle Kontakte. Keine Änderung des Checkpointformats.
+
+### Gemeinsame Projektregeln (PR #408)
+
+Die gemeinsamen mathematischen, Handels-, Treibstoff- und Arbeiterfunktionen
+besitzen keinen unabhängigen Zustand. Vorhandene Cargo-, Markt-, Schiffs- und
+NPC-Checkpoints bleiben autoritativ; keine Änderung des Save-Schemas.
+
+Die Zufallsgeneratoren bleiben pro Aufruf instanziiert; ihre bisherigen Seeds
+und Wiederherstellungsverfahren bleiben erhalten. Keine neuen persistenten Daten.
+
+Frachtraum bleibt im Spielerwirtschaftszustand und Komponentenbestand verankert.
+Gemeinsame Kapazitätsberechnung ist abgeleitet; keine neuen Checkpoint-Felder.
+
+Gemeinsame physische Ressourcentransfers speichern keinen separaten Zustand;
+nicht angenommene Mengen gehen in den bestehenden Reservepool zurück.
+
+Tankkapazität und Verbrauch werden aus der aufgelösten Schiffsdefinition
+abgeleitet; bestehende Tank- und Schadensdaten bleiben im bisherigen Checkpoint.
+
+Kampfaufbauten erhalten die nominelle Rumpflänge aus der Schiffsdefinition;
+diese wird wie der übrige Setup beim Laden neu abgeleitet, nicht gespeichert.
+
+Taktische Sensorparameter werden aus vorhandenen installierten Komponenten
+abgeleitet. Keine Änderung der gespeicherten Sensor- oder Kontaktdaten.
+
+Gemeinsame Worker-Scanfortschritte und Arbeitsbedingungen verwenden weiterhin
+die existierenden lokalen Worker-Felder; keine neuen Checkpoint-Felder.
+
+Piratenzugehörigkeit wird aus vorhandener Fraktions-ID oder Legacy-Markierung
+abgeleitet; Schutzgeld nutzt weiterhin das bestehende Fraktionsfeld.
+
+Schadensabsorption ist eine zustandslose Berechnung; Schild-, Rumpf- und
+Subsystemzustände bleiben in den bestehenden Eigentümern und Checkpoints.
+
+Simulationsschrittgrenzen bleiben unverändert (Kampf/Worker 0,08 s, lokale
+Physik 0,05 s, Sektor 0,25 s). NPC-Ersatzvorlagen werden tief kopiert;
+Wiederholungsaufrufe während laufender Erholung buchen keine weiteren Verluste.
+Keine neuen gespeicherten Felder.

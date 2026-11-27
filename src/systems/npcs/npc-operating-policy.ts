@@ -1,5 +1,5 @@
 import type { SectorNpcState } from '../../core/npc-types';
-import { repairCost } from '../ships/ship-operating-costs';
+import { missingRepairPoints, repairCost } from '../ships/ship-operating-costs';
 
 /**
  * Critical ships spend their available funds on hull survival before routine fueling.
@@ -13,7 +13,7 @@ export function npcRepairPriority(
   const fraction = Math.max(0, npc.hullHp / npc.hullMaxHp);
   if (fraction < 0.4) return 'critical';
   if (fraction <= 0.7) return 'affordable';
-  const cost = repairCost(npc.hullMaxHp - npc.hullHp, shipyard);
+  const cost = repairCost(missingRepairPoints(npc.hullHp, npc.hullMaxHp), shipyard);
   const fuelReserve = Math.max(200, Math.ceil(npc.fuelCapacity * 2.5));
   return npc.credits >= cost + fuelReserve ? 'affordable' : 'defer';
 }

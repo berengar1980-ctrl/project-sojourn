@@ -1,3 +1,4 @@
+import { createLcgRandom as createRandom } from '../../core/seeded-random';
 import type { EconomyResourceId } from '../../core/economy-types';
 import type {
   SalvageEventChoice,
@@ -16,14 +17,6 @@ const BASE_EVENT_RATE = 0.52;
 interface PendingSession {
   readonly state: SalvageEventState;
   readonly rolls: readonly number[];
-}
-
-function createRandom(seed: number): () => number {
-  let value = seed >>> 0;
-  return () => {
-    value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
-    return value / 4294967296;
-  };
 }
 
 function eventType(roll: number): SalvageEventType {

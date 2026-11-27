@@ -369,3 +369,57 @@ console.log('PASS reserve-backed mining, cargo capacity and physical conservatio
   restored.advanceDay(1);
   assert.deepEqual(restored.exportState(), checkpoint);
 }
+
+{
+  const markets = createMarkets();
+  const trade = tradeModule.createPlayerTradeService(markets, 1000);
+  const simulation = simulationModule.createEconomySimulationService(
+    markets,
+    trade.player,
+    resources,
+    96
+  );
+  const mining = miningModule.createMiningEconomyService(simulation, trade);
+  const { createSalvageEconomyService } = loadStandaloneTypeScriptModule(
+    root,
+    'src/systems/economy/salvage-economy-service.ts'
+  );
+  const salvage = createSalvageEconomyService(simulation, trade);
+  trade.player.reservedCargoTons = 4;
+  trade.player.smugglingNormalPenalty = 2;
+  const before = simulation.getResourceTotal('ferrite');
+  assert.equal(mining.collect('ferrite', 10, 8), 2);
+  assert.equal(simulation.getResourceTotal('ferrite'), before);
+  assert.equal(salvage.recover('ferrite', 10, 8), 0);
+  assert.equal(simulation.getResourceTotal('ferrite'), before);
+  assert.equal(salvage.recover('ferrite', 10, 10), 2);
+  assert.equal(simulation.getResourceTotal('ferrite'), before);
+}
+
+{
+  const markets = createMarkets();
+  const trade = tradeModule.createPlayerTradeService(markets, 1000);
+  const simulation = simulationModule.createEconomySimulationService(
+    markets,
+    trade.player,
+    resources,
+    97
+  );
+  const partialReceiver = {
+    player: trade.player,
+    receiveCargo: (id, requested, capacity, origin) =>
+      trade.receiveCargo(id, Math.min(1, requested), capacity, origin),
+  };
+  const mining = miningModule.createMiningEconomyService(simulation, partialReceiver);
+  const before = simulation.getResourceTotal('ferrite');
+  assert.equal(mining.collect('ferrite', 4, 10), 1);
+  assert.equal(simulation.getResourceTotal('ferrite'), before);
+  const { createSalvageEconomyService } = loadStandaloneTypeScriptModule(
+    root,
+    'src/systems/economy/salvage-economy-service.ts'
+  );
+  const salvage = createSalvageEconomyService(simulation, partialReceiver);
+  assert.equal(salvage.recover('ferrite', 4, 10, undefined, 'missing-wreck'), 0);
+  assert.equal(salvage.recover('ferrite', 4, 10), 1);
+  assert.equal(simulation.getResourceTotal('ferrite'), before);
+}

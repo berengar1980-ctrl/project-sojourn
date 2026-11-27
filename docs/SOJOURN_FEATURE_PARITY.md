@@ -2195,3 +2195,53 @@ Hindernisse begrenzt; bewegte Objekte werden live geprüft.
 Schiffe verhindern nicht mehr den Routenstart. Stehende Arbeitsschiffe
 bleiben Hindernisse; alle beweglichen Schiffe bleiben in der unmittelbaren
 Kontaktprüfung. Der unveränderte Kreuzungs-Stresstest ist maßgeblich.
+
+**Keine Statusänderung** der Feature-IDs. Gemeinsame Distanz- und Hashfunktionen,
+strukturelle Hindernisse für die Routenplanung und gemeinsame Marktbestands-
+und Nachfragebuchungen für Spieler und NPCs. Gebühren, Frachtbuchhaltung,
+Routenstrategien und bestehende Zufallsfolgen bleiben unverändert.
+
+**Keine Statusänderung** der Feature-IDs. Gemeinsame Mengenvalidierung in
+Ressourcenbilanz, Mining, Bergung und Piratenverkauf; gemeinsame lokale
+Arbeiterbewegung, Ereignis-Risikowahl, Port-Servicefähigkeit und Tankpreis-
+Berechnung. Bestehende Rollenparameter, Gebühren und Routen bleiben erhalten.
+
+Gemeinsame reine Zufalls- und Clamp-Funktionen ohne Änderung der Algorithmen,
+Seeds, Aufrufreihenfolgen oder Feature-IDs.
+
+Piraten-Heimathäfen, NPC-Scanzeit und Treibstoff-Distanzfaktor zentralisiert.
+Verkehrshindernisse enthalten ausschließlich die bisherigen Routengeometriedaten.
+Keine Änderung der Fraktions- oder Kollisionsregeln.
+
+Normaler Frachtraum berücksichtigt bei Handel, Mining, Bergung und Kampagnen
+verdeckte Waren, reservierte Kapazität und den Schmuggelabzug konsistent.
+
+Mining und Bergung nutzen denselben synchronen Ressourcentransfer mit
+kapazitätsbegrenzter Entnahme und Rückgabe nicht angenommener Reservemengen.
+Die unterschiedliche Behandlung nicht registrierter Vorkommen bleibt erhalten.
+
+Treibstoffverbrauch und Routenreserve zentralisiert; Spieler respektieren wie
+NPCs die Schiffs-Overrides. Reparaturprognosen verwenden die tatsächliche
+aufgerundete Reparaturmenge. NPC-Mindestverbrauch und Crew-Modifikatoren bleiben.
+
+Kampf-Kontaktgeometrie bezieht die Rumpflänge aus der Schiffsdefinition statt
+primär aus der ID; vorhandene Schildgeometrie und Legacy-Fallback bleiben.
+
+Spieler, NPCs und frei konfigurierte Duelle nutzen gemeinsame taktische
+Sensorwerte. Der Duellmodus übernimmt nun den installierten Reichweitenbonus;
+Sektorkontakte und industrielle Scans behalten ihre eigenen Maßstäbe.
+
+Miner und Berger teilen Scanfortschritt, Schrittgrenze, Arbeitszulassung,
+Kampfunterbrechung und Abreise bei vollem Frachtraum. Individuelle Erträge,
+Ereignisse und Zielwahl bleiben in ihren jeweiligen Diensten.
+
+NPC-Zielzulassung und Piratenschutz sind gemeinsame Regeln für lokale und
+strategische Begegnungen. Unterschiedliche Auftrags- und Gebietsregeln bleiben.
+
+Gemeinsame Schadensabsorption für Waffen, Minen, Schildtreffer und Rammkontakt.
+Native Schadenswerte, Panzerung und die bewusst unterschiedlichen Überlaufregeln
+bleiben unverändert. Keine neue Kampfengine oder Regenerationsregel.
+
+Gemeinsame validierte Zeitschrittbegrenzung ohne Änderung der Simulationsraten.
+NPC-Ersatzgenerationen besitzen unabhängige verschachtelte Daten; wiederholte
+Bergung/Erholung ist idempotent. Bestehende Flotten- und Feldtickautorität bleibt.

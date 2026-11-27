@@ -1,3 +1,4 @@
+import { hiddenQuantityAfterRemoval, playerCargoFree } from '../../core/player-cargo';
 import type {
   EconomyResourceId,
   PlayerCargoLot,
@@ -20,6 +21,21 @@ export interface PlayerCampaignEconomyActions {
 
 function positiveSafeInteger(value: number): boolean {
   return Number.isSafeInteger(value) && value > 0;
+}
+
+function grantedCargoLot(
+  lot: PlayerCargoLot | undefined,
+  quantity: number,
+  originId?: string
+): PlayerCargoLot {
+  const next: PlayerCargoLot = {
+    qty: (lot?.qty ?? 0) + quantity,
+    totalCost: lot?.totalCost ?? 0,
+    ...(lot?.hiddenQty !== undefined ? { hiddenQty: lot.hiddenQty } : {}),
+  };
+  const source = originId ?? lot?.lastOriginId;
+  if (source) next.lastOriginId = source;
+  return next;
 }
 
 export function createPlayerCampaignEconomyActions(
@@ -45,16 +61,10 @@ export function createPlayerCampaignEconomyActions(
       }
       const used = cargoUsed();
       const lot = player.cargo[resourceId];
-      if (!Number.isSafeInteger(used) || used > capacity - quantity) return false;
+      if (!Number.isSafeInteger(used) || quantity > playerCargoFree(player, capacity)) return false;
       if (!Number.isSafeInteger(lot?.qty ?? 0)) return false;
       if ((lot?.qty ?? 0) > Number.MAX_SAFE_INTEGER - quantity) return false;
-      const next: PlayerCargoLot = {
-        qty: (lot?.qty ?? 0) + quantity,
-        totalCost: lot?.totalCost ?? 0,
-      };
-      const source = originId ?? lot?.lastOriginId;
-      if (source) next.lastOriginId = source;
-      player.cargo[resourceId] = next;
+      player.cargo[resourceId] = grantedCargoLot(lot, quantity, originId);
       return true;
     },
     removeCargo(resourceId, quantity) {
@@ -71,6 +81,9 @@ export function createPlayerCampaignEconomyActions(
       player.cargo[resourceId] = {
         ...lot,
         qty: lot.qty - quantity,
+        ...(lot.hiddenQty !== undefined
+          ? { hiddenQty: hiddenQuantityAfterRemoval(lot, quantity) }
+          : {}),
         totalCost: Math.max(0, lot.totalCost * ratio),
       };
       return true;

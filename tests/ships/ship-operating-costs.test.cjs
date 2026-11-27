@@ -82,3 +82,15 @@ assert.equal(full.cost, 4550);
 assert.equal(service.snapshot(miner, 100).fuel, 145);
 assert.equal(service.emergencyRefuel(miner).cost, 0);
 console.log('PASS paid player emergency refuel, partial purchase and no duplicate charge');
+
+// Per-hull overrides are authoritative for both consumption and the tank.
+const custom = {
+  ...miner,
+  id: 'custom-fuel-test',
+  gameplayOverrides: { ...miner.gameplayOverrides, fuelCapacity: 70, fuelUse: 2 },
+};
+assert.equal(service.snapshot(custom, 100).fuelCapacity, 70);
+assert.equal(service.burn(custom, 100), 5);
+assert.equal(service.snapshot(custom, 100).fuel, 65);
+assert.equal(operations.missingRepairPoints(99.5, 100), 1);
+assert.equal(operations.quoteRepair(99.5, 100, 100, true).cost, 80);

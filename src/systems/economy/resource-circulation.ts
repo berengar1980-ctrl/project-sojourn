@@ -1,13 +1,9 @@
+import { wholeQuantity as finiteQuantity } from '../../core/economy-quantity';
 import type {
   EconomyMarketStock,
   EconomyResourceId,
   ResourceCirculationState,
 } from '../../core/economy-types';
-
-function finiteQuantity(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.floor(value));
-}
 
 function cargoQuantity(
   cargo: Readonly<Record<EconomyResourceId, number>>,

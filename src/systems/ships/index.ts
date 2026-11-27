@@ -21,6 +21,7 @@ export {
   salvageYieldMultiplier,
   salvagedComponentAppraisal,
   sensorRangeMultiplier,
+  combatSensorStats,
 } from './ship-component-service';
 export { canShipCarryResource } from './ship-cargo-policy';
 export {

@@ -88,3 +88,20 @@ for (const [job, min, max] of [
   assert.equal(service.outstanding, 0);
 }
 console.log('PASS guaranteed replacement, refinancing and persisted external funding');
+
+// The replacement template must never acquire mutable state from its successors.
+const replacement = createSectorNpcEconomyStates().find((entry) => entry.job === 'miner');
+const generations = createNpcPopulationService([replacement], markets);
+const originalWorkResources = [...replacement.workResourceIds];
+assert(generations.scheduleDefeated(replacement, 1));
+assert.equal(generations.scheduleDefeated(replacement, 1), false);
+generations.advanceDay(replacement.retiredUntilDay);
+replacement.workResourceIds.push('test-mutation');
+assert(generations.scheduleDefeated(replacement, 30));
+const replacementDay = replacement.retiredUntilDay;
+generations.advanceDay(replacementDay);
+assert.deepEqual(replacement.workResourceIds, originalWorkResources);
+assert.equal(replacement.replacementGeneration, 2);
+const replacementState = generations.exportState();
+generations.advanceDay(replacementDay);
+assert.deepEqual(generations.exportState(), replacementState);

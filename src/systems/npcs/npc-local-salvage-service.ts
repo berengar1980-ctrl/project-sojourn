@@ -1,3 +1,10 @@
+import {
+  advanceWorkerScan,
+  workerCargoFull,
+  workerCombatSuspended,
+  workerMustExit,
+  workerStepSeconds,
+} from './npc-worker-primitives';
 import type {
   LocalNpcSalvagerState,
   NpcLocalSalvageService,
@@ -30,7 +37,6 @@ import { getShipDefinition, resolveShipLocalCruiseSpeed, resolveShipRuntimeSetup
 import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 import {
   FLIGHT_SPEED,
-  SCAN_SECONDS,
   BASE_CYCLE_SECONDS,
   hashId,
   cargoUsed,
@@ -118,8 +124,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
         position: { ...(explicit ?? entry) },
         headingRadians: 0,
         speed: explicit || !getTrafficObstacles ? localCruiseSpeed(npc) : 0,
-        phase:
-          cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) ? 'exiting' : 'entering',
+        phase: workerCargoFull(npc) ? 'exiting' : 'entering',
         targetWreckId: null,
         salvageActive: false,
         scanProgress: 0,
@@ -230,7 +235,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
     );
     if (accepted > 0) deposit.remainingAmount = Math.max(0, deposit.remainingAmount - accepted);
 
-    if (accepted <= 0 || cargoUsed(npc) >= Math.floor(npc.cargoCapacity)) {
+    if (workerMustExit(npc, accepted)) {
       this.beginExit(ship);
     } else if (wreckRemaining(wreck) <= 0) {
       this.recoverComponent(npc, wreck);
@@ -301,9 +306,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
       this.beginExit(ship);
       return;
     }
-    ship.speed = 0;
-    ship.scanProgress = Math.min(1, ship.scanProgress + dt / SCAN_SECONDS);
-    if (ship.scanProgress < 1) return;
+    if (!advanceWorkerScan(ship, dt)) return;
     wreck.inspected = true;
     wreck.scanLevel = 'analyzed';
     if (this.options.registerWreck && !this.options.registerWreck(npc, wreck)) {
@@ -342,7 +345,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
     return;
   };
   tick = (deltaSeconds: number, combatantId?: string, skipPlayer = false): void => {
-    const dt = Math.min(Math.max(0, deltaSeconds), 0.08);
+    const dt = workerStepSeconds(deltaSeconds);
     if (dt <= 0) return;
     this.syncArrivals();
 
@@ -364,7 +367,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
 
       // The native PvP combat actor owns this ship while engaged. Suspend
       // work without moving the salvager or losing its field identity.
-      if (npc.combatMovement || (npc.combatRecoverySeconds ?? 0) > 0) {
+      if (workerCombatSuspended(npc)) {
         // The duel pose was mirrored before this tick; preserve its velocity.
         ship.salvageActive = false;
         ship.targetWreckId = null;
@@ -377,8 +380,7 @@ class LocalSalvageService implements NpcLocalSalvageService {
         this.ships.splice(index, 1);
         continue;
       }
-      if (cargoUsed(npc) >= Math.max(1, Math.floor(npc.cargoCapacity)) && ship.phase !== 'exiting')
-        this.beginExit(ship);
+      if (workerCargoFull(npc) && ship.phase !== 'exiting') this.beginExit(ship);
 
       if (this.advanceWorker(ship, npc, dt)) this.ships.splice(index, 1);
     }

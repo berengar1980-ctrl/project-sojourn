@@ -1,3 +1,6 @@
+import { clamp } from '../../core/numeric-geometry';
+import { createMulberryRandom as seededRandom } from '../../core/seeded-random';
+import { wholeQuantity as quantity } from '../../core/economy-quantity';
 import type {
   EconomyCargoHold,
   EconomyMarketState,
@@ -14,26 +17,6 @@ import {
   stageCareerResourcePools,
   type CareerResourcePoolCheckpoint,
 } from './career-resource-pool-checkpoint';
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
-
-function quantity(value: number): number {
-  if (!Number.isFinite(value)) return 0;
-  return Math.max(0, Math.floor(value));
-}
-
-function seededRandom(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let value = state;
-    value = Math.imul(value ^ (value >>> 15), value | 1);
-    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 function playerQuantity(player: PlayerEconomyState, resourceId: EconomyResourceId): number {
   return quantity(player.cargo[resourceId]?.qty ?? 0);
@@ -229,6 +212,7 @@ export interface EconomySimulationService {
   getResourceTotal(resourceId: EconomyResourceId): number;
   getResourceBalance(): readonly ResourceBalanceReport[];
   allocatePhysicalResource(resourceId: EconomyResourceId, amount: number): number;
+  returnAllocatedResource(resourceId: EconomyResourceId, amount: number): void;
   fundPhysicalStock(
     resourceId: EconomyResourceId,
     sourceId: string,
@@ -434,6 +418,10 @@ export function createEconomySimulationService(
       );
     },
     allocatePhysicalResource,
+    returnAllocatedResource(resourceId, amount) {
+      const pool = pools[resourceId];
+      if (pool) pool.reserve += quantity(amount);
+    },
     ...physicalStocks,
     createMinedResource,
     advanceDay,

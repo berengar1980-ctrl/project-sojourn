@@ -1,7 +1,6 @@
 import { measurePerformance } from '../core/performance-diagnostics';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
-import { getShipRoleProfile } from '../data/ships/ship-role-profiles';
-import { resolveShipRuntimeSetup } from '../systems/ships';
+import { resolveShipGameplayStats, resolveShipRuntimeSetup } from '../systems/ships';
 import { fuelForDistance } from '../systems/ships/ship-operating-costs';
 import { planFuelRoute, type FuelRoutePlan } from '../systems/navigation/fuel-route-planner';
 import { navigationOrbitalBerth } from '../systems/navigation/orbital-berth';
@@ -36,7 +35,7 @@ export function fuelPerTravelUnit(context: ControllerRuntimeContext): number {
   });
   return fuelForDistance(
     1,
-    getShipRoleProfile(ship.role).fuelUse,
+    resolveShipGameplayStats(ship).fuelUse,
     runtime.crewEffects.piloting.fuelUseMultiplier,
     runtime.crewEffects.engineering.fuelUseMultiplier
   );

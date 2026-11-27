@@ -1,3 +1,6 @@
+import { boundedSimulationStep, SECTOR_STEP_SECONDS } from '../../core/simulation-step';
+import { fuelForDistance } from '../../core/fuel-pricing';
+import { pirateHomePort } from '../../core/pirate-ports';
 import { isSecurityDrone, SECURITY_DRONE_SHIP_ID } from '../../core/security-drone';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import type {
@@ -19,7 +22,6 @@ import {
   type RoutePlan,
 } from '../navigation/route-planner';
 import {
-  FUEL_DISTANCE_SCALE,
   nearestLocation,
   patrolDestination,
   pirateHuntDestination,
@@ -181,7 +183,7 @@ class SectorService implements NpcSectorService {
       fuel: npc.fuel,
       capacity: npc.fuelCapacity,
       credits: availableCredits,
-      fuelPerDistance: npc.fuelUse * FUEL_DISTANCE_SCALE,
+      fuelPerDistance: fuelForDistance(1, npc.fuelUse),
       locationPosition: (id: string) =>
         id === npc.locationId ? this.livePosition(npc) : npcOrbitDestination(this.world, npc, id),
     };
@@ -228,12 +230,7 @@ class SectorService implements NpcSectorService {
       destinationId === npc.locationId ||
       npc.hullHp <= 0 ||
       (npcNeedsSafeReturn(npc) &&
-        destinationId !==
-          (npc.pirate
-            ? npc.factionId === 'pirates2'
-              ? 'gallows-anchor'
-              : 'blackjaw-outpost'
-            : npc.homePortId)) ||
+        destinationId !== (npc.pirate ? pirateHomePort(npc.factionId) : npc.homePortId)) ||
       (npc.combatRecoverySeconds ?? 0) > 0
     ) {
       return false;
@@ -273,7 +270,7 @@ class SectorService implements NpcSectorService {
     return target ? this.requestTravel(npc, target, 'Sicherheitspatrouille') : false;
   };
   private requestPirateHunt(npc: SectorNpcState): boolean {
-    const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+    const homeId = pirateHomePort(npc.factionId);
     const lootUnits = Object.values(npc.cargo).reduce(
       (sum, amount) => sum + Math.max(0, Math.floor(amount)),
       0
@@ -454,7 +451,7 @@ class SectorService implements NpcSectorService {
   };
   tick = (deltaSeconds: number): void => {
     if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
-    const dt = Math.min(deltaSeconds, 0.25);
+    const dt = boundedSimulationStep(deltaSeconds, SECTOR_STEP_SECONDS);
     const npcPositions = measurePerformance(
       'sim.npcs.positions',
       () => new Map(this.npcs.map((npc) => [npc.id, this.livePosition(npc)]))

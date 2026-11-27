@@ -1,3 +1,4 @@
+import { boundedSimulationStep, SECTOR_STEP_SECONDS } from '../../core/simulation-step';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import { validateNpcEconomyCheckpoint } from './npc-economy-checkpoint';
 import type { EconomyResourceDefinition, NpcEconomyState } from '../../core/economy-types';
@@ -462,7 +463,7 @@ export function createNpcEconomyService(
     },
     tick(deltaSeconds) {
       if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return;
-      const dt = Math.min(deltaSeconds, 0.25);
+      const dt = boundedSimulationStep(deltaSeconds, SECTOR_STEP_SECONDS);
       for (const npc of npcs) {
         if ('retiredUntilDay' in npc && npc.retiredUntilDay !== undefined) continue;
         if (dailyOptions.isManaged?.(npc)) continue;

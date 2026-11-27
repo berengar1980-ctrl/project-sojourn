@@ -8,7 +8,7 @@ import {
   componentHullBonus,
   componentShieldBonus,
   calculateShipModeEnergy,
-  getShipComponent,
+  combatSensorStats,
   shipCombatTractorRange,
   shipHasIndustrialTractor,
   shipHullMaxHp,
@@ -84,7 +84,6 @@ export function duelCombatant(
   const crew = crewDefinitionById(draft.crewId);
   const installed = duelInstalledComponents(draft);
   const power = calculateShipModeEnergy(installed);
-  const sensor = getShipComponent('sensor', draft.sensorId ?? 'sensor1');
   const armor = resolveShipArmorProtection(installed);
   const pilotSkill = crew?.skills.piloting ?? 50;
   const weaponSkill = crew?.skills.weapons ?? 50;
@@ -93,6 +92,7 @@ export function duelCombatant(
     id: 'duelist-' + index,
     name: 'Spieler ' + (index + 1) + ' · ' + ship.name,
     shipId: ship.id,
+    nominalLengthMeters: ship.nominalLengthMeters,
     shieldHp: shipShieldMaxHp(ship) + componentShieldBonus(installed),
     shieldGeometry: createCombatShieldGeometry(points, ship.nominalLengthMeters),
     hullHp: shipHullMaxHp(ship, componentHullBonus(installed)),
@@ -112,9 +112,7 @@ export function duelCombatant(
     ...resolveShipCombatMovementStats(ship, installed),
     tractorRangeMeters: shipCombatTractorRange(installed),
     power,
-    sensorTier: sensor?.tier ?? 0,
-    sensorCrewSkill: sensorSkill,
-    sensorRangeMeters: sensor ? 1000 : 0,
+    ...combatSensorStats(installed, sensorSkill),
     tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
     aiControlled: true,
     aiAggression: 90,

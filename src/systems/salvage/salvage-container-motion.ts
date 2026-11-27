@@ -1,3 +1,4 @@
+import { boundedSimulationStep, LOCAL_PHYSICS_STEP_SECONDS } from '../../core/simulation-step';
 import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
 import { salvageSolidContactRadius } from '../../core/salvage-contact-profile';
 import type {
@@ -148,7 +149,7 @@ function syncBodyPositions(world: WorldPhysics, dt: number): void {
 
 /** Keep the asteroid engine authoritative instead of maintaining a second salvage solver. */
 export function advanceSalvageContainerDrift(field: SalvageField, deltaSeconds: number): void {
-  const dt = Math.min(0.05, Math.max(0, deltaSeconds));
+  const dt = boundedSimulationStep(deltaSeconds, LOCAL_PHYSICS_STEP_SECONDS);
   if (dt <= 0) return;
   const world = getPhysics(field);
   integrateAsteroids(world.bodies, dt, field.width, field.height);

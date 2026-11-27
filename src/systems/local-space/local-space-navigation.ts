@@ -1,7 +1,17 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
-import { pointToSegmentDistanceSquared, squaredDistance } from '../../core/field-geometry';
+import {
+  distance,
+  pointToSegmentDistanceSquared,
+  squaredDistance,
+} from '../../core/field-geometry';
 import { localAsteroidContactRadius } from './local-asteroid-footprint';
+
+/** The point-route planner needs geometry, not a simulated asteroid body. */
+export type RouteObstacle = Pick<
+  LocalAsteroid,
+  'id' | 'position' | 'radius' | 'collisionRadius' | 'routeBlocking'
+>;
 
 interface GridNode extends WorldPoint {
   readonly column: number;
@@ -17,7 +27,7 @@ export interface RoutePlanningOptions {
   readonly surfaceDistance?: number;
   readonly start: WorldPoint;
   readonly target: LocalAsteroid;
-  readonly asteroids: readonly LocalAsteroid[];
+  readonly asteroids: readonly RouteObstacle[];
   readonly clearance: number;
   readonly width: number;
   readonly height: number;
@@ -26,7 +36,7 @@ export interface RoutePlanningOptions {
 export interface PointRoutePlanningOptions {
   readonly start: WorldPoint;
   readonly target: WorldPoint;
-  readonly asteroids: readonly LocalAsteroid[];
+  readonly asteroids: readonly RouteObstacle[];
   readonly clearance: number;
   readonly width: number;
   readonly height: number;
@@ -90,24 +100,20 @@ const APPROACH_SAMPLES = 16;
 const CORNER_RADIUS = 34;
 const MAX_ROUTE_CANDIDATES = 4;
 
-function distance(a: WorldPoint, b: WorldPoint): number {
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
-
 function key(column: number, row: number): string {
   return column + ':' + row;
 }
 
 function obstacleList(
-  asteroids: readonly LocalAsteroid[],
+  asteroids: readonly RouteObstacle[],
   targetId: string
-): readonly LocalAsteroid[] {
+): readonly RouteObstacle[] {
   return asteroids.filter((asteroid) => asteroid.id !== targetId && asteroid.routeBlocking);
 }
 
 function pointClear(
   point: WorldPoint,
-  obstacles: readonly LocalAsteroid[],
+  obstacles: readonly RouteObstacle[],
   clearance: number
 ): boolean {
   return obstacles.every((asteroid) => {
@@ -119,7 +125,7 @@ function pointClear(
 function segmentClear(
   start: WorldPoint,
   end: WorldPoint,
-  obstacles: readonly LocalAsteroid[],
+  obstacles: readonly RouteObstacle[],
   clearance: number
 ): boolean {
   return obstacles.every((asteroid) => {
@@ -180,7 +186,7 @@ function reconstructRoute(
 function findGridRoute(
   start: WorldPoint,
   end: WorldPoint,
-  obstacles: readonly LocalAsteroid[],
+  obstacles: readonly RouteObstacle[],
   clearance: number,
   width: number,
   height: number
@@ -250,7 +256,7 @@ function findGridRoute(
 
 function simplifyRoute(
   route: readonly WorldPoint[],
-  obstacles: readonly LocalAsteroid[],
+  obstacles: readonly RouteObstacle[],
   clearance: number
 ): readonly WorldPoint[] {
   if (route.length <= 2) return route;
@@ -315,7 +321,7 @@ function roundRoute(route: readonly WorldPoint[]): readonly WorldPoint[] {
 
 function routeSegmentsClear(
   points: readonly WorldPoint[],
-  obstacles: readonly LocalAsteroid[],
+  obstacles: readonly RouteObstacle[],
   clearance: number
 ): boolean {
   for (let index = 1; index < points.length; index += 1) {

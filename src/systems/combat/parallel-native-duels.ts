@@ -1,3 +1,4 @@
+import { boundedSimulationStep, COMBAT_STEP_SECONDS } from '../../core/simulation-step';
 import { clearCombatSpawn, fleetArrivalPosition } from './combat-field-spawns';
 import type { StrategicCombatBystander } from './strategic-combat-bystander-types';
 import {
@@ -406,7 +407,7 @@ export function createParallelNativeDuels(
 
   const advance = (seconds: number, beforePrimaryAttackerReplacement?: () => void): void => {
     if (!Number.isFinite(seconds) || seconds <= 0) return;
-    const dt = Math.min(seconds, 0.08);
+    const dt = boundedSimulationStep(seconds, COMBAT_STEP_SECONDS);
     cachedSnapshot = null;
     if (boarding.active || services.some((service) => !service.getStatus().winner)) elapsed += dt;
     advanceNativeFleetFrame({

@@ -1,3 +1,4 @@
+import { pirateGroupId, pirateHomePort } from '../../core/pirate-ports';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { nearestLocation } from './npc-sector-routing';
@@ -9,7 +10,7 @@ export function npcRecoveryLocation(
   position: WorldPoint
 ): string | null {
   if (npc.pirate) {
-    const homeId = npc.factionId === 'pirates2' ? 'gallows-anchor' : 'blackjaw-outpost';
+    const homeId = pirateHomePort(pirateGroupId(npc));
     if (world.locations.some((location) => location.id === homeId)) return homeId;
   }
 

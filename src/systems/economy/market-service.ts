@@ -1,3 +1,4 @@
+import { clamp } from '../../core/numeric-geometry';
 import type {
   EconomyMarketEntry,
   EconomyMarketState,
@@ -8,10 +9,6 @@ import type { PortDefinition } from '../../core/port-types';
 
 const MIN_PRICE_FACTOR = 0.28;
 const MAX_PRICE_FACTOR = 3.2;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
 
 function finiteQuantity(value: number): number {
   if (!Number.isFinite(value)) return 0;
