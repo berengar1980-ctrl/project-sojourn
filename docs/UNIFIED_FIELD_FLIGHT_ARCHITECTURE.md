@@ -461,10 +461,14 @@ format:check`, `npm run check:quick` (405/405) und `npm run build`; der Build
   Head `9034b571` und erreichte 404 bestandene Tests; allein
   `tests/quality/feature-parity.test.cjs` schlug fehl, weil der erforderliche
   Review-Log-Eintrag in `docs/SOJOURN_FEATURE_PARITY.md` fehlte. Dieser
-  fachliche Nachweis ist ergänzt; kein Test wurde abgeschwächt. AGENTS.md wird
-  an den aktiven Anbieter GitHub Actions angepasst. F01 bleibt offen, bis der
-  aktualisierte PR-Head beide Workflows erfolgreich beendet. F02 beginnt erst
-  danach.
+  fachliche Nachweis ist ergänzt; kein Test wurde abgeschwächt. Run 1965
+  stoppte anschließend bei Prettier: die lange Paritätsdatei war bei ihrer
+  GitHub-Tree-Übertragung durch eine gekürzte Kommandoausgabe beschädigt.
+  Lokal ist die vollständige formatierte Datei aus dem committed Branch-Stand
+  wiederhergestellt; `tests/quality/feature-parity.test.cjs` besteht. Die
+  vollständige Datei wird erneut übertragen. AGENTS.md ist an den aktiven
+  Anbieter GitHub Actions angepasst. F01 bleibt offen, bis der aktualisierte
+  PR-Head beide Workflows erfolgreich beendet. F02 beginnt erst danach.
 - Bei jedem Arbeitsstand ergänzen: Datum, Commit/PR, Paket, konkret geänderte
   Dateien/Funktionen, entfernte Pfade, offene Aufrufer, neue/entfernte src-Zeilen,
   tatsächlich gelaufene Tests, CI-Ergebnis, Risiken und nächster Schritt.
