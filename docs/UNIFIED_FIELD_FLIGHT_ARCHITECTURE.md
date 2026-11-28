@@ -190,6 +190,22 @@ Masse, stehende und bewegte Partner, schräge Kontakte (Tangentialbewegung),
 Schild an/aus, Drohnen, Rammen, Wracks, Kettenkontakte, Grenzen, keine
 Doppelimpulse und kein zusätzlicher Schaden beim Moduswechsel.
 
+F03-Audit, 28.11.2026 (in Arbeit): Asteroid-gegen-Asteroid nutzt bereits
+`local-space-collision.ts` in Kampagne und Combat. Der Combat-Adapter verändert
+jedoch Ressourcenmassen beim Moduswechsel (`max(8, radius / 3)`), teilt die
+Felsreaktion zusätzlich durch eine Art-abhängige Widerstandszahl und wendet auf
+das Schiff einen festen Faktor `1.15` an. Die zivile Schildauflösung überträgt
+den Impuls nur auf den Fels; freie Feldtrümmer verwenden wiederum einen festen
+Mindestkick `5`/Faktor `1.15`. Schiff-gegen-Schiff nutzt je nach Pfad
+gewichtete Trennung oder eine separate Closing-Impulse-Regel.
+`ShipDefinition` enthält weder Masse noch Trägheitsmoment. `pushWeight` (z. B.
+Spieler 2,4 / NPC 1) steuert aktuell nur Trennungsanteile und ist nicht als
+physische Masse spezifiziert. F03 bleibt offen; einen massenabhängigen
+Schiffsimpuls kann ich daher nicht ohne Wahl eines neuen effektiven
+Schiffsmassenmodells implementieren. Vor Umsetzung der Impulsvereinheitlichung
+ist diese Mechanikentscheidung zu klären. Bis dahin bleiben bestehende Werte
+und Spielmechanik unverändert.
+
 ### F04 – Gemeinsame Navigation
 
 - [ ] F04 Gemeinsame Navigation und Hindernisvermeidung
