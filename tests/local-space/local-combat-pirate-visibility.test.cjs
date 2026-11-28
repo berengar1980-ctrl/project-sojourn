@@ -39,7 +39,7 @@ assert(
   'background duel pirate must also remain renderable'
 );
 
-traffic.syncCombatPose(pirate.id, { x: 750, y: 610 }, 0.7);
+traffic.syncCombatPose(pirate.id, { x: 750, y: 610 }, 0.7, { x: 0, y: 0 });
 traffic.tick(1 / 60, [pirate], { x: 500, y: 500 }, [], [], () => false, pirate.id);
 const combatShip = traffic.snapshot([pirate])[0];
 assert.deepEqual(
@@ -55,8 +55,8 @@ assert.equal(traffic.snapshot([pirate]).length, 1, 'duel ship persists after com
 const separated = new LocalPirateTraffic(4000, 2600, 456);
 const otherPirate = { ...pirate, id: 'pirate-second' };
 separated.reconcile([pirate, otherPirate]);
-separated.syncCombatPose(pirate.id, { x: 1500, y: 1300 }, 0);
-separated.syncCombatPose(otherPirate.id, { x: 1500, y: 1300 }, 0);
+separated.syncCombatPose(pirate.id, { x: 1500, y: 1300 }, 0, { x: 0, y: 0 });
+separated.syncCombatPose(otherPirate.id, { x: 1500, y: 1300 }, 0, { x: 0, y: 0 });
 separated.tick(1 / 60, [pirate, otherPirate], { x: 2800, y: 1300 }, [], [], () => false);
 const [one, two] = separated.snapshot([pirate, otherPirate]);
 assert(

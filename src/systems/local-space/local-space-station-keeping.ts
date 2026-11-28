@@ -1,28 +1,32 @@
 import type { LocalShipState } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import {
+  applyShipVelocityCommand,
+  turnShipTowardHeading,
+  type ShipFlightPerformance,
+  type ShipFlightBounds,
+} from '../../core/ship-flight-physics';
+import {
+  localShipForwardSpeed,
+  localShipLateralSpeed,
+  setLocalShipComponents,
+} from './local-space-ship-velocity';
 
 export interface IdleStationKeepingState {
   targetHeading: number;
-  lateralVelocity: number;
   angularVelocity: number;
   disturbanceTimer: number;
   disturbanceIndex: number;
-}
-
-function angleDelta(current: number, target: number): number {
-  let delta = target - current;
-  while (delta > Math.PI) delta -= Math.PI * 2;
-  while (delta < -Math.PI) delta += Math.PI * 2;
-  return delta;
 }
 
 export function createIdleStationKeepingState(
   seed: number,
   ship: LocalShipState
 ): IdleStationKeepingState {
+  const lateralVelocity = ((seed % 2001) / 2000 - 0.5) * 0.68;
+  setLocalShipComponents(ship, localShipForwardSpeed(ship), lateralVelocity);
   return {
     targetHeading: ship.headingRadians,
-    lateralVelocity: ((seed % 2001) / 2000 - 0.5) * 0.68,
     angularVelocity: ((seed % 997) / 996 - 0.5) * 0.025,
     disturbanceTimer: 1.8 + (seed % 2400) / 1000,
     disturbanceIndex: 0,
@@ -34,7 +38,7 @@ export function resetIdleStationKeeping(
   ship: LocalShipState
 ): void {
   state.targetHeading = ship.headingRadians;
-  state.lateralVelocity *= 0.35;
+  setLocalShipComponents(ship, localShipForwardSpeed(ship), localShipLateralSpeed(ship) * 0.35);
   state.angularVelocity *= 0.35;
   state.disturbanceTimer = Math.max(1.2, state.disturbanceTimer);
 }
@@ -44,15 +48,18 @@ export function updateIdleStationKeeping(
   ship: LocalShipState,
   hold: WorldPoint,
   seed: number,
-  deltaSeconds: number
+  deltaSeconds: number,
+  performance?: ShipFlightPerformance,
+  bounds?: ShipFlightBounds
 ): void {
-  applyDisturbance(state, seed, deltaSeconds);
-  applyPositionKeeping(state, ship, hold, deltaSeconds);
-  applyHeadingKeeping(state, ship, deltaSeconds);
+  applyDisturbance(state, ship, seed, deltaSeconds);
+  applyPositionKeeping(state, ship, hold, deltaSeconds, performance, bounds);
+  applyHeadingKeeping(state, ship, deltaSeconds, performance);
 }
 
 function applyDisturbance(
   state: IdleStationKeepingState,
+  ship: LocalShipState,
   seed: number,
   deltaSeconds: number
 ): void {
@@ -60,7 +67,12 @@ function applyDisturbance(
   if (state.disturbanceTimer > 0) return;
 
   const phase = seed * 0.00017 + state.disturbanceIndex * 1.618;
-  state.lateralVelocity += Math.sin(phase * 7.31) * 0.23;
+  const lateralVelocity = localShipLateralSpeed(ship);
+  setLocalShipComponents(
+    ship,
+    localShipForwardSpeed(ship),
+    lateralVelocity + Math.sin(phase * 7.31) * 0.23
+  );
   state.angularVelocity += Math.sin(phase * 11.73 + 0.8) * 0.024;
   state.disturbanceIndex += 1;
   state.disturbanceTimer = 2.2 + Math.abs(Math.sin(phase * 3.17)) * 3.2;
@@ -70,44 +82,43 @@ function applyPositionKeeping(
   state: IdleStationKeepingState,
   ship: LocalShipState,
   hold: WorldPoint,
-  deltaSeconds: number
+  deltaSeconds: number,
+  performance?: ShipFlightPerformance,
+  bounds?: ShipFlightBounds
 ): void {
-  const sideX = -Math.sin(ship.headingRadians);
-  const sideY = Math.cos(ship.headingRadians);
   const offsetX = ship.position.x - hold.x;
   const offsetY = ship.position.y - hold.y;
-  const lateralOffset = offsetX * sideX + offsetY * sideY;
-
-  let thrust = -lateralOffset * 0.11 - state.lateralVelocity * 0.62;
-  thrust = Math.max(-0.27, Math.min(0.27, thrust));
-  if (Math.abs(thrust) < 0.045) thrust = 0;
-
-  ship.lateralThrust = thrust;
-  state.lateralVelocity += thrust * 1.8 * deltaSeconds;
-  state.lateralVelocity = Math.max(-0.8, Math.min(0.8, state.lateralVelocity));
-  ship.position = {
-    x: ship.position.x + sideX * state.lateralVelocity * deltaSeconds,
-    y: ship.position.y + sideY * state.lateralVelocity * deltaSeconds,
-  };
-  ship.speed = 0;
+  const distance = Math.hypot(offsetX, offsetY);
+  const direction =
+    distance > 0 ? { x: -offsetX / distance, y: -offsetY / distance } : { x: 0, y: 0 };
+  const acceleration = performance?.accelerationMetersPerSecond2 ?? 1.2;
+  const targetSpeed = Math.min(0.8, Math.sqrt(2 * acceleration * distance));
+  applyShipVelocityCommand(ship, {
+    direction,
+    targetSpeed,
+    acceleration,
+    accelerationMultiplier: 0.4,
+    deltaSeconds,
+    maxSpeed: 0.8,
+    ...(bounds ? { bounds } : {}),
+  });
+  const forwardX = Math.cos(ship.headingRadians);
+  const forwardY = Math.sin(ship.headingRadians);
+  ship.longitudinalThrust = direction.x * forwardX + direction.y * forwardY;
+  ship.lateralThrust = direction.x * -forwardY + direction.y * forwardX;
 }
 
 function applyHeadingKeeping(
   state: IdleStationKeepingState,
   ship: LocalShipState,
-  deltaSeconds: number
+  deltaSeconds: number,
+  performance?: ShipFlightPerformance
 ): void {
-  const headingError = angleDelta(ship.headingRadians, state.targetHeading);
-  let angularThrust = headingError * 0.82 - state.angularVelocity * 1.22;
-  angularThrust = Math.max(-0.34, Math.min(0.34, angularThrust));
-
-  if (Math.abs(headingError) < 0.004 && Math.abs(state.angularVelocity) < 0.003) {
-    angularThrust = 0;
-  }
-
-  state.angularVelocity += angularThrust * 0.32 * deltaSeconds;
-  state.angularVelocity = Math.max(-0.048, Math.min(0.048, state.angularVelocity));
-  ship.headingRadians += state.angularVelocity * deltaSeconds;
-  ship.turnRateRadiansPerSecond = state.angularVelocity;
-  ship.angularThrust = angularThrust / 0.34;
+  state.angularVelocity *= Math.exp(-1.22 * deltaSeconds);
+  turnShipTowardHeading(
+    ship,
+    state.targetHeading + state.angularVelocity,
+    performance?.turnRateRadiansPerSecond ?? 0.4,
+    deltaSeconds
+  );
 }

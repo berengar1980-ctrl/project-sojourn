@@ -80,6 +80,9 @@ const lightBody = trafficBodies.find((body) => body.id === light.id);
 const heavyBody = trafficBodies.find((body) => body.id === heavy.id);
 assert.equal(lightBody.routeBlocking, false);
 assert.equal(heavyBody.routeBlocking, true);
-assert.equal(resolveFieldDebrisContacts(lightBody.position, { x: 80, y: 0 }, [lightBody], 15), 1);
+assert.equal(
+  resolveFieldDebrisContacts(lightBody.position, { x: 80, y: 0 }, [lightBody], 15, 100000),
+  1
+);
 assert.notDeepEqual(lightBody.position, light.position);
 console.log('PASS local embedded combat keeps environmental and NPC simulations separate');

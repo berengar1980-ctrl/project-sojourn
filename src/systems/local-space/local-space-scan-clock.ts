@@ -1,5 +1,7 @@
 import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { ShipFlightPerformance } from '../../core/ship-flight-physics';
+import { shipFlightBounds } from '../../core/ship-flight-physics';
 import { runLongRangeAsteroidScan } from './local-space-scanning';
 import {
   updateIdleStationKeeping,
@@ -13,7 +15,10 @@ export class LocalSpaceScanClock {
   private longParameters: { readonly sensorModifier: number; readonly crewSkill: number } | null =
     null;
 
-  constructor(private readonly instance: LocalSpaceInstance) {}
+  constructor(
+    private readonly instance: LocalSpaceInstance,
+    private readonly performance?: ShipFlightPerformance
+  ) {}
 
   longProgress(): number | null {
     return this.longParameters ? Math.min(1, this.longElapsed / 5) : null;
@@ -47,7 +52,15 @@ export class LocalSpaceScanClock {
   }
 
   keepStation(seconds: number, idle: IdleStationKeepingState, station: WorldPoint): void {
-    updateIdleStationKeeping(idle, this.instance.ship, station, this.instance.seed, seconds);
+    updateIdleStationKeeping(
+      idle,
+      this.instance.ship,
+      station,
+      this.instance.seed,
+      seconds,
+      this.performance,
+      shipFlightBounds(this.instance.width, this.instance.height)
+    );
   }
 
   advanceShort(
@@ -57,7 +70,15 @@ export class LocalSpaceScanClock {
     station: WorldPoint
   ): boolean {
     this.shortElapsed += seconds;
-    updateIdleStationKeeping(idle, this.instance.ship, station, this.instance.seed, seconds);
+    updateIdleStationKeeping(
+      idle,
+      this.instance.ship,
+      station,
+      this.instance.seed,
+      seconds,
+      this.performance,
+      shipFlightBounds(this.instance.width, this.instance.height)
+    );
     if (this.shortElapsed < 5) return false;
     asteroid.scanLevel = 'analyzed';
     for (const deposit of asteroid.deposits) deposit.identified = true;

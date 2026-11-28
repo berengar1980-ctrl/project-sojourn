@@ -2,28 +2,7 @@ import { DRONE_SHIELD_RADIUS_METERS, isSecurityDrone } from '../../core/security
 import { combatEquippedWeapons, combatWeaponMounts } from './combat-loadout-mounts';
 import type { SectorNpcState } from '../../core/npc-types';
 
-import {
-  pilotingDodgeChance,
-  sensorWeaponHitChanceBonus,
-  weaponCriticalChance,
-  weaponCycleTimeMultiplier,
-  weaponDamageMultiplier,
-} from '../crew/crew-skill-effects';
-
-import {
-  componentHullBonus,
-  componentShieldBonus,
-  calculateShipModeEnergy,
-  getShipComponent,
-  combatSensorStats,
-  getShipDefinition,
-  resolveShipCombatMovementStats,
-  resolveShipArmorProtection,
-  shipCombatTractorRange,
-  shipHasIndustrialTractor,
-  shipHullMaxHp,
-  shipShieldMaxHp,
-} from '../ships';
+import { getShipComponent, getShipDefinition, resolveShipCombatProfile } from '../ships';
 
 import { npcDefenseReaction } from '../npcs/npc-combat-ai';
 import { civilianCombatOpening, civilianCombatRole } from './combat-civilian-policy';
@@ -65,14 +44,15 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
   const ship = getShipDefinition(npc.shipId);
   if (!ship) return null;
   const installed = ensureNpcInstalledComponents(npc);
-  const movement = resolveShipCombatMovementStats(ship, installed);
-  const installedArmor = resolveShipArmorProtection(installed);
-  const drone = isSecurityDrone(npc.id);
-  const armor = drone && installedArmor ? radialDroneArmor(installedArmor) : installedArmor;
-  const equippedWeapons = combatEquippedWeapons(ship, installed.weapon ?? []);
-  const hullMax = shipHullMaxHp(ship, componentHullBonus(installed));
-  const shieldMax = shipShieldMaxHp(ship) + componentShieldBonus(installed);
   const skill = npcCombatSkill(npc);
+  const profile = resolveShipCombatProfile(ship, installed, {
+    piloting: skill,
+    sensors: skill,
+    weapons: skill,
+  });
+  const drone = isSecurityDrone(npc.id);
+  const armor = drone && profile.armor ? radialDroneArmor(profile.armor) : profile.armor;
+  const equippedWeapons = combatEquippedWeapons(ship, installed.weapon ?? []);
   const mines = (installed.mine ?? []).flatMap((id) => {
     const component = getShipComponent('mine', id);
     return component?.mine ? [component.mine, component.mine, component.mine] : [];
@@ -83,7 +63,7 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
     name: npc.name,
     shipId: ship.id,
     nominalLengthMeters: ship.nominalLengthMeters,
-    shieldHp: Math.max(1, shieldMax),
+    shieldHp: profile.shieldMaxHp,
     shieldGeometry: drone
       ? {
           centerOffset: { x: 0, y: 0 },
@@ -92,23 +72,28 @@ export function npcCombatant(npc: SectorNpcState): StrategicCombatantSetup | nul
           modifier: 1,
         }
       : createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
-    hullHp: Math.max(1, Math.min(hullMax, npc.hullHp)),
+    hullHp: Math.max(1, Math.min(profile.hullMaxHp, npc.hullHp)),
     ...(armor ? { armor } : {}),
     weapons: equippedWeapons.map((entry) => entry.component),
     weaponMounts: combatWeaponMounts(ship, equippedWeapons),
-    hitChance: 0.68 + sensorWeaponHitChanceBonus(skill),
-    dodgeChance: pilotingDodgeChance(skill),
-    damageMultiplier: weaponDamageMultiplier(skill),
-    criticalChance: weaponCriticalChance(skill),
-    cycleTimeMultiplier: weaponCycleTimeMultiplier(skill),
+    hitChance: profile.hitChance,
+    dodgeChance: profile.dodgeChance,
+    damageMultiplier: profile.damageMultiplier,
+    criticalChance: profile.criticalChance,
+    cycleTimeMultiplier: profile.cycleTimeMultiplier,
     // Role doctrine changes the chosen maneuver, never weapon or damage statistics.
     preferredTactic: npcCombatDoctrine(npc, mines.length > 0, equippedWeapons.length > 0),
-    ...movement,
+    combatSpeed: profile.combatSpeed,
+    turnRateRadiansPerSecond: profile.turnRateRadiansPerSecond,
+    accelerationMetersPerSecond2: profile.accelerationMetersPerSecond2,
     mines,
-    tractorRangeMeters: shipCombatTractorRange(installed),
-    power: calculateShipModeEnergy(installed),
-    tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
-    ...combatSensorStats(installed, skill),
+    tractorRangeMeters: profile.tractorRangeMeters,
+    power: profile.power,
+    tractorCanManipulateObjects: profile.tractorCanManipulateObjects,
+    sensorTier: profile.sensorTier,
+    sensorCrewSkill: profile.sensorCrewSkill,
+    sensorRangeMeters: profile.sensorRangeMeters,
+    sensorRangeMultiplier: profile.sensorRangeMultiplier,
     aiControlled: true,
     aiAggression: npc.aggression,
     ...(npc.factionId ? { factionId: npc.factionId } : {}),

@@ -24,7 +24,12 @@ assert(
   'cover and asteroid avoidance remain part of the canonical pilot'
 );
 assert(routing.includes('pathBlocked('), 'direct line checks asteroid clearance');
-assert(physics.includes('resistance'), 'large rocks resist ship-contact displacement');
+assert(
+  physics.includes('shipContactMassProperties') &&
+    physics.includes('resolveShieldCollisions(') &&
+    !physics.includes('resistance'),
+  'rock displacement follows the shared physical mass ratio without mode-specific damping'
+);
 assert(renderer.includes("impact.layer === 'obstacle'"), 'obstacle impacts have a visual effect');
 assert(
   renderer.includes("impact.weaponKind === 'missile'"),

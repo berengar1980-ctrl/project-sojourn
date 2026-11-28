@@ -24,11 +24,7 @@ import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-v
 import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
 import { grantDistressSalvageRights } from '../systems/salvage/distress-salvage-rights';
-import {
-  resolveShipLocalCruiseSpeed,
-  engineSpeedMultiplier,
-  resolveShipRuntimeSetup,
-} from '../systems/ships';
+import { resolveShipCombatMovementStats, resolveShipRuntimeSetup } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips, salvagePirateShips } from './game-controller-salvage-npc-view';
 import {
@@ -230,8 +226,9 @@ function tickSalvageTraffic(
     context.drone.syncCombatPose(
       combat.defender.position,
       combat.defender.headingRadians,
-      combat.defender.speed,
-      combat.defender.hullHp > 0
+      combat.defender.velocity,
+      combat.defender.hullHp > 0,
+      combat.defender
     );
   }
   advanceSalvagePirateResponse({
@@ -243,7 +240,7 @@ function tickSalvageTraffic(
     playerPosition: combat?.attacker.position ?? service.getSnapshot().ship.position,
     playerRadius: Math.max(18, options.ship.nominalLengthMeters * 0.35),
     ...(!combat && {
-      playerBody: { id: 'player', ship: options.ship, state: playerBody, pushWeight: 2.4 },
+      playerBody: { id: 'player', ship: options.ship, state: playerBody },
     }),
     ...(options.onFreighterExit && { onFreighterExit: options.onFreighterExit }),
     dt: deltaSeconds,
@@ -274,7 +271,8 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     service.syncCombatPose(
       combat.attacker.position,
       combat.attacker.headingRadians,
-      combat.attacker.speed
+      combat.attacker.velocity,
+      combat.attacker
     );
     npcSalvage.tick(deltaSeconds, combat.defender.id, true);
   } else {
@@ -349,6 +347,11 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     generateSalvageField(options.location.id, options.seed, options.location.dangerLevel);
   if (!hasNpcSalvageRuntime(field)) options.wreckClaims.restoreField(field);
   if (options.sectorEvent) options.economy.prepareEventField?.(field);
+  const flightPerformance = resolveShipCombatMovementStats(
+    options.ship,
+    runtime.installed,
+    runtime.stationSkills.piloting
+  );
   const service = createSalvageLocalSpaceService({
     field,
     setup: runtime.salvage,
@@ -365,17 +368,12 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
         null
       );
     },
-    approachSpeed: resolveShipLocalCruiseSpeed(
-      options.ship,
-      runtime.installed,
-      runtime.stationSkills.piloting
-    ),
-    turnRateMultiplier:
-      engineSpeedMultiplier(runtime.installed) * runtime.crewEffects.piloting.turnRateMultiplier,
+    approachSpeed: flightPerformance.combatSpeed,
+    flightPerformance,
     hardpoints: options.ship.sprite.hardpoints,
     shipLengthMeters: options.ship.nominalLengthMeters,
   });
-  if (options.playerStart) service.syncCombatPose(options.playerStart, 0, 0);
+  if (options.playerStart) service.syncCombatPose(options.playerStart, 0, { x: 0, y: 0 });
   const context: SalvageSceneRuntime = {
     options,
     runtime,

@@ -7,16 +7,26 @@ import type { CombatVisualAsteroid, StrategicCombatArenaOptions } from './strate
 export function nativeCombatAsteroids(arena: StrategicCombatArenaOptions): LocalAsteroid[] {
   return (arena.asteroids ?? []).map((asteroid) => {
     const physics = asteroid.physics ?? {
-      mass: Math.max(1, Math.PI * asteroid.radius ** 2),
+      mass: Math.max(
+        1,
+        Math.PI * asteroid.radius ** 2 * (asteroid.kind === 'resource' ? 5.8 : 16.5)
+      ),
       centerOfMassOffset: { x: 0, y: 0 },
       velocity: asteroid.velocity,
       angularVelocity: asteroid.angularVelocity ?? 0,
-      momentOfInertia: Math.max(1, 0.5 * Math.PI * asteroid.radius ** 4),
+      momentOfInertia: Math.max(
+        1,
+        0.5 *
+          Math.PI *
+          asteroid.radius ** 2 *
+          (asteroid.kind === 'resource' ? 5.8 : 16.5) *
+          asteroid.radius ** 2
+      ),
     };
     return {
       id: asteroid.id,
       kind: asteroid.kind,
-      routeBlocking: asteroid.kind === 'resource',
+      routeBlocking: asteroid.routeBlocking ?? asteroid.kind === 'resource',
       position: asteroid.position,
       radius: asteroid.radius,
       ...(asteroid.collisionRadius !== undefined
@@ -24,17 +34,7 @@ export function nativeCombatAsteroids(arena: StrategicCombatArenaOptions): Local
         : {}),
       ...(usesNaturalCombatContour(asteroid) ? { contactGeometry: 'silhouette' as const } : {}),
       rotation: asteroid.rotation ?? 0,
-      // Combat rocks retain their campaign motion but large bodies carry much more inertia.
-      // This suppresses unrealistic kickback when a 60 m ship strikes a massive asteroid.
-      physics:
-        asteroid.kind === 'resource'
-          ? {
-              ...physics,
-              velocity: { ...physics.velocity },
-              mass: physics.mass * Math.max(8, asteroid.radius / 3),
-              momentOfInertia: physics.momentOfInertia * Math.max(8, asteroid.radius / 3),
-            }
-          : physics,
+      physics: { ...physics, velocity: { ...physics.velocity } },
       deposits: [],
       scanLevel: 'unscanned',
     } satisfies LocalAsteroid;
@@ -68,5 +68,9 @@ export function advanceCombatAsteroids(arena: StrategicCombatArenaOptions, dt: n
     const velocity = visual.velocity as { x: number; y: number };
     velocity.x = body.physics.velocity.x;
     velocity.y = body.physics.velocity.y;
+    if (visual.physics) {
+      visual.physics.velocity = { ...body.physics.velocity };
+      visual.physics.angularVelocity = body.physics.angularVelocity;
+    }
   });
 }

@@ -14,7 +14,12 @@ import { equipSecurityDroneMk3 } from '../ships/security-drone-weapon-loadout';
 import { npcOperationalSpeed } from './npc-upgrade-service';
 import { replanNpcTravel } from './npc-sector-live-replan';
 import { advanceNpcCombatRecovery, beginNpcCombatRecovery } from './npc-sector-combat-recovery';
-import { advanceNpcCombatMovement, resumeNpcFieldActivity } from './npc-sector-combat-movement';
+import {
+  advanceNpcCombatMovement,
+  createNpcCombatMovementState,
+  npcCombatTargetPosition,
+  resumeNpcFieldActivity,
+} from './npc-sector-combat-movement';
 import {
   planRouteFromPoint,
   planRouteWithProfile,
@@ -145,15 +150,19 @@ class SectorService implements NpcSectorService {
     const position = this.livePosition(npc);
     const headingRadians = this.liveHeading(npc);
     const speed = npc.combatMovement?.speed ?? 0;
+    const velocity = npc.combatMovement?.velocity ?? {
+      x: Math.cos(headingRadians) * speed,
+      y: Math.sin(headingRadians) * speed,
+    };
     delete npc.travel;
-    npc.combatMovement = {
+    npc.combatMovement = createNpcCombatMovementState(
       mode,
       targetKind,
       targetId,
-      position: { ...position },
-      headingRadians,
-      speed,
-    };
+      position,
+      velocity,
+      headingRadians
+    );
     npc.activityId = mode;
     npc.activity = reason;
     const dx = targetPosition.x - position.x;
@@ -163,14 +172,6 @@ class SectorService implements NpcSectorService {
         mode === 'pursue' ? Math.atan2(dy, dx) : Math.atan2(-dy, -dx);
     }
     return true;
-  };
-  private targetPosition = (
-    movement: NonNullable<SectorNpcState['combatMovement']>,
-    npcPositions: ReadonlyMap<string, WorldPoint>,
-    playerPosition: WorldPoint | null
-  ): WorldPoint | null => {
-    if (movement.targetKind === 'player') return playerPosition;
-    return npcPositions.get(movement.targetId) ?? null;
   };
   private planJourney(npc: SectorNpcState, destinationId: string, availableCredits: number) {
     const request = {
@@ -333,15 +334,19 @@ class SectorService implements NpcSectorService {
   ): void => {
     const position = this.livePosition(npc);
     const headingRadians = this.liveHeading(npc);
+    const priorVelocity = npc.combatMovement?.velocity ?? {
+      x: Math.cos(headingRadians) * (npc.combatMovement?.speed ?? 0),
+      y: Math.sin(headingRadians) * (npc.combatMovement?.speed ?? 0),
+    };
     delete npc.travel;
-    npc.combatMovement = {
-      mode: 'engaged',
+    npc.combatMovement = createNpcCombatMovementState(
+      'engaged',
       targetKind,
       targetId,
-      position: { ...position },
-      headingRadians,
-      speed: 0,
-    };
+      position,
+      priorVelocity,
+      headingRadians
+    );
     npc.activityId = 'combat';
     npc.activity = reason;
   };
@@ -367,9 +372,7 @@ class SectorService implements NpcSectorService {
   combatMode = (npc: SectorNpcState): NpcCombatMovementMode | null => {
     return npc.combatMovement?.mode ?? null;
   };
-  isTravelling = (npc: SectorNpcState): boolean => {
-    return Boolean(npc.travel || npc.combatMovement);
-  };
+  isTravelling = (npc: SectorNpcState): boolean => Boolean(npc.travel || npc.combatMovement);
   livePosition = (npc: SectorNpcState): WorldPoint => {
     if (npc.combatMovement) return npc.combatMovement.position;
     return npc.travel
@@ -377,7 +380,8 @@ class SectorService implements NpcSectorService {
       : npcOrbitPosition(this.world, npc);
   };
   liveHeading = (npc: SectorNpcState): number => {
-    if (npc.combatMovement) return npc.combatMovement.headingRadians;
+    const movement = npc.combatMovement;
+    if (movement) return movement.headingRadians;
     return npc.travel
       ? routeHeading(npc.travel.routePoints, npc.travel.distanceTravelled)
       : npcOrbitHeading(this.world, npc);
@@ -472,7 +476,7 @@ class SectorService implements NpcSectorService {
       }
       const movement = npc.combatMovement;
       if (movement) {
-        const target = this.targetPosition(movement, npcPositions, playerPosition);
+        const target = npcCombatTargetPosition(movement, npcPositions, playerPosition);
         if (target) advanceNpcCombatMovement(this.world, npc, target, dt);
         continue;
       }

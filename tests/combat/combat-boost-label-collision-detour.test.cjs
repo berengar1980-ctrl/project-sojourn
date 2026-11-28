@@ -44,6 +44,7 @@ const { escapeContactDetour } = loadStandaloneTypeScriptModule(
   'src/systems/combat/combat-collision-evasion.ts'
 );
 const vessel = (x, y, vx, vy) => ({
+  setup: { id: `ship-${x}`, shipId: 'miner-80m-variant-04' },
   position: { x, y },
   velocity: { x: vx, y: vy },
   speed: Math.hypot(vx, vy),

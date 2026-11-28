@@ -182,11 +182,18 @@ export function generateMiningSpace(
     chunks: [],
     ship: {
       position: seededLocalGate(width, height, seed),
+      velocity: { x: 0, y: 0 },
       headingRadians: 0,
-      speed: 0,
+      get speed() {
+        return (
+          this.velocity.x * Math.cos(this.headingRadians) +
+          this.velocity.y * Math.sin(this.headingRadians)
+        );
+      },
       turnRateRadiansPerSecond: 0,
       angularThrust: 0,
       lateralThrust: 0,
+      longitudinalThrust: 0,
     },
   };
 }

@@ -1,6 +1,7 @@
 import type { AsteroidScanLevel } from './resource-types';
 import type { ShieldImpactEffect, ShieldState } from './shield-types';
 import type { WorldPoint } from './world-types';
+import type { ManeuveringShipState } from './physical-ship-state';
 
 export type LocalAsteroidKind = 'resource' | 'debris';
 
@@ -69,12 +70,10 @@ export interface LocalReactorState {
   readonly continuousFree: number;
 }
 
-export interface LocalShipState {
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
-  turnRateRadiansPerSecond: number;
-  angularThrust: number;
+export interface LocalShipState extends ManeuveringShipState {
+  /** The sole authoritative translational velocity in world coordinates. */
+  /** Signed forward projection of velocity; it is never an independent state value. */
+  readonly speed: number;
   lateralThrust: number;
 }
 

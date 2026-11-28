@@ -1,5 +1,5 @@
 import { workerAtAssignment } from './npc-worker-primitives';
-export { moveToward, cargoUsed, chooseEventChoice } from './npc-worker-primitives';
+export { cargoUsed, chooseEventChoice } from './npc-worker-primitives';
 import { stableHash as hashId } from '../../core/stable-hash';
 import { npcOperationalRoleAllowed } from '../operations/ship-operation-permissions';
 import type { SectorNpcState } from '../../core/npc-types';

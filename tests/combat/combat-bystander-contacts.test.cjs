@@ -24,7 +24,7 @@ const civilian = {
 };
 resolveCombatBystanderContacts(fighter, [civilian]);
 assert(fighter.position.x < 100, 'player must not pass through a civilian ship');
-assert.equal(fighter.velocity.x, 0, 'contact must cancel closing velocity');
+assert(Math.abs(fighter.velocity.x) < 1e-8, 'contact must cancel closing velocity');
 assert.deepEqual(civilian.position, { x: 115, y: 100 }, 'PvP must not mutate civilian poses');
 const { getShipDefinition } = loadStandaloneTypeScriptModule(root, 'src/systems/ships/index.ts');
 const { shipShieldFootprint, shipShieldGeometry, combatHullRadii } = loadStandaloneTypeScriptModule(

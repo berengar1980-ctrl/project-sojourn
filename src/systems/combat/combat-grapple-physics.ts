@@ -91,8 +91,6 @@ export function advanceCombatGrappleTether(
     target.velocity.x -= diffX;
     target.velocity.y -= diffY;
   }
-  source.speed = Math.hypot(source.velocity.x, source.velocity.y);
-  target.speed = Math.hypot(target.velocity.x, target.velocity.y);
 
   return {
     ...grapple,

@@ -85,7 +85,15 @@ assert.equal(worker.workerMustExit(workerNpc, 1), true);
 workerNpc.combatRecoverySeconds = 1;
 assert.equal(worker.workerAtAssignment(workerNpc, 'field'), false);
 assert.equal(worker.workerStepSeconds(1), 0.08);
-const scan = { speed: 20, scanProgress: 0 };
+const scan = {
+  position: { x: 0, y: 0 },
+  headingRadians: 0,
+  velocity: { x: 20, y: 0 },
+  get speed() {
+    return Math.hypot(this.velocity.x, this.velocity.y);
+  },
+  scanProgress: 0,
+};
 assert.equal(worker.advanceWorkerScan(scan, 2.5), false);
 assert.equal(scan.speed, 0);
 assert.equal(worker.advanceWorkerScan(scan, 2.5), true);

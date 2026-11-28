@@ -27,6 +27,7 @@ function traffic(npcs, coordinates) {
     ships: coordinates.map(([id, x, y]) => ({
       npcId: id,
       position: { x, y },
+      velocity: { x: 80, y: 0 },
       headingRadians: 0,
       speed: 80,
       awaitingCombat: false,
@@ -37,9 +38,9 @@ function traffic(npcs, coordinates) {
 }
 const playerNpc = [npc('pirate-a')];
 const playerTraffic = traffic(playerNpc, [['pirate-a', 300, 300]]);
-const player = { position: { x: 306, y: 300 }, headingRadians: 0 };
+const player = { position: { x: 306, y: 300 }, velocity: { x: 0, y: 0 }, headingRadians: 0 };
 const playerContacts = playerTraffic.resolveShipContacts(playerNpc, [
-  { id: 'player', ship: definition, state: player, pushWeight: 2.4 },
+  { id: 'player', ship: definition, state: player },
 ]);
 assert(
   playerContacts.some((contact) => contact.firstId === 'pirate-a' && contact.secondId === 'player')
@@ -52,11 +53,11 @@ assert(
 );
 
 const civilianTraffic = traffic(playerNpc, [['pirate-a', 450, 350]]);
-const miner = { position: { x: 455, y: 350 }, headingRadians: 0 };
-const drone = { position: { x: 455, y: 350 }, headingRadians: 0 };
+const miner = { position: { x: 455, y: 350 }, velocity: { x: 0, y: 0 }, headingRadians: 0 };
+const drone = { position: { x: 455, y: 350 }, velocity: { x: 0, y: 0 }, headingRadians: 0 };
 const npcContacts = civilianTraffic.resolveShipContacts(playerNpc, [
-  { id: 'miner-one', ship: definition, state: miner, pushWeight: 1 },
-  { id: 'drone-one', ship: definition, state: drone, pushWeight: 100000 },
+  { id: 'miner-one', ship: definition, state: miner },
+  { id: 'drone-one', ship: definition, state: drone },
 ]);
 assert(npcContacts.some((contact) => contact.secondId === 'miner-one'));
 assert(npcContacts.some((contact) => contact.secondId === 'drone-one'));
@@ -82,16 +83,19 @@ const debris = {
   position: { x: 300, y: 300 },
   radius: 12,
   collisionRadius: 10,
+  rotation: 0,
   routeBlocking: false,
-  physics: { velocity: { x: 0, y: 0 }, angularVelocity: 0 },
+  physics: {
+    mass: 1000,
+    centerOfMassOffset: { x: 0, y: 0 },
+    velocity: { x: 0, y: 0 },
+    angularVelocity: 0,
+    momentOfInertia: 1000,
+  },
 };
 idlePirate.resolveShipContacts(playerNpc, [], [debris]);
-assert.equal(
-  idlePirate.body('pirate-a').position.x,
-  310,
-  'light debris must not push a pirate back'
-);
-assert(debris.position.x < 300 && debris.physics.velocity.x < 0);
+assert(idlePirate.body('pirate-a').position.x > 310, 'light debris must not push a pirate back');
+assert(debris.position.x < 300, 'separating contact clears overlap without an extra kick');
 const solid = {
   ...debris,
   id: 'solid',
@@ -111,7 +115,13 @@ for (const pirate of [true, false]) {
   const fragment = {
     ...debris,
     position: { x: 425, y: 500 },
-    physics: { velocity: { x: 0, y: 0 }, angularVelocity: 0 },
+    physics: {
+      mass: 1000,
+      centerOfMassOffset: { x: 0, y: 0 },
+      velocity: { x: 0, y: 0 },
+      angularVelocity: 0,
+      momentOfInertia: 1000,
+    },
   };
   for (let step = 0; step < 180; step++) {
     ships.tick(0.08, roster, target, [], [fragment], () => false);
@@ -121,7 +131,11 @@ for (const pirate of [true, false]) {
 }
 const inactive = [npc('pirate-a', { combatMovement: { targetId: 'miner' } })];
 const inactiveTraffic = traffic([npc('pirate-a')], [['pirate-a', 300, 300]]);
-const stationary = { position: { x: 300, y: 300 }, headingRadians: 0 };
+const stationary = {
+  position: { x: 300, y: 300 },
+  velocity: { x: 0, y: 0 },
+  headingRadians: 0,
+};
 assert.equal(
   inactiveTraffic.resolveShipContacts(inactive, [
     { id: 'player', ship: definition, state: stationary },

@@ -1,5 +1,5 @@
 import { workerAtAssignment, workerCargoFull } from './npc-worker-primitives';
-export { moveToward, cargoUsed, chooseEventChoice } from './npc-worker-primitives';
+export { cargoUsed, chooseEventChoice } from './npc-worker-primitives';
 import { stableHash as hashId } from '../../core/stable-hash';
 import { distance } from '../../core/field-geometry';
 import type { FieldRouteState, FieldRouteObstacle } from '../navigation/field-ship-routing';
@@ -11,7 +11,15 @@ import type { ShipDefinition } from '../../core/ship-types';
 import type { SectorNpcState } from '../../core/npc-types';
 
 import type { WorldPoint } from '../../core/world-types';
+import {
+  applyShipVelocityCommand,
+  turnShipTowardHeading,
+  type ShipFlightBounds,
+  type ShipFlightPerformance,
+} from '../../core/ship-flight-physics';
+import type { ManeuveringShipControls } from '../../core/physical-ship-state';
 import type { MiningEventCheckpoint } from '../local-space/mining-event-checkpoint';
+import type { PhysicalShipState } from '../../core/physical-ship-state';
 
 export type LocalNpcMiningPhase = 'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
 
@@ -22,13 +30,11 @@ export interface NpcOreCollection {
   readonly durationSeconds: number;
 }
 
-export interface LocalNpcMinerState {
+export interface LocalNpcMinerState extends PhysicalShipState {
   readonly npcId: string;
   readonly name: string;
   readonly shipId: string;
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
+  readonly speed: number;
   routeState?: FieldRouteState;
   phase: LocalNpcMiningPhase;
   targetAsteroidId: string | null;
@@ -54,7 +60,13 @@ export interface LocalMinerCheckpoint {
 export interface NpcLocalMiningService {
   exportState(): LocalMinerCheckpoint;
   readonly ships: readonly LocalNpcMinerState[];
-  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
+  syncCombatPose(
+    npcId: string,
+    position: WorldPoint,
+    headingRadians: number,
+    velocity: WorldPoint,
+    maneuvering?: Partial<ManeuveringShipControls>
+  ): void;
   tick(deltaSeconds: number, combatantId?: string): void;
 }
 
@@ -175,7 +187,9 @@ export function eligibleMiner(npc: SectorNpcState, locationId: string): boolean 
 export function holdMinerWorkRange(
   ship: LocalNpcMinerState,
   rocks: readonly LocalAsteroid[],
-  dt: number
+  dt: number,
+  performance?: ShipFlightPerformance,
+  bounds?: ShipFlightBounds
 ): void {
   if (ship.phase !== 'scanning' && ship.phase !== 'mining') return;
   const rock = rocks.find((body) => body.id === ship.targetAsteroidId);
@@ -193,10 +207,22 @@ export function holdMinerWorkRange(
     return;
   }
   if (centerDistance === 0) return;
-  const correction = Math.max(-16 * dt, Math.min(16 * dt, offset));
-  ship.position = {
-    x: ship.position.x - (dx / centerDistance) * correction,
-    y: ship.position.y - (dy / centerDistance) * correction,
-  };
-  ship.headingRadians = Math.atan2(-dy, -dx);
+  const radial = { x: dx / centerDistance, y: dy / centerDistance };
+  const direction = offset > 0 ? { x: -radial.x, y: -radial.y } : radial;
+  const desiredHeading = Math.atan2(-dy, -dx);
+  turnShipTowardHeading(ship, desiredHeading, performance?.turnRateRadiansPerSecond ?? 1.15, dt);
+  const acceleration = performance?.accelerationMetersPerSecond2 ?? 30;
+  const targetSpeed = Math.min(16, Math.sqrt(2 * acceleration * Math.abs(offset)));
+  const forwardX = Math.cos(ship.headingRadians);
+  const forwardY = Math.sin(ship.headingRadians);
+  ship.longitudinalThrust = direction.x * forwardX + direction.y * forwardY;
+  ship.lateralThrust = direction.x * -forwardY + direction.y * forwardX;
+  applyShipVelocityCommand(ship, {
+    direction,
+    targetSpeed,
+    acceleration,
+    deltaSeconds: dt,
+    maxSpeed: 16,
+    ...(bounds ? { bounds } : {}),
+  });
 }

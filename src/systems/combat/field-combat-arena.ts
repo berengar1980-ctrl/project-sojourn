@@ -13,6 +13,22 @@ import type {
   StrategicCombatSnapshot,
 } from './strategic-combat-types';
 
+function salvageBodyPhysics(
+  radius: number,
+  velocity: WorldPoint,
+  angularVelocity: number,
+  density: number
+) {
+  const mass = Math.max(1, Math.PI * radius ** 2 * density);
+  return {
+    mass,
+    centerOfMassOffset: { x: 0, y: 0 },
+    velocity: { ...velocity },
+    angularVelocity,
+    momentOfInertia: Math.max(1, 0.5 * mass * radius ** 2),
+  };
+}
+
 /** Preserve every native mining body, including its real velocity and contact radius. */
 export function miningFieldCombatArena(
   instance: LocalSpaceInstance,
@@ -31,6 +47,7 @@ export function miningFieldCombatArena(
       ...instance.asteroids.map((asteroid) => ({
         id: asteroid.id,
         kind: asteroid.kind,
+        routeBlocking: asteroid.routeBlocking,
         position: { ...asteroid.position },
         velocity: { ...asteroid.physics.velocity },
         angularVelocity: asteroid.physics.angularVelocity,
@@ -45,14 +62,14 @@ export function miningFieldCombatArena(
     ],
     obstacles: [
       ...instance.asteroids
-        .filter((asteroid) => asteroid.kind === 'resource')
+        .filter((asteroid) => asteroid.routeBlocking)
         .map((asteroid) => ({
           id: asteroid.id,
           position: { ...asteroid.position },
           radius: asteroid.collisionRadius ?? asteroid.radius,
         })),
       ...wreckBodies
-        .filter((wreck) => wreck.kind === 'resource')
+        .filter((wreck) => wreck.routeBlocking)
         .map((wreck) => ({
           id: wreck.id,
           position: { ...wreck.position },
@@ -64,15 +81,14 @@ export function miningFieldCombatArena(
 
 export function wreckCombatBody(wreck: SalvageWreck): CombatVisualAsteroid {
   const kind = wreck.containerVariant || wreck.debrisVariant ? 'debris' : 'resource';
-  const variant = {
-    ...(wreck.sectionVariant ? { sectionVariant: wreck.sectionVariant } : {}),
-    ...(wreck.combatWreckVariant ? { combatWreckVariant: wreck.combatWreckVariant } : {}),
-    ...(wreck.debrisVariant ? { debrisVariant: wreck.debrisVariant } : {}),
-    ...(wreck.containerVariant ? { containerVariant: wreck.containerVariant } : {}),
-  };
+  const heavy = Boolean(wreck.sectionVariant || wreck.combatWreckVariant);
+  const velocity = wreck.driftVelocity ?? { x: 0, y: 0 };
+  const angularVelocity = wreck.spin3d?.z ?? 0;
+  const variant = wreckCombatVariant(wreck);
   return {
     id: wreck.id,
     kind,
+    routeBlocking: heavy,
     position: { ...wreck.position },
     radius: wreck.radius,
     contactGeometry: 'circle',
@@ -81,6 +97,12 @@ export function wreckCombatBody(wreck: SalvageWreck): CombatVisualAsteroid {
       : wreck.radius,
     velocity: { ...(wreck.driftVelocity ?? { x: 0, y: 0 }) },
     angularVelocity: wreck.spin3d?.z ?? 0,
+    physics: salvageBodyPhysics(
+      wreck.radius,
+      velocity,
+      angularVelocity,
+      heavy ? 10 : wreck.radius >= 28 ? 3.2 : 1.3
+    ),
     rotation: wreck.rotation3d?.z ?? wreck.rotation,
     ...variant,
     ...(wreck.rotation3d ? { rotation3d: { ...wreck.rotation3d } } : {}),
@@ -89,10 +111,20 @@ export function wreckCombatBody(wreck: SalvageWreck): CombatVisualAsteroid {
   };
 }
 
+function wreckCombatVariant(wreck: SalvageWreck) {
+  return {
+    ...(wreck.sectionVariant ? { sectionVariant: wreck.sectionVariant } : {}),
+    ...(wreck.combatWreckVariant ? { combatWreckVariant: wreck.combatWreckVariant } : {}),
+    ...(wreck.debrisVariant ? { debrisVariant: wreck.debrisVariant } : {}),
+    ...(wreck.containerVariant ? { containerVariant: wreck.containerVariant } : {}),
+  };
+}
+
 function debrisCombatBody(debris: SalvageDebris): CombatVisualAsteroid {
   return {
     id: debris.id,
     kind: 'debris',
+    routeBlocking: false,
     position: { ...debris.position },
     radius: debris.radius,
     collisionRadius: combatVisibleContactRadius({
@@ -103,6 +135,12 @@ function debrisCombatBody(debris: SalvageDebris): CombatVisualAsteroid {
     }),
     velocity: { ...debris.driftVelocity },
     angularVelocity: debris.spin3d.z,
+    physics: salvageBodyPhysics(
+      debris.radius,
+      debris.driftVelocity,
+      debris.spin3d.z,
+      debris.radius >= 28 ? 3.2 : 1.3
+    ),
     rotation: debris.rotation3d.z,
     debrisVariant: debris.variant,
     rotation3d: { ...debris.rotation3d },
@@ -116,6 +154,7 @@ function sectionCombatBody(section: SalvageSection): CombatVisualAsteroid {
   return {
     id: section.id,
     kind,
+    routeBlocking: true,
     position: { ...section.position },
     radius: section.radius,
     collisionRadius: combatVisibleContactRadius({
@@ -126,6 +165,7 @@ function sectionCombatBody(section: SalvageSection): CombatVisualAsteroid {
     }),
     velocity: { ...section.driftVelocity },
     angularVelocity: section.spin3d.z,
+    physics: salvageBodyPhysics(section.radius, section.driftVelocity, section.spin3d.z, 10),
     rotation: section.rotation3d.z,
     sectionVariant: section.variant,
     rotation3d: { ...section.rotation3d },
@@ -161,7 +201,7 @@ export function salvageFieldCombatArena(field: SalvageField): StrategicCombatAre
     backdropSeed: field.seed,
     asteroids,
     obstacles: asteroids
-      .filter((asteroid) => asteroid.kind === 'resource')
+      .filter((asteroid) => asteroid.routeBlocking)
       .map((asteroid) => ({
         id: asteroid.id,
         position: { ...asteroid.position },

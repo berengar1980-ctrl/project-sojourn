@@ -15,7 +15,7 @@ export function resolvePirateFieldShipContacts(
     const npc = byId.get(miner.npcId);
     if (!npc || npc.hullHp <= 0 || npc.combatMovement || npc.combatRecoverySeconds) continue;
     const ship = getShipDefinition(miner.shipId);
-    if (ship) bodies.push({ id: miner.npcId, ship, state: miner, pushWeight: 1 });
+    if (ship) bodies.push({ id: miner.npcId, ship, state: miner });
   }
 
   const playerField = context.state.localSpace?.getSnapshot().instance;
@@ -27,7 +27,6 @@ export function resolvePirateFieldShipContacts(
       id: 'player',
       ship: context.state.activeShip,
       state: playerField.ship,
-      pushWeight: 2.4,
     });
   }
 
@@ -41,8 +40,11 @@ export function resolvePirateFieldShipContacts(
       bodies.push({
         id: droneId,
         ship,
-        state: { position: { ...drone.position }, headingRadians: field.drone.headingRadians },
-        pushWeight: 100000,
+        state: {
+          position: { ...drone.position },
+          headingRadians: field.drone.headingRadians,
+          velocity: { ...field.drone.velocity },
+        },
       });
     }
   }

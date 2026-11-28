@@ -3,7 +3,6 @@ import type { WorldPoint } from '../../core/world-types';
 import {
   contactCandidate,
   pointToSegmentDistanceSquared,
-  rotatePoint,
   squaredDistance,
 } from '../../core/field-geometry';
 import { shipShieldFootprint } from '../../core/ship-contact-geometry';
@@ -22,14 +21,13 @@ export function shipTrafficObstacle(
   pose: {
     readonly position: WorldPoint;
     readonly headingRadians: number;
-    readonly speed?: number;
+    readonly velocity?: WorldPoint;
   }
 ): FieldRouteObstacle {
-  const velocity = rotatePoint({ x: pose.speed ?? 0, y: 0 }, pose.headingRadians);
   return {
     id,
     ...shipShieldFootprint(ship, pose.position, pose.headingRadians),
-    velocity,
+    velocity: { ...(pose.velocity ?? { x: 0, y: 0 }) },
     intent: trafficIntent(pose, id),
   };
 }
@@ -41,6 +39,9 @@ export function trafficRouteBodies(obstacles: readonly FieldRouteObstacle[]): Ro
     position: { ...obstacle.position },
     radius: obstacle.radius,
     routeBlocking: true,
+    ...(obstacle.velocity
+      ? { velocity: { x: obstacle.velocity.x ?? 0, y: obstacle.velocity.y ?? 0 } }
+      : {}),
   }));
 }
 

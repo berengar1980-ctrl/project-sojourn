@@ -35,7 +35,7 @@ function verifySpawns(arena) {
     for (const rock of arena.asteroids) {
       assert(
         Math.hypot(point.x - rock.position.x, point.y - rock.position.y) >=
-          rock.radius + (rock.kind === 'resource' ? 145 : 65),
+          (rock.collisionRadius ?? rock.radius) + (rock.routeBlocking ? 145 : 65),
         'spawn clearance must not change the existing map'
       );
     }

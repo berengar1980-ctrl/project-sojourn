@@ -136,11 +136,18 @@ export class PlayerShipRenderer {
     if (!this.idleShip || !this.idleState || this.idleHoldHeading !== ship.headingRadians) {
       this.idleShip = {
         position: { x: 0, y: 0 },
+        velocity: { x: 0, y: 0 },
         headingRadians: ship.headingRadians,
-        speed: 0,
+        get speed() {
+          return (
+            Math.cos(this.headingRadians) * this.velocity.x +
+            Math.sin(this.headingRadians) * this.velocity.y
+          );
+        },
         turnRateRadiansPerSecond: 0,
         angularThrust: 0,
         lateralThrust: 0,
+        longitudinalThrust: 0,
       };
       this.idleSeedValue = idleSeed(ship.name);
       this.idleState = createIdleStationKeepingState(this.idleSeedValue, this.idleShip);

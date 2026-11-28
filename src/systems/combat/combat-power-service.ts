@@ -1,5 +1,6 @@
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
-import { clamp, EDGE_PADDING } from './strategic-combat-geometry';
+import { EDGE_PADDING } from './strategic-combat-geometry';
+import { advanceShipDrift, shipFlightBounds } from '../../core/ship-flight-physics';
 
 /** Finite, deterministic brownouts from an overcommitted *active* combat bus. */
 export function advanceCombatPower(ship: MutableCombatant, dt: number): boolean {
@@ -36,6 +37,5 @@ export function advancePowerlessDrift(
   dt: number
 ): void {
   const padding = arena.useFieldBounds ? 0 : EDGE_PADDING;
-  ship.position.x = clamp(ship.position.x + ship.velocity.x * dt, padding, arena.width - padding);
-  ship.position.y = clamp(ship.position.y + ship.velocity.y * dt, padding, arena.height - padding);
+  advanceShipDrift(ship, dt, shipFlightBounds(arena.width, arena.height, padding));
 }

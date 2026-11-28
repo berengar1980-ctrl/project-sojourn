@@ -103,17 +103,27 @@ assert(
 const mining = read('src/app/game-controller-mining.ts');
 const npcMining = read('src/systems/npcs/npc-local-mining-service.ts');
 const npcSalvage = read('src/systems/npcs/npc-local-salvage-service.ts');
+const npcLocalPose = read('src/systems/npcs/npc-local-physical-pose.ts');
 for (const localSetup of [mining, salvage]) {
-  assert(localSetup.includes('resolveShipLocalCruiseSpeed('));
+  assert(localSetup.includes('resolveShipCombatMovementStats('));
   assert(localSetup.includes('runtime.stationSkills.piloting'));
-  assert(localSetup.includes('engineSpeedMultiplier(runtime.installed)'));
-  assert(localSetup.includes('runtime.crewEffects.piloting.turnRateMultiplier'));
+  assert(localSetup.includes('approachSpeed: flightPerformance.combatSpeed'));
+  assert(localSetup.includes('flightPerformance,'));
 }
-assert(npcMining.includes('localCruiseSpeed(npc)'));
-assert(npcMining.includes('ensureNpcInstalledComponents(npc)'));
-assert(npcSalvage.includes('localCruiseSpeed(npc)'));
-assert(npcSalvage.includes('ensureNpcInstalledComponents(npc)'));
-assert(read('src/app/game-controller-combat.ts').includes('hitChance: 0.68 +'));
+assert(npcMining.includes('localNpcCruiseSpeed(npc, FLIGHT_SPEED)'));
+assert(npcSalvage.includes('localNpcCruiseSpeed(npc, FLIGHT_SPEED)'));
+assert(npcLocalPose.includes('resolveShipCombatMovementStats'));
+assert(npcLocalPose.includes('ensureNpcInstalledComponents(npc)'));
+const combatProfile = read('src/systems/ships/ship-combat-profile.ts');
+assert(combatProfile.includes('crewSkillEffects('));
+assert(combatProfile.includes('effects.sensors.weaponHitChanceBonus'));
+for (const setupFile of [
+  'src/app/game-controller-combat.ts',
+  'src/systems/combat/npc-combatant-setup.ts',
+  'src/ui/start/duel-combatant-setup.ts',
+]) {
+  assert(read(setupFile).includes('resolveShipCombatProfile('), setupFile);
+}
 const shared = 'combatEquippedWeapons';
 for (const setupFile of [
   'src/ui/start/duel-combatant-setup.ts',

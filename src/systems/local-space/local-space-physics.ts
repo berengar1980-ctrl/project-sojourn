@@ -44,6 +44,14 @@ export function applyImpulseAtPoint(
     y: asteroid.physics.velocity.y + impulse.y * inverseMass,
   };
 
+  applyAngularImpulseAtPoint(asteroid, impulse, point);
+}
+
+export function applyAngularImpulseAtPoint(
+  asteroid: LocalAsteroid,
+  impulse: WorldPoint,
+  point: WorldPoint
+): void {
   const centerOfMass = centerOfMassWorld(asteroid);
   const lever = {
     x: point.x - centerOfMass.x,

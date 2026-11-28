@@ -75,6 +75,22 @@ orbiter.turnRateRadiansPerSecond = 0;
 const resumed = chooseCombatFlightIntent(interceptor, orbiter, 500, arena, 0.08, true);
 assert.equal(interceptor.ramApproach.intercept, true, 'intercept commitment is not lost');
 assert(resumed.destination.y > 500, 'still lead moving target after angular rate subsides');
+const firstAttemptSide = interceptor.ramApproach.side;
+for (let tick = 0; tick < 105; tick += 1) {
+  chooseCombatFlightIntent(interceptor, orbiter, 500, arena, 0.08, true);
+}
+assert.equal(interceptor.ramApproach.phase, 'flank', 'stalled impact approach releases its lock');
+assert.equal(
+  interceptor.ramApproach.intercept,
+  false,
+  'retry restages instead of chasing the same lead'
+);
+assert.equal(
+  interceptor.ramApproach.side,
+  -firstAttemptSide,
+  'retry chooses the opposite approach side'
+);
+assert(interceptor.ramApproach.retryCooldownSeconds > 0, 'retry gets a short realignment window');
 const ramOpportunityShip = (armor) => ({
   setup: { aiControlled: true, armor },
   tactic: 'fight',

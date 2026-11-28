@@ -185,7 +185,7 @@
     },
     "src/systems/operations/security-drone-solid-contact.ts": {
       "mode": "derived",
-      "reason": "Pure shield-circle separation against the currently visible route-blocking rocks and ship footprints; no independent saved state."
+      "reason": "Stateless mass-aware drone contact against current route-blocking rocks and kinematic ship footprints; positions and velocities remain owned by the field, drone and ship authorities."
     },
     "src/systems/operations/security-drone-debris-contact.ts": {
       "mode": "derived",
@@ -283,6 +283,10 @@
       "mode": "derived",
       "reason": "Stateless adapter to the existing shield collision solver for recoverable combat wrecks; updates already persisted salvage positions and owns no independent state."
     },
+    "src/systems/local-space/local-space-route-flanks.ts": {
+      "mode": "derived",
+      "reason": "Pure shared route geometry and flank search; waypoint commitment remains on existing ship state and no checkpoint authority is introduced."
+    },
     "src/systems/local-space/local-space-wreck-navigation.ts": {
       "mode": "derived",
       "reason": "Builds local route planning options from current asteroid and saved wreck physics; the helper holds no independent state or checkpoint."
@@ -326,6 +330,26 @@
     "src/systems/npcs/npc-worker-primitives.ts": {
       "mode": "derived",
       "reason": "Shared worker movement and risk selection mutate only the owning worker pose or derive a choice; no independent checkpoint state."
+    },
+    "src/systems/npcs/npc-local-physical-pose.ts": {
+      "mode": "derived",
+      "reason": "Creates and synchronizes views of the existing NPC field pose; it owns no mutable collection or independent checkpoint state."
+    },
+    "src/systems/npcs/npc-local-salvage-contacts.ts": {
+      "mode": "derived",
+      "reason": "Stateless adapter to existing shield and salvage contact solvers; it mutates only positions and velocities owned by current field checkpoints."
+    },
+    "src/systems/npcs/npc-local-pirate-availability.ts": {
+      "mode": "derived",
+      "reason": "Pure availability predicates read existing sector NPC and combat state; no independent runtime or checkpoint state."
+    },
+    "src/systems/npcs/npc-local-pirate-flight.ts": {
+      "mode": "derived",
+      "reason": "Derives flight performance from existing NPC and drone definitions; owns no mutable runtime or checkpoint state."
+    },
+    "src/systems/ships/ship-combat-profile.ts": {
+      "mode": "derived",
+      "reason": "Derives combat values from existing ship definitions, installed components, and crew skills; owns no mutable runtime or checkpoint state."
     }
   }
 }

@@ -14,6 +14,7 @@ import { fieldGateAvailable } from './npc-local-field-arrivals';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { shipFlightBounds } from '../../core/ship-flight-physics';
 import { getShipDefinition } from '../ships';
 import {
   resolveShipShieldObstacleCollisions,
@@ -23,7 +24,6 @@ import {
 } from '../local-space/ship-shield-collision';
 import {
   fieldInterceptRange,
-  localArmedTraffic,
   npcMayTargetNpc,
   protectedFromPirate,
   rivalPirateGroups,
@@ -39,6 +39,14 @@ import {
   stageLocalPirateCheckpoint,
   type LocalPirateCheckpoint,
 } from './npc-local-pirate-checkpoint';
+import {
+  ensurePhysicalShipVelocity,
+  type ManeuveringShipControls,
+} from '../../core/physical-ship-state';
+import { setLocalNpcPhysicalPose } from './npc-local-physical-pose';
+import { localNpcFlightPerformance } from './npc-local-physical-pose';
+import { availableLocalTraffic, keepCombatReturn } from './npc-local-pirate-availability';
+import { patrolFlightPerformance } from './npc-local-pirate-flight';
 
 export interface LocalPirateContact {
   readonly npcId: string;
@@ -49,7 +57,9 @@ export interface LocalPirateContact {
   readonly position: WorldPoint;
   readonly headingRadians: number;
   readonly speed: number;
+  readonly velocity: WorldPoint;
 }
+
 export class LocalPirateTraffic {
   private readonly ships = new Map<string, PirateRuntime>();
   private readonly combatReturnPositions = new Map<string, WorldPoint>();
@@ -64,7 +74,6 @@ export class LocalPirateTraffic {
     return this.width === width && this.height === height && this.seed === seed;
   }
 
-  /** Save authoritative local poses, pending engagements and combat return locations. */
   exportState(): LocalPirateCheckpoint {
     return {
       version: 1,
@@ -72,11 +81,9 @@ export class LocalPirateTraffic {
       height: this.height,
       seed: this.seed,
       ships: [...this.ships.values()].map((ship) => ({
-        npcId: ship.npcId,
+        ...ship,
         position: { ...ship.position },
-        headingRadians: ship.headingRadians,
-        speed: ship.speed,
-        awaitingCombat: ship.awaitingCombat,
+        velocity: { ...ship.velocity },
         ...(ship.routeState ? { routeState: structuredClone(ship.routeState) } : {}),
       })),
       combatReturns: [...this.combatReturnPositions].map(
@@ -96,11 +103,13 @@ export class LocalPirateTraffic {
     const saved = stageLocalPirateCheckpoint(checkpoint, width, height, seed, npcs);
     const instance = new LocalPirateTraffic(width, height, seed);
     for (const ship of saved.ships) {
-      instance.ships.set(ship.npcId, {
+      const restored = {
         ...ship,
         position: { ...ship.position },
         ...(ship.routeState ? { routeState: structuredClone(ship.routeState) } : {}),
-      });
+      };
+      ensurePhysicalShipVelocity(restored);
+      instance.ships.set(ship.npcId, restored);
     }
     for (const [id, position] of saved.combatReturns) {
       instance.combatReturnPositions.set(id, { ...position });
@@ -138,6 +147,7 @@ export class LocalPirateTraffic {
         position: { ...ship.position },
         headingRadians: ship.headingRadians,
         speed: ship.speed,
+        velocity: { ...ship.velocity },
       });
     }
     return contacts;
@@ -190,7 +200,14 @@ export class LocalPirateTraffic {
         npcId: id,
         position,
         headingRadians: 0,
-        speed: 0,
+        velocity: { x: 0, y: 0 },
+        turnRateRadiansPerSecond: 0,
+        angularThrust: 0,
+        lateralThrust: 0,
+        longitudinalThrust: 0,
+        get speed() {
+          return Math.hypot(this.velocity.x, this.velocity.y);
+        },
         awaitingCombat: false,
       });
       this.combatReturnPositions.delete(id);
@@ -261,7 +278,10 @@ export class LocalPirateTraffic {
         speed,
         dt,
         [...asteroids.filter((rock) => rock.routeBlocking), ...traffic],
-        65
+        65,
+        'grid',
+        localNpcFlightPerformance(npc, speed),
+        shipFlightBounds(this.width, this.height)
       );
       pirate.position = resolvePirateCollisions(
         pirate.position,
@@ -332,7 +352,9 @@ export class LocalPirateTraffic {
         dt,
         [...asteroids.filter((rock) => rock.routeBlocking), ...traffic],
         65,
-        'patrol'
+        'patrol',
+        localNpcFlightPerformance(npc, 110),
+        shipFlightBounds(this.width, this.height)
       )
     )
       onFreighterExit?.(npc);
@@ -346,6 +368,7 @@ export class LocalPirateTraffic {
     traffic: readonly FieldRouteObstacle[] = []
   ): void {
     const drone = isSecurityDrone(ship.npcId);
+    const operator = npcs.find((npc) => npc.id === ship.npcId);
     const hostiles = this.snapshot(
       npcs.filter(
         (npc) =>
@@ -394,7 +417,9 @@ export class LocalPirateTraffic {
         dt,
         blockers,
         40,
-        'patrol'
+        'patrol',
+        patrolFlightPerformance(operator, drone),
+        shipFlightBounds(this.width, this.height)
       );
       if (arrived || ship.routeState) return;
     }
@@ -424,7 +449,7 @@ export class LocalPirateTraffic {
       const ship = getShipDefinition(npc.shipId);
       if (!ship) continue;
       pirateIds.add(pirate.npcId);
-      pirates.push({ id: pirate.npcId, ship, state: pirate, pushWeight: 1 });
+      pirates.push({ id: pirate.npcId, ship, state: pirate });
     }
     if (pirates.length === 0) return [];
     const impacts = resolveShipShieldCollisions(
@@ -436,7 +461,7 @@ export class LocalPirateTraffic {
         const pirate = this.ships.get(id);
         if (!pirate || !pirateIds.has(id)) continue;
         delete pirate.routeState;
-        pirate.speed = 0;
+        pirate.velocity = { x: 0, y: 0 };
         pirate.position = {
           x: Math.max(0, Math.min(this.width, pirate.position.x)),
           y: Math.max(0, Math.min(this.height, pirate.position.y)),
@@ -451,29 +476,17 @@ export class LocalPirateTraffic {
     return impacts;
   }
 
-  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed = 0): void {
+  syncCombatPose(
+    npcId: string,
+    position: WorldPoint,
+    headingRadians: number,
+    velocity: WorldPoint,
+    maneuvering?: Partial<ManeuveringShipControls>
+  ): void {
     const ship = this.ships.get(npcId);
     if (!ship) return;
-    ship.position = { ...position };
-    ship.headingRadians = headingRadians;
-    ship.speed = speed;
+    setLocalNpcPhysicalPose(ship, position, headingRadians, velocity, maneuvering);
     delete ship.routeState;
     // Keep the interception latch until the engagement has recovered.
   }
-}
-
-function availableLocalTraffic(npc: SectorNpcState): boolean {
-  return Boolean(
-    localArmedTraffic(npc) &&
-    npc.hullHp > 0 &&
-    (!isSecurityDrone(npc.id) || (npc.combatRecoverySeconds ?? 0) <= 0) &&
-    npc.retiredUntilDay === undefined &&
-    (!npc.travel || npc.combatMovement)
-  );
-}
-
-function keepCombatReturn(id: string, npc: SectorNpcState | undefined): boolean {
-  return (
-    !isSecurityDrone(id) && Boolean(npc?.combatMovement || (npc?.combatRecoverySeconds ?? 0) > 0)
-  );
 }

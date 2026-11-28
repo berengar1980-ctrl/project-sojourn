@@ -66,8 +66,8 @@ const escort = {
 };
 const contacts = [pirate, escort];
 field.reconcile(contacts);
-field.syncCombatPose(pirate.id, { x: 1800, y: 1100 }, 0);
-field.syncCombatPose(escort.id, { x: 1800, y: 1400 }, 0);
+field.syncCombatPose(pirate.id, { x: 1800, y: 1100 }, 0, { x: 0, y: 0 });
+field.syncCombatPose(escort.id, { x: 1800, y: 1400 }, 0, { x: 0, y: 0 });
 pirate.combatMovement = { mode: 'engaged' };
 let newDuels = 0;
 for (let i = 0; i < 30; i++) {

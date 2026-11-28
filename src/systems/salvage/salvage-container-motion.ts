@@ -9,6 +9,7 @@ import type {
 } from '../../core/salvage-types';
 import type { ShipHardpoints } from '../../core/ship-types';
 import { integrateAsteroids } from '../local-space/local-space-physics';
+import { shipContactMassProperties } from '../../core/ship-contact-mass';
 import {
   createShieldWorldGeometry,
   resolveAsteroidCollisions,
@@ -166,16 +167,13 @@ export function resolveSalvageShieldContacts(
 ): ShieldCollisionImpact[] {
   const world = getPhysics(field);
   const heading = ship.headingRadians;
+  const shield = createShieldWorldGeometry(hardpoints, lengthMeters);
+  const { mass } = shipContactMassProperties(lengthMeters, shield);
   const velocity = {
     x: Math.cos(heading) * ship.speed,
     y: Math.sin(heading) * ship.speed,
   };
-  const collisions = resolveShieldCollisions(
-    ship,
-    velocity,
-    world.bodies,
-    createShieldWorldGeometry(hardpoints, lengthMeters)
-  );
+  const collisions = resolveShieldCollisions(ship, velocity, world.bodies, shield, mass);
   syncBodyPositions(world, 0);
   return collisions;
 }

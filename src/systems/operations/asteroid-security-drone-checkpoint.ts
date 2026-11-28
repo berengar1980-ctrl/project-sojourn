@@ -7,6 +7,11 @@ export interface SecurityDroneCheckpoint {
   readonly position: WorldPoint;
   readonly headingRadians?: number;
   readonly speed?: number;
+  readonly velocity?: WorldPoint;
+  readonly turnRateRadiansPerSecond?: number;
+  readonly angularThrust?: number;
+  readonly lateralThrust?: number;
+  readonly longitudinalThrust?: number;
   readonly routeState?: FieldRouteState;
   readonly scanRadius: number;
   readonly operational: boolean;
@@ -81,4 +86,23 @@ function verifyDroneMotion(value: Record<string, unknown>): void {
     (value.speed !== undefined && !validNumber(value.speed))
   )
     throw new Error('Ungültige gespeicherte Drohnenbewegung.');
+  for (const key of [
+    'turnRateRadiansPerSecond',
+    'angularThrust',
+    'lateralThrust',
+    'longitudinalThrust',
+  ]) {
+    if (value[key] !== undefined && !validNumber(value[key], -Infinity)) {
+      throw new Error('Ungültiger gespeicherter Drohnen-Manövrierzustand.');
+    }
+  }
+  if (value.velocity !== undefined) {
+    const velocity = value.velocity;
+    if (
+      !record(velocity) ||
+      !validNumber(velocity.x, -Infinity) ||
+      !validNumber(velocity.y, -Infinity)
+    )
+      throw new Error('Beschädigter Drohnen-Geschwindigkeitsvektor.');
+  }
 }

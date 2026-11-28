@@ -1,18 +1,13 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
-import {
-  distance,
-  pointToSegmentDistanceSquared,
-  squaredDistance,
-} from '../../core/field-geometry';
+import { distance, squaredDistance } from '../../core/field-geometry';
 import { localAsteroidContactRadius } from './local-asteroid-footprint';
+import { fastFlankRoute, routeSegmentClear, type RouteObstacle } from './local-space-route-flanks';
+export { planFlankWaypoint, routeSegmentClear } from './local-space-route-flanks';
+export { fastFlankRoute } from './local-space-route-flanks';
+export type { RouteObstacle } from './local-space-route-flanks';
 
 /** The point-route planner needs geometry, not a simulated asteroid body. */
-export type RouteObstacle = Pick<
-  LocalAsteroid,
-  'id' | 'position' | 'radius' | 'collisionRadius' | 'routeBlocking'
->;
-
 interface GridNode extends WorldPoint {
   readonly column: number;
   readonly row: number;
@@ -40,6 +35,12 @@ export interface PointRoutePlanningOptions {
   readonly clearance: number;
   readonly width: number;
   readonly height: number;
+  /** Project moving field bodies by their real velocity before planning. */
+  readonly predictionSeconds?: number;
+  /** Work approaches prefer the precise legacy grid; combat uses PvP flank-first search. */
+  readonly searchOrder?: 'flank-first' | 'grid-first';
+  /** Permit one safe departure segment when the current position is inside the route margin. */
+  readonly startRecoveryClearance?: number;
 }
 
 export interface PointRoutePlan {
@@ -122,16 +123,22 @@ function pointClear(
   });
 }
 
-function segmentClear(
-  start: WorldPoint,
-  end: WorldPoint,
+function predictedObstacles(
   obstacles: readonly RouteObstacle[],
-  clearance: number
-): boolean {
-  return obstacles.every((asteroid) => {
-    const radius = localAsteroidContactRadius(asteroid) + clearance;
-    return pointToSegmentDistanceSquared(asteroid.position, start, end) >= radius * radius;
-  });
+  seconds: number
+): readonly RouteObstacle[] {
+  if (!(seconds > 0)) return obstacles;
+  return obstacles.map((obstacle) =>
+    obstacle.velocity
+      ? {
+          ...obstacle,
+          position: {
+            x: obstacle.position.x + obstacle.velocity.x * seconds,
+            y: obstacle.position.y + obstacle.velocity.y * seconds,
+          },
+        }
+      : obstacle
+  );
 }
 
 function gridNode(column: number, row: number): GridNode {
@@ -191,7 +198,7 @@ function findGridRoute(
   width: number,
   height: number
 ): readonly WorldPoint[] | null {
-  if (segmentClear(start, end, obstacles, clearance)) return [start, end];
+  if (routeSegmentClear(start, end, obstacles, clearance)) return [start, end];
 
   const columns = Math.max(1, Math.ceil(width / GRID_SIZE));
   const rows = Math.max(1, Math.ceil(height / GRID_SIZE));
@@ -240,7 +247,7 @@ function findGridRoute(
         pointAvailability[cell] = availability;
       }
       if (availability === 2) continue;
-      if (!segmentClear(current, neighbor, obstacles, clearance * 0.92)) continue;
+      if (!routeSegmentClear(current, neighbor, obstacles, clearance * 0.92)) continue;
 
       const priority = tentative + distance(neighbor, endNode);
       cameFrom.set(neighborKey, entry.key);
@@ -268,7 +275,7 @@ function simplifyRoute(
     let candidate = route.length - 1;
     while (
       candidate > anchor + 1 &&
-      !segmentClear(route[anchor]!, route[candidate]!, obstacles, clearance)
+      !routeSegmentClear(route[anchor]!, route[candidate]!, obstacles, clearance)
     ) {
       candidate -= 1;
     }
@@ -325,7 +332,7 @@ function routeSegmentsClear(
   clearance: number
 ): boolean {
   for (let index = 1; index < points.length; index += 1) {
-    if (!segmentClear(points[index - 1]!, points[index]!, obstacles, clearance)) return false;
+    if (!routeSegmentClear(points[index - 1]!, points[index]!, obstacles, clearance)) return false;
   }
   return true;
 }
@@ -407,7 +414,10 @@ export function planPointRoute(options: PointRoutePlanningOptions): PointRoutePl
     x: Math.max(0, Math.min(options.width, options.target.x)),
     y: Math.max(0, Math.min(options.height, options.target.y)),
   };
-  const obstacles = options.asteroids.filter((asteroid) => asteroid.routeBlocking);
+  const obstacles = predictedObstacles(
+    options.asteroids.filter((asteroid) => asteroid.routeBlocking),
+    options.predictionSeconds ?? 0
+  );
   const clearances = [
     options.clearance,
     options.clearance * 0.72,
@@ -418,6 +428,28 @@ export function planPointRoute(options: PointRoutePlanningOptions): PointRoutePl
 
   for (const clearance of clearances) {
     if (!pointClear(target, obstacles, clearance)) continue;
+    const fast =
+      options.searchOrder === 'grid-first'
+        ? null
+        : fastFlankRoute(
+            options.start,
+            target,
+            obstacles,
+            clearance,
+            options.width,
+            options.height
+          );
+    const regularFastRoute = fast && routeSegmentsClear(fast, obstacles, clearance);
+    const recoveryFastRoute =
+      fast &&
+      options.startRecoveryClearance !== undefined &&
+      fast.length >= 2 &&
+      !pointClear(options.start, obstacles, clearance) &&
+      routeSegmentClear(fast[0]!, fast[1]!, obstacles, options.startRecoveryClearance) &&
+      routeSegmentsClear(fast.slice(1), obstacles, clearance);
+    if (fast && (regularFastRoute || recoveryFastRoute)) {
+      return { route: fast, compromised: clearance < options.clearance * 0.99 };
+    }
     const raw = findGridRoute(
       options.start,
       target,
@@ -434,5 +466,7 @@ export function planPointRoute(options: PointRoutePlanningOptions): PointRoutePl
     return { route, compromised: clearance < options.clearance * 0.99 };
   }
 
-  return { route: [options.start, target], compromised: true };
+  // A blocked target or disconnected field is not a license to drive straight
+  // through a body. Callers can retain their current position and retry later.
+  return { route: [], compromised: true };
 }

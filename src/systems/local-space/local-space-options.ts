@@ -1,4 +1,5 @@
 import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
+import type { ShipFlightPerformance } from '../../core/ship-flight-physics';
 import type { ShipHardpoints } from '../../core/ship-types';
 import type { FieldRouteObstacle } from '../navigation/field-ship-routing';
 import type { MiningChunkCollector } from './mining-chunk-service';
@@ -15,6 +16,7 @@ export interface LocalSpaceServiceOptions {
   readonly approachSpeed: number;
   /** Fitted drive multiplier for maneuvering RCS, independent of travel speed. */
   readonly turnRateMultiplier?: number;
+  readonly flightPerformance?: ShipFlightPerformance;
   readonly hardpoints: ShipHardpoints;
   readonly nominalLengthMeters: number;
   readonly mining?: LocalSpaceMiningOptions;

@@ -17,7 +17,8 @@ function finite(value: unknown, minimum = 0): value is number {
 
 function validCombatant(value: unknown, setup: StrategicCombatantSetup): boolean {
   if (!record(value) || 'setup' in value || !record(value.position)) return false;
-  if (!record(value.velocity) || !record(value.subsystems)) return false;
+  if (!record(value.subsystems)) return false;
+  if (!validCombatVelocity(value)) return false;
   if (!Array.isArray(value.cooldowns) || value.cooldowns.length !== setup.weapons.length) {
     return false;
   }
@@ -25,8 +26,6 @@ function validCombatant(value: unknown, setup: StrategicCombatantSetup): boolean
     value.cooldowns.every((time) => finite(time)) &&
     finite(value.position.x, -Infinity) &&
     finite(value.position.y, -Infinity) &&
-    finite(value.velocity.x, -Infinity) &&
-    finite(value.velocity.y, -Infinity) &&
     finite(value.hullHp) &&
     finite(value.shieldHp) &&
     finite(value.hullMaxHp, 1) &&
@@ -35,6 +34,12 @@ function validCombatant(value: unknown, setup: StrategicCombatantSetup): boolean
     value.shieldHp <= value.shieldMaxHp &&
     typeof value.tactic === 'string'
   );
+}
+
+function validCombatVelocity(value: Record<string, unknown>): boolean {
+  if (record(value.velocity))
+    return finite(value.velocity.x, -Infinity) && finite(value.velocity.y, -Infinity);
+  return finite(value.headingRadians, -Infinity) && finite(value.speed);
 }
 
 function validRuntime(value: Record<string, unknown>): boolean {

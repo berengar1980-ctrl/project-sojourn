@@ -107,7 +107,7 @@ const closePosition = {
   x: nearby.wreck.position.x + nearby.wreck.radius + standoff,
   y: nearby.wreck.position.y,
 };
-nearby.service.syncCombatPose(closePosition, 0, 0);
+nearby.service.syncCombatPose(closePosition, 0, { x: 0, y: 0 });
 nearby.service.selectWreck(nearby.wreck.id);
 assert.equal(nearby.service.startDistressDiagnosis(nearby.wreck.id).phase, 'diagnosing');
 for (let step = 0; step < 29; step++) nearby.service.tick(0.1);

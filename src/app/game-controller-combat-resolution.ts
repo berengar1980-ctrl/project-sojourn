@@ -1,6 +1,7 @@
 import { isStationedDrone } from '../systems/npcs/npc-combat-ai';
 import type { ControllerRuntimeContext } from './game-controller-runtime-types';
 import type { SalvageField } from '../core/salvage-types';
+import type { ManeuveringShipControls } from '../core/physical-ship-state';
 import type { StrategicCombatSnapshot } from '../systems/combat/strategic-combat-types';
 import { combatResultMessage } from '../systems/combat/combat-result-summary';
 import { showCampaignCombatSummary } from '../ui/combat/campaign-combat-summary';
@@ -22,9 +23,9 @@ function synchronizeLocalDefender(
     id: string;
     position: { x: number; y: number };
     headingRadians: number;
-    speed: number;
+    velocity: { x: number; y: number };
     hullHp: number;
-  }
+  } & Partial<ManeuveringShipControls>
 ): void {
   if (isStationedDrone(defender.id)) {
     const locationId = defender.id.slice('security-drone:'.length);
@@ -33,8 +34,9 @@ function synchronizeLocalDefender(
       drone.syncCombatPose(
         defender.position,
         defender.headingRadians,
-        defender.speed,
-        defender.hullHp > 0
+        defender.velocity,
+        defender.hullHp > 0,
+        defender
       );
       if (defender.hullHp <= 0) {
         context.economy.legal.reportOffense(
@@ -61,14 +63,21 @@ function synchronizeLocalDefender(
   ) {
     context.economy.localPirates
       .get(localId)
-      ?.syncCombatPose(defender.id, defender.position, defender.headingRadians, defender.speed);
+      ?.syncCombatPose(
+        defender.id,
+        defender.position,
+        defender.headingRadians,
+        defender.velocity,
+        defender
+      );
     return;
   }
   context.state.localNpcMining?.syncCombatPose(
     defender.id,
     defender.position,
     defender.headingRadians,
-    defender.speed
+    defender.velocity,
+    defender
   );
 }
 const combatExplosionStart = new WeakMap<ControllerRuntimeContext, number>();
@@ -103,7 +112,8 @@ function startEmbeddedBoarding(
     state.localSpace?.syncCombatPose(
       snapshot.attacker.position,
       snapshot.attacker.headingRadians,
-      snapshot.attacker.speed
+      snapshot.attacker.velocity,
+      snapshot.attacker
     );
     synchronizeLocalDefender(context, snapshot.defender);
   }
@@ -184,7 +194,8 @@ export function resolveControllerCombat(
     state.localSpace?.syncCombatPose(
       snapshot.attacker.position,
       snapshot.attacker.headingRadians,
-      snapshot.attacker.speed
+      snapshot.attacker.velocity,
+      snapshot.attacker
     );
     synchronizeLocalDefender(context, snapshot.defender);
   } else {

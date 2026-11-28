@@ -45,6 +45,14 @@ const optionsFor = (npc, rock) => ({
 const original = createNpcLocalMiningService(optionsFor(miner, asteroid));
 assert.equal(original.ships.length, 1);
 const ship = original.ships[0];
+original.syncCombatPose(miner.id, { x: 640, y: 720 }, 0.4, { x: -18, y: 31 });
+assert.deepEqual(ship.velocity, { x: -18, y: 31 }, 'combat returns preserve miner lateral drift');
+const driftCheckpoint = original.exportState();
+const driftRestored = createNpcLocalMiningService(
+  optionsFor(copy(miner), copy(asteroid)),
+  driftCheckpoint
+);
+assert.deepEqual(copy(driftRestored.ships[0].velocity), { x: -18, y: 31 });
 ship.position = { x: asteroid.position.x + asteroid.radius + 48, y: asteroid.position.y };
 ship.phase = 'scanning';
 ship.targetAsteroidId = asteroid.id;

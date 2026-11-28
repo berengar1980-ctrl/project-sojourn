@@ -1,4 +1,10 @@
-import { clampedSegmentProjection } from '../../core/field-geometry';
+import type { WorldPoint } from '../../core/world-types';
+import {
+  fastFlankRoute,
+  planFlankWaypoint,
+  routeSegmentClear,
+  type RouteObstacle,
+} from '../local-space/local-space-navigation';
 import type {
   CombatPoint,
   MutableCombatant,
@@ -8,126 +14,133 @@ import type {
 const ROUTE_REFRESH_SECONDS = 0.75;
 const TARGET_DRIFT_METERS = 150;
 const REACHED_WAYPOINT_METERS = 65;
+const MIN_ROUTE_PREDICTION_SECONDS = 0.4;
+const MAX_ROUTE_PREDICTION_SECONDS = 3;
 
-// Local steering for combat: bounded obstacle checks instead of a full grid A*.
-const MAX_DETOUR_HOPS = 10;
-
-function nearestBlocker(
-  start: CombatPoint,
-  end: CombatPoint,
-  arena: StrategicCombatArenaOptions,
-  clearance: number
-): NonNullable<StrategicCombatArenaOptions['obstacles']>[number] | null {
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const lengthSquared = Math.max(1, dx * dx + dy * dy);
-  let nearest = Infinity;
-  let blocker: NonNullable<StrategicCombatArenaOptions['obstacles']>[number] | null = null;
-  for (const rock of arena.obstacles ?? []) {
-    const t = clampedSegmentProjection(rock.position, start, dx, dy, lengthSquared);
-    const offsetX = start.x + dx * t - rock.position.x;
-    const offsetY = start.y + dy * t - rock.position.y;
-    if (offsetX * offsetX + offsetY * offsetY >= (rock.radius + clearance) ** 2 || t >= nearest)
-      continue;
-    nearest = t;
-    blocker = rock;
-  }
-  return blocker;
+function brakingForecast(ship: MutableCombatant): {
+  readonly seconds: number;
+  readonly position: CombatPoint;
+} {
+  const speed = Math.hypot(ship.velocity.x, ship.velocity.y);
+  const acceleration = Math.max(1, ship.setup.accelerationMetersPerSecond2 ?? 36);
+  const seconds = Math.max(
+    MIN_ROUTE_PREDICTION_SECONDS,
+    Math.min(MAX_ROUTE_PREDICTION_SECONDS, speed / acceleration)
+  );
+  const brakingDistance = (speed * speed) / (2 * acceleration);
+  return {
+    seconds,
+    position:
+      speed > 0
+        ? {
+            x: ship.position.x + (ship.velocity.x / speed) * brakingDistance,
+            y: ship.position.y + (ship.velocity.y / speed) * brakingDistance,
+          }
+        : ship.position,
+  };
 }
 
-function detourPoint(
-  start: CombatPoint,
-  end: CombatPoint,
-  arena: StrategicCombatArenaOptions,
-  clearance: number
-): CombatPoint | null {
-  const rock = nearestBlocker(start, end, arena, clearance);
-  if (!rock) return null;
-  const dx = end.x - start.x;
-  const dy = end.y - start.y;
-  const length = Math.max(1, Math.hypot(dx, dy));
-  const clearanceRadius = (rock.radius + clearance + 35) * 1.5;
-  const candidates = [1, -1].map((sign) => ({
-    x: Math.max(
-      EDGE_MARGIN,
-      Math.min(
-        arena.width - EDGE_MARGIN,
-        rock.position.x - ((sign * dy) / length) * clearanceRadius
-      )
-    ),
-    y: Math.max(
-      EDGE_MARGIN,
-      Math.min(
-        arena.height - EDGE_MARGIN,
-        rock.position.y + ((sign * dx) / length) * clearanceRadius
-      )
-    ),
-  }));
-  // Prefer a collision-free first leg; consider the target leg as a tie breaker.
-  candidates.sort((left, right) => {
-    const score = (point: CombatPoint): number =>
-      (pathBlocked(start, point, arena, clearance) ? 100000 : 0) +
-      (pathBlocked(point, end, arena, clearance) ? 1000 : 0) +
-      Math.hypot(point.x - start.x, point.y - start.y) +
-      Math.hypot(end.x - point.x, end.y - point.y);
-    return score(left) - score(right);
+function routeObstacles(arena: StrategicCombatArenaOptions): RouteObstacle[] {
+  const bodies = new Map((arena.asteroids ?? []).map((body) => [body.id, body]));
+  return (arena.obstacles ?? []).map((obstacle) => {
+    const body = bodies.get(obstacle.id);
+    return {
+      id: obstacle.id,
+      position: obstacle.position,
+      radius: obstacle.radius,
+      collisionRadius: obstacle.radius,
+      routeBlocking: true,
+      ...(body?.velocity ? { velocity: body.velocity } : {}),
+    };
   });
-  return candidates[0] ?? null;
-}
-
-const EDGE_MARGIN = 55;
-
-function fastCombatRoute(
-  start: CombatPoint,
-  end: CombatPoint,
-  arena: StrategicCombatArenaOptions,
-  clearance: number
-): CombatPoint[] {
-  const route: CombatPoint[] = [];
-  let position = start;
-  for (let hop = 0; hop < MAX_DETOUR_HOPS; hop += 1) {
-    const waypoint = detourPoint(position, end, arena, clearance);
-    if (!waypoint) break;
-    if (Math.hypot(position.x - waypoint.x, position.y - waypoint.y) < 15) break;
-    route.push(waypoint);
-    position = waypoint;
-  }
-  route.push(end);
-  return route;
 }
 
 function pathBlocked(
   start: CombatPoint,
-  target: CombatPoint,
-  arena: StrategicCombatArenaOptions,
-  clearance: number
+  end: CombatPoint,
+  obstacles: readonly RouteObstacle[],
+  clearance: number,
+  predictionSeconds = 0
 ): boolean {
-  const dx = target.x - start.x;
-  const dy = target.y - start.y;
-  const lengthSquared = Math.max(1, dx * dx + dy * dy);
-  return (arena.obstacles ?? []).some((rock) => {
-    const t = clampedSegmentProjection(rock.position, start, dx, dy, lengthSquared);
-    const x = start.x + t * dx - rock.position.x;
-    const y = start.y + t * dy - rock.position.y;
-    return x * x + y * y < (rock.radius + clearance) ** 2;
-  });
+  const projected =
+    predictionSeconds > 0
+      ? obstacles.map((obstacle) =>
+          obstacle.velocity
+            ? {
+                ...obstacle,
+                position: {
+                  x: obstacle.position.x + obstacle.velocity.x * predictionSeconds,
+                  y: obstacle.position.y + obstacle.velocity.y * predictionSeconds,
+                },
+              }
+            : obstacle
+        )
+      : obstacles;
+  return !routeSegmentClear(start, end, projected, clearance);
 }
 
-/** Flight-route memory is shared; only escape keeps a committed rock flank. */
+function plannedCombatRoute(
+  start: CombatPoint,
+  target: CombatPoint,
+  arena: StrategicCombatArenaOptions,
+  obstacles: readonly RouteObstacle[],
+  clearance: number,
+  predictionSeconds: number
+): readonly WorldPoint[] {
+  const projected =
+    predictionSeconds > 0
+      ? obstacles.map((obstacle) =>
+          obstacle.velocity
+            ? {
+                ...obstacle,
+                position: {
+                  x: obstacle.position.x + obstacle.velocity.x * predictionSeconds,
+                  y: obstacle.position.y + obstacle.velocity.y * predictionSeconds,
+                },
+              }
+            : obstacle
+        )
+      : obstacles;
+  return (
+    fastFlankRoute(start, target, projected, clearance, arena.width, arena.height)?.slice(1) ?? []
+  );
+}
+
+function shouldRefreshCombatRoute(
+  ship: MutableCombatant,
+  target: CombatPoint,
+  route: readonly WorldPoint[],
+  obstacles: readonly RouteObstacle[],
+  clearance: number,
+  immediateThreat: boolean
+): boolean {
+  if (ship.tactic === 'flee' || (ship.nextAsteroidRouteAt ?? 0) > 0) return false;
+  const oldTarget = route.at(-1);
+  const targetDrift = oldTarget
+    ? Math.hypot(oldTarget.x - target.x, oldTarget.y - target.y)
+    : Infinity;
+  const staleLeg = route.length > 0 && pathBlocked(ship.position, route[0]!, obstacles, clearance);
+  return targetDrift > TARGET_DRIFT_METERS || (staleLeg && immediateThreat);
+}
+
+/** Combat keeps its committed flight waypoint while sharing field route geometry. */
 function selectRouteWaypoint(
   ship: MutableCombatant,
   target: CombatPoint,
   arena: StrategicCombatArenaOptions,
+  obstacles: readonly RouteObstacle[],
   clearance: number,
   deltaSeconds: number,
   immediateThreat: boolean
 ): CombatPoint | null {
-  const blocked = pathBlocked(ship.position, target, arena, clearance);
   const fleeing = ship.tactic === 'flee';
-  if (!fleeing && !immediateThreat && !blocked) {
+  const forecast = brakingForecast(ship);
+  const targetBlocked = pathBlocked(ship.position, target, obstacles, clearance, forecast.seconds);
+  if (!fleeing && !immediateThreat && !targetBlocked) {
     ship.asteroidRoute = [];
     return null;
   }
+
   const route = ship.asteroidRoute ?? [];
   const reached = Math.max(
     32,
@@ -140,28 +153,43 @@ function selectRouteWaypoint(
     route.shift();
   }
   ship.nextAsteroidRouteAt = Math.max(0, (ship.nextAsteroidRouteAt ?? 0) - deltaSeconds);
-  // The current obstacle flank is a committed waypoint, not a suggestion
-  // to replace every 750 ms. Replan only if the destination actually moves,
-  // a new rock obstructs the next leg, or the route is exhausted.
-  const oldTarget = route.at(-1);
-  let targetDrift = Infinity;
-  if (oldTarget) {
-    targetDrift = Math.hypot(oldTarget.x - target.x, oldTarget.y - target.y);
-  }
-  const staleLeg = route.length > 0 && pathBlocked(ship.position, route[0]!, arena, clearance);
-  const needRefresh =
-    !fleeing &&
-    ship.nextAsteroidRouteAt <= 0 &&
-    (targetDrift > TARGET_DRIFT_METERS || (staleLeg && immediateThreat));
-  const replan = !route.length || needRefresh;
-  if (replan) {
-    ship.asteroidRoute = fastCombatRoute(ship.position, target, arena, clearance);
+  const needRefresh = shouldRefreshCombatRoute(
+    ship,
+    target,
+    route,
+    obstacles,
+    clearance,
+    immediateThreat
+  );
+  if (!route.length || needRefresh) {
+    const planned = plannedCombatRoute(
+      ship.position,
+      target,
+      arena,
+      obstacles,
+      clearance,
+      forecast.seconds
+    );
+    if (planned.length > 0) {
+      ship.asteroidRoute = [...planned];
+    } else {
+      const flank = planFlankWaypoint(
+        ship.position,
+        target,
+        obstacles,
+        clearance,
+        arena.width,
+        arena.height
+      );
+      if (flank) ship.asteroidRoute = [flank, target];
+      else if (route.length === 0) ship.asteroidRoute = [];
+    }
     ship.nextAsteroidRouteAt = ROUTE_REFRESH_SECONDS;
   }
   return ship.asteroidRoute?.[0] ?? null;
 }
 
-/** Bounded local obstacle routing with a committed flank for each ship. */
+/** The shared point planner supplies geometry; combat retains route commitment and flee policy. */
 export function combatRouteHeading(
   ship: MutableCombatant,
   target: CombatPoint,
@@ -169,31 +197,34 @@ export function combatRouteHeading(
   deltaSeconds: number
 ): CombatPoint | null {
   if (!arena.obstacles?.length) return null;
+  const obstacles = routeObstacles(arena);
   const clearance = Math.max(25, ship.setup.shieldGeometry?.radiusY ?? 30) + 14;
-  const prediction = {
+  const originalLookahead = {
     x: ship.position.x + ship.velocity.x * 2,
     y: ship.position.y + ship.velocity.y * 2,
   };
-  const immediateThreat = pathBlocked(ship.position, prediction, arena, clearance + 35);
+  const immediateThreat = pathBlocked(ship.position, originalLookahead, obstacles, clearance + 35);
   const waypoint = selectRouteWaypoint(
     ship,
     target,
     arena,
+    obstacles,
     clearance,
     deltaSeconds,
     immediateThreat
   );
   if (!waypoint) return null;
-  // No per-frame emergency flank reversal during retreat: a flight waypoint
-  // is committed until reached. Ordinary combat can still dodge drifting rocks.
-  let steeringPoint = waypoint;
-  if (
+  const combatMayReplanForThreat =
     ship.tactic !== 'flee' &&
     immediateThreat &&
-    pathBlocked(ship.position, waypoint, arena, clearance)
-  ) {
-    steeringPoint = detourPoint(ship.position, waypoint, arena, clearance) ?? waypoint;
-  }
+    pathBlocked(ship.position, waypoint, obstacles, clearance);
+  const emergencyFlank = combatMayReplanForThreat
+    ? planFlankWaypoint(ship.position, waypoint, obstacles, clearance, arena.width, arena.height)
+    : null;
+  // Keep PvP's immediate flank response. The common planner owns the flank
+  // geometry; combat retains the original policy for using it under threat.
+  const steeringPoint = emergencyFlank ?? waypoint;
+  if (!steeringPoint) return null;
   const dx = steeringPoint.x - ship.position.x;
   const dy = steeringPoint.y - ship.position.y;
   const distance = Math.hypot(dx, dy);

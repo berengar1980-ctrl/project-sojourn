@@ -1,4 +1,6 @@
 import type { SalvageLocalSpaceService, SalvageRuntimeOptions } from './salvage-local-space-types';
+import type { ManeuveringShipControls } from '../../core/physical-ship-state';
+import { shipFlightBounds } from '../../core/ship-flight-physics';
 export type { SalvageLocalSpaceService } from './salvage-local-space-types';
 import {
   clampPoint,
@@ -241,12 +243,18 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   syncCombatPose(
     position: WorldPoint,
     headingRadians: number,
-    speed: number
+    velocity: WorldPoint,
+    maneuvering?: Partial<ManeuveringShipControls>
   ): SalvageLocalSpaceSnapshot {
     this.ship.position = clampPoint(position, this.options.field.width, this.options.field.height);
     this.ship.headingRadians = headingRadians;
     this.finishIdle();
-    this.ship.speed = Math.max(0, speed);
+    this.ship.velocity = { ...velocity };
+    if (maneuvering) {
+      this.ship.turnRateRadiansPerSecond = maneuvering.turnRateRadiansPerSecond ?? 0;
+      this.ship.angularThrust = maneuvering.angularThrust ?? 0;
+      this.ship.lateralThrust = maneuvering.lateralThrust ?? 0;
+    }
     return this.getSnapshot();
   }
 
@@ -309,11 +317,12 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.approachPurpose = purpose;
     this.beginRoute(
       clampPoint(workPoint(this.ship, wreck), this.options.field.width, this.options.field.height),
-      'approaching'
+      'approaching',
+      wreck.id
     );
   }
 
-  private beginRoute(target: WorldPoint, phase: SalvageLocalPhase): void {
+  private beginRoute(target: WorldPoint, phase: SalvageLocalPhase, workWreckId?: string): void {
     this.phase = phase;
     this.elapsed = 0;
     this.navigationTarget = target;
@@ -321,7 +330,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.options.field,
       this.ship.position,
       target,
-      this.options.shipLengthMeters ?? 70
+      this.options.shipLengthMeters ?? 70,
+      workWreckId
     );
     this.routeIndex = 1;
     this.trafficReviewElapsed = 0;
@@ -357,7 +367,9 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
         obstacles: fieldTrafficObstacles(this.options.field, 'player'),
         solids: () => salvageTrafficSolids(this.options.field),
         clearance: Math.max(32, (this.options.shipLengthMeters ?? 70) * 0.46),
-      }
+      },
+      this.options.flightPerformance,
+      shipFlightBounds(this.options.field.width, this.options.field.height)
     );
     this.routeIndex = result.nextIndex;
     if (!result.completed) return;

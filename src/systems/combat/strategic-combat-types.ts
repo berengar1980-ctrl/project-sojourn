@@ -12,6 +12,7 @@ import type { ShipComponentDefinition } from '../../data/ships/ship-component-ca
 import type { CombatPowerBudget } from './combat-power-types';
 import type { RamApproachState } from './combat-ram-approach-types';
 import type { CombatSubsystemHealth } from './strategic-combat-checkpoint-types';
+import type { ManeuveringShipControls, ManeuveringShipState } from '../../core/physical-ship-state';
 export type {
   CareerStrategicCombatCheckpoint,
   CombatSubsystemHealth,
@@ -288,6 +289,8 @@ export interface CombatVisualAsteroid {
   readonly collisionRadius?: number;
   rotation: number;
   readonly kind: 'resource' | 'debris';
+  /** Physical route classification carried across combat/local-space transitions. */
+  readonly routeBlocking?: boolean;
 }
 
 export interface StrategicCombatObstacle {
@@ -313,13 +316,15 @@ export interface StrategicCombatArenaOptions {
   readonly defenderVelocity?: CombatPoint;
   readonly attackerHeadingRadians?: number;
   readonly defenderHeadingRadians?: number;
+  readonly attackerManeuvering?: Partial<ManeuveringShipControls>;
+  readonly defenderManeuvering?: Partial<ManeuveringShipControls>;
   readonly obstacles?: readonly StrategicCombatObstacle[];
   readonly asteroids?: readonly CombatVisualAsteroid[];
   readonly exitPoint?: CombatPoint;
   readonly backdropSeed?: number;
 }
 
-export interface MutableCombatant {
+export interface MutableCombatant extends ManeuveringShipState {
   readonly setup: StrategicCombatantSetup;
   readonly shieldMaxHp: number;
   readonly hullMaxHp: number;
@@ -329,14 +334,7 @@ export interface MutableCombatant {
   nextFireDecisionAt?: number;
   /** Round-robin tie-breaker for identical gun mounts. */
   lastFiredWeaponIndex?: number;
-  position: { x: number; y: number };
-  velocity: { x: number; y: number };
-  headingRadians: number;
-  speed: number;
-  turnRateRadiansPerSecond: number;
-  angularThrust: number;
-  lateralThrust?: number;
-  longitudinalThrust?: number;
+  readonly speed: number;
   boostSeconds?: number;
   boostActive?: boolean;
   powerStress?: number;

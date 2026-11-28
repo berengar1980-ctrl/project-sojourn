@@ -147,11 +147,13 @@ console.log('PASS per-asteroid mining selection persistence and cargo-time resou
 // Releasing a ship back to idle must hold the last combat position.
 instance.asteroids.length = 0;
 const combatEnd = { x: 1200, y: 600 };
-service.syncCombatPose(combatEnd, 0, 0);
+service.syncCombatPose(combatEnd, 0, { x: 0, y: 0 });
 for (let frame = 0; frame < 20; frame++) service.tick(0.05);
 const shipAfterCombat = service.getSnapshot().instance.ship;
 assert(
   Math.hypot(shipAfterCombat.position.x - combatEnd.x, shipAfterCombat.position.y - combatEnd.y) <
-    0.15
+    0.15,
+  'ship drifted from its exact combat return pose: ' +
+    JSON.stringify({ position: shipAfterCombat.position, velocity: shipAfterCombat.velocity })
 );
 assert.equal(shipAfterCombat.lateralThrust, 0);

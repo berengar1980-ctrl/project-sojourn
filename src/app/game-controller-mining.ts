@@ -11,8 +11,7 @@ import {
   type LocalSpaceService,
 } from '../systems/local-space';
 import {
-  resolveShipLocalCruiseSpeed,
-  engineSpeedMultiplier,
+  resolveShipCombatMovementStats,
   resolveShipRuntimeSetup,
   type ShipRuntimeOptions,
 } from '../systems/ships';
@@ -34,6 +33,11 @@ export function createMiningLocalSpace(
   >
 ): LocalSpaceService {
   const runtime = resolveShipRuntimeSetup(ship, runtimeOptions);
+  const flightPerformance = resolveShipCombatMovementStats(
+    ship,
+    runtime.installed,
+    runtime.stationSkills.piloting
+  );
 
   const instance =
     persistentField ?? generateMiningSpace(location.id, seed, location.minedResourceIds);
@@ -41,13 +45,8 @@ export function createMiningLocalSpace(
   return createLocalSpaceService({
     instance,
     ...wreckPhysics,
-    approachSpeed: resolveShipLocalCruiseSpeed(
-      ship,
-      runtime.installed,
-      runtime.stationSkills.piloting
-    ),
-    turnRateMultiplier:
-      engineSpeedMultiplier(runtime.installed) * runtime.crewEffects.piloting.turnRateMultiplier,
+    approachSpeed: flightPerformance.combatSpeed,
+    flightPerformance,
     hardpoints: ship.sprite.hardpoints,
     nominalLengthMeters: ship.nominalLengthMeters,
     hazardCrew: {

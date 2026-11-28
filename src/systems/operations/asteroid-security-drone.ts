@@ -2,6 +2,7 @@ import { clampedSegmentProjection } from '../../core/field-geometry';
 import type { SectorNpcState } from '../../core/npc-types';
 import { edgePoint } from '../npcs/npc-mining-targets';
 import { DRONE_SCAN_RADIUS, DRONE_PATROL_SPEED } from '../../core/security-drone';
+import { shipFlightBounds } from '../../core/ship-flight-physics';
 import {
   moveFieldShip,
   type FieldRouteObstacle,
@@ -9,6 +10,7 @@ import {
 } from '../navigation/field-ship-routing';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { ManeuveringShipControls, PhysicalShipState } from '../../core/physical-ship-state';
 import { resolveSecurityDroneDebrisContacts } from './security-drone-debris-contact';
 import { resolveSecurityDroneSolidContacts } from './security-drone-solid-contact';
 import {
@@ -31,10 +33,17 @@ export interface SecurityDroneSnapshot {
 /** Physical patrol and line-of-sight based claim enforcement.
  * A ship is reported only while it is actively mining a protected asteroid.
  */
-export class AsteroidSecurityDrone {
-  position: WorldPoint;
+export class AsteroidSecurityDrone implements PhysicalShipState {
+  position: { x: number; y: number };
+  velocity = { x: 0, y: 0 };
   headingRadians = 0;
-  speed = 0;
+  turnRateRadiansPerSecond = 0;
+  angularThrust = 0;
+  lateralThrust = 0;
+  longitudinalThrust = 0;
+  get speed(): number {
+    return Math.hypot(this.velocity.x, this.velocity.y);
+  }
   routeState?: FieldRouteState;
   private readonly patrol: readonly WorldPoint[];
   private nextWaypoint = 0;
@@ -77,6 +86,11 @@ export class AsteroidSecurityDrone {
       position: { ...this.position },
       headingRadians: this.headingRadians,
       speed: this.speed,
+      velocity: { ...this.velocity },
+      turnRateRadiansPerSecond: this.turnRateRadiansPerSecond,
+      angularThrust: this.angularThrust,
+      lateralThrust: this.lateralThrust,
+      longitudinalThrust: this.longitudinalThrust,
       ...(this.routeState ? { routeState: structuredClone(this.routeState) } : {}),
       scanRadius: this.scanRadius,
       operational: this.operational,
@@ -98,7 +112,14 @@ export class AsteroidSecurityDrone {
     const data = stageSecurityDroneCheckpoint(checkpoint, scanRadius, instance.patrol.length);
     instance.position = { ...data.position };
     instance.headingRadians = data.headingRadians ?? 0;
-    instance.speed = data.speed ?? 0;
+    instance.velocity = data.velocity ?? {
+      x: Math.cos(instance.headingRadians) * (data.speed ?? 0),
+      y: Math.sin(instance.headingRadians) * (data.speed ?? 0),
+    };
+    instance.turnRateRadiansPerSecond = data.turnRateRadiansPerSecond ?? 0;
+    instance.angularThrust = data.angularThrust ?? 0;
+    instance.lateralThrust = data.lateralThrust ?? 0;
+    instance.longitudinalThrust = data.longitudinalThrust ?? 0;
     if (data.routeState) instance.routeState = structuredClone(data.routeState);
     instance.operational = data.operational;
     instance.nextWaypoint = data.nextWaypoint;
@@ -123,7 +144,7 @@ export class AsteroidSecurityDrone {
       this.restore(edgePoint(key, this.width, this.height), true);
       const target = this.patrol[this.nextWaypoint]!;
       this.headingRadians = Math.atan2(target.y - this.position.y, target.x - this.position.x);
-      this.speed = 0;
+      this.velocity = { x: 0, y: 0 };
     }
   }
 
@@ -155,12 +176,19 @@ export class AsteroidSecurityDrone {
   syncCombatPose(
     position: WorldPoint,
     headingRadians: number,
-    speed: number,
-    operational: boolean
+    velocity: WorldPoint,
+    operational: boolean,
+    maneuvering?: Partial<ManeuveringShipControls>
   ): void {
     this.restore(position, operational);
     this.headingRadians = headingRadians;
-    this.speed = Math.max(0, speed);
+    this.velocity = { ...velocity };
+    if (maneuvering) {
+      this.turnRateRadiansPerSecond = maneuvering.turnRateRadiansPerSecond ?? 0;
+      this.angularThrust = maneuvering.angularThrust ?? 0;
+      this.lateralThrust = maneuvering.lateralThrust ?? 0;
+      this.longitudinalThrust = maneuvering.longitudinalThrust ?? 0;
+    }
   }
 
   tick(
@@ -173,21 +201,20 @@ export class AsteroidSecurityDrone {
     if (!this.operational) return [];
     this.advancePatrolMovement(dt, asteroids, nearbyShips, pursuitTarget);
     this.shieldContactSeconds = Math.max(0, this.shieldContactSeconds - Math.max(0, dt));
-    const solid = resolveSecurityDroneSolidContacts(this.position, asteroids, nearbyShips, {
-      width: this.width,
-      height: this.height,
-    });
+    const solid = resolveSecurityDroneSolidContacts(
+      this.position,
+      this.velocity,
+      asteroids,
+      nearbyShips,
+      { width: this.width, height: this.height }
+    );
     if (solid.contacts > 0) {
       this.position = solid.position;
-      this.speed = 0;
+      this.velocity = solid.velocity;
       delete this.routeState;
       this.shieldContactSeconds = 0.4;
     }
-    const velocity = {
-      x: Math.cos(this.headingRadians) * this.speed,
-      y: Math.sin(this.headingRadians) * this.speed,
-    };
-    if (resolveSecurityDroneDebrisContacts(this.position, velocity, asteroids) > 0)
+    if (resolveSecurityDroneDebrisContacts(this.position, this.velocity, asteroids) > 0)
       this.shieldContactSeconds = 0.4;
 
     const active = new Set(
@@ -244,7 +271,13 @@ export class AsteroidSecurityDrone {
         Math.max(0, Math.min(dt, 0.25)),
         obstacles,
         40,
-        'patrol'
+        'patrol',
+        {
+          combatSpeed: DRONE_PATROL_SPEED,
+          turnRateRadiansPerSecond: 0.72,
+          accelerationMetersPerSecond2: 28,
+        },
+        shipFlightBounds(this.width, this.height)
       );
       if (arrived && !pursuitTarget)
         this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;

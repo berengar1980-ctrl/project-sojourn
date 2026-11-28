@@ -8,17 +8,14 @@ import {
   contactCandidate,
   rotatePoint as rotate,
 } from '../../core/field-geometry';
-import {
-  shieldWorldCenter,
-  shipShieldGeometry,
-  weightedContactSeparation,
-} from '../../core/ship-contact-geometry';
+import { shieldWorldCenter, shipShieldGeometry } from '../../core/ship-contact-geometry';
+import { circularContactMass, shipContactMassProperties } from '../../core/ship-contact-mass';
+import { resolveContactImpulse, separateContactBodies } from '../../core/contact-impulse';
 
 export interface LocalShieldShipBody {
   readonly id: string;
   readonly ship: ShipDefinition;
-  readonly state: Pick<LocalShipState, 'position' | 'headingRadians'>;
-  readonly pushWeight?: number;
+  readonly state: Pick<LocalShipState, 'position' | 'headingRadians' | 'velocity'>;
 }
 
 export interface ShipShieldCollision {
@@ -39,6 +36,12 @@ function shieldCenter(body: LocalShieldShipBody): WorldPoint {
   if (isSecurityDrone(body.id)) return body.state.position;
   const geometry = shipShieldGeometry(body.ship);
   return shieldWorldCenter(body.state.position, body.state.headingRadians, geometry);
+}
+
+function contactMass(body: LocalShieldShipBody): number {
+  if (isSecurityDrone(body.id)) return circularContactMass(DRONE_SHIELD_RADIUS_METERS);
+  const geometry = shipShieldGeometry(body.ship);
+  return shipContactMassProperties(body.ship.nominalLengthMeters, geometry).mass;
 }
 
 function supportRadius(body: LocalShieldShipBody, directionWorld: WorldPoint): number {
@@ -85,23 +88,17 @@ export function resolveShipShieldCollisions(
       const required = firstRadius + secondRadius;
       if (distance >= required) continue;
 
+      const firstMass = contactMass(first);
+      const secondMass = contactMass(second);
+      const firstBody = { ...first.state, mass: firstMass };
+      const secondBody = { ...second.state, mass: secondMass };
       const overlap = required - distance + 0.5;
-      const firstWeight = Math.max(0.05, first.pushWeight ?? 1);
-      const secondWeight = Math.max(0.05, second.pushWeight ?? 1);
-      const { first: firstMove, second: secondMove } = weightedContactSeparation(
-        overlap,
-        firstWeight,
-        secondWeight
-      );
-
-      first.state.position = {
-        x: first.state.position.x - normal.x * firstMove,
-        y: first.state.position.y - normal.y * firstMove,
-      };
-      second.state.position = {
-        x: second.state.position.x + normal.x * secondMove,
-        y: second.state.position.y + normal.y * secondMove,
-      };
+      separateContactBodies(firstBody, secondBody, normal, overlap);
+      const closingSpeed =
+        (first.state.velocity.x - second.state.velocity.x) * normal.x +
+        (first.state.velocity.y - second.state.velocity.y) * normal.y;
+      if (closingSpeed > 0)
+        resolveContactImpulse(firstBody, secondBody, normal, closingSpeed * 0.1);
 
       impacts.push({
         firstId: first.id,

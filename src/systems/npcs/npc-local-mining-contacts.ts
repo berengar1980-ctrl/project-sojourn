@@ -23,7 +23,7 @@ export function resolveMinerCollisions(
     // participates in the local contact solver.
     if (local.npcId === combatantId || npc?.combatMovement || (npc?.hullHp ?? 0) <= 0) return [];
     const definition = getShipDefinition(local.shipId);
-    return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
+    return definition ? [{ id: local.npcId, ship: definition, state: local }] : [];
   });
   // With no free NPC body, neither pair contacts nor NPC/rock contacts can occur.
   if (bodies.length === 0) return;
@@ -33,7 +33,6 @@ export function resolveMinerCollisions(
       id: 'player',
       ship: playerShip,
       state: playerState,
-      pushWeight: 2.4,
     });
   }
   resolveShipShieldCollisions(bodies);

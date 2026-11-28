@@ -1640,3 +1640,44 @@ Simulationsschrittgrenzen bleiben unverändert (Kampf/Worker 0,08 s, lokale
 Physik 0,05 s, Sektor 0,25 s). NPC-Ersatzvorlagen werden tief kopiert;
 Wiederholungsaufrufe während laufender Erholung buchen keine weiteren Verluste.
 Keine neuen gespeicherten Felder.
+
+Die gemeinsamen NPC-Pose-Helfer erzeugen oder synchronisieren ausschließlich
+Ansichten des bereits checkpointeten Sektor-NPC- und lokalen Worker-Zustands.
+Sie besitzen keine eigene veränderliche Sammlung; die Position und der
+Geschwindigkeitsvektor bleiben den vorhandenen Checkpoint-Eigentümern zugeordnet.
+Der NPC-Salvage-Kontaktadapter delegiert an die bestehenden Schild- und
+Bergungskontaktlöser und besitzt ebenfalls keinen zusätzlichen Save-Zustand.
+
+### Gemeinsame Kontaktphysik (F03, in Arbeit)
+
+Schiffs-Kontaktmasse wird aus vorhandener nominaler Länge und Shield-Hardpoints
+abgeleitet; sie ist kein zusätzlich gespeicherter Wert. Asteroiden- und
+Wrackmasse, Drift und Rotation bleiben bei den bereits checkpointeten
+Feld-/Bergungsbesitzern. Combat-Feldkörper übernehmen `routeBlocking` aus diesem
+Feldzustand; das optionale Feld ist eine Ableitung für den flüchtigen Combat-
+Snapshot. Historische Snapshots ohne dieses Feld bleiben über den bisherigen
+Kategoriefallback lesbar. Es entsteht keine zweite Save-Autorität und kein neues
+Career-Save-Feld.
+
+### Gemeinsame Flugphysik (F02)
+
+Die neuen NPC-Piraten-Helfer werten vorhandene Sektor-NPC- und Drohnenwerte aus:
+Verfügbarkeitsprädikate und Flugleistungsauflösung besitzen keinen eigenen
+veränderlichen Zustand oder Checkpoint. Flugposition, Vektor und Manöverzustand
+bleiben bei ihren bisherigen NPC-/Feld-Checkpoint-Eigentümern.
+
+### Gemeinsame Kampfprofile (F06)
+
+`ship-combat-profile.ts` leitet Kampfwerte aus vorhandenen Schiffsdefinitionen,
+Komponenten und Crew-Fähigkeiten ab. Das Modul besitzt keine veränderliche
+Laufzeit oder Checkpoint-Autorität. Der vorhandene Career-Combat-Checkpoint
+behält Schild-/Hüllenzustand; Konfiguration wird beim Setup aus denselben
+gespeicherten Besitzern neu berechnet. Keine Änderung des Save-Schemas.
+
+### Gemeinsame Navigation (F04)
+
+`local-space-route-flanks.ts` enthält zustandslose Geometrie- und
+Flankensuchfunktionen. Die berechneten Wegpunkte werden von den bestehenden
+Combat- und Feldschiff-Objekten gehalten; der neue Helfer erhält weder eine
+eigene Save-Autorität noch zusätzliche Checkpoint-Felder. Bestehende
+`routeState`-Besitzer und deren Wiederherstellung bleiben unverändert.

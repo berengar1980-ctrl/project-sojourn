@@ -69,7 +69,10 @@ export function prepareFleetField(config: FleetTestConfiguration, seed: number) 
         ? careerSalvagePirates(context, salvage)
         : context.economy.localPirates.get(location.id)!;
       traffic.reconcile(npcs);
-      traffic.syncCombatPose(npc.id, spawn, npc.pirateMark === 'black-tide' ? Math.PI : 0);
+      traffic.syncCombatPose(npc.id, spawn, npc.pirateMark === 'black-tide' ? Math.PI : 0, {
+        x: 0,
+        y: 0,
+      });
     }
   }
   return {

@@ -16,12 +16,14 @@ export function finishSalvageCombat(
   service.syncCombatPose(
     snapshot.attacker.position,
     snapshot.attacker.headingRadians,
-    snapshot.attacker.speed
+    snapshot.attacker.velocity,
+    snapshot.attacker
   );
   npcSalvage.syncCombatPose(
     snapshot.defender.id,
     snapshot.defender.position,
     snapshot.defender.headingRadians,
-    snapshot.defender.speed
+    snapshot.defender.velocity,
+    snapshot.defender
   );
 }

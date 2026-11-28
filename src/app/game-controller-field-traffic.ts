@@ -15,6 +15,8 @@ import { registerTrafficPose } from '../systems/navigation/field-traffic-priorit
 import type { LocalPirateTraffic } from '../systems/npcs/npc-local-pirate-service';
 import type { AsteroidSecurityDrone } from '../systems/operations/asteroid-security-drone';
 import { getShipDefinition } from '../systems/ships';
+import { shipContactMassProperties } from '../core/ship-contact-mass';
+import { shipShieldGeometry } from '../core/ship-contact-geometry';
 
 type TrafficPose = FieldContactPose;
 type AddTraffic = (id: string, pose: TrafficPose) => void;
@@ -102,7 +104,7 @@ function applyFieldContact(
   entry: FieldLiveShip,
   normal: WorldPoint,
   distance: number,
-  velocityDelta: number
+  velocityDelta: WorldPoint
 ): number {
   const { pose, bounds } = entry;
   const before = pose.position;
@@ -114,11 +116,8 @@ function applyFieldContact(
         y: Math.max(0, Math.min(bounds.height, y)),
       }
     : { x, y };
-  if (pose.speed !== undefined) {
-    const alongBow =
-      normal.x * Math.cos(pose.headingRadians) + normal.y * Math.sin(pose.headingRadians);
-    pose.speed += velocityDelta * alongBow;
-  }
+  pose.velocity.x += velocityDelta.x;
+  pose.velocity.y += velocityDelta.y;
   return Math.max(
     0,
     (pose.position.x - before.x) * normal.x + (pose.position.y - before.y) * normal.y
@@ -128,7 +127,8 @@ function applyFieldContact(
 function fieldContactHandle(field: object, entry: FieldLiveShip): FieldBystanderContact {
   return {
     pose: entry.pose,
-    pushWeight: entry.id === 'player' ? 2.4 : 1,
+    mass: shipContactMassProperties(entry.ship.nominalLengthMeters, shipShieldGeometry(entry.ship))
+      .mass,
     apply(normal, distance, velocityDelta) {
       const current = liveSources
         .get(field)?.()

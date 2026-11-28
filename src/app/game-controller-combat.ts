@@ -3,13 +3,8 @@ import type { ShipDefinition } from '../core/ship-types';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../systems/combat';
 import {
   getShipComponent,
-  combatSensorStats,
-  calculateShipModeEnergy,
-  resolveShipArmorProtection,
+  resolveShipCombatProfile,
   resolveShipRuntimeSetup,
-  resolveShipCombatMovementStats,
-  shipCombatTractorRange,
-  shipHasIndustrialTractor,
   type ShipRuntimeOptions,
 } from '../systems/ships';
 
@@ -18,12 +13,12 @@ export function createPlayerCombatant(
   options: ShipRuntimeOptions
 ): StrategicCombatantSetup {
   const runtime = resolveShipRuntimeSetup(ship, options);
-  const movement = resolveShipCombatMovementStats(
+  const profile = resolveShipCombatProfile(
     ship,
     runtime.installed,
-    runtime.stationSkills.piloting
+    runtime.stationSkills,
+    runtime.scanAvailable
   );
-  const armor = resolveShipArmorProtection(runtime.installed);
   const equippedWeapons = combatEquippedWeapons(ship, runtime.installed.weapon ?? []);
   const weapons = equippedWeapons.map((entry) => entry.component);
   const mines = (runtime.installed.mine ?? []).flatMap((id) => {
@@ -36,24 +31,29 @@ export function createPlayerCombatant(
     name: ship.name,
     shipId: ship.id,
     nominalLengthMeters: ship.nominalLengthMeters,
-    shieldHp: runtime.shieldMaxHp,
+    shieldHp: profile.shieldMaxHp,
     shieldGeometry: createCombatShieldGeometry(ship.sprite.hardpoints, ship.nominalLengthMeters),
-    hullHp: runtime.hullMaxHp,
-    ...(armor ? { armor } : {}),
+    hullHp: profile.hullMaxHp,
+    ...(profile.armor ? { armor: profile.armor } : {}),
     weapons,
     weaponMounts: combatWeaponMounts(ship, equippedWeapons),
-    hitChance: 0.68 + runtime.crewEffects.sensors.weaponHitChanceBonus,
-    dodgeChance: runtime.crewEffects.piloting.dodgeChance,
-    damageMultiplier: runtime.crewEffects.weapons.damageMultiplier,
-    criticalChance: runtime.crewEffects.weapons.criticalChance,
-    cycleTimeMultiplier: runtime.crewEffects.weapons.cycleTimeMultiplier,
+    hitChance: profile.hitChance,
+    dodgeChance: profile.dodgeChance,
+    damageMultiplier: profile.damageMultiplier,
+    criticalChance: profile.criticalChance,
+    cycleTimeMultiplier: profile.cycleTimeMultiplier,
     preferredTactic: 'fight',
-    ...movement,
+    combatSpeed: profile.combatSpeed,
+    turnRateRadiansPerSecond: profile.turnRateRadiansPerSecond,
+    accelerationMetersPerSecond2: profile.accelerationMetersPerSecond2,
     mines,
-    tractorRangeMeters: shipCombatTractorRange(runtime.installed),
-    power: calculateShipModeEnergy(runtime.installed),
-    tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
-    ...combatSensorStats(runtime.installed, runtime.sensorCrewSkill, runtime.scanAvailable),
+    tractorRangeMeters: profile.tractorRangeMeters,
+    power: profile.power,
+    tractorCanManipulateObjects: profile.tractorCanManipulateObjects,
+    sensorTier: profile.sensorTier,
+    sensorCrewSkill: profile.sensorCrewSkill,
+    sensorRangeMeters: profile.sensorRangeMeters,
+    sensorRangeMultiplier: profile.sensorRangeMultiplier,
   };
 }
 

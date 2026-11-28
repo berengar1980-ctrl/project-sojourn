@@ -2245,3 +2245,21 @@ bleiben unverändert. Keine neue Kampfengine oder Regenerationsregel.
 Gemeinsame validierte Zeitschrittbegrenzung ohne Änderung der Simulationsraten.
 NPC-Ersatzgenerationen besitzen unabhängige verschachtelte Daten; wiederholte
 Bergung/Erholung ist idempotent. Bestehende Flotten- und Feldtickautorität bleibt.
+
+## Review-Log (2026-11-28): F01 – gemeinsamer physischer Schiffszustand
+
+**Keine Statusänderung** an den historischen Feature-IDs. F01 vereinheitlicht
+die autoritative Schiffsbewegung als Positions- und XY-Geschwindigkeitsvektor;
+`speed` wird daraus abgeleitet. Kampfbeitritt/-ende und Career-Checkpoints
+erhalten den vollständigen Vektor sowie vorhandene Manövrierwerte. Ältere
+skalare Spielstände werden beim Restore in heading-ausgerichtete Vektoren
+migriert. Waffen, Crew-Boni, Missionen, Taktik, Schadenswerte und Ressourcen-
+regeln bleiben außerhalb dieses Zustandsumbaus unverändert. Nachweise: die
+Integrations- und Migrationsprüfungen in
+`tests/combat/shared-physical-velocity.test.cjs`,
+`tests/combat/unified-native-world-handoff.test.cjs`,
+`tests/persistence/career-combat-runtime.test.cjs`,
+`tests/persistence/career-local-miner-checkpoint.test.cjs`,
+`tests/persistence/career-local-pirate-checkpoint.test.cjs`,
+`tests/persistence/career-npc-checkpoint.test.cjs` und
+`tests/persistence/career-security-drone.test.cjs`.

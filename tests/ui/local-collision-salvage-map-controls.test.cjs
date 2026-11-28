@@ -17,6 +17,7 @@ const salvageNpc = fs.readFileSync(
   path.join(root, 'src/systems/npcs/npc-local-salvage-service.ts'),
   'utf8'
 );
+const salvageContacts = readModuleSource(root, 'src/systems/npcs/npc-local-salvage-contacts.ts');
 const salvagePanel = readModuleSource(root, 'src/ui/salvage/salvage-space-panel.ts');
 const salvageControls = readModuleSource(root, 'src/ui/salvage/salvage-space-panel-controls.ts');
 const salvageWorkSelector = readModuleSource(root, 'src/ui/salvage/salvage-work-selector.ts');
@@ -33,12 +34,13 @@ assert(
     miningContacts.includes('solidFieldRockObstacles(rocks)') &&
     rockFootprint.includes('filter((rock) => rock.routeBlocking)') &&
     miningContacts.includes('resolveShipFieldDebrisContacts') &&
-    debrisContact.includes('return resolveFieldDebrisContacts('),
+    debrisContact.includes('resolveShieldCollisions('),
   'NPC miners must collide with local asteroids'
 );
 assert(
-  salvageNpc.includes('resolveShipShieldObstacleCollisions') &&
-    salvageNpc.includes('resolveSalvageShieldContacts'),
+  salvageNpc.includes('resolveNpcSalvageLocalContacts') &&
+    salvageContacts.includes('resolveShipShieldObstacleCollisions') &&
+    salvageContacts.includes('resolveSalvageShieldContacts'),
   'player and NPC ships must collide with wrecks in salvage space'
 );
 assert(

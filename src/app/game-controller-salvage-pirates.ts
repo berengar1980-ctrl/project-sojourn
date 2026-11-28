@@ -57,17 +57,23 @@ function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> 
       if (npc?.locationId !== field.sourceLocationId) continue;
       if (ship.hullHp <= 0) continue;
       combatants.add(npc.id);
-      pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians, ship.speed);
+      pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians, ship.velocity, ship);
       for (const salvager of salvagers) {
         if (salvager.npcId === npc.id) {
           salvager.position = { ...ship.position };
           salvager.headingRadians = ship.headingRadians;
-          salvager.speed = ship.speed;
+          salvager.velocity = { ...ship.velocity };
           delete salvager.routeState;
         }
       }
       if (npc.id === 'security-drone:' + field.sourceLocationId) {
-        drone.syncCombatPose(ship.position, ship.headingRadians, ship.speed, ship.hullHp > 0);
+        drone.syncCombatPose(
+          ship.position,
+          ship.headingRadians,
+          ship.velocity,
+          ship.hullHp > 0,
+          ship
+        );
       }
     }
   }
@@ -151,7 +157,7 @@ function resolveSalvageTrafficContacts(
   for (const salvager of options.salvagers) {
     if (combatants.has(salvager.npcId)) continue;
     const ship = getShipDefinition(salvager.shipId);
-    if (ship) bodies.push({ id: salvager.npcId, ship, state: salvager, pushWeight: 1 });
+    if (ship) bodies.push({ id: salvager.npcId, ship, state: salvager });
   }
   const droneId = 'security-drone:' + options.field.sourceLocationId;
   const droneNpc = options.sectorNpcs.find((npc) => npc.id === droneId && npc.hullHp > 0);
@@ -163,8 +169,8 @@ function resolveSalvageTrafficContacts(
       state: {
         position: { ...options.drone.position },
         headingRadians: options.drone.headingRadians,
+        velocity: { ...options.drone.velocity },
       },
-      pushWeight: 100000,
     });
   }
   const hits = options.pirates.resolveShipContacts(traffic, bodies, rocks);

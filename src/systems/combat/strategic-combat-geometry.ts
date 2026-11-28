@@ -60,6 +60,16 @@ export { wrapAngle } from '../../core/numeric-geometry';
 
 export { rotatePoint as rotate } from '../../core/field-geometry';
 
+function initialManeuveringState(arena: StrategicCombatArenaOptions, side: StrategicCombatSide) {
+  const maneuvering = side === 'attacker' ? arena.attackerManeuvering : arena.defenderManeuvering;
+  return {
+    turnRateRadiansPerSecond: maneuvering?.turnRateRadiansPerSecond ?? 0,
+    angularThrust: maneuvering?.angularThrust ?? 0,
+    lateralThrust: maneuvering?.lateralThrust ?? 0,
+    longitudinalThrust: maneuvering?.longitudinalThrust ?? 0,
+  };
+}
+
 export function createCombatant(
   setup: StrategicCombatantSetup,
   side: StrategicCombatSide,
@@ -88,9 +98,10 @@ export function createCombatant(
     position: { x: startX, y: startY },
     velocity: initialVelocity,
     headingRadians: initialHeading ?? (side === 'attacker' ? 0 : Math.PI),
-    speed: Math.hypot(initialVelocity.x, initialVelocity.y),
-    turnRateRadiansPerSecond: 0,
-    angularThrust: 0,
+    get speed() {
+      return Math.hypot(this.velocity.x, this.velocity.y);
+    },
+    ...initialManeuveringState(arena, side),
     boostSeconds: 3.5,
     boostActive: false,
     powerStress: 0,
@@ -118,7 +129,7 @@ export function snapshot(combatant: MutableCombatant): StrategicCombatantSnapsho
     position: { ...combatant.position },
     velocity: { ...combatant.velocity },
     headingRadians: combatant.headingRadians,
-    speed: combatant.speed,
+    speed: Math.hypot(combatant.velocity.x, combatant.velocity.y),
     turnRateRadiansPerSecond: combatant.turnRateRadiansPerSecond,
     angularThrust: combatant.angularThrust,
     lateralThrust: combatant.lateralThrust ?? 0,
