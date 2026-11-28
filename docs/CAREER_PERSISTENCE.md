@@ -1666,6 +1666,14 @@ Verfügbarkeitsprädikate und Flugleistungsauflösung besitzen keinen eigenen
 veränderlichen Zustand oder Checkpoint. Flugposition, Vektor und Manöverzustand
 bleiben bei ihren bisherigen NPC-/Feld-Checkpoint-Eigentümern.
 
+### Gemeinsame Kampfprofile (F06)
+
+`ship-combat-profile.ts` leitet Kampfwerte aus vorhandenen Schiffsdefinitionen,
+Komponenten und Crew-Fähigkeiten ab. Das Modul besitzt keine veränderliche
+Laufzeit oder Checkpoint-Autorität. Der vorhandene Career-Combat-Checkpoint
+behält Schild-/Hüllenzustand; Konfiguration wird beim Setup aus denselben
+gespeicherten Besitzern neu berechnet. Keine Änderung des Save-Schemas.
+
 ### Gemeinsame Navigation (F04)
 
 `local-space-route-flanks.ts` enthält zustandslose Geometrie- und

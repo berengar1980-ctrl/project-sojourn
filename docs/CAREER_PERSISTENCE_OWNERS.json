@@ -346,6 +346,10 @@
     "src/systems/npcs/npc-local-pirate-flight.ts": {
       "mode": "derived",
       "reason": "Derives flight performance from existing NPC and drone definitions; owns no mutable runtime or checkpoint state."
+    },
+    "src/systems/ships/ship-combat-profile.ts": {
+      "mode": "derived",
+      "reason": "Derives combat values from existing ship definitions, installed components, and crew skills; owns no mutable runtime or checkpoint state."
     }
   }
 }
