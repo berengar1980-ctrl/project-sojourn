@@ -344,7 +344,7 @@ Browser-Restart-Smoke vom 28.11.2026 abgenommen.
 
 ### F06 – Gemeinsame Schiffs-, Crew- und Systemparameter
 
-- [ ] F06 Gemeinsame Schiffs- und Systemparameter
+- [x] F06 Gemeinsame Schiffs- und Systemparameter
 
 Ein Konfigurationspfad aus Rumpf, Komponenten, Crew, Schäden und Energie.
 Bestehende `ship-stats.ts`, `ship-runtime.ts`, Crew-Skill-Formeln und
@@ -533,10 +533,16 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 - F05 ci: PR-Head `cc3c3f21628944cf98f9084d333784cddcb6319f`; Quality Gate Run 1976 (`46151374716`) und Career Browser Restart Smoke (`46151374737`) beide erfolgreich.
 - F05 loc: gegenüber F04-Basis `ca9a45ff085e5725fa0b09de700a28cb4f7c7782`: 92 `src/`-Zeilen hinzugefügt, 19 entfernt, netto +73; der Ablauf bleibt in den kanonischen Ramm-Intent-/Zielmodulen.
 - F05 parity: `combat-unified-flight-replay.test.cjs` besteht mit identischen historischen Hashes für die drei PvP-1vs1-Loadouts und vier Seeds. Lokales `npm run check:quick` bestand mit 412/412 Tests; `npm run build` und beide Workflows des aktuellen PR-Heads bestanden. Der bekannte Vite-Chunkgrößenhinweis bleibt.
+- F06 code: `resolveShipCombatProfile` in `src/systems/ships/ship-combat-profile.ts` ist die gemeinsame Quelle für Rumpf-/Komponentenwerte, Crew-Kampfeffekte, gerichtete Panzerung, Bewegung, Sensoren, Energie und Traktorparameter. `game-controller-combat.ts`, `npc-combatant-setup.ts` und `duel-combatant-setup.ts` liefern nur noch Modusidentität, Zustand und explizite NPC-/Drohnenregeln.
+- F06 removed: Die drei Setup-Pfade enthalten keine eigenen parallelen Berechnungen mehr für Schild-/Hüllenhöchstwerte, Panzerung, Crew-Kampfwerte, Bewegung, taktische Sensoren, Powerbudget oder Traktorwerte. Gemeinsamer Treffer-/Überlauf-/Subsystemschaden und Combat-Checkpoint bleiben in den vorhandenen zentralen Combat-Funktionen.
+- F06 test: `tests/combat/combat-campaign-duel-parity.test.cjs` prüft alle drei Profil-Aufrufer; `tests/combat/combat-campaign-preset-parity.test.cjs` vergleicht Kampagnenpresets in PvP und FleetCombat; `tests/combat/combat-duel-power-ram-misses.test.cjs`, `tests/combat/unified-native-world-handoff.test.cjs` und `tests/persistence/career-combat-runtime.test.cjs` decken Power-/Subsystemausfall sowie Kampfzustand und Checkpoint-Fortsetzung ab.
+- F06 ci: PR-Head `f32fc6694c55639fde10b60c120bc097b1b7c0f3`; Quality Gate Run 1980 (`46158033631`) und Career Browser Restart Smoke Run 1195 (`46158033635`) beide erfolgreich. Das Gate bestand Persistenzprüfung, 412/412 Tests, Drei-Tage-Wirtschaftssmoke und Build; der Neustarttest speicherte, lud den Browser neu und setzte fort.
+- F06 loc: gegenüber F05-Commit `7f10aaa9aec04b455a11323939003f7f0718df12`: 127 `src/`-Zeilen hinzugefügt, 100 entfernt, netto +27. Der gemeinsame Resolver umfasst 54 Zeilen; die drei Aufrufer gaben insgesamt 100 Zeilen doppelter Berechnung ab.
+- F06 parity: gleiche Installationen und Crew-Skillwerte durchlaufen dieselben Formeln in Player-, NPC- und Duell-Setups; NPC-Aggression bleibt deren explizite Skillquelle und Drohnen behalten radiale Panzerung. Engineering-Schildstärke wirkt nun auch im Standalone-Duell nach derselben Crew-Formel wie in der Kampagne. Schild-/Hüllenzustand bleibt im vorhandenen Combat-Checkpoint. Schildregeneration bleibt die bestehende lokale Zeitregel; sie wird nicht in den Kampf übertragen oder im Zahlenwert geändert.
 
 ## Arbeitslog und Übergabe an neue Chats
 
-- 28.11.2026: F06 gemeinsames Schiffs-Kampfprofil umgesetzt. Player-, NPC- und
+- 28.11.2026: F06 gemeinsames Schiffs-Kampfprofil umgesetzt und abgenommen. Player-, NPC- und
   Duell-Setup delegieren Rumpf-/Komponentenwerte, Crew-Kampfwerte, Bewegung,
   Sensoren, Energie, Traktor und Panzerung jetzt an
   `resolveShipCombatProfile` in `src/systems/ships/ship-combat-profile.ts`.
@@ -552,8 +558,12 @@ Verhaltenstests und Architektur-Tests sind zwingend.
   PvP und FleetCombat, `unified-native-world-handoff` und
   `career-combat-runtime` decken Fortsetzung/Checkpoint ab. Lokal bestanden:
   `npm run check:quick` (412/412), `npm run build`, gezielte PvP-/Fleet-Parität.
-  Build meldet nur den bekannten Vite-Chunkgrößenhinweis. PR-Head-CI für diesen
-  Stand steht noch aus; F06 bleibt bis zu dessen erfolgreichem Abschluss offen.
+  Der erste PR-Quality-Gate-Lauf stoppte an der Owner-Klassifizierung; danach
+  ist das neue Modul als `derived` eingetragen. Auf PR-Head
+  `f32fc6694c55639fde10b60c120bc097b1b7c0f3` bestanden Quality Gate Run 1980
+  (412/412, Drei-Tage-Wirtschaftssmoke und Build) sowie Browser-Restart Run
+  1195 (Save, Neustart, Fortsetzen). F06 ist abgenommen. Build meldet nur den
+  bekannten Vite-Chunkgrößenhinweis.
 
 - 28.11.2026: F05-Audit und Replay-Implementierung. Audit von `combat-flight-intent.ts`,
   `combat-ram-targeting.ts`, `combat-route-steering.ts` und
