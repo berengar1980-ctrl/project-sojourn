@@ -326,6 +326,14 @@
     "src/systems/npcs/npc-worker-primitives.ts": {
       "mode": "derived",
       "reason": "Shared worker movement and risk selection mutate only the owning worker pose or derive a choice; no independent checkpoint state."
+    },
+    "src/systems/npcs/npc-local-physical-pose.ts": {
+      "mode": "derived",
+      "reason": "Creates and synchronizes views of the existing NPC field pose; it owns no mutable collection or independent checkpoint state."
+    },
+    "src/systems/npcs/npc-local-salvage-contacts.ts": {
+      "mode": "derived",
+      "reason": "Stateless adapter to existing shield and salvage contact solvers; it mutates only positions and velocities owned by current field checkpoints."
     }
   }
 }

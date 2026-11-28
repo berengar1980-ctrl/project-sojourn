@@ -396,11 +396,9 @@ ausstehender Branch-CI nicht abgenommen. Kein Paket abgeschlossen.
   Tests verifizieren den Combat→Local-Space-Rundlauf, Checkpoint-Parität,
   parallele Duelle und Alt-Save-Migration. `npm run check:quick` lief mit 405
   Tests und null Fehlern; `npm run build` lief erfolgreich. Vite meldete die
-  bestehende Warnung zum 1,2-MB-JavaScript-Bundle. Commit `3b4d5908` liegt auf
-  `refactor/unified-field-flight-physics`. Der Push an `origin` wurde von der
-  automatischen Prüfregel abgelehnt, weil er Projektquellcode an das nicht
-  verifizierte GitHub-Remote übertragen würde; deshalb gibt es für diesen
-  Commit noch keine Branch-CI. Main wurde nicht verändert.
+  bestehende Warnung zum 1,2-MB-JavaScript-Bundle. Die zwei Commits liegen
+  seit 28.11.2026 auf `refactor/unified-field-flight-physics`; Main blieb
+  unverändert. Für diesen Branch wurde noch kein CircleCI-Lauf gefunden.
   Produktionsquellstand dieses Commits gegenüber seinem Branch-Parent: 851
   hinzugefügt, 390 entfernt, netto +461 Zeilen. Dieser Zuwachs ist die
   gemeinsame Zustands-/Save-Migration und extrahierte Helfer; kein
@@ -445,9 +443,24 @@ ausstehender Branch-CI nicht abgenommen. Kein Paket abgeschlossen.
 - 27.11.2026: PR #408 gemergt; Main 6babc77 geprüft. PR #409 ist ein
   separater Audit-PR, nicht Produktionsbasis. Sicherungsbranch vorhanden.
 - Historische Referenz #400 identifiziert; erste statische Vergleiche erfolgt.
-- Nächster Schritt: Zustimmung zum Push dieses Commits auf genau diesen Branch
-  einholen, Branch-CI ausführen und deren Ergebnis dokumentieren; danach erst
-  F02 beginnen.
+- Nächster Schritt: CircleCI-Quality-Gate für den Branch ausführen und
+  dokumentieren; F01 bleibt bis zu dessen erfolgreichem Abschluss offen.
+- 28.11.2026: Der freigegebene Push der zwei F01-Commits wurde auf genau diesen
+  Branch übertragen; Remote-Vergleich: zwei Commits vor dem vorherigen HEAD,
+  keine Abweichung hinter dem Branch-Parent. Die lokalen Commit-IDs wurden bei
+  der GitHub-Übertragung neu erzeugt, die Code- und Dokumenttrees entsprechen
+  den Änderungen. Erster Pflicht-Preflight fand die fehlenden
+  Persistenzklassifizierungen von `npc-local-physical-pose.ts` und
+  `npc-local-salvage-contacts.ts`; beide zustandslosen Module sind als
+  `derived` klassifiziert, die Persistenzfolgen in `CAREER_PERSISTENCE.md`
+  dokumentiert. Danach bestanden `npm run persistence:check`, `npm run
+format:check`, `npm run check:quick` (405/405) und `npm run build`; der Build
+  meldet weiterhin die bestehende Chunk-Warnung. GitHub meldet keine
+  Actions-Runs, und Commitstatus ist leer. Laut `.circleci/config.yml` ist der
+  CircleCI-Workflow durch `quality_gate_enabled` standardmäßig ausgeschaltet;
+  eine CircleCI-Verbindung oder CLI-Anmeldung ist in dieser Umgebung nicht
+  verfügbar. Tatsächliche Branch-CI bleibt daher offen; F01 wird nicht
+  abgehakt und F02 startet erst nach erfolgreichem CircleCI-Nachweis.
 - Bei jedem Arbeitsstand ergänzen: Datum, Commit/PR, Paket, konkret geänderte
   Dateien/Funktionen, entfernte Pfade, offene Aufrufer, neue/entfernte src-Zeilen,
   tatsächlich gelaufene Tests, CI-Ergebnis, Risiken und nächster Schritt.
@@ -460,4 +473,3 @@ Weiterhin gelten `docs/ARCHITECTURE.md`, `docs/COMBAT_AI_TARGET_ARCHITECTURE.md`
 `docs/CAREER_PERSISTENCE.md`, `docs/SOJOURN_FEATURE_PARITY.md` und AGENTS.md.
 Bei Konflikten zwischen alter Feature-Parität und diesem Auftrag die
 konkrete Differenz dokumentieren, nicht verdeckt alte Unterschiede bewahren.
-

@@ -1640,3 +1640,10 @@ Simulationsschrittgrenzen bleiben unverändert (Kampf/Worker 0,08 s, lokale
 Physik 0,05 s, Sektor 0,25 s). NPC-Ersatzvorlagen werden tief kopiert;
 Wiederholungsaufrufe während laufender Erholung buchen keine weiteren Verluste.
 Keine neuen gespeicherten Felder.
+
+Die gemeinsamen NPC-Pose-Helfer erzeugen oder synchronisieren ausschließlich
+Ansichten des bereits checkpointeten Sektor-NPC- und lokalen Worker-Zustands.
+Sie besitzen keine eigene veränderliche Sammlung; die Position und der
+Geschwindigkeitsvektor bleiben den vorhandenen Checkpoint-Eigentümern zugeordnet.
+Der NPC-Salvage-Kontaktadapter delegiert an die bestehenden Schild- und
+Bergungskontaktlöser und besitzt ebenfalls keinen zusätzlichen Save-Zustand.
