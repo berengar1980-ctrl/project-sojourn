@@ -396,9 +396,9 @@ ausstehender Branch-CI nicht abgenommen. Kein Paket abgeschlossen.
   Tests verifizieren den Combat→Local-Space-Rundlauf, Checkpoint-Parität,
   parallele Duelle und Alt-Save-Migration. `npm run check:quick` lief mit 405
   Tests und null Fehlern; `npm run build` lief erfolgreich. Vite meldete die
-  bestehende Warnung zum 1,2-MB-JavaScript-Bundle. Die zwei Commits liegen
-  seit 28.11.2026 auf `refactor/unified-field-flight-physics`; Main blieb
-  unverändert. Für diesen Branch wurde noch kein CircleCI-Lauf gefunden.
+  bestehende Warnung zum 1,2-MB-JavaScript-Bundle. Der F01-Code und zwei
+  Status-/Nachweiskommits liegen auf `refactor/unified-field-flight-physics`;
+  Main blieb unverändert. Draft-PR #410 startete GitHub Actions.
   Produktionsquellstand dieses Commits gegenüber seinem Branch-Parent: 851
   hinzugefügt, 390 entfernt, netto +461 Zeilen. Dieser Zuwachs ist die
   gemeinsame Zustands-/Save-Migration und extrahierte Helfer; kein
@@ -443,8 +443,9 @@ ausstehender Branch-CI nicht abgenommen. Kein Paket abgeschlossen.
 - 27.11.2026: PR #408 gemergt; Main 6babc77 geprüft. PR #409 ist ein
   separater Audit-PR, nicht Produktionsbasis. Sicherungsbranch vorhanden.
 - Historische Referenz #400 identifiziert; erste statische Vergleiche erfolgt.
-- Nächster Schritt: CircleCI-Quality-Gate für den Branch ausführen und
-  dokumentieren; F01 bleibt bis zu dessen erfolgreichem Abschluss offen.
+- Nächster Schritt: GitHub-Actions-Quality-Gate und Career-Browser-Restarttest
+  auf dem aktuellen PR-Head prüfen; F01 bleibt bis zu deren erfolgreichem
+  Abschluss offen.
 - 28.11.2026: Der freigegebene Push der zwei F01-Commits wurde auf genau diesen
   Branch übertragen; Remote-Vergleich: zwei Commits vor dem vorherigen HEAD,
   keine Abweichung hinter dem Branch-Parent. Die lokalen Commit-IDs wurden bei
@@ -455,12 +456,15 @@ ausstehender Branch-CI nicht abgenommen. Kein Paket abgeschlossen.
   `derived` klassifiziert, die Persistenzfolgen in `CAREER_PERSISTENCE.md`
   dokumentiert. Danach bestanden `npm run persistence:check`, `npm run
 format:check`, `npm run check:quick` (405/405) und `npm run build`; der Build
-  meldet weiterhin die bestehende Chunk-Warnung. GitHub meldet keine
-  Actions-Runs, und Commitstatus ist leer. Laut `.circleci/config.yml` ist der
-  CircleCI-Workflow durch `quality_gate_enabled` standardmäßig ausgeschaltet;
-  eine CircleCI-Verbindung oder CLI-Anmeldung ist in dieser Umgebung nicht
-  verfügbar. Tatsächliche Branch-CI bleibt daher offen; F01 wird nicht
-  abgehakt und F02 startet erst nach erfolgreichem CircleCI-Nachweis.
+  meldet weiterhin die bestehende Chunk-Warnung. GitHub-Actions-Run 1179
+  (Career-Browser-Restart) war erfolgreich. Run 1964 (Quality Gate) lief auf
+  Head `9034b571` und erreichte 404 bestandene Tests; allein
+  `tests/quality/feature-parity.test.cjs` schlug fehl, weil der erforderliche
+  Review-Log-Eintrag in `docs/SOJOURN_FEATURE_PARITY.md` fehlte. Dieser
+  fachliche Nachweis ist ergänzt; kein Test wurde abgeschwächt. AGENTS.md wird
+  an den aktiven Anbieter GitHub Actions angepasst. F01 bleibt offen, bis der
+  aktualisierte PR-Head beide Workflows erfolgreich beendet. F02 beginnt erst
+  danach.
 - Bei jedem Arbeitsstand ergänzen: Datum, Commit/PR, Paket, konkret geänderte
   Dateien/Funktionen, entfernte Pfade, offene Aufrufer, neue/entfernte src-Zeilen,
   tatsächlich gelaufene Tests, CI-Ergebnis, Risiken und nächster Schritt.
