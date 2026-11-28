@@ -283,6 +283,10 @@
       "mode": "derived",
       "reason": "Stateless adapter to the existing shield collision solver for recoverable combat wrecks; updates already persisted salvage positions and owns no independent state."
     },
+    "src/systems/local-space/local-space-route-flanks.ts": {
+      "mode": "derived",
+      "reason": "Pure shared route geometry and flank search; waypoint commitment remains on existing ship state and no checkpoint authority is introduced."
+    },
     "src/systems/local-space/local-space-wreck-navigation.ts": {
       "mode": "derived",
       "reason": "Builds local route planning options from current asteroid and saved wreck physics; the helper holds no independent state or checkpoint."

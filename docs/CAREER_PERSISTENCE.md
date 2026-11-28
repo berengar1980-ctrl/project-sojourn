@@ -1665,3 +1665,11 @@ Die neuen NPC-Piraten-Helfer werten vorhandene Sektor-NPC- und Drohnenwerte aus:
 Verfügbarkeitsprädikate und Flugleistungsauflösung besitzen keinen eigenen
 veränderlichen Zustand oder Checkpoint. Flugposition, Vektor und Manöverzustand
 bleiben bei ihren bisherigen NPC-/Feld-Checkpoint-Eigentümern.
+
+### Gemeinsame Navigation (F04)
+
+`local-space-route-flanks.ts` enthält zustandslose Geometrie- und
+Flankensuchfunktionen. Die berechneten Wegpunkte werden von den bestehenden
+Combat- und Feldschiff-Objekten gehalten; der neue Helfer erhält weder eine
+eigene Save-Autorität noch zusätzliche Checkpoint-Felder. Bestehende
+`routeState`-Besitzer und deren Wiederherstellung bleiben unverändert.

@@ -297,11 +297,15 @@ Typecheck, Dependency- und Persistenzprüfung sowie 411/411 Tests. `npm run
 build` bestanden; Vite meldet weiterhin die bestehende Chunk-Warnung für das
 1,22-MB-JavaScript-Bundle. Nach der Aktualisierung dieses Arbeitsnachweises
 bestanden `npm run format:check`, `git diff --check` und der
-Architektur-Dokumentationstest. Der F04-Arbeitsstand ist lokal als
-`refactor: unify field flight routing` committed; der Remote-Branch steht
-weiterhin auf `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`. Für den F04-Commit
-wurde noch keine GitHub-Actions-CI ausgeführt. F04 bleibt bis zur Branch-CI
-und finalen Abnahme offen; kein Merge nach Main.
+Architektur-Dokumentationstest. Der F04-Code liegt auf PR #410 als Commit
+`5858593e`. Quality Gate Run 1973 bestand Format, Lint, Typecheck und
+Dependency-Check, scheiterte aber an der fehlenden Persistenzklassifizierung
+für `local-space-route-flanks.ts`; Tests, Wirtschaftssmoke und Build wurden
+deshalb übersprungen. Career-Browser-Restart Run 1188 war erfolgreich. Die
+fehlende `derived`-Einstufung und der Persistenz-Auswirkungsvermerk sind
+ergänzt; `npm run persistence:check` besteht lokal. Der Korrekturcommit ist
+erst lokal erstellt, der CI-Neustart steht noch aus. F04 bleibt bis zur
+Branch-CI und finalen Abnahme offen; kein Merge nach Main.
 
 ### F05 – Kampftaktik und Manöver
 
@@ -530,6 +534,15 @@ Verhaltenstests und Architektur-Tests sind zwingend.
   steht noch auf `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`, daher gibt es
   noch keinen GitHub-Actions-Lauf für F04. F04-Checklisteneintrag bleibt
   offen bis Branch-CI und Abschlussprüfung; kein Merge nach Main.
+- 28.11.2026: PR #410 Quality Gate Run 1973 scheiterte nach erfolgreichen
+  Format-, Lint-, TypeScript- und Dependency-Gates an der fehlenden
+  Persistenzklassifizierung von `src/systems/local-space/local-space-route-flanks.ts`.
+  Der Test-, Wirtschaftssmoke- und Build-Schritt wurde dadurch übersprungen.
+  Browser-Restart Run 1188 bestand. Das Routingmodul ist als `derived`
+  klassifiziert, `docs/CAREER_PERSISTENCE.md` dokumentiert die Save-Auswirkung;
+  `npm run persistence:check` besteht lokal. Der Korrekturstand ist lokal
+  committed, CI für ihn steht noch aus. F04 bleibt bis zum grünen Quality Gate
+  offen; kein Merge nach Main.
 - 28.11.2026: F03 auf `refactor/unified-field-flight-physics` umgesetzt und
   nach lokaler Abnahme sowie erfolgreichen GitHub Actions auf PR-Head
   `e3346c047b44fe8daf9bdd605bf321ea2ea552fd` abgenommen. Feld-/Combat-
