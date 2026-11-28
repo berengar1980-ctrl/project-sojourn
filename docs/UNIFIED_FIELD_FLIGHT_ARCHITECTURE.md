@@ -309,7 +309,7 @@ zum 1,22-MB-JavaScript-Bundle. Kein Merge nach Main.
 
 ### F05 – Kampftaktik und Manöver
 
-- [ ] F05 Kampfmanöver und Rammverhalten
+- [x] F05 Kampfmanöver und Rammverhalten
 
 PvP #400 zuerst: Frontal-/Breitseitenangriff, Angriffspassagen, Distanzkampf,
 Flucht, Minen, Traktor, Entermanöver und Waffenwinkel erhalten.
@@ -339,7 +339,8 @@ Anflug; bewegtes Ziel 3/3 Kontakte (Quote 1.00); Hindernis 4/5 (Quote 0.80),
 unter 20 s Stillstand im Nahbereich und hatten keine ungültigen Frames. Der
 60-s-Kampfbasislauf misst außerdem Bewegung, Angriffspassagen, Waffenreichweite
 und Feuerphasen; die Flucht-, Minen-, Traktor-, Waffen- und Boardingregressionen
-laufen im Projekttestgate. F05 wartet noch auf das Quality Gate des PR-Heads.
+laufen im Projekttestgate. F05 ist nach bestandenem PR-Head-Quality-Gate und
+Browser-Restart-Smoke vom 28.11.2026 abgenommen.
 
 ### F06 – Gemeinsame Schiffs-, Crew- und Systemparameter
 
@@ -525,10 +526,13 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 - F04 ci: PR-Head `a3983b833e5492a5cadf2f68e518513b0a6c8b85`; Sojourn Quality Gate Run 1974 (`46146017092`) und Career browser restart smoke Run 1189 (`46146017121`) erfolgreich. Persistenzprüfung, alle Tests, Drei-Tage-Wirtschaftssmoke, Build und Save-/Browser-Neustart/Weiterlaufen bestanden.
 - F04 loc: gegenüber F04-Basis `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`: 438 `src/`-Zeilen hinzugefügt, 225 entfernt, netto +213. Gemeinsame Route-Geometrie und Salvage-Arbeitspositionen ersetzen getrennte Pfade; der begrenzte Patrol-Algorithmus bleibt aus Performancegründen.
 - F04 parity: der historische #400 Replay-Trace bleibt auf allen drei Seeds exakt; dichte Asteroidenkämpfe behalten Angriffspassagen. Identische Combat-/Zivilgeometrie, bewegte Hindernisse, blockierte Ziele, Verkehr, Ausfahrt und Distress-Salvage sind durch Produktionspfad- und Regressionstests abgedeckt. Neue Geometrie führt keine Save-Autorität ein.
-- F05 code (in progress): `combat-ram-targeting.ts` beendet einen festgefahrenen Impact-Anflug nach acht Sekunden ohne Nahkontakt, löst den Intercept-Lock, wechselt die Flankenseite und lässt den Kurs drei Sekunden neu ausrichten. Es werden keine zweite Rammphysik und keine Balanceparameter eingeführt.
-- F05 test: `combat-ai-ram-boost-activation.test.cjs` prüft Abbruch/Seitenwechsel; `combat-ram-approach-replay.test.cjs` misst bilaterale, bewegte und asteroidenblockierte Anflüge samt Wiederholung und Kontakten. Der 60-s-`combat-motion-baseline.cjs`-Lauf erfasst Passagen, Reichweite und Feuerphasen. Flucht, Minen, Traktor, Waffenwinkel, Treffer und Boarding bleiben durch bestehende Regressionen abgedeckt.
+- F05 code: `combat-ram-targeting.ts` beendet einen festgefahrenen Impact-Anflug nach acht Sekunden ohne Nahkontakt oder bei radialem Nahkontakt-Stillstand unter 25 m/s, löst den Intercept-Lock, wechselt die Flankenseite und lässt den Kurs drei Sekunden neu ausrichten. Es werden keine zweite Rammphysik und keine Balanceparameter eingeführt.
+- F05 removed: Der unbeschränkte direkte Intercept-Lock ist durch den begrenzten Anflug mit Flankenwechsel ersetzt. Keine bestehende Waffentaktik, Flugphysik oder Kontakt-/Schadensregel wurde entfernt; es bleibt kein paralleler Ramm- oder Steuerungspfad.
+- F05 test: `tests/combat/combat-ai-ram-boost-activation.test.cjs` prüft Abbruch/Seitenwechsel; `tests/combat/combat-ram-approach-replay.test.cjs` misst bilaterale, bewegte und asteroidenblockierte Anflüge samt Wiederholung und Kontakten. Der 60-s-`combat-motion-baseline.cjs`-Lauf erfasst Passagen, Reichweite und Feuerphasen. Flucht, Minen, Traktor, Waffenwinkel, Treffer und Boarding bleiben durch bestehende Regressionen abgedeckt.
 - F05 local: Seed 123 ergab bilateral 2/2 Anflüge je Seite und 1 Rammkontakt (0.25 Kontakte/Anflug), am bewegten Ziel 3 Kontakte bei 3 Anflügen, am Asteroiden 4 Kontakte bei 5 Anflügen. Der Hindernisfall hielt 24.29 m Freiraum, ohne Kontaktframes. Nahkontakt-Stillstand blieb je Schiff unter 20 s; alle drei Simulationen hatten 0 ungültige Frames.
-- F05 parity: `combat-unified-flight-replay.test.cjs` besteht mit identischen historischen Hashes für die drei PvP-1vs1-Loadouts und vier Seeds. `npm run check:quick` und `npm run build` liefen lokal erfolgreich; der Quality-Gate-Status des neuen PR-Heads steht noch aus.
+- F05 ci: PR-Head `cc3c3f21628944cf98f9084d333784cddcb6319f`; Quality Gate Run 1976 (`46151374716`) und Career Browser Restart Smoke (`46151374737`) beide erfolgreich.
+- F05 loc: gegenüber F04-Basis `ca9a45ff085e5725fa0b09de700a28cb4f7c7782`: 92 `src/`-Zeilen hinzugefügt, 19 entfernt, netto +73; der Ablauf bleibt in den kanonischen Ramm-Intent-/Zielmodulen.
+- F05 parity: `combat-unified-flight-replay.test.cjs` besteht mit identischen historischen Hashes für die drei PvP-1vs1-Loadouts und vier Seeds. Lokales `npm run check:quick` bestand mit 412/412 Tests; `npm run build` und beide Workflows des aktuellen PR-Heads bestanden. Der bekannte Vite-Chunkgrößenhinweis bleibt.
 
 ## Arbeitslog und Übergabe an neue Chats
 
@@ -542,8 +546,9 @@ Verhaltenstests und Architektur-Tests sind zwingend.
   bilaterale, bewegte sowie physische Asteroiden-Replays samt Metriken ergänzt.
   Die historischen 1vs1-Hashes blieben exakt. Lokal `npm run check:quick`
   (412/412), Format, Lint, Typecheck, Dependency-/Persistenzprüfung und Build
-  bestanden. PR-Head-Quality-Gate steht noch aus; F05 erst nach dessen grünem
-  Abschluss abnehmen. Build meldet nur den vorhandenen Chunkgrößenhinweis.
+  bestanden. PR-Head `cc3c3f21628944cf98f9084d333784cddcb6319f` bestand Quality
+  Gate Run 1976 und Career Browser Restart Smoke; F05 ist abgenommen. Build
+  meldet nur den vorhandenen Chunkgrößenhinweis.
 
 - 28.11.2026: F04-Audit und Implementierung auf Basis der F03-Abnahme
   `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`. PvP-Flankenversuch und zivile
