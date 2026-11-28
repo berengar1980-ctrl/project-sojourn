@@ -39,6 +39,9 @@ export function trafficRouteBodies(obstacles: readonly FieldRouteObstacle[]): Ro
     position: { ...obstacle.position },
     radius: obstacle.radius,
     routeBlocking: true,
+    ...(obstacle.velocity
+      ? { velocity: { x: obstacle.velocity.x ?? 0, y: obstacle.velocity.y ?? 0 } }
+      : {}),
   }));
 }
 

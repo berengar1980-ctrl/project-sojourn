@@ -241,8 +241,9 @@ Regressionstests geprüft.
 - [ ] F04 Gemeinsame Navigation und Hindernisvermeidung
 
 PvP `combat-asteroid-routing.ts` / `combat-route-steering.ts` als bevorzugte
-Grundlage; vorhandene zivile Gittersuche in `local-space-navigation.ts` als
-Fallback bei komplexen Hindernissen, nicht als paralleler Modusplaner.
+Grundlage für den schnellen Flankenversuch; vorhandene zivile Gittersuche in
+`local-space-navigation.ts` bleibt gemeinsamer Fallback bei komplexen
+Hindernissen, nicht als paralleler Modusplaner.
 Einheitliche Hindernis-/Konturabfrage, Sicherheitsabstände anhand realer
 Geometrie, Prognose mit tatsächlichem Vektor und Bremsweg, gebundene
 Ausweichwegpunkte, Fortschrittsüberwachung, sichere blockierte Routen.
@@ -250,8 +251,8 @@ Ein gemeinsamer Planer darf unterschiedliche Suchverfahren nach Situation
 wählen; weder PvP noch ziviler Modus dürfen eigene Ersatzphysik besitzen.
 
 Ablösekandidaten: `field-ship-routing.ts`, `local-space-autopilot-hazards.ts`,
-`field-traffic-priority.ts`, `distress-navigation.ts`,
-`local-space-wreck-navigation.ts`, `salvage-work-navigation.ts`.
+`field-traffic-priority.ts`, `local-space-wreck-navigation.ts`,
+`salvage-work-navigation.ts`.
 Zivile Vorfahrt und taktische Absicht sind Policies. Absichtlicher Rammkurs
 darf das Ziel, nicht andere Hindernisse, aus der Vermeidung ausschließen.
 Tor-/Ausflugregeln, Arbeitsabstände und Zielbelegung erhalten.
@@ -260,6 +261,47 @@ Abnahme: freie, dichte und blockierte Felder, bewegte Hindernisse, Gegenverkehr,
 Ausfahrt, kleine Trümmer ohne Detour, große Hindernisse sicher umfliegen.
 Kein Durchreichen einer erwiesenermaßen blockierten Endroute; weniger
 ungewollte Großkörperkontakte ohne Verschlechterung von Flugleistung.
+
+F04-Audit und Implementierung, 28.11.2026 (Abnahme offen): Die PvP-Zwei-
+Flanken-/10-Hop-Suche ist jetzt der gemeinsame schnelle erste Versuch in
+`local-space-navigation.ts`; komplexe Felder fallen auf dessen gemeinsame
+44-m-A*-Suche zurück. Combat behält persistente taktische Routenbindung,
+verwendet aber denselben Planer und gemeinsame Segmentgeometrie. Fehlgeschlagene
+Routen ergeben keine Gerade durch ein Hindernis. Combat projiziert reale
+Asteroidenvektoren bis zum aus Schiffsgeschwindigkeit und Beschleunigung
+berechneten Bremszeitpunkt. Feld-NPCs verwenden den gemeinsamen Segmentcheck;
+Patrol behält den begrenzten Sichtgraphen als Performance-Ausnahme. Verkehr
+behält Vorfahrt und relative Swept-Step-Regeln. Der zivile Autopilot behält
+Crew-/Sensorwarnungen und seine Zeit-bis-Kreuzung-Gefahrenpolicy. Salvage plant
+Distress-Wrack und Verkehr jetzt gemeinsam; die Einzelkreis-Implementierung
+`distress-navigation.ts` ist entfernt. Die identischen Kampf-/Zivilpfade,
+bewegte Hindernisse, blockierten Ziele, Combat-Dichte und Distress-/Verkehrs-
+Kombination werden durch Produktionspfadtests verglichen.
+
+Wiederaufnahme am 28.11.2026: Der Route-Planer wurde in
+`local-space-route-flanks.ts` aufgeteilt, damit das Navigationsmodul unter der
+500-Zeilen-Grenze bleibt. Salvage akzeptiert jetzt auch einen vom Planer als
+`compromised` markierten, aber tatsächlich geplanten A*-Weg statt bei jeder
+reduzierten Sicherheitsmarge die Anfahrt neu zu starten. Die erste gemeinsame
+A*-Combat-Variante veränderte den historischen #400-Replay und verhinderte im
+dichten Asteroidenfeld einen Angriffsdurchflug. Die Ursache war nachweislich
+der abweichende Combat-Anflugpfad. Combat verwendet nun den bereits gemeinsam
+genutzten PvP-Flanken-/10-Hop-Algorithmus und gemeinsame Segmentgeometrie;
+bewegte Asteroiden werden für die Planung weiterhin mit ihrem echten Vektor
+projiziert. Die Notausweichflanke bleibt erhalten. Damit bestehen der
+Combined-Battle-Replay (alle drei Seeds), der dichte Asteroidenkampf und der
+neue Combat-/Zivil-Routenparitätstest.
+
+Lokale Abnahme am 28.11.2026: `npm run check:quick` bestanden — Format, Lint,
+Typecheck, Dependency- und Persistenzprüfung sowie 411/411 Tests. `npm run
+build` bestanden; Vite meldet weiterhin die bestehende Chunk-Warnung für das
+1,22-MB-JavaScript-Bundle. Nach der Aktualisierung dieses Arbeitsnachweises
+bestanden `npm run format:check`, `git diff --check` und der
+Architektur-Dokumentationstest. Der F04-Arbeitsstand ist lokal als
+`refactor: unify field flight routing` committed; der Remote-Branch steht
+weiterhin auf `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`. Für den F04-Commit
+wurde noch keine GitHub-Actions-CI ausgeführt. F04 bleibt bis zur Branch-CI
+und finalen Abnahme offen; kein Merge nach Main.
 
 ### F05 – Kampftaktik und Manöver
 
@@ -461,6 +503,33 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 
 ## Arbeitslog und Übergabe an neue Chats
 
+- 28.11.2026: F04-Audit und Implementierung auf Basis der F03-Abnahme
+  `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`. PvP-Flankenversuch und zivile
+  A*-Rückfallebene sind im gemeinsamen Punktplaner; Combat, Feldrouting und
+  Salvage delegieren. Der einzelne Distress-Detour wurde entfernt. Gezielte
+  Typ- und Produktionspfadtests bestehen; 410/411 Quick-Tests bestehen.
+  Offen ist der historische #400-Kampftrace nach einer 1-cm-Abweichung bei
+  einem Asteroidenmanöver. Der unveränderte F03-Combat-Routenpfad besteht den
+  Kontrolllauf, deshalb bleibt diese F04-Verhaltensabweichung bis zur
+  Ursachenentscheidung offen. Build besteht; GitHub Actions wurde für den
+  uncommitteten Stand nicht ausgeführt. Kein Merge nach Main.
+- 28.11.2026: Fortsetzung von F04. Der historische #400 Replay-Drift sowie
+  der fehlende Angriffsdurchflug im dichten Asteroidenfeld wurden auf den
+  abweichenden Combat-A*-Anflug zurückgeführt. Nach Rückkehr auf den gemeinsam
+  genutzten PvP-Flanken-/10-Hop-Algorithmus bei gemeinsamer Segmentgeometrie
+  bestehen beide Regressionen wieder. `npm run check:quick`: 411/411; darin
+  Format, Lint, Typecheck, Dependency- und Persistenzprüfung. `npm run build`
+  erfolgreich, mit bestehender 1,22-MB-Bundle-Warnung. Geänderte Pfade:
+  Combat-/Local-Space-/Feldnavigation, Salvage-Routing und -Service,
+  `tests/navigation/unified-flight-route-parity.test.cjs` sowie
+  `tests/salvage/distress-operational-fixes.test.cjs`; entfernt:
+  `src/systems/salvage/distress-navigation.ts`. Produktionsdiff der bereits
+  getrackten `src/`-Dateien: 327 hinzugefügt, 225 entfernt; zusätzlich
+  `local-space-route-flanks.ts` mit 111 Zeilen. Der lokale Commit
+  `refactor: unify field flight routing` ist erstellt; der Remote-Branch
+  steht noch auf `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`, daher gibt es
+  noch keinen GitHub-Actions-Lauf für F04. F04-Checklisteneintrag bleibt
+  offen bis Branch-CI und Abschlussprüfung; kein Merge nach Main.
 - 28.11.2026: F03 auf `refactor/unified-field-flight-physics` umgesetzt und
   nach lokaler Abnahme sowie erfolgreichen GitHub Actions auf PR-Head
   `e3346c047b44fe8daf9bdd605bf321ea2ea552fd` abgenommen. Feld-/Combat-

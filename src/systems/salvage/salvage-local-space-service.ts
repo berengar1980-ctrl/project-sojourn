@@ -317,11 +317,12 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
     this.approachPurpose = purpose;
     this.beginRoute(
       clampPoint(workPoint(this.ship, wreck), this.options.field.width, this.options.field.height),
-      'approaching'
+      'approaching',
+      wreck.id
     );
   }
 
-  private beginRoute(target: WorldPoint, phase: SalvageLocalPhase): void {
+  private beginRoute(target: WorldPoint, phase: SalvageLocalPhase, workWreckId?: string): void {
     this.phase = phase;
     this.elapsed = 0;
     this.navigationTarget = target;
@@ -329,7 +330,8 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
       this.options.field,
       this.ship.position,
       target,
-      this.options.shipLengthMeters ?? 70
+      this.options.shipLengthMeters ?? 70,
+      workWreckId
     );
     this.routeIndex = 1;
     this.trafficReviewElapsed = 0;

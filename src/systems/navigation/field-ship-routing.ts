@@ -9,8 +9,8 @@ import {
   type ShipFlightPerformance,
 } from '../../core/ship-flight-physics';
 import { measurePerformance } from '../../core/performance-diagnostics';
-import { clampedSegmentProjection, distance } from '../../core/field-geometry';
-import { planPointRoute } from '../local-space/local-space-navigation';
+import { distance } from '../../core/field-geometry';
+import { planPointRoute, routeSegmentClear } from '../local-space/local-space-navigation';
 import { planFieldPatrolRoute } from './field-patrol-route';
 import {
   trafficDestinationOccupied,
@@ -45,16 +45,20 @@ function blocked(
   obstacle: FieldRouteObstacle,
   clearance: number
 ): boolean {
-  const dx = target.x - start.x;
-  const dy = target.y - start.y;
-  const lengthSq = dx * dx + dy * dy;
-  if (lengthSq < 1) return false;
-  const t = clampedSegmentProjection(obstacle.position, start, dx, dy, lengthSq);
-  const gap = Math.hypot(
-    start.x + dx * t - obstacle.position.x,
-    start.y + dy * t - obstacle.position.y
+  return !routeSegmentClear(
+    start,
+    target,
+    [
+      {
+        id: obstacle.id,
+        position: obstacle.position,
+        radius: obstacle.radius,
+        collisionRadius: obstacle.radius,
+        routeBlocking: true,
+      },
+    ],
+    clearance
   );
-  return gap < obstacle.radius + clearance;
 }
 
 function makeRoute(
@@ -62,7 +66,8 @@ function makeRoute(
   target: WorldPoint,
   obstacles: readonly FieldRouteObstacle[],
   clearance: number,
-  mode: 'grid' | 'patrol'
+  mode: 'grid' | 'patrol',
+  bounds?: ShipFlightBounds
 ): readonly WorldPoint[] {
   if (mode === 'patrol') return planFieldPatrolRoute(start, target, obstacles, clearance);
   if (!obstacles.some((rock) => blocked(start, target, rock, clearance))) return [target];
@@ -85,15 +90,17 @@ function makeRoute(
     target,
     asteroids: rocks,
     clearance,
-    width: Math.max(4400, maxX + 250),
-    height: Math.max(2700, maxY + 250),
+    width: bounds ? bounds.right : Math.max(4400, maxX + 250),
+    height: bounds ? bounds.bottom : Math.max(2700, maxY + 250),
   });
-  // Never accept the planner's straight-line fallback through a solid body.
+  // A compromised route may reduce desired clearance, but must still clear
+  // every physical body. An unreachable route is represented by no points.
   if (planned.compromised) {
+    if (planned.route.length === 0) return [];
     const safe = planned.route.every((point, index) => {
       if (index === 0) return true;
       const before = planned.route[index - 1]!;
-      return !obstacles.some((rock) => blocked(before, point, rock, 0));
+      return obstacles.every((rock) => !blocked(before, point, rock, 0));
     });
     if (!safe) return [];
   }
@@ -106,7 +113,8 @@ export function fieldRouteTarget(
   target: WorldPoint,
   obstacles: readonly FieldRouteObstacle[],
   clearance: number,
-  mode: 'grid' | 'patrol' = 'grid'
+  mode: 'grid' | 'patrol' = 'grid',
+  bounds?: ShipFlightBounds
 ): WorldPoint | null {
   const planning = trafficPlanningObstacles(target, obstacles, clearance);
   const saved = ship.routeState;
@@ -130,7 +138,7 @@ export function fieldRouteTarget(
     // An occupied destination cannot be solved by repeated full-field searches.
     if (trafficDestinationOccupied(target, planning, clearance)) return null;
     const points = measurePerformance('sim.field.route-search', () =>
-      makeRoute(ship.position, target, planning, clearance, mode)
+      makeRoute(ship.position, target, planning, clearance, mode, bounds)
     );
     if (points.length === 0) {
       delete ship.routeState;
@@ -157,7 +165,9 @@ export function moveFieldShip(
   beginTrafficLeg(ship, target);
   const escape = trafficEscapeWaypoint(ship, obstacles, clearance);
   const waypoint =
-    escape === undefined ? fieldRouteTarget(ship, target, obstacles, clearance, mode) : escape;
+    escape === undefined
+      ? fieldRouteTarget(ship, target, obstacles, clearance, mode, bounds)
+      : escape;
   if (!waypoint) {
     ship.velocity = { x: 0, y: 0 };
     noteTrafficProgress(ship, dt, true);

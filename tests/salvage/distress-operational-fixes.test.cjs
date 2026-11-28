@@ -6,23 +6,76 @@ const path = require('node:path');
 const { loadStandaloneTypeScriptModule } = require('../ts-module-loader.cjs');
 const root = path.resolve(__dirname, '../..');
 
-const { routeAroundDistressShip } = loadStandaloneTypeScriptModule(
+const traffic = loadStandaloneTypeScriptModule(
   root,
-  'src/systems/salvage/distress-navigation.ts'
+  'src/systems/navigation/field-traffic-obstacles.ts'
 );
-const route = routeAroundDistressShip(
-  { x: 100, y: 100 },
-  { x: 500, y: 100 },
-  { x: 300, y: 100 },
-  100
+const motion = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/salvage/salvage-container-motion.ts'
 );
-assert.equal(route.length, 3, 'course across a disabled vessel must detour');
-assert(Math.hypot(route[1].x - 300, route[1].y - 100) >= 100);
-assert.equal(
-  routeAroundDistressShip({ x: 100, y: 100 }, { x: 500, y: 100 }, { x: 300, y: 450 }, 100).length,
-  2,
-  'clear route remains direct'
+const { bindFieldTraffic, fieldTrafficObstacles } = traffic;
+const { salvageFieldPhysicsBodies } = motion;
+const { planSalvageRoute } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/salvage/salvage-work-navigation.ts',
+  {
+    'src/systems/navigation/field-traffic-obstacles.ts': traffic,
+    'src/systems/salvage/salvage-container-motion.ts': motion,
+  }
 );
+const { routeSegmentClear } = loadStandaloneTypeScriptModule(
+  root,
+  'src/systems/local-space/local-space-navigation.ts'
+);
+const field = {
+  id: 'distress-route-test',
+  sourceLocationId: 'distress-route-test',
+  seed: 41,
+  width: 1800,
+  height: 1400,
+  wrecks: [
+    {
+      id: 'event-wreck-salvage-distress-test',
+      name: 'Disabled ship',
+      kind: 'distress',
+      quality: 'standard',
+      position: { x: 650, y: 700 },
+      radius: 80,
+      rotation: 0,
+      integrity: 100,
+      resources: [],
+      component: null,
+      componentStatus: 'none',
+      inspected: false,
+    },
+  ],
+};
+const trafficBlocker = { id: 'hauler', position: { x: 900, y: 820 }, radius: 85 };
+bindFieldTraffic(field, () => [trafficBlocker]);
+const route = planSalvageRoute(field, { x: 200, y: 700 }, { x: 1100, y: 700 }, 70);
+assert(route.length > 2, 'distress and traffic obstacles require a shared detour');
+const bodies = [
+  ...salvageFieldPhysicsBodies(field).map((body) => ({
+    id: body.id,
+    position: body.position,
+    radius: body.radius,
+    collisionRadius: body.collisionRadius,
+    routeBlocking: body.routeBlocking,
+  })),
+  ...fieldTrafficObstacles(field, 'player').map((obstacle) => ({
+    id: 'traffic:' + obstacle.id,
+    position: obstacle.position,
+    radius: obstacle.radius,
+    routeBlocking: true,
+  })),
+];
+assert(
+  route.slice(1).every((point, index) => routeSegmentClear(route[index], point, bodies, 32)),
+  'each route segment must clear the distress ship and live traffic'
+);
+assert.equal(route[0].x, 200);
+assert.equal(route.at(-1).x, 1100);
 
 const { createDistressTowState } = loadStandaloneTypeScriptModule(
   root,
@@ -62,4 +115,4 @@ assert(
   'evacuation must either succeed or trigger the diagnosed distress trap'
 );
 
-console.log('PASS three-second diagnosis, inertial towing orientation, avoidance and evacuation');
+console.log('PASS shared distress avoidance, three-second diagnosis, towing and evacuation');
