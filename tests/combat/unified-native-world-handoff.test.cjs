@@ -179,8 +179,11 @@ const enemy = {
     targetKind: 'player',
     targetId: 'player',
     position: { x: 800, y: 800 },
+    velocity: { x: 0, y: 0 },
     headingRadians: 0,
-    speed: 0,
+    get speed() {
+      return Math.hypot(this.velocity.x, this.velocity.y);
+    },
   },
 };
 const worldPose = {
@@ -193,6 +196,7 @@ assert.deepEqual(career.fleet.getActor('npc').position, arena.defenderPosition);
 career.tick(0.08);
 const realNpcActor = career.fleet.getActor('npc');
 assert.equal(enemy.combatMovement.headingRadians, realNpcActor.headingRadians);
+assert.deepEqual(enemy.combatMovement.velocity, realNpcActor.velocity);
 assert.equal(enemy.combatMovement.speed, realNpcActor.speed);
 assert.equal(
   enemy.combatMovement.position.x - realNpcActor.position.x,

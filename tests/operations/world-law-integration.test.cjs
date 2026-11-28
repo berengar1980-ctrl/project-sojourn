@@ -232,7 +232,14 @@ remoteTheftAndPursuitTest();
   const { context, field, location, miner } = createScenario();
   const droneId = 'security-drone:' + location.id;
   const position = { x: 50, y: 50 };
-  const drone = { id: droneId, position, hullHp: 100, headingRadians: 1.25, speed: 37 };
+  const drone = {
+    id: droneId,
+    position,
+    hullHp: 100,
+    headingRadians: 1.25,
+    velocity: { x: Math.cos(1.25) * 37, y: Math.sin(1.25) * 37 },
+    speed: 37,
+  };
   context.engagements.finishedFieldCombatSnapshots = () => [
     {
       arena: { backdropSeed: field.instance.seed },

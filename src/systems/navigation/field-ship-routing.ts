@@ -1,4 +1,5 @@
 import type { WorldPoint } from '../../core/world-types';
+import type { PhysicalShipState } from '../../core/physical-ship-state';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import { clampedSegmentProjection, distance } from '../../core/field-geometry';
 import { planPointRoute } from '../local-space/local-space-navigation';
@@ -25,10 +26,8 @@ export interface FieldRouteState {
   index: number;
 }
 
-export interface FieldRouteShip {
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
+export interface FieldRouteShip extends PhysicalShipState {
+  readonly speed: number;
   routeState?: FieldRouteState;
 }
 
@@ -148,7 +147,7 @@ export function moveFieldShip(
   const waypoint =
     escape === undefined ? fieldRouteTarget(ship, target, obstacles, clearance, mode) : escape;
   if (!waypoint) {
-    ship.speed = 0;
+    ship.velocity = { x: 0, y: 0 };
     noteTrafficProgress(ship, dt, true);
     return false;
   }
@@ -164,14 +163,14 @@ export function moveFieldShip(
         y: ship.position.y + (dy / remaining) * step,
       };
   if (!trafficStepClear(ship.position, next, dt, obstacles, clearance, ship)) {
-    ship.speed = 0;
+    ship.velocity = { x: 0, y: 0 };
     noteTrafficProgress(ship, dt, true);
     return false;
   }
   ship.headingRadians = Math.atan2(dy, dx);
   if (arrives) {
     ship.position = { ...waypoint };
-    ship.speed = 0;
+    ship.velocity = { x: 0, y: 0 };
     if (escape) {
       delete ship.routeState;
       noteTrafficProgress(ship, dt, false);
@@ -187,7 +186,10 @@ export function moveFieldShip(
     return false;
   }
   ship.position = next;
-  ship.speed = speed;
+  ship.velocity = {
+    x: Math.cos(ship.headingRadians) * speed,
+    y: Math.sin(ship.headingRadians) * speed,
+  };
   noteTrafficProgress(ship, dt, false);
   return false;
 }

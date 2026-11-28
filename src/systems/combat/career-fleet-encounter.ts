@@ -404,7 +404,7 @@ function createSectorFleetEncounter(
             y: actor.position.y + offset.y,
           };
           npc.combatMovement.headingRadians = actor.headingRadians;
-          npc.combatMovement.speed = actor.speed;
+          npc.combatMovement.velocity = { ...actor.velocity };
         }
       }
     },

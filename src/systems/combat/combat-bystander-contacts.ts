@@ -36,7 +36,6 @@ function separateBystander(
   if (impulse > 0) {
     ship.velocity.x -= normal.x * impulse;
     ship.velocity.y -= normal.y * impulse;
-    ship.speed = Math.hypot(ship.velocity.x, ship.velocity.y);
   }
 }
 

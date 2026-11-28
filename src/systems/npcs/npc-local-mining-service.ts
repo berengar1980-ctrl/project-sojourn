@@ -16,9 +16,13 @@ import type { LocalAsteroid } from '../../core/local-space-types';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createMiningEventController } from '../local-space/mining-event-service';
+import { ensurePhysicalShipVelocity } from '../../core/physical-ship-state';
+import {
+  createLocalNpcPhysicalPose,
+  localNpcCruiseSpeed,
+  syncLocalNpcWorkerPose,
+} from './npc-local-physical-pose';
 
-import { getShipDefinition, resolveShipLocalCruiseSpeed } from '../ships';
-import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 import { resolveMinerCollisions } from './npc-local-mining-contacts';
 
 import {
@@ -44,11 +48,6 @@ export type {
   NpcLocalMiningService,
   NpcLocalMiningOptions,
 } from './npc-mining-targets';
-function localCruiseSpeed(npc: SectorNpcState): number {
-  const ship = getShipDefinition(npc.shipId);
-  return ship ? resolveShipLocalCruiseSpeed(ship, ensureNpcInstalledComponents(npc)) : FLIGHT_SPEED;
-}
-
 interface MinerRuntime {
   readonly options: NpcLocalMiningOptions;
   readonly ships: LocalNpcMinerState[];
@@ -100,13 +99,13 @@ function syncArrivals(runtime: MinerRuntime): void {
     )
       continue;
     const spawn = explicit ?? entry;
-    runtime.ships.push({
+    const speed =
+      explicit || !runtime.options.getTrafficObstacles ? localNpcCruiseSpeed(npc, FLIGHT_SPEED) : 0;
+    const worker: LocalNpcMinerState = {
       npcId: npc.id,
       name: npc.name,
       shipId: npc.shipId,
-      position: { ...spawn },
-      headingRadians: 0,
-      speed: explicit || !runtime.options.getTrafficObstacles ? localCruiseSpeed(npc) : 0,
+      ...createLocalNpcPhysicalPose(spawn, 0, speed),
       phase: 'entering',
       targetAsteroidId: null,
       laserActive: false,
@@ -114,7 +113,9 @@ function syncArrivals(runtime: MinerRuntime): void {
       entryPoint: entry,
       exitPoint: { ...entry },
       miningAccumulator: 0,
-    });
+    };
+    ensurePhysicalShipVelocity(worker);
+    runtime.ships.push(worker);
     runtime.combatReturnPositions.delete(npc.id);
   }
 }
@@ -237,27 +238,6 @@ function resolvePendingEvent(
   return false;
 }
 
-function syncCombatPose(
-  runtime: MinerRuntime,
-  npcId: string,
-  position: WorldPoint,
-  headingRadians: number,
-  speed: number
-): void {
-  const ship = runtime.ships.find((entry) => entry.npcId === npcId);
-  if (!ship) return;
-  ship.position = {
-    x: Math.max(0, Math.min(runtime.options.width, position.x)),
-    y: Math.max(0, Math.min(runtime.options.height, position.y)),
-  };
-  ship.headingRadians = headingRadians;
-  ship.speed = Math.max(0, speed);
-  ship.phase = 'approaching';
-  ship.targetAsteroidId = null;
-  ship.laserActive = false;
-  ship.scanProgress = 0;
-}
-
 function advanceApproaching(
   runtime: MinerRuntime,
   ship: LocalNpcMinerState,
@@ -286,14 +266,14 @@ function advanceApproaching(
       moveFieldShip(
         ship,
         point,
-        localCruiseSpeed(npc),
+        localNpcCruiseSpeed(npc, FLIGHT_SPEED),
         dt,
         [...rockBlockers, ...(runtime.options.getTrafficObstacles?.(npc.id) ?? [])],
         65
       )
     ) {
       ship.phase = 'scanning';
-      ship.speed = 0;
+      ship.velocity = { x: 0, y: 0 };
       ship.scanProgress = 0;
       ship.headingRadians = Math.atan2(
         asteroid.position.y - ship.position.y,
@@ -351,7 +331,7 @@ function advanceMining(
       if (resolvePendingEvent(runtime, ship, npc, asteroid)) return;
       return;
     }
-    ship.speed = 0;
+    ship.velocity = { x: 0, y: 0 };
     ship.laserActive = true;
     ship.headingRadians = Math.atan2(
       asteroid.position.y - ship.position.y,
@@ -392,7 +372,7 @@ function advanceMiner(
     moveFieldShip(
       ship,
       ship.exitPoint,
-      localCruiseSpeed(npc),
+      localNpcCruiseSpeed(npc, FLIGHT_SPEED),
       dt,
       [
         ...runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
@@ -436,7 +416,7 @@ function tickMinerRuntime(runtime: MinerRuntime, deltaSeconds: number, combatant
     if (workerCombatSuspended(npc)) {
       // Preserve the native duel velocity for exhaust/telemetry while the
       // combat engine alone owns an engaged ship's physical movement.
-      if (!npc.combatMovement) ship.speed = 0;
+      if (!npc.combatMovement) ship.velocity = { x: 0, y: 0 };
       ship.laserActive = false;
       delete ship.oreCollection;
       ship.scanProgress = 0;
@@ -470,7 +450,13 @@ export function createNpcLocalMiningService(
   };
   if (checkpoint) {
     const saved = stageLocalMinerCheckpoint(checkpoint, options);
-    runtime.ships.push(...saved.ships.map((ship) => cloneCareerJson(ship)));
+    runtime.ships.push(
+      ...saved.ships.map((ship) => {
+        const restored = cloneCareerJson(ship);
+        ensurePhysicalShipVelocity(restored);
+        return restored;
+      })
+    );
     for (const [id, point] of saved.combatReturns) {
       runtime.combatReturnPositions.set(id, { ...point });
     }
@@ -492,8 +478,15 @@ export function createNpcLocalMiningService(
       events: [...runtime.events].map(([id, event]) => [id, event.exportState()] as const),
     }),
     ships: runtime.ships,
-    syncCombatPose: (id, position, heading, speed) =>
-      syncCombatPose(runtime, id, position, heading, speed),
+    syncCombatPose: (id, position, heading, velocity, maneuvering) =>
+      syncLocalNpcWorkerPose(runtime.ships, id, position, heading, velocity, maneuvering, (ship) =>
+        Object.assign(ship, {
+          phase: 'approaching',
+          targetAsteroidId: null,
+          laserActive: false,
+          scanProgress: 0,
+        })
+      ),
     tick: (dt, combatantId) => tickMinerRuntime(runtime, dt, combatantId),
   };
 }

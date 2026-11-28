@@ -51,7 +51,9 @@ const fighter = {
   setup: { id: 'fighter', shipId: 'miner-80m-variant-04' },
   position: { x: 295, y: 200 },
   velocity: { x: 80, y: 0 },
-  speed: 80,
+  get speed() {
+    return Math.hypot(this.velocity.x, this.velocity.y);
+  },
   headingRadians: 0,
 };
 const claimed = new Set();

@@ -4,17 +4,16 @@ import type { SectorNpcState } from '../../core/npc-types';
 import type { ShipDefinition } from '../../core/ship-types';
 import type { SalvageField, SalvageWreck, SalvageEventResolution } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { ManeuveringShipControls, PhysicalShipState } from '../../core/physical-ship-state';
 
 export type LocalNpcSalvagePhase =
   'entering' | 'approaching' | 'scanning' | 'salvaging' | 'exiting';
 
-export interface LocalNpcSalvagerState {
+export interface LocalNpcSalvagerState extends PhysicalShipState {
   readonly npcId: string;
   readonly name: string;
   readonly shipId: string;
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
+  readonly speed: number;
   routeState?: FieldRouteState;
   phase: LocalNpcSalvagePhase;
   targetWreckId: string | null;
@@ -26,7 +25,13 @@ export interface LocalNpcSalvagerState {
 
 export interface NpcLocalSalvageService {
   readonly ships: readonly LocalNpcSalvagerState[];
-  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
+  syncCombatPose(
+    npcId: string,
+    position: WorldPoint,
+    headingRadians: number,
+    velocity: WorldPoint,
+    maneuvering?: Partial<ManeuveringShipControls>
+  ): void;
   tick(deltaSeconds: number, combatantId?: string, skipPlayer?: boolean): void;
 }
 

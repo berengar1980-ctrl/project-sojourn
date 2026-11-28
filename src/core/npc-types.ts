@@ -1,6 +1,7 @@
 import type { NpcEconomyState } from './economy-types';
 import type { ShipComponentType, ShipRole } from './ship-types';
 import type { WorldPoint } from './world-types';
+import type { PhysicalShipState } from './physical-ship-state';
 
 export type NpcJob = 'freighter' | 'miner' | 'salvager' | 'patrol' | 'pirate';
 export type NpcFactionId = 'civilian' | 'pirates' | 'pirates2';
@@ -40,13 +41,11 @@ export interface NpcTravelState {
   replanCooldown?: number;
 }
 
-export interface NpcCombatMovementState {
+export interface NpcCombatMovementState extends PhysicalShipState {
   mode: NpcCombatMovementMode;
   readonly targetKind: NpcCombatTargetKind;
   readonly targetId: string;
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
+  readonly speed: number;
 }
 
 export type NpcInstalledComponents = Partial<Record<ShipComponentType, string[]>>;

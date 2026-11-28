@@ -12,6 +12,10 @@ const { stageSecurityDroneCheckpoint } = load(
 
 const asteroids = [];
 const first = new AsteroidSecurityDrone(3000, 2000, asteroids);
+first.turnRateRadiansPerSecond = 0.12;
+first.angularThrust = -0.23;
+first.lateralThrust = 0.34;
+first.longitudinalThrust = -0.45;
 const observed = {
   shipId: 'miner-1',
   asteroidId: 'ore-2',

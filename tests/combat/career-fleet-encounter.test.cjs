@@ -192,7 +192,7 @@ for (let attempt = 0; attempt < 20; attempt++) {
     for (const participant of [target, attacker]) {
       participant.headingRadians = 0;
       participant.velocity = { x: 0, y: 0 };
-      participant.speed = 0;
+      participant.velocity = { x: 0, y: 0 };
     }
     target.position = { ...playerSpot };
     attacker.position = { x: 1100, y: 1300 };

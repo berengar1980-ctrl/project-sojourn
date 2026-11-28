@@ -6,6 +6,7 @@ import type {
 } from '../../core/salvage-types';
 import type { EconomyResourceId } from '../../core/economy-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { ManeuveringShipControls } from '../../core/physical-ship-state';
 import type { ShipSalvageSetup } from '../ships/ship-salvage-capability';
 import type { SalvageComponentCollector, SalvageResourceCollector } from './salvage-field-service';
 
@@ -24,7 +25,8 @@ export interface SalvageLocalSpaceService {
   syncCombatPose(
     position: WorldPoint,
     headingRadians: number,
-    speed: number
+    velocity: WorldPoint,
+    maneuvering?: Partial<ManeuveringShipControls>
   ): SalvageLocalSpaceSnapshot;
   tick(deltaSeconds: number, combatOwnsBodies?: boolean): SalvageLocalSpaceSnapshot;
 }

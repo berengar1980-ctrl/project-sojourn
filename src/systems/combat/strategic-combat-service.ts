@@ -2,6 +2,7 @@ import { crewCapacity } from '../crew/crew-performance';
 import { getShipDefinition } from '../ships';
 import { retargetNativeFleetSurvivor, redirectNativeFleetTarget } from './native-fleet-retarget';
 import { runtimeSnapshot } from './strategic-combat-runtime-snapshot';
+import { velocityFromHeading } from '../../core/physical-ship-state';
 import {
   captureCareerStrategicCombat,
   stageCareerStrategicCombat,
@@ -213,10 +214,18 @@ export function createStrategicCombatService(
   );
   if (saved) {
     for (let call = 0; call < saved.randomCalls; call += 1) runtime.random();
-    const { attacker: storedAttacker, defender: storedDefender, ...state } = saved.runtime;
+    const stored = saved.runtime as unknown as Record<string, unknown> & {
+      attacker: Record<string, unknown>;
+      defender: Record<string, unknown>;
+    };
+    const { attacker: storedAttacker, defender: storedDefender, ...state } = stored;
     Object.assign(runtime, state);
-    Object.assign(runtime.attacker, storedAttacker);
-    Object.assign(runtime.defender, storedDefender);
+    const attackerState = { ...storedAttacker };
+    const defenderState = { ...storedDefender };
+    normalizeStoredCombatant(attackerState, runtime.attacker);
+    normalizeStoredCombatant(defenderState, runtime.defender);
+    Object.assign(runtime.attacker, attackerState);
+    Object.assign(runtime.defender, defenderState);
   }
   if (!saved && !externalDefender) {
     initializeStrategicCombatLog(runtime, attackerSetup, defenderSetup, seed);
@@ -276,4 +285,15 @@ export function createStrategicCombatService(
       return runtimeSnapshot(runtime);
     },
   };
+}
+
+function normalizeStoredCombatant(state: Record<string, unknown>, live: MutableCombatant): void {
+  if (!state.velocity || typeof state.velocity !== 'object') {
+    const heading = Number.isFinite(state.headingRadians)
+      ? (state.headingRadians as number)
+      : live.headingRadians;
+    const speed = Number.isFinite(state.speed) ? (state.speed as number) : 0;
+    state.velocity = velocityFromHeading(heading, speed);
+  }
+  delete state.speed;
 }

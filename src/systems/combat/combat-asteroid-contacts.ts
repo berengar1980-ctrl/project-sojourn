@@ -71,11 +71,18 @@ export function resolveCombatAsteroidContacts(
   const hits = resolveShieldCollisions(
     {
       position: ship.position,
+      velocity: ship.velocity,
       headingRadians: combatShieldHeading(ship),
-      speed: ship.speed,
+      get speed() {
+        return (
+          Math.cos(this.headingRadians) * this.velocity.x +
+          Math.sin(this.headingRadians) * this.velocity.y
+        );
+      },
       turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
       angularThrust: ship.angularThrust,
       lateralThrust: 0,
+      longitudinalThrust: 0,
     },
     ship.velocity,
     native,
@@ -115,7 +122,6 @@ export function resolveCombatAsteroidContacts(
       const impulse = approach * 1.15;
       ship.velocity.x -= hit.normal.x * impulse;
       ship.velocity.y -= hit.normal.y * impulse;
-      ship.speed = Math.hypot(ship.velocity.x, ship.velocity.y);
     }
     const damage =
       Math.min(14, Math.max(0, hit.impactSpeed - 7) * 0.22) /

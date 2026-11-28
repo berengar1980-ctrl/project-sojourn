@@ -230,8 +230,9 @@ function tickSalvageTraffic(
     context.drone.syncCombatPose(
       combat.defender.position,
       combat.defender.headingRadians,
-      combat.defender.speed,
-      combat.defender.hullHp > 0
+      combat.defender.velocity,
+      combat.defender.hullHp > 0,
+      combat.defender
     );
   }
   advanceSalvagePirateResponse({
@@ -274,7 +275,8 @@ function tickSalvageScene(context: SalvageSceneRuntime, deltaSeconds: number): v
     service.syncCombatPose(
       combat.attacker.position,
       combat.attacker.headingRadians,
-      combat.attacker.speed
+      combat.attacker.velocity,
+      combat.attacker
     );
     npcSalvage.tick(deltaSeconds, combat.defender.id, true);
   } else {
@@ -375,7 +377,7 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     hardpoints: options.ship.sprite.hardpoints,
     shipLengthMeters: options.ship.nominalLengthMeters,
   });
-  if (options.playerStart) service.syncCombatPose(options.playerStart, 0, 0);
+  if (options.playerStart) service.syncCombatPose(options.playerStart, 0, { x: 0, y: 0 });
   const context: SalvageSceneRuntime = {
     options,
     runtime,

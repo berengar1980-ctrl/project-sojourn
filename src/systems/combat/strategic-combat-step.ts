@@ -107,8 +107,6 @@ function advanceRuntimeGrapple(
   initiator.velocity.y = sharedY;
   victim.velocity.x = sharedX;
   victim.velocity.y = sharedY;
-  initiator.speed = Math.hypot(sharedX, sharedY);
-  victim.speed = initiator.speed;
   runtime.boardingInitiator = owner;
   runtime.winner = owner;
   runtime.outcomeReason = 'boarding';

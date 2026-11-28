@@ -58,7 +58,7 @@ const miner = service.ships[0];
 assert(miner);
 miner.position = { x: 100, y: 100 };
 miner.headingRadians = 0;
-miner.speed = 92;
+miner.velocity = { x: 92, y: 0 };
 miner.phase = 'approaching';
 miner.targetAsteroidId = ore.id;
 delete miner.routeState;
@@ -73,7 +73,7 @@ assert(debris.physics.velocity.x > 0, 'small asteroid must receive outward momen
 
 npc.combatMovement = { mode: 'engaged' };
 miner.position = { x: 100, y: 100 };
-miner.speed = 46;
+miner.velocity = { x: 46, y: 0 };
 debris.position = { x: 125, y: 100 };
 const beforeRock = { ...debris.position };
 service.tick(0.08);

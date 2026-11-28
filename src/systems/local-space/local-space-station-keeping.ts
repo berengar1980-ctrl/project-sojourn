@@ -1,9 +1,13 @@
 import type { LocalShipState } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import {
+  localShipForwardSpeed,
+  localShipLateralSpeed,
+  setLocalShipComponents,
+} from './local-space-ship-velocity';
 
 export interface IdleStationKeepingState {
   targetHeading: number;
-  lateralVelocity: number;
   angularVelocity: number;
   disturbanceTimer: number;
   disturbanceIndex: number;
@@ -20,9 +24,10 @@ export function createIdleStationKeepingState(
   seed: number,
   ship: LocalShipState
 ): IdleStationKeepingState {
+  const lateralVelocity = ((seed % 2001) / 2000 - 0.5) * 0.68;
+  setLocalShipComponents(ship, localShipForwardSpeed(ship), lateralVelocity);
   return {
     targetHeading: ship.headingRadians,
-    lateralVelocity: ((seed % 2001) / 2000 - 0.5) * 0.68,
     angularVelocity: ((seed % 997) / 996 - 0.5) * 0.025,
     disturbanceTimer: 1.8 + (seed % 2400) / 1000,
     disturbanceIndex: 0,
@@ -34,7 +39,7 @@ export function resetIdleStationKeeping(
   ship: LocalShipState
 ): void {
   state.targetHeading = ship.headingRadians;
-  state.lateralVelocity *= 0.35;
+  setLocalShipComponents(ship, localShipForwardSpeed(ship), localShipLateralSpeed(ship) * 0.35);
   state.angularVelocity *= 0.35;
   state.disturbanceTimer = Math.max(1.2, state.disturbanceTimer);
 }
@@ -46,13 +51,14 @@ export function updateIdleStationKeeping(
   seed: number,
   deltaSeconds: number
 ): void {
-  applyDisturbance(state, seed, deltaSeconds);
+  applyDisturbance(state, ship, seed, deltaSeconds);
   applyPositionKeeping(state, ship, hold, deltaSeconds);
   applyHeadingKeeping(state, ship, deltaSeconds);
 }
 
 function applyDisturbance(
   state: IdleStationKeepingState,
+  ship: LocalShipState,
   seed: number,
   deltaSeconds: number
 ): void {
@@ -60,7 +66,12 @@ function applyDisturbance(
   if (state.disturbanceTimer > 0) return;
 
   const phase = seed * 0.00017 + state.disturbanceIndex * 1.618;
-  state.lateralVelocity += Math.sin(phase * 7.31) * 0.23;
+  const lateralVelocity = localShipLateralSpeed(ship);
+  setLocalShipComponents(
+    ship,
+    localShipForwardSpeed(ship),
+    lateralVelocity + Math.sin(phase * 7.31) * 0.23
+  );
   state.angularVelocity += Math.sin(phase * 11.73 + 0.8) * 0.024;
   state.disturbanceIndex += 1;
   state.disturbanceTimer = 2.2 + Math.abs(Math.sin(phase * 3.17)) * 3.2;
@@ -78,18 +89,19 @@ function applyPositionKeeping(
   const offsetY = ship.position.y - hold.y;
   const lateralOffset = offsetX * sideX + offsetY * sideY;
 
-  let thrust = -lateralOffset * 0.11 - state.lateralVelocity * 0.62;
+  let lateralVelocity = localShipLateralSpeed(ship);
+  let thrust = -lateralOffset * 0.11 - lateralVelocity * 0.62;
   thrust = Math.max(-0.27, Math.min(0.27, thrust));
   if (Math.abs(thrust) < 0.045) thrust = 0;
 
   ship.lateralThrust = thrust;
-  state.lateralVelocity += thrust * 1.8 * deltaSeconds;
-  state.lateralVelocity = Math.max(-0.8, Math.min(0.8, state.lateralVelocity));
+  lateralVelocity += thrust * 1.8 * deltaSeconds;
+  lateralVelocity = Math.max(-0.8, Math.min(0.8, lateralVelocity));
+  setLocalShipComponents(ship, 0, lateralVelocity);
   ship.position = {
-    x: ship.position.x + sideX * state.lateralVelocity * deltaSeconds,
-    y: ship.position.y + sideY * state.lateralVelocity * deltaSeconds,
+    x: ship.position.x + sideX * lateralVelocity * deltaSeconds,
+    y: ship.position.y + sideY * lateralVelocity * deltaSeconds,
   };
-  ship.speed = 0;
 }
 
 function applyHeadingKeeping(

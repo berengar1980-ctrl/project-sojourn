@@ -10,6 +10,7 @@ import {
   trafficEscapeWaypoint,
 } from '../navigation/field-traffic-priority';
 import { angleDelta, distance, heading, moveToward, turnToward } from './local-space-motion';
+import { clearLocalShipVelocity, setLocalShipDisplacement } from './local-space-ship-velocity';
 
 const MAX_TURN_RATE = 1.15;
 const REVERSE_CORRECTION_DISTANCE = 120;
@@ -23,7 +24,7 @@ export interface RouteAdvanceResult {
 
 export function resetAutopilotMotion(ship: LocalShipState): void {
   endTrafficLeg(ship);
-  ship.speed = 0;
+  clearLocalShipVelocity(ship);
   ship.turnRateRadiansPerSecond = 0;
   ship.angularThrust = 0;
   ship.lateralThrust = 0;
@@ -55,13 +56,14 @@ function advanceReverseCorrection(
   deltaSeconds: number,
   remainingDistance: number
 ): void {
+  const start = { ...ship.position };
   const reverseSpeed = Math.min(
     MAX_REVERSE_SPEED,
     cruiseSpeed * 0.24,
     Math.max(5, remainingDistance * 0.72)
   );
   ship.position = moveToward(ship.position, waypoint, reverseSpeed * deltaSeconds);
-  ship.speed = -reverseSpeed;
+  setLocalShipDisplacement(ship, start, deltaSeconds);
   ship.turnRateRadiansPerSecond = 0;
   ship.angularThrust = 0;
   ship.lateralThrust = 0;
@@ -104,7 +106,7 @@ export function advanceAutopilotRoute(
   const start = ship.position;
   const escape = autopilotEscape(ship, route[route.length - 1]!, traffic);
   if (escape === null) {
-    ship.speed = 0;
+    clearLocalShipVelocity(ship);
     noteTrafficProgress(ship, deltaSeconds, true);
     return { nextIndex: index, completed: false };
   }
@@ -143,7 +145,7 @@ export function advanceAutopilotRoute(
     !trafficStepClear(start, next, deltaSeconds, traffic.obstacles, traffic.clearance, ship)
   ) {
     ship.position = start;
-    ship.speed = 0;
+    clearLocalShipVelocity(ship);
     noteTrafficProgress(ship, deltaSeconds, true);
     return { nextIndex: index, completed: false };
   }
@@ -151,7 +153,7 @@ export function advanceAutopilotRoute(
   if (!arrived) return { nextIndex: index, completed: false };
 
   ship.position = { ...waypoint };
-  ship.speed = 0;
+  clearLocalShipVelocity(ship);
   if (escape) return { nextIndex: index, completed: false };
   const nextIndex = index + 1;
   if (nextIndex >= route.length) endTrafficLeg(ship);
@@ -168,6 +170,7 @@ function advanceForwardRoute(
   brakeAtFinalWaypoint: boolean,
   turnRateMultiplier: number
 ): void {
+  const start = { ...ship.position };
   const desiredHeading = heading(ship.position, waypoint);
   const previousHeading = ship.headingRadians;
   ship.headingRadians = turnToward(
@@ -190,7 +193,7 @@ function advanceForwardRoute(
       : cruiseSpeed;
   const travelSpeed = desiredSpeed * alignment;
   ship.position = moveToward(ship.position, waypoint, travelSpeed * deltaSeconds);
-  ship.speed = travelSpeed;
+  setLocalShipDisplacement(ship, start, deltaSeconds);
 }
 
 export function faceAutopilotTarget(
@@ -212,7 +215,7 @@ export function faceAutopilotTarget(
     Math.min(1, angleDelta(previousHeading, desiredHeading) / (Math.PI / 6))
   );
   ship.lateralThrust = 0;
-  ship.speed = 0;
+  clearLocalShipVelocity(ship);
 
   if (Math.abs(angleDelta(ship.headingRadians, desiredHeading)) > 0.04) return false;
   ship.headingRadians = desiredHeading;

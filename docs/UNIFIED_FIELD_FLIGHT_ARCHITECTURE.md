@@ -379,17 +379,72 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 
 ## Nachweisblock
 
-Noch keine Nachweise. Kein Paket abgeschlossen.
+Noch keine Paketnachweise. F01 ist lokal umgesetzt und verifiziert, aber wegen
+ausstehender Branch-CI nicht abgenommen. Kein Paket abgeschlossen.
 
 ## Arbeitslog und Übergabe an neue Chats
 
+- 28.11.2026: F01 bleibt offen. Gemeinsamer `PhysicalShipState` enthält
+  Position, Heading, XY-Geschwindigkeit und Dreh-/Schubzustand. `speed` ist
+  überall abgeleitet; lokale Spieleranzeige nutzt die signierte
+  Vorwärtsprojektion, Kampfsnapshot und NPC-Reisewert die Vektormagnitude.
+  Feldkampf startet und endet mit vollständig kopierten Bewegungswerten.
+  Checkpoint-Restore normalisiert ältere skalare Saves in Vektoren und ergänzt
+  fehlende Manövrierwerte mit null: Combat-, Sektor-NPC-, lokale Piraten-,
+  Miner- und Drohnenstände. Ein Verhaltensvergleich entdeckte und behob die
+  seitliche Drift-Dämpfung beim Combat-Rücklauf nach dem Stationshalt-Reset.
+  Tests verifizieren den Combat→Local-Space-Rundlauf, Checkpoint-Parität,
+  parallele Duelle und Alt-Save-Migration. `npm run check:quick` lief mit 405
+  Tests und null Fehlern; `npm run build` lief erfolgreich. Vite meldete die
+  bestehende Warnung zum 1,2-MB-JavaScript-Bundle. Branch bleibt
+  `refactor/unified-field-flight-physics`, HEAD `d3954f3`; keine Commits, kein
+  Push, kein Main-Merge. Produktionsquellstand im Arbeitsbaum gegenüber HEAD
+  (einschließlich neuer Dateien): 851 hinzugefügt, 390 entfernt, netto +461
+  Zeilen. Dieser Zuwachs ist die gemeinsame Zustands-/Save-Migration und
+  extrahierte Helfer; kein Paketabschluss. Noch ausstehend ist die tatsächliche
+  Branch-CI nach Commit/Push. Für F03 bleibt die Massenregel offen: `ShipDefinition`
+  hat keine Hull-Masse und Collision-`pushWeight` ist kein bestätigtes Maß;
+  keine Masse oder Rotationsinertie erfunden.
+- 27.11.2026: F01 in Bearbeitung, noch nicht abgenommen. `PhysicalShipState`
+  vereinheitlicht Position, Heading und XY-Geschwindigkeitsvektor;
+  `ManeuveringShipState` ergänzt gemeinsame Dreh- und Schubfelder für
+  bewegungsfähige Schiffe. Spieler-
+  Local-Space, native Combatants, NPC-Sektor-Kampfzustände, lokale Miner,
+  Bergungsschiffe, Piraten und Sicherheitsdrohne führen ihre Translation nun
+  als Vektor; `speed` wird daraus abgeleitet. Feldkampf- und zivile
+  Checkpoint-Übergänge übertragen den Vektor. Ältere NPC- und Drohnen-Checkpoints
+  ohne Vektor werden aus Heading und bisheriger Geschwindigkeit migriert.
+  `moveFieldShip` schreibt den Vektor statt eines separaten Skalars.
+  Gemeinsame NPC-Pose-/Cruise-Speed-Helfer und Salvage-Kontaktauflösung aus den
+  Services extrahiert; alle betroffenen Services bleiben unter der
+  500-Zeilen-Grenze. Combat-Checkpoint-Restore akzeptiert historische
+  Skalarzustände und überführt sie beim Laden in Vektoren. Produktionscode-Diff
+  seit Branch-HEAD bis hier: 493 hinzugefügt, 372 entfernt, netto +121 Zeilen.
+  Vergleichs-/Regressionstests: `tests/combat/shared-physical-velocity.test.cjs`,
+  `tests/persistence/career-local-pirate-checkpoint.test.cjs`,
+  `tests/persistence/career-local-miner-checkpoint.test.cjs`,
+  `tests/operations/local-pirate-shared-routing.test.cjs`,
+  `tests/local-space/local-combat-pirate-visibility.test.cjs`,
+  `tests/local-space/local-pirate-background-continuity.test.cjs`,
+  `tests/operations/background-drone-security.test.cjs`,
+  `tests/operations/security-drone-solid-contacts.test.cjs`,
+  `tests/operations/security-drone-debris-shield-mk3.test.cjs`,
+  `tests/persistence/career-security-drone.test.cjs` und
+  `tests/combat/security-drone-combat-pose-visual.test.cjs` liefen erfolgreich.
+  Typecheck, Lint, Dependency-/Persistence-Check sowie gezielte Combat-, NPC-,
+  Salvage-, Piraten- und Drohnen-Checkpoint-Tests liefen erfolgreich. Im
+  Folgeeintrag vom 28.11.2026 stehen der aktuelle Gesamtlauf und Build.
+  Inventarprüfung:
+  `ShipDefinition` enthält nominale Länge, aber keine Hull-Masse; die bisherige
+  Collision-`pushWeight`-Policy ist kein nachgewiesenes Massenmaß. Keine neue
+  Masse oder Rotationsinertie erfunden. Offene Abnahmebedingung: tatsächliche
+  Branch-CI. Keine zentrale Hull-Masse vorhanden; eine Massenregel wird nicht
+  ohne Mechanikentscheidung ergänzt.
 - 27.11.2026: PR #408 gemergt; Main 6babc77 geprüft. PR #409 ist ein
   separater Audit-PR, nicht Produktionsbasis. Sicherungsbranch vorhanden.
 - Historische Referenz #400 identifiziert; erste statische Vergleiche erfolgt.
-- Dieser Branch dokumentiert zunächst Auftrag und Abnahme. Keine neue
-  Produktionsphysik implementiert, alle F01-F08 offen.
-- Nächster Schritt: F01/F02-Aufrufer- und Schreibstelleninventar, historische
-  PvP-Replays sichern; dann gemeinsamen Zustand und Flugsteuerung migrieren.
+- Nächster Schritt: F01 auf Branch-CI ausführen und deren Ergebnis dokumentieren;
+  danach erst F02 beginnen.
 - Bei jedem Arbeitsstand ergänzen: Datum, Commit/PR, Paket, konkret geänderte
   Dateien/Funktionen, entfernte Pfade, offene Aufrufer, neue/entfernte src-Zeilen,
   tatsächlich gelaufene Tests, CI-Ergebnis, Risiken und nächster Schritt.

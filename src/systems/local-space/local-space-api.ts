@@ -4,6 +4,7 @@ import type {
   MiningResourceSelection,
 } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { ManeuveringShipControls } from '../../core/physical-ship-state';
 import type { PointRoutePlanningOptions, RoutePlanningOptions } from './local-space-navigation';
 
 export interface LocalSpaceService {
@@ -20,7 +21,12 @@ export interface LocalSpaceService {
   startShortRangeScan(route: readonly WorldPoint[]): LocalSpaceSnapshot;
   resolveMiningEvent(choiceId: string): MiningEventResolution | null;
   cancelMining(): LocalSpaceSnapshot;
-  syncCombatPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot;
+  syncCombatPose(
+    position: WorldPoint,
+    headingRadians: number,
+    velocity: WorldPoint,
+    maneuvering?: Partial<ManeuveringShipControls>
+  ): LocalSpaceSnapshot;
   tickCombatEnvironment(deltaSeconds: number): LocalSpaceSnapshot;
   tick(deltaSeconds: number, combatOwnsBodies?: boolean): LocalSpaceSnapshot;
 }

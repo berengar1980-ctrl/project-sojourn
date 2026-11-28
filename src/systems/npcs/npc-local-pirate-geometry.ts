@@ -2,12 +2,11 @@ import type { WorldPoint } from '../../core/world-types';
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { FieldRouteObstacle, FieldRouteState } from '../navigation/field-ship-routing';
 import { hashId } from './npc-mining-targets';
+import type { PhysicalShipState } from '../../core/physical-ship-state';
 
-export interface PirateRuntime {
+export interface PirateRuntime extends PhysicalShipState {
   readonly npcId: string;
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
+  readonly speed: number;
   awaitingCombat: boolean;
   routeState?: FieldRouteState;
 }

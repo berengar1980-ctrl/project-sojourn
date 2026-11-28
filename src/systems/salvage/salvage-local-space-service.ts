@@ -1,4 +1,5 @@
 import type { SalvageLocalSpaceService, SalvageRuntimeOptions } from './salvage-local-space-types';
+import type { ManeuveringShipControls } from '../../core/physical-ship-state';
 export type { SalvageLocalSpaceService } from './salvage-local-space-types';
 import {
   clampPoint,
@@ -241,12 +242,18 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
   syncCombatPose(
     position: WorldPoint,
     headingRadians: number,
-    speed: number
+    velocity: WorldPoint,
+    maneuvering?: Partial<ManeuveringShipControls>
   ): SalvageLocalSpaceSnapshot {
     this.ship.position = clampPoint(position, this.options.field.width, this.options.field.height);
     this.ship.headingRadians = headingRadians;
     this.finishIdle();
-    this.ship.speed = Math.max(0, speed);
+    this.ship.velocity = { ...velocity };
+    if (maneuvering) {
+      this.ship.turnRateRadiansPerSecond = maneuvering.turnRateRadiansPerSecond ?? 0;
+      this.ship.angularThrust = maneuvering.angularThrust ?? 0;
+      this.ship.lateralThrust = maneuvering.lateralThrust ?? 0;
+    }
     return this.getSnapshot();
   }
 

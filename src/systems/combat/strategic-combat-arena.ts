@@ -20,6 +20,12 @@ function initialCombatMotion(arenaOptions?: StrategicCombatArenaOptions) {
     ...(arenaOptions?.defenderHeadingRadians !== undefined
       ? { defenderHeadingRadians: arenaOptions.defenderHeadingRadians }
       : {}),
+    ...(arenaOptions?.attackerManeuvering
+      ? { attackerManeuvering: arenaOptions.attackerManeuvering }
+      : {}),
+    ...(arenaOptions?.defenderManeuvering
+      ? { defenderManeuvering: arenaOptions.defenderManeuvering }
+      : {}),
   };
 }
 

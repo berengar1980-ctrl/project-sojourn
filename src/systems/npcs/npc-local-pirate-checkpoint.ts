@@ -9,6 +9,11 @@ export interface LocalPirateCheckpointShip {
   readonly position: WorldPoint;
   readonly headingRadians: number;
   readonly speed: number;
+  readonly velocity?: WorldPoint;
+  readonly turnRateRadiansPerSecond?: number;
+  readonly angularThrust?: number;
+  readonly lateralThrust?: number;
+  readonly longitudinalThrust?: number;
   readonly awaitingCombat: boolean;
   readonly routeState?: FieldRouteState;
 }
@@ -36,6 +41,10 @@ function validPosition(value: unknown, width: number, height: number): boolean {
   return value.x <= width && value.y <= height;
 }
 
+function validVelocity(value: unknown): boolean {
+  return record(value) && finite(value.x) && finite(value.y);
+}
+
 function validRoute(value: unknown, width: number, height: number): boolean {
   if (!record(value) || !validPosition(value.target, width, height)) return false;
   if (!Array.isArray(value.points) || value.points.length === 0) return false;
@@ -50,6 +59,15 @@ function validShip(value: unknown, width: number, height: number): boolean {
   if (typeof value.npcId !== 'string' || !value.npcId) return false;
   if (!validPosition(value.position, width, height)) return false;
   if (!finite(value.headingRadians) || !finite(value.speed, 0)) return false;
+  if (value.velocity !== undefined && !validVelocity(value.velocity)) return false;
+  for (const key of [
+    'turnRateRadiansPerSecond',
+    'angularThrust',
+    'lateralThrust',
+    'longitudinalThrust',
+  ]) {
+    if (value[key] !== undefined && !finite(value[key], -Infinity)) return false;
+  }
   if (typeof value.awaitingCombat !== 'boolean') return false;
   return value.routeState === undefined || validRoute(value.routeState, width, height);
 }

@@ -1,6 +1,11 @@
 import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import { angleDelta, heading, turnToward } from './local-space-motion';
+import {
+  localShipForwardSpeed,
+  localShipLateralSpeed,
+  setLocalShipComponents,
+} from './local-space-ship-velocity';
 
 const MAX_TURN_RATE = 1.15;
 
@@ -10,14 +15,7 @@ interface MiningFormationOptions {
   readonly asteroids: readonly LocalAsteroid[];
   readonly holdOffset: WorldPoint | null;
   readonly shieldRadiusX: number;
-  readonly forwardVelocity: number;
-  readonly lateralVelocity: number;
   readonly deltaSeconds: number;
-}
-
-export interface MiningFormationVelocity {
-  readonly forward: number;
-  readonly lateral: number;
 }
 
 function closestClosingDebris(
@@ -42,14 +40,13 @@ function closestClosingDebris(
   return threat ? { dx: threat.dx, dy: threat.dy } : null;
 }
 
-export function advanceMiningFormation(options: MiningFormationOptions): MiningFormationVelocity {
+export function advanceMiningFormation(options: MiningFormationOptions): void {
   const { ship, asteroid, holdOffset, deltaSeconds } = options;
   if (!holdOffset) {
-    ship.speed = 0;
     ship.lateralThrust = 0;
     ship.turnRateRadiansPerSecond = 0;
     ship.angularThrust = 0;
-    return { forward: options.forwardVelocity, lateral: options.lateralVelocity };
+    return;
   }
 
   const desiredPosition = {
@@ -79,36 +76,37 @@ export function advanceMiningFormation(options: MiningFormationOptions): MiningF
   const lateralError = errorX * sideX + errorY * sideY;
 
   const threat = closestClosingDebris(ship, options.asteroids, options.shieldRadiusX);
-  let lateralThrust = -options.lateralVelocity * 0.68 + lateralError * 0.13;
+  const currentLateral = localShipLateralSpeed(ship);
+  const currentForward = localShipForwardSpeed(ship);
+  let lateralThrust = -currentLateral * 0.68 + lateralError * 0.13;
   lateralThrust = Math.max(-0.62, Math.min(0.62, lateralThrust));
   if (threat) {
     const threatSide = threat.dx * sideX + threat.dy * sideY;
     lateralThrust = threatSide >= 0 ? -1 : 1;
   }
-  if (Math.abs(lateralError) < 1.5 && Math.abs(options.lateralVelocity) < 0.18) {
+  if (Math.abs(lateralError) < 1.5 && Math.abs(currentLateral) < 0.18) {
     lateralThrust = 0;
   }
 
-  let forwardThrust = -options.forwardVelocity * 0.62 + forwardError * 0.11;
+  let forwardThrust = -currentForward * 0.62 + forwardError * 0.11;
   forwardThrust = Math.max(-0.52, Math.min(0.72, forwardThrust));
-  if (Math.abs(forwardError) < 1.5 && Math.abs(options.forwardVelocity) < 0.2) {
+  if (Math.abs(forwardError) < 1.5 && Math.abs(currentForward) < 0.2) {
     forwardThrust = 0;
   }
 
   const lateral = Math.max(
     -3.5,
-    Math.min(3.5, options.lateralVelocity + lateralThrust * 2.2 * deltaSeconds)
+    Math.min(3.5, currentLateral + lateralThrust * 2.2 * deltaSeconds)
   );
   const forward = Math.max(
     -3.2,
-    Math.min(4.5, options.forwardVelocity + forwardThrust * 2.8 * deltaSeconds)
+    Math.min(4.5, currentForward + forwardThrust * 2.8 * deltaSeconds)
   );
 
   ship.lateralThrust = lateralThrust;
+  setLocalShipComponents(ship, forward, lateral);
   ship.position = {
     x: ship.position.x + (forwardX * forward + sideX * lateral) * deltaSeconds,
     y: ship.position.y + (forwardY * forward + sideY * lateral) * deltaSeconds,
   };
-  ship.speed = Math.max(0, forward);
-  return { forward, lateral };
 }

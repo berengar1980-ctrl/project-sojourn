@@ -11,7 +11,9 @@ import type { ShipDefinition } from '../../core/ship-types';
 import type { SectorNpcState } from '../../core/npc-types';
 
 import type { WorldPoint } from '../../core/world-types';
+import type { ManeuveringShipControls } from '../../core/physical-ship-state';
 import type { MiningEventCheckpoint } from '../local-space/mining-event-checkpoint';
+import type { PhysicalShipState } from '../../core/physical-ship-state';
 
 export type LocalNpcMiningPhase = 'entering' | 'approaching' | 'scanning' | 'mining' | 'exiting';
 
@@ -22,13 +24,11 @@ export interface NpcOreCollection {
   readonly durationSeconds: number;
 }
 
-export interface LocalNpcMinerState {
+export interface LocalNpcMinerState extends PhysicalShipState {
   readonly npcId: string;
   readonly name: string;
   readonly shipId: string;
-  position: WorldPoint;
-  headingRadians: number;
-  speed: number;
+  readonly speed: number;
   routeState?: FieldRouteState;
   phase: LocalNpcMiningPhase;
   targetAsteroidId: string | null;
@@ -54,7 +54,13 @@ export interface LocalMinerCheckpoint {
 export interface NpcLocalMiningService {
   exportState(): LocalMinerCheckpoint;
   readonly ships: readonly LocalNpcMinerState[];
-  syncCombatPose(npcId: string, position: WorldPoint, headingRadians: number, speed: number): void;
+  syncCombatPose(
+    npcId: string,
+    position: WorldPoint,
+    headingRadians: number,
+    velocity: WorldPoint,
+    maneuvering?: Partial<ManeuveringShipControls>
+  ): void;
   tick(deltaSeconds: number, combatantId?: string): void;
 }
 

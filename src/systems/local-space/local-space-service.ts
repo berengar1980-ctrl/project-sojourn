@@ -9,6 +9,7 @@ import type {
   MiningResourceSelection,
 } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import type { ManeuveringShipControls } from '../../core/physical-ship-state';
 import {
   createShieldWorldGeometry,
   resolveAsteroidCollisions,
@@ -17,7 +18,14 @@ import {
 import { faceAutopilotTarget, resetAutopilotMotion } from './local-space-autopilot';
 import { integrateAsteroids } from './local-space-physics';
 import { calculateMiningImpact } from './mining-impact';
-import { localShipVelocity } from './local-space-ship-velocity';
+import {
+  localShipForwardSpeed,
+  localShipLateralSpeed,
+  localShipVelocity,
+  ensureLocalShipPhysicalState,
+  setLocalShipComponents,
+  setLocalShipVelocity,
+} from './local-space-ship-velocity';
 import { hasMineableDeposits } from './mining-chunk-service';
 import { advanceMiningFormation } from './local-space-mining-formation';
 import { selectedAsteroid } from './local-space-scanning';
@@ -65,12 +73,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private miningAccumulator = 0;
   private miningHoldOffset: WorldPoint | null = null;
   private stationKeepingPosition: WorldPoint;
-  private shipForwardVelocity = 0;
-  private shipLateralVelocity = 0;
   private readonly idleStationKeeping: IdleStationKeepingState;
 
   constructor(private readonly options: LocalSpaceServiceOptions) {
     this.instance = options.instance;
+    ensureLocalShipPhysicalState(this.instance.ship);
     this.scanClock = new LocalSpaceScanClock(options.instance);
     this.approachSpeed = options.approachSpeed;
     this.turnRateMultiplier = options.turnRateMultiplier ?? 1;
@@ -105,12 +112,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
   /** Preserve the complete instantaneous inertial velocity when entering combat. */
   getShipWorldVelocity(): WorldPoint {
-    return localShipVelocity(this.instance.ship, {
-      miningPhase: this.miningPhase,
-      shipForwardVelocity: this.shipForwardVelocity,
-      shipLateralVelocity: this.shipLateralVelocity,
-      idleLateralVelocity: this.idleStationKeeping.lateralVelocity,
-    });
+    return localShipVelocity(this.instance.ship);
   }
 
   getSnapshot(): LocalSpaceSnapshot {
@@ -172,8 +174,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.navigationIndex = 1;
     this.hazards.reset();
     resetAutopilotMotion(this.instance.ship);
-    this.shipForwardVelocity = 0;
-    this.shipLateralVelocity = 0;
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
     return this.getSnapshot();
   }
@@ -236,13 +236,17 @@ class LocalSpaceRuntime implements LocalSpaceService {
     return this.getSnapshot();
   }
 
-  syncCombatPose(position: WorldPoint, headingRadians: number, speed: number): LocalSpaceSnapshot {
+  syncCombatPose(
+    position: WorldPoint,
+    headingRadians: number,
+    velocity: WorldPoint,
+    maneuvering?: Partial<ManeuveringShipControls>
+  ): LocalSpaceSnapshot {
     this.instance.ship.position = {
       x: Math.max(0, Math.min(this.instance.width, position.x)),
       y: Math.max(0, Math.min(this.instance.height, position.y)),
     };
     this.instance.ship.headingRadians = headingRadians;
-    this.instance.ship.speed = Math.max(0, speed);
     this.stationKeepingPosition = { ...this.instance.ship.position };
     this.navigationTarget = null;
     this.navigationRoute = [];
@@ -254,6 +258,12 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.scanTargetId = null;
     this.approachPurpose = null;
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
+    setLocalShipVelocity(this.instance.ship, velocity);
+    if (maneuvering) {
+      this.instance.ship.turnRateRadiansPerSecond = maneuvering.turnRateRadiansPerSecond ?? 0;
+      this.instance.ship.angularThrust = maneuvering.angularThrust ?? 0;
+      this.instance.ship.lateralThrust = maneuvering.lateralThrust ?? 0;
+    }
     return this.getSnapshot();
   }
 
@@ -297,12 +307,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
 
     const collisions = resolveLocalWreckContacts(
       this.instance.ship,
-      localShipVelocity(this.instance.ship, {
-        miningPhase: this.miningPhase,
-        shipForwardVelocity: this.shipForwardVelocity,
-        shipLateralVelocity: this.shipLateralVelocity,
-        idleLateralVelocity: this.idleStationKeeping.lateralVelocity,
-      }),
+      localShipVelocity(this.instance.ship),
       this.instance.asteroids,
       this.options.additionalObstacles?.() ?? [],
       this.shield,
@@ -318,8 +323,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.finishManualNavigation();
     this.miningAccumulator = 0;
     resetAutopilotMotion(this.instance.ship);
-    this.shipForwardVelocity = 0;
-    this.shipLateralVelocity = 0;
     this.miningHoldOffset = null;
     this.approachRoute = route;
     this.hazards.reset();
@@ -360,8 +363,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.miningHoldOffset = null;
     this.stationKeepingPosition = { ...this.instance.ship.position };
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
-    this.shipForwardVelocity *= 0.25;
-    this.shipLateralVelocity *= 0.35;
+    setLocalShipComponents(
+      this.instance.ship,
+      localShipForwardSpeed(this.instance.ship) * 0.25,
+      localShipLateralSpeed(this.instance.ship) * 0.35
+    );
   }
 
   private updateManualNavigation(deltaSeconds: number): void {
@@ -388,8 +394,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.navigationIndex = 0;
     resetAutopilotMotion(this.instance.ship);
     this.stationKeepingPosition = { ...this.instance.ship.position };
-    this.shipForwardVelocity = 0;
-    this.shipLateralVelocity = 0;
     resetIdleStationKeeping(this.idleStationKeeping, this.instance.ship);
   }
 
@@ -424,8 +428,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     if (this.approachPurpose === 'scan') {
       resetAutopilotMotion(ship);
       this.stationKeepingPosition = { ...ship.position };
-      this.shipForwardVelocity = 0;
-      this.shipLateralVelocity = 0;
       this.scanClock.resetShort();
       this.miningPhase = 'scanning';
       return;
@@ -441,8 +443,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
       y: ship.position.y - asteroid.position.y,
     };
     this.stationKeepingPosition = { ...ship.position };
-    this.shipForwardVelocity = 0;
-    this.shipLateralVelocity = 0;
     this.miningEvents.begin(asteroid);
     this.miningPhase = 'extracting';
   }
@@ -476,18 +476,14 @@ class LocalSpaceRuntime implements LocalSpaceService {
   }
 
   private updateMiningFormation(deltaSeconds: number, asteroid: LocalAsteroid): void {
-    const velocity = advanceMiningFormation({
+    advanceMiningFormation({
       ship: this.instance.ship,
       asteroid,
       asteroids: this.instance.asteroids,
       holdOffset: this.miningHoldOffset,
       shieldRadiusX: this.shield.radiusX,
-      forwardVelocity: this.shipForwardVelocity,
-      lateralVelocity: this.shipLateralVelocity,
       deltaSeconds,
     });
-    this.shipForwardVelocity = velocity.forward;
-    this.shipLateralVelocity = velocity.lateral;
   }
 }
 

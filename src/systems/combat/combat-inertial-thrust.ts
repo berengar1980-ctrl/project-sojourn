@@ -86,5 +86,4 @@ export function applyInertialThrust(
   combatant.position.y = clamp(nextY, padding, arena.height - padding);
   if (nextX !== combatant.position.x) combatant.velocity.x = 0;
   if (nextY !== combatant.position.y) combatant.velocity.y = 0;
-  combatant.speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
 }

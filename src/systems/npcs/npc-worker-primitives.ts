@@ -2,6 +2,8 @@ import { boundedSimulationStep, COMBAT_STEP_SECONDS } from '../../core/simulatio
 import { npcCargoUsed } from '../economy/npc-cargo';
 import type { WorldPoint } from '../../core/world-types';
 import type { SectorNpcState } from '../../core/npc-types';
+import type { PhysicalShipState } from '../../core/physical-ship-state';
+import { velocityFromHeading } from '../../core/physical-ship-state';
 
 export const WORKER_SCAN_SECONDS = 5;
 
@@ -29,13 +31,12 @@ export function workerAtAssignment(npc: SectorNpcState, locationId: string): boo
   );
 }
 
-interface WorkerScanState {
-  speed: number;
+interface WorkerScanState extends PhysicalShipState {
   scanProgress: number;
 }
 
 export function advanceWorkerScan(ship: WorkerScanState, dt: number): boolean {
-  ship.speed = 0;
+  ship.velocity = { x: 0, y: 0 };
   ship.scanProgress = Math.min(1, ship.scanProgress + dt / WORKER_SCAN_SECONDS);
   return ship.scanProgress >= 1;
 }
@@ -45,7 +46,7 @@ export function workerMustExit(npc: SectorNpcState, accepted: number): boolean {
 }
 
 export function moveToward(
-  ship: { position: WorldPoint; headingRadians: number; speed: number },
+  ship: PhysicalShipState,
   target: WorldPoint,
   speed: number,
   dt: number
@@ -54,10 +55,10 @@ export function moveToward(
   const dy = target.y - ship.position.y;
   const remaining = Math.hypot(dx, dy);
   ship.headingRadians = Math.atan2(dy, dx);
-  ship.speed = speed;
+  ship.velocity = velocityFromHeading(ship.headingRadians, speed);
   if (remaining <= Math.max(2, speed * dt)) {
     ship.position = { ...target };
-    ship.speed = 0;
+    ship.velocity = { x: 0, y: 0 };
     return true;
   }
   ship.position = {

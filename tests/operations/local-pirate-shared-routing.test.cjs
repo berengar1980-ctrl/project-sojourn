@@ -26,7 +26,7 @@ const rock = {
 const npc = { npcId: 'civilian-miner', position: { x: 950, y: 500 } };
 const traffic = new LocalPirateTraffic(1400, 1100, 31);
 traffic.reconcile([pirate]);
-traffic.syncCombatPose(pirate.id, { x: 80, y: 500 }, 0);
+traffic.syncCombatPose(pirate.id, { x: 80, y: 500 }, 0, { x: 0, y: 0 });
 
 let intercepted = false;
 let closest = Infinity;

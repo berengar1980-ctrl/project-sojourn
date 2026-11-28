@@ -26,7 +26,5 @@ export function resolveCombatantCollision(
     second.velocity.x += normal.x * impulse;
     second.velocity.y += normal.y * impulse;
   }
-  first.speed = Math.hypot(first.velocity.x, first.velocity.y);
-  second.speed = Math.hypot(second.velocity.x, second.velocity.y);
   return true;
 }

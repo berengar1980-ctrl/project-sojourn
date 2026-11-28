@@ -269,8 +269,9 @@ assert(
   'mining events must migrate the six physical Voidbound mining hazards without fake NPC encounters'
 );
 assert(
-  service.includes('shipLateralVelocity'),
-  'ship station keeping must use real lateral velocity'
+  service.includes('localShipVelocity(this.instance.ship)') &&
+    stationKeeping.includes('localShipLateralSpeed(ship)'),
+  'ship station keeping must use the authoritative world velocity vector'
 );
 assert(
   service.includes('updateIdleStationKeeping'),
@@ -304,7 +305,7 @@ assert(
   'mining formation must move its desired point with the target asteroid'
 );
 assert(
-  service.includes('shipForwardVelocity'),
+  miningFormation.includes('localShipForwardSpeed(ship)'),
   'mining formation must follow or back away along the ship axis'
 );
 assert(
@@ -384,7 +385,7 @@ assert(autopilot.includes('MAX_TURN_RATE'), 'route following must limit ship tur
 assert(
   autopilot.includes('REVERSE_CORRECTION_DISTANCE') &&
     autopilot.includes('advanceReverseCorrection') &&
-    autopilot.includes('ship.speed = -reverseSpeed'),
+    autopilot.includes('setLocalShipDisplacement(ship, start, deltaSeconds)'),
   'short final corrections behind the ship must use reverse thrust without turning around'
 );
 assert(

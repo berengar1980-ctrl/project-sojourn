@@ -30,6 +30,19 @@ function loadResolver(mocks) {
   return exports;
 }
 
+function combatantPose(id, name, hullHp, position, velocity, headingRadians) {
+  return {
+    id,
+    ...(name ? { name } : {}),
+    hullHp,
+    hullMaxHp: 100,
+    position,
+    velocity,
+    headingRadians,
+    speed: Math.hypot(velocity.x, velocity.y),
+  };
+}
+
 function scenario(origin, boarding = false) {
   const calls = [];
   let returnFromBoarding;
@@ -45,22 +58,8 @@ function scenario(origin, boarding = false) {
     elapsedSeconds: 12,
     lastEvent: 'battle ended',
     outcomeReason: 'destruction',
-    attacker: {
-      id: 'player',
-      hullHp: 72,
-      hullMaxHp: 100,
-      position: { x: 12, y: 34 },
-      headingRadians: 1,
-      speed: 2,
-    },
-    defender: {
-      id: 'miner',
-      name: 'Miner',
-      hullHp: 0,
-      position: { x: 56, y: 78 },
-      headingRadians: 2,
-      speed: 3,
-    },
+    attacker: combatantPose('player', null, 72, { x: 12, y: 34 }, { x: -2, y: 1 }, 1),
+    defender: combatantPose('miner', 'Miner', 0, { x: 56, y: 78 }, { x: 0, y: -3 }, 2),
   };
   let combat = { getSnapshot: () => snapshot };
   const context = {
@@ -164,11 +163,24 @@ for (const origin of ['local-space', 'salvage-space']) {
   if (origin === 'local-space') {
     assert.deepEqual(
       s.calls.find(([name]) => name === 'player-pose'),
-      ['player-pose', s.snapshot.attacker.position, 1, 2]
+      [
+        'player-pose',
+        s.snapshot.attacker.position,
+        1,
+        s.snapshot.attacker.velocity,
+        s.snapshot.attacker,
+      ]
     );
     assert.deepEqual(
       s.calls.find(([name]) => name === 'npc-pose'),
-      ['npc-pose', 'miner', s.snapshot.defender.position, 2, 3]
+      [
+        'npc-pose',
+        'miner',
+        s.snapshot.defender.position,
+        2,
+        s.snapshot.defender.velocity,
+        s.snapshot.defender,
+      ]
     );
   } else assert.equal(s.calls.find(([name]) => name === 'salvage-finish')[1], s.snapshot);
 }

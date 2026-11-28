@@ -1,5 +1,6 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldMap } from '../../core/world-types';
+import { ensurePhysicalShipVelocity } from '../../core/physical-ship-state';
 import { cloneCareerJson } from './career-save-contract';
 
 export interface CareerNpcCheckpoint {
@@ -73,7 +74,9 @@ function movement(value: unknown, ids: ReadonlySet<string>): boolean {
     value.targetId.length > 0 &&
     position(value.position) &&
     number(value.headingRadians, -Infinity) &&
-    number(value.speed)
+    (record(value.velocity)
+      ? number(value.velocity.x, -Infinity) && number(value.velocity.y, -Infinity)
+      : number(value.speed))
   );
 }
 
@@ -166,8 +169,11 @@ export function captureCareerNpcs(
   npcs: readonly SectorNpcState[]
 ): CareerNpcCheckpoint {
   const detached = cloneCareerJson({ version: 1 as const, worldId: world.id, npcs });
-  stageCareerNpcs(world, detached);
-  return detached;
+  return {
+    version: 1,
+    worldId: world.id,
+    npcs: cloneCareerJson(stageCareerNpcs(world, detached)),
+  };
 }
 
 /** Validate cross-NPC references before returning a new, independent array. */
@@ -189,5 +195,8 @@ export function stageCareerNpcs(world: WorldMap, candidate: unknown): SectorNpcS
   if (!snapshot.npcs.every((npc) => validNpc(npc, world, ids))) {
     throw new Error('Beschädigte NPC-Route, Ladung oder Kampfzuordnung.');
   }
-  return snapshot.npcs as SectorNpcState[];
+  return snapshot.npcs.map((npc) => {
+    if (npc.combatMovement) ensurePhysicalShipVelocity(npc.combatMovement);
+    return npc;
+  }) as SectorNpcState[];
 }

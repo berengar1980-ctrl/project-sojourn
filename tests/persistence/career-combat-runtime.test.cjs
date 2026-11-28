@@ -46,6 +46,10 @@ const attacker = setup('career-player');
 const defender = setup('career-pirate');
 const initial = createStrategicCombatService(attacker, defender, 431, arena);
 for (let i = 0; i < 30; i += 1) initial.tick(0.08);
+initial.getParallelActor('attacker').velocity = { x: -17, y: 23 };
+initial.getParallelActor('attacker').turnRateRadiansPerSecond = -0.16;
+initial.getParallelActor('attacker').angularThrust = 0.38;
+initial.getParallelActor('attacker').lateralThrust = -0.54;
 const saved = initial.exportCareerState();
 assert(saved.randomCalls >= 0);
 const restored = createStrategicCombatService(
@@ -59,9 +63,29 @@ assert.deepEqual(
   JSON.parse(JSON.stringify(restored.getSnapshot())),
   JSON.parse(JSON.stringify(initial.getSnapshot()))
 );
+assert.deepEqual(JSON.parse(JSON.stringify(restored.getParallelActor('attacker').velocity)), {
+  x: -17,
+  y: 23,
+});
+assert.equal(restored.getParallelActor('attacker').turnRateRadiansPerSecond, -0.16);
+assert.equal(restored.getParallelActor('attacker').angularThrust, 0.38);
+assert.equal(restored.getParallelActor('attacker').lateralThrust, -0.54);
 assert.deepEqual(
   JSON.parse(JSON.stringify(restored.exportCareerState())),
   JSON.parse(JSON.stringify(saved))
+);
+const legacy = JSON.parse(JSON.stringify(saved));
+for (const side of ['attacker', 'defender']) {
+  const actor = legacy.runtime[side];
+  delete actor.velocity;
+  actor.speed = 27;
+}
+const migratedLegacy = createStrategicCombatService(attacker, defender, 431, arena, legacy);
+const legacyHeading = legacy.runtime.attacker.headingRadians;
+assert.deepEqual(
+  migratedLegacy.getParallelActor('attacker').velocity,
+  { x: Math.cos(legacyHeading) * 27, y: Math.sin(legacyHeading) * 27 },
+  'legacy scalar combat saves migrate to the heading-aligned vector'
 );
 for (let i = 0; i < 100; i += 1) {
   const original = initial.tick(0.08);

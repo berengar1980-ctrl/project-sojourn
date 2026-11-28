@@ -57,17 +57,23 @@ function mirrorSalvageDuels(options: SalvagePirateResponseOptions): Set<string> 
       if (npc?.locationId !== field.sourceLocationId) continue;
       if (ship.hullHp <= 0) continue;
       combatants.add(npc.id);
-      pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians, ship.speed);
+      pirates.syncCombatPose(npc.id, ship.position, ship.headingRadians, ship.velocity, ship);
       for (const salvager of salvagers) {
         if (salvager.npcId === npc.id) {
           salvager.position = { ...ship.position };
           salvager.headingRadians = ship.headingRadians;
-          salvager.speed = ship.speed;
+          salvager.velocity = { ...ship.velocity };
           delete salvager.routeState;
         }
       }
       if (npc.id === 'security-drone:' + field.sourceLocationId) {
-        drone.syncCombatPose(ship.position, ship.headingRadians, ship.speed, ship.hullHp > 0);
+        drone.syncCombatPose(
+          ship.position,
+          ship.headingRadians,
+          ship.velocity,
+          ship.hullHp > 0,
+          ship
+        );
       }
     }
   }

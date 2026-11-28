@@ -206,7 +206,6 @@ export function moveCombatant(
   if (combatant.hullHp <= 0) {
     combatant.velocity.x = 0;
     combatant.velocity.y = 0;
-    combatant.speed = 0;
     combatant.turnRateRadiansPerSecond = 0;
     combatant.angularThrust = 0;
     return;

@@ -304,20 +304,23 @@ function syncNpcDuelFieldPoses(
         combatant.id,
         combatant.position,
         combatant.headingRadians,
-        combatant.speed
+        combatant.velocity,
+        combatant
       );
       field.pirates.syncCombatPose(
         combatant.id,
         combatant.position,
         combatant.headingRadians,
-        combatant.speed
+        combatant.velocity,
+        combatant
       );
       if (combatant.id === 'security-drone:' + field.locationId) {
         field.drone.syncCombatPose(
           combatant.position,
           combatant.headingRadians,
-          combatant.speed,
-          combatant.hullHp > 0
+          combatant.velocity,
+          combatant.hullHp > 0,
+          combatant
         );
       }
     }
@@ -402,7 +405,8 @@ export function advanceControllerFieldWorld(
       context.state.localSpace?.syncCombatPose(
         activeCombat.attacker.position,
         activeCombat.attacker.headingRadians,
-        activeCombat.attacker.speed
+        activeCombat.attacker.velocity,
+        activeCombat.attacker
       );
     }
     const grouped = (activeCombat ? localBySeed : backgroundBySeed).get(field.instance.seed) ?? [];
