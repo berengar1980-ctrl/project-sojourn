@@ -75,7 +75,14 @@ function advanceRamApproach(
     ship.ramApproach = { side, phase: 'flank', flankDirection: { x: sideX, y: sideY } };
   }
   const approach = ship.ramApproach;
-  if (approach.phase === 'impact') advanceRamImpact(approach, range, sideX, sideY, deltaSeconds);
+  if (approach.phase === 'impact') {
+    const towardX = (enemy.position.x - ship.position.x) / Math.max(1, range);
+    const towardY = (enemy.position.y - ship.position.y) / Math.max(1, range);
+    const closingSpeed =
+      (ship.velocity.x - enemy.velocity.x) * towardX +
+      (ship.velocity.y - enemy.velocity.y) * towardY;
+    advanceRamImpact(approach, range, closingSpeed, sideX, sideY, deltaSeconds);
+  }
   advanceRetryCooldown(approach, deltaSeconds);
   if (approach.retryCooldownSeconds === undefined && shouldIntercept(enemy)) {
     // Latch interception mode so the maneuver cannot flip between
@@ -87,12 +94,17 @@ function advanceRamApproach(
 function advanceRamImpact(
   approach: NonNullable<MutableCombatant['ramApproach']>,
   range: number,
+  closingSpeed: number,
   sideX: number,
   sideY: number,
   deltaSeconds: number
 ): void {
   approach.impactElapsedSeconds = (approach.impactElapsedSeconds ?? 0) + deltaSeconds;
-  if (approach.impactElapsedSeconds < RAM_IMPACT_RETRY_SECONDS || range <= RAM_RETRY_DISTANCE) {
+  const stalledNearContact = range <= RAM_RETRY_DISTANCE && closingSpeed < 25;
+  if (
+    approach.impactElapsedSeconds < RAM_IMPACT_RETRY_SECONDS ||
+    (range <= RAM_RETRY_DISTANCE && !stalledNearContact)
+  ) {
     return;
   }
   // A blocked or missed charge must release its direct-intercept lock and

@@ -326,16 +326,20 @@ Treffer/Rammquote, Dauer des Kreisflugs, Kollisionen mit großen Hindernissen,
 Zeit in Waffenreichweite, Waffennutzung, Flucht und Entererfolg.
 Unbeabsichtigte Balanceänderungen separat ausweisen.
 
-F05-Zwischenschritt vom 28.11.2026: Ein Ramm-Anflug, der acht Sekunden lang
-außerhalb der Nahkontaktzone bleibt, gibt seinen Impact-Lock auf, wechselt die
-Anflugseite und erhält drei Sekunden zum Neu-Ausrichten. Dadurch bleibt die
-vorhandene Flugphysik unverändert; der Schiffsaktor besitzt nur kurzlebigen
-Manöverzustand. `combat-ai-ram-boost-activation.test.cjs` prüft Abbruch,
-Seitenwechsel und Neu-Ausrichtung; der historische PvP-Trace sowie die
-Angriffspassagen- und Hindernisregressionen bleiben Teil des grünen Quick-Gates.
-F05 bleibt offen: integrierte Messungen für beidseitiges Rammen, tatsächliche
-Rammquote, Hindernis-/Abbruch-/Wiederholungsfälle und vorhandene Taktiken fehlen
-noch als gemeinsamer Abnahmenachweis.
+F05-Implementierung und Replay-Nachweis vom 28.11.2026: Ein Ramm-Anflug, der
+acht Sekunden lang ohne Nahkontakt bleibt oder im Nahbereich unter 25 m/s
+radialer Schließgeschwindigkeit festhängt, gibt seinen Impact-Lock auf,
+wechselt die Anflugseite und erhält drei Sekunden zum Neu-Ausrichten. Die
+vorhandene Flugphysik und Ramm-Schadensregel bleiben unverändert;
+`combat-ram-approach-replay.test.cjs` misst beidseitige Angriffe, bewegtes Ziel,
+physisches Großasteroid-Hindernis, Wiederholungen, Nahkontakt-Stillstand und
+Rammquote. Seed 123: bilateral 2 Anflüge je Schiff, 1 Kontakt, 0.25 Kontakte je
+Anflug; bewegtes Ziel 3/3 Kontakte (Quote 1.00); Hindernis 4/5 (Quote 0.80),
+24.29 m minimale Asteroidenfreiheit und 0 Kontaktframes. Alle Szenarien blieben
+unter 20 s Stillstand im Nahbereich und hatten keine ungültigen Frames. Der
+60-s-Kampfbasislauf misst außerdem Bewegung, Angriffspassagen, Waffenreichweite
+und Feuerphasen; die Flucht-, Minen-, Traktor-, Waffen- und Boardingregressionen
+laufen im Projekttestgate. F05 wartet noch auf das Quality Gate des PR-Heads.
 
 ### F06 – Gemeinsame Schiffs-, Crew- und Systemparameter
 
@@ -522,23 +526,24 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 - F04 loc: gegenüber F04-Basis `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`: 438 `src/`-Zeilen hinzugefügt, 225 entfernt, netto +213. Gemeinsame Route-Geometrie und Salvage-Arbeitspositionen ersetzen getrennte Pfade; der begrenzte Patrol-Algorithmus bleibt aus Performancegründen.
 - F04 parity: der historische #400 Replay-Trace bleibt auf allen drei Seeds exakt; dichte Asteroidenkämpfe behalten Angriffspassagen. Identische Combat-/Zivilgeometrie, bewegte Hindernisse, blockierte Ziele, Verkehr, Ausfahrt und Distress-Salvage sind durch Produktionspfad- und Regressionstests abgedeckt. Neue Geometrie führt keine Save-Autorität ein.
 - F05 code (in progress): `combat-ram-targeting.ts` beendet einen festgefahrenen Impact-Anflug nach acht Sekunden ohne Nahkontakt, löst den Intercept-Lock, wechselt die Flankenseite und lässt den Kurs drei Sekunden neu ausrichten. Es werden keine zweite Rammphysik und keine Balanceparameter eingeführt.
-- F05 test: `tests/combat/combat-ai-ram-boost-activation.test.cjs` deckt stagnierenden Anflug, Lock-Abbruch, Seitenwechsel und Neu-Ausrichtung ab. `npm run check:quick` bestand lokal mit 411/411 Tests, einschließlich des exakten historischen PvP-Replay-Hashes; `npm run build` bestand. Der bestehende Vite-Chunkgrößenhinweis bleibt.
-- F05 open: integrierte Abnahmeszenarien für beidseitiges Rammen, Treffer-/Rammquote, bewegtes Ziel, große Hindernisse, Abbruch/Retry sowie Vergleich von Waffenreichweite/-nutzung, Flucht und Entern; daher bleibt F05 unabgenommen.
+- F05 test: `combat-ai-ram-boost-activation.test.cjs` prüft Abbruch/Seitenwechsel; `combat-ram-approach-replay.test.cjs` misst bilaterale, bewegte und asteroidenblockierte Anflüge samt Wiederholung und Kontakten. Der 60-s-`combat-motion-baseline.cjs`-Lauf erfasst Passagen, Reichweite und Feuerphasen. Flucht, Minen, Traktor, Waffenwinkel, Treffer und Boarding bleiben durch bestehende Regressionen abgedeckt.
+- F05 local: Seed 123 ergab bilateral 2/2 Anflüge je Seite und 1 Rammkontakt (0.25 Kontakte/Anflug), am bewegten Ziel 3 Kontakte bei 3 Anflügen, am Asteroiden 4 Kontakte bei 5 Anflügen. Der Hindernisfall hielt 24.29 m Freiraum, ohne Kontaktframes. Nahkontakt-Stillstand blieb je Schiff unter 20 s; alle drei Simulationen hatten 0 ungültige Frames.
+- F05 parity: `combat-unified-flight-replay.test.cjs` besteht mit identischen historischen Hashes für die drei PvP-1vs1-Loadouts und vier Seeds. `npm run check:quick` und `npm run build` liefen lokal erfolgreich; der Quality-Gate-Status des neuen PR-Heads steht noch aus.
 
 ## Arbeitslog und Übergabe an neue Chats
 
-- 28.11.2026: F05 begonnen. Audit von `combat-flight-intent.ts`,
+- 28.11.2026: F05-Audit und Replay-Implementierung. Audit von `combat-flight-intent.ts`,
   `combat-ram-targeting.ts`, `combat-route-steering.ts` und
   `strategic-combat-movement.ts`: bestehende Waffen-/Flucht-/Minen-/Traktor-/
   Boardingpfade und historische PvP-Replays bleiben erhalten. Der direkte
   Ramm-Intercept hatte keinen Abbruch bei blockiertem oder verfehltem Anflug;
-  ein achtsekündiger Nahkontakt-Timeout mit Flankenwechsel und kurzer
-  Neu-Ausrichtung ergänzt. Tests für den Retry und das vollständige
-  `npm run check:quick` (411/411), Format, Lint, Typecheck,
-  Dependency-/Persistenzprüfung und Build bestanden. F05 bleibt offen bis zu
-  integrierten beidseitigen Ramm-/Hindernisreplays und den dokumentierten
-  Kampfmetriken. Nächster Schritt: F05-Szenariomatrix messen, alle Taktiken und
-  Auswirkungen bewerten, dann das Paket abnehmen.
+  Nahbereichs-Stillstand konnte außerdem den Impact-Lock halten. Achtsekündiger
+  Abort mit Flankenwechsel und kurzer Neu-Ausrichtung ergänzt und integrierte
+  bilaterale, bewegte sowie physische Asteroiden-Replays samt Metriken ergänzt.
+  Die historischen 1vs1-Hashes blieben exakt. Lokal `npm run check:quick`
+  (412/412), Format, Lint, Typecheck, Dependency-/Persistenzprüfung und Build
+  bestanden. PR-Head-Quality-Gate steht noch aus; F05 erst nach dessen grünem
+  Abschluss abnehmen. Build meldet nur den vorhandenen Chunkgrößenhinweis.
 
 - 28.11.2026: F04-Audit und Implementierung auf Basis der F03-Abnahme
   `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`. PvP-Flankenversuch und zivile
