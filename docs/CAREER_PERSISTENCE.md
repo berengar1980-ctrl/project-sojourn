@@ -1647,3 +1647,10 @@ Sie besitzen keine eigene veränderliche Sammlung; die Position und der
 Geschwindigkeitsvektor bleiben den vorhandenen Checkpoint-Eigentümern zugeordnet.
 Der NPC-Salvage-Kontaktadapter delegiert an die bestehenden Schild- und
 Bergungskontaktlöser und besitzt ebenfalls keinen zusätzlichen Save-Zustand.
+
+### Gemeinsame Flugphysik (F02)
+
+Die neuen NPC-Piraten-Helfer werten vorhandene Sektor-NPC- und Drohnenwerte aus:
+Verfügbarkeitsprädikate und Flugleistungsauflösung besitzen keinen eigenen
+veränderlichen Zustand oder Checkpoint. Flugposition, Vektor und Manöverzustand
+bleiben bei ihren bisherigen NPC-/Feld-Checkpoint-Eigentümern.

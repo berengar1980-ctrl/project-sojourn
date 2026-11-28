@@ -334,6 +334,14 @@
     "src/systems/npcs/npc-local-salvage-contacts.ts": {
       "mode": "derived",
       "reason": "Stateless adapter to existing shield and salvage contact solvers; it mutates only positions and velocities owned by current field checkpoints."
+    },
+    "src/systems/npcs/npc-local-pirate-availability.ts": {
+      "mode": "derived",
+      "reason": "Pure availability predicates read existing sector NPC and combat state; no independent runtime or checkpoint state."
+    },
+    "src/systems/npcs/npc-local-pirate-flight.ts": {
+      "mode": "derived",
+      "reason": "Derives flight performance from existing NPC and drone definitions; owns no mutable runtime or checkpoint state."
     }
   }
 }

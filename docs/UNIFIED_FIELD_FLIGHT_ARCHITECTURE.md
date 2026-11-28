@@ -440,6 +440,14 @@ Verhaltenstests und Architektur-Tests sind zwingend.
   Entfernung redundanter Flughelfer gegenüber. F02 bleibt offen: GitHub-Actions
   müssen auf dem tatsächlichen aktualisierten PR-Head erfolgreich sein; erst
   dann folgen die sechs F02-Nachweiszeilen und die Abnahme.
+- GitHub-Actions-Nachweis auf `cdc8e940db16fe2b36e913136fb26f5eb580178b`:
+  Quality Gate Run 1967 scheiterte im Schritt `persistence:check`, weil die
+  neuen zustandslosen Module `npc-local-pirate-availability.ts` und
+  `npc-local-pirate-flight.ts` im Eigentümerregister und Review fehlten. Format,
+  Lint, Typecheck und Dependency-Architektur waren erfolgreich; Tests und Build
+  wurden übersprungen. Ursache aus dem Joblog, nicht spekulativ. Die Klassifikation
+  als abgeleitet ist ergänzt; der gezielte Persistenz-Check und danach neuer
+  PR-Head-/Actions-Lauf stehen aus. Browser-Smoke Run 1182 läuft noch.
 - 28.11.2026: F01 abgenommen nach tatsächlichen erfolgreichen GitHub-Actions-Läufen
   auf PR-Head `cc81314df011c9e62b10b6a86d5e435d74210008`: Quality Gate Run 1966
   (`46114558950`) und Career Browser Restart Run 1181 (`46114558937`). Beide
