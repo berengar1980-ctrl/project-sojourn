@@ -161,7 +161,7 @@ Präzises Anfliegen ohne Positionssprünge; RCS-Anzeige folgt echter Bewegung.
 
 ### F03 – Kollisionsphysik und Hindernisklassifizierung
 
-- [ ] F03 Gemeinsame Kontaktphysik und Hindernisklassifizierung
+- [x] F03 Gemeinsame Kontaktphysik und Hindernisklassifizierung
 
 Nutzerziel: kleine Asteroiden und Wrackteile werden verdrängt, das Schiff
 verliert dabei nicht abrupt seine Fahrt; keine Routenumwege um kleine Trümmer.
@@ -223,16 +223,18 @@ verwenden den Legacy-Fallback. Kampf- und zivile Schadensparameter,
 Schild-/Hüllenfeedback, Ramm-Cooldown und Paaranspruch bleiben getrennte
 Gameplay-Policies und werden nicht doppelt ausgelöst.
 
-Lokale Abnahme am 28.11.2026: `npm run format:check`, `npm run lint`,
+Abnahme am 28.11.2026: `npm run format:check`, `npm run lint`,
 `npm run typecheck`, `npm run deps:check`, `npm run persistence:check`,
 Quick Suite (410/410) und `npm run build` bestanden. Der neue direkte
 Produktionspfadvergleich deckt identische zivile und Combat-Asteroidenkontakte,
 Schiff-/Felsposition und XY-Geschwindigkeit sowie Tangentialerhaltung ab;
 weitere vorhandene Regressionen decken Schilde, Drohnen, NPCs, Wracks,
-Salvage, Navigation und Checkpoints ab. F03 bleibt bis zum erfolgreichen
-GitHub-Actions-Nachweis auf dem exakten PR-Head offen; die breitere Abnahme
-(insbesondere paarweise und Grenz-/Kettenkontakte) wird vor Paketabschluss
-nochmals gegen die vollständigen Akzeptanzkriterien auditiert.
+Salvage, Navigation, Grenzen, Paaransprüche und Checkpoints ab. Der historische
+PvP-1vs1-Replay-Hash blieb exakt; die F03-Massen-/Kontaktregressionen und beide
+GitHub-Actions-Workflows auf PR-Head `e3346c047b44fe8daf9bdd605bf321ea2ea552fd`
+bestätigen die Abnahme. Die unveränderten Schadens-/Feedback-Policies und die
+gemeinsame Feldkörperklassifizierung wurden ebenfalls durch die vollständige
+Regressionstests geprüft.
 
 ### F04 – Gemeinsame Navigation
 
@@ -450,11 +452,18 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 - F02 ci: PR-Head `829f218899895822351ff6f4950944afa89c8de6`; GitHub Actions Sojourn Quality Gate Run 1968 (`46122731660`) und Career Browser Restart Smoke Run 1183 (`46122731636`) beide erfolgreich. Der vorherige Quality-Gate-Lauf 1967 scheiterte ausschließlich an fehlender Klassifikation der neuen zustandslosen Helper; Eigentümerregister und Review wurden ergänzt und der erfolgreiche Lauf bestätigt den Fix.
 - F02 loc: gegen F02-Basis `cc81314df011c9e62b10b6a86d5e435d74210008`: 828 additions, 440 deletions, netto +388 `src/`-Zeilen. Darin 169 Zeilen gemeinsamer Kern; Nettozuwachs erklärt sich durch gemeinsame Steuerungslogik und die neu abgedeckten Modusadapter. Redundante Integrations-/Bewegungshelfer wurden gelöscht; kein zweiter Flugintegrator verbleibt.
 - F02 parity: der historische PvP-Trace bleibt exakt; die tatsächlichen PvP-/Local-Space- und PvP-/Kampagnen-NPC-Produktionspfade matchen Beschleunigung, Heading, XY-Geschwindigkeit und Drehung. Ergänzende Prüfungen decken RCS-Anzeige und Rückwärtskorrektur, Boost, Traktorassistenz/-limit, präzises Stoppen, Drift und Feldgrenzen ab. Persistenzschema und bestehende Kampagnen-, Mining-, Bergungs-, Drohnen- und Kampf-Features bleiben erhalten; AST-Audit-Ausnahmen sind ausschließlich geworfene Asteroiden und Miningchunks.
+- F03 code: `src/core/contact-impulse.ts` verteilt Trennung und Normalimpuls nach inverser Masse; `src/core/ship-contact-mass.ts` berechnet Schiffskontaktmasse aus metrischer Rumpfellipse und der bestehenden Referenzdichte 5.8. Lokale Asteroiden, Combat-Asteroiden, Schilde, Schiffs-Paare, Feld-NPCs, Drohnen, Trümmer und Distress-Rammen delegieren an denselben Impulskern. `routeBlocking`, physische Masse, Rotation und Kontur werden über den Kampfbeitritt getragen; Bildpixel bleiben unberücksichtigt.
+- F03 removed: der feste Combat-Schiffskick `1.15`, feste Mindestkicks freier Trümmer, artabhängige Widerstandsdivision und redundante getrennte Normalimpulse für Schiff/Fels wurden entfernt. Redundante gewichtete Schiffstrennung wurde durch gemeinsamen inversen Masseanteil ersetzt; der ungenutzte Winkelabstand-Helfer entfiel. Materialdichte, Rotationsimpuls am Kontaktpunkt und vorhandene Gameplay-/Schadens-/Feedback-Policies bleiben erhalten.
+- F03 test: `tests/combat/shared-asteroid-contact-parity.test.cjs` führt denselben generierten Asteroiden durch zivile `resolveLocalWreckContacts` und Combat `resolveCombatAsteroidContacts` und vergleicht Schiff-/Asteroidenposition und XY-Geschwindigkeit numerisch; zusätzlich prüft es Tangentialerhaltung und den Massenverhältniseffekt. `npm run check:quick` bestand lokal mit 410/410 Tests; `npm run build` bestand.
+- F03 ci: PR-Head `e3346c047b44fe8daf9bdd605bf321ea2ea552fd`; GitHub Actions Sojourn Quality Gate Run 1971 (`46129168075`) und Career browser restart smoke Run 1186 (`46129168068`) beide erfolgreich. Der Quality Gate enthielt Format, Lint, Typecheck, Dependency- und Persistenzprüfung, alle Projekttests, integrierten Drei-Tage-Wirtschaftssmoke und Produktionsbuild; der Browser-Smoke prüfte Save, Neuladen und Fortsetzen.
+- F03 loc: gegen F03-Basis `11cb5c94410218fdd73f81acbb672afc02de2aea`: 575 hinzugefügte, 394 entfernte und netto 181 `src/`-Zeilen. Das neue gemeinsame Kontakt-/Massenmodell ersetzt mehrere separate Kick-, Reibungs- und Trennungswege; die Nettozeilen bilden die nun modeübergreifenden Adapter und Erhaltungsprüfungen ab.
+- F03 parity: PvP-1vs1, Fleet-/Combat-Asteroiden und zivile Feldkontakte verwenden dieselben metrischen Körperdaten und denselben Kontaktkern. Der historische PvP-1vs1-Replay-Hash bleibt exakt. Der Produktionspfadvergleich bestätigt identische Ergebnisse für denselben Feldkontakt; vorhandene Schild-, Drohnen-, Schiff-, Wrack-, Ramm-, Navigations- und Checkpoint-Regressionsprüfungen blieben grün. Keine neue Schadensauslösung beim Moduswechsel.
 
 ## Arbeitslog und Übergabe an neue Chats
 
-- 28.11.2026: F03 umgesetzt, lokale Abnahme bestanden, GitHub Actions noch
-  ausstehend. Auf `refactor/unified-field-flight-physics` nutzen Feld-/Combat-
+- 28.11.2026: F03 auf `refactor/unified-field-flight-physics` umgesetzt und
+  nach lokaler Abnahme sowie erfolgreichen GitHub Actions auf PR-Head
+  `e3346c047b44fe8daf9bdd605bf321ea2ea552fd` abgenommen. Feld-/Combat-
   Asteroiden, Schildkontakt, freie Trümmer, Schiffspaare, gemischte
   PvP/Feldbystander, Drohnenkontakte und Distress-Rammen den gemeinsamen
   Impuls-/Trennungskern `src/core/contact-impulse.ts`. Die effektive
@@ -471,10 +480,11 @@ Verhaltenstests und Architektur-Tests sind zwingend.
   numerisch, einschließlich Tangentialerhaltung. Nach Korrektur eines alten
   skalaren Navigationstest-Fixtures besteht die vollständige Quick Suite mit
   410/410; Format, Lint, Typecheck, Dependency- und Persistenzcheck sowie Build
-  waren ebenfalls grün. Lokaler Build zeigt nur die bekannte große
-  JavaScript-Bundle-Warnung. F03 bleibt bis zur CI auf dem aktualisierten
-  PR-Head und vollständiger Prüfung der restlichen Kontakt-Abnahmekriterien
-  ungekreuzt. Kein Merge nach Main.
+  waren ebenfalls grün. Source-Bilanz gegen F03-Basis: 575 hinzugefügt, 394
+  entfernt, netto +181 Zeilen. GitHub Actions Sojourn Quality Gate Run 1971
+  (`46129168075`) und Career browser restart smoke Run 1186 (`46129168068`)
+  sind beide erfolgreich. Lokaler Build zeigt nur die bekannte große
+  JavaScript-Bundle-Warnung. Kein Merge nach Main.
 - 28.11.2026: F02 in Arbeit auf `refactor/unified-field-flight-physics`, Basis
   `cc81314df011c9e62b10b6a86d5e435d74210008`; kein Merge nach Main. Der
   gemeinsame `src/core/ship-flight-physics.ts`-Integrator besitzt jetzt
