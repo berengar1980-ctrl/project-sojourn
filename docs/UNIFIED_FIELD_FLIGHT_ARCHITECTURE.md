@@ -131,7 +131,7 @@ sind gelöscht oder nachweislich reine Daten-/UI-Adapter.
 
 ### F02 – Gemeinsame Flugsteuerung und Triebwerksphysik
 
-- [ ] F02 Gemeinsame Flugsteuerung und Triebwerksphysik
+- [x] F02 Gemeinsame Flugsteuerung und Triebwerksphysik
 
 Referenz: `src/systems/combat/combat-inertial-thrust.ts` (applyInertialThrust)
 und `strategic-combat-movement.ts` (performCombatThrust), #400.
@@ -339,7 +339,7 @@ Alle betroffenen Fälle müssen jeweils aus den tatsächlichen Produktionspfaden
 laufen. Gleicher Input und dt, keine taktisch unterschiedlichen Befehle
 fälschlich als Physikabweichung werten. Zusätzlich eine Vollständigkeitsprüfung
 der Schreibstellen (AST bzw. gezielte Codeprüfung) gegen eine begründete
-Allowlist einführen; spätestens mit F02/F03 als ausführbarer Architekturtest.
+Allowlist einführen; mit F02 als ausführbarer Architekturtest.
 Die Liste darf keine alten Modusintegratoren dauerhaft freistellen.
 
 F02-Schreibstellenreview: Schiffs-Translation darf nur der gemeinsame
@@ -400,6 +400,12 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 - F01 ci: PR-Head `cc81314df011c9e62b10b6a86d5e435d74210008`; GitHub Actions Quality Gate Run 1966 (`46114558950`) und Career Browser Restart Run 1181 (`46114558937`) beide erfolgreich.
 - F01 loc: gegen Baseline `6babc77e520d5c30f49f6876fc325dd110a7d02a`: 851 additions, 390 deletions, netto +461 `src/`-Zeilen. Zuwachs kommt aus dem gemeinsamen Zustandsvertrag und staged Save-/NPC-Migration; die alten skalaren Speicherstellen werden entfernt.
 - F01 parity: PvP-/Feldwechsel und Save/Load übertragen XY-Geschwindigkeit, Heading und Bewegungszustand; historische skalare Checkpoints werden migriert. Feature-Parity-Review vom 28.11.2026 bestätigt keine Änderung am Status der 241 historischen Feature-IDs; die lokale Vergleichssuite und beide PR-Head-Workflows sind grün.
+- F02 code: `src/core/ship-flight-physics.ts` ist der einzige gemeinsame Schiffs-Flugintegrator für Beschleunigung, Bremsen/Gegenschub, Drehung, RCS, Boost-Rampe, Sollgeschwindigkeit, Drift und Grenzen. PvP (`combat-inertial-thrust.ts`, `strategic-combat-movement.ts`), ziviler Autopilot, Feldrouten, Stationshaltung, Mining-/Salvage-Arbeitsposition, Kampagnen-NPC-Kampf und Drohne delegieren an ihn; gemeinsame Schiffswerte stammen aus `ship-stats.ts`.
+- F02 removed: zivile eigene Vorwärts-/Rückwärts-Integrationsschleifen, doppelte lokale `moveToward`-/`turnToward`-Helfer und der nicht mehr benötigte lokale Displacement-Adapter wurden entfernt. Routen-, Verkehrs-, Arbeits- und Taktikcode bleibt als Befehls-/Policy-Adapter; Zustandsübertragungen, Kontaktkorrektur und initiale Platzierung bleiben begründete Nicht-Integrations-Schreibstellen.
+- F02 test: `tests/combat/shared-flight-integrator-parity.test.cjs`, `tests/combat/campaign-npc-flight-parity.test.cjs`, `tests/combat/shared-flight-commands.test.cjs` und `tests/architecture/shared-flight-integrator-boundary.test.cjs`; vollständige lokale Quick Suite 409/409, inklusive unverändertem historischen PvP-Replay-Hash.
+- F02 ci: PR-Head `829f218899895822351ff6f4950944afa89c8de6`; GitHub Actions Sojourn Quality Gate Run 1968 (`46122731660`) und Career Browser Restart Smoke Run 1183 (`46122731636`) beide erfolgreich. Der vorherige Quality-Gate-Lauf 1967 scheiterte ausschließlich an fehlender Klassifikation der neuen zustandslosen Helper; Eigentümerregister und Review wurden ergänzt und der erfolgreiche Lauf bestätigt den Fix.
+- F02 loc: gegen F02-Basis `cc81314df011c9e62b10b6a86d5e435d74210008`: 828 additions, 440 deletions, netto +388 `src/`-Zeilen. Darin 169 Zeilen gemeinsamer Kern; Nettozuwachs erklärt sich durch gemeinsame Steuerungslogik und die neu abgedeckten Modusadapter. Redundante Integrations-/Bewegungshelfer wurden gelöscht; kein zweiter Flugintegrator verbleibt.
+- F02 parity: der historische PvP-Trace bleibt exakt; die tatsächlichen PvP-/Local-Space- und PvP-/Kampagnen-NPC-Produktionspfade matchen Beschleunigung, Heading, XY-Geschwindigkeit und Drehung. Ergänzende Prüfungen decken RCS-Anzeige und Rückwärtskorrektur, Boost, Traktorassistenz/-limit, präzises Stoppen, Drift und Feldgrenzen ab. Persistenzschema und bestehende Kampagnen-, Mining-, Bergungs-, Drohnen- und Kampf-Features bleiben erhalten; AST-Audit-Ausnahmen sind ausschließlich geworfene Asteroiden und Miningchunks.
 
 ## Arbeitslog und Übergabe an neue Chats
 
@@ -437,17 +443,23 @@ Verhaltenstests und Architektur-Tests sind zwingend.
   `git diff --check` ist sauber. Die Produktivcode-Bilanz gegen den Branchstand
   vor F02 beträgt 828 hinzugefügte, 440 entfernte und netto 388 `src/`-Zeilen;
   die 169-zeilige gemeinsame Physik steht zusätzlichen Extraktionen und der
-  Entfernung redundanter Flughelfer gegenüber. F02 bleibt offen: GitHub-Actions
-  müssen auf dem tatsächlichen aktualisierten PR-Head erfolgreich sein; erst
-  dann folgen die sechs F02-Nachweiszeilen und die Abnahme.
+  Entfernung redundanter Flughelfer gegenüber. F02 wurde nach erfolgreichem
+  GitHub-Actions-Nachweis auf PR-Head `829f218899895822351ff6f4950944afa89c8de6`
+  abgenommen; die sechs Nachweiszeilen stehen im Nachweisblock. Quality Gate
+  Run 1968 (`46122731660`) und Career Browser Restart Smoke Run 1183
+  (`46122731636`) sind beide erfolgreich. Der vorherige Quality Gate Run 1967
+  identifizierte exakt die fehlende Persistenzklassifikation für zwei neue
+  zustandslose NPC-Piraten-Helper. Eigentümerregister und Review wurden ergänzt;
+  `npm run persistence:check` und der vollständige neue PR-Head-Workflow sind
+  anschließend grün. Kein Merge nach Main.
 - GitHub-Actions-Nachweis auf `cdc8e940db16fe2b36e913136fb26f5eb580178b`:
   Quality Gate Run 1967 scheiterte im Schritt `persistence:check`, weil die
   neuen zustandslosen Module `npc-local-pirate-availability.ts` und
   `npc-local-pirate-flight.ts` im Eigentümerregister und Review fehlten. Format,
   Lint, Typecheck und Dependency-Architektur waren erfolgreich; Tests und Build
   wurden übersprungen. Ursache aus dem Joblog, nicht spekulativ. Die Klassifikation
-  als abgeleitet ist ergänzt; der gezielte Persistenz-Check und danach neuer
-  PR-Head-/Actions-Lauf stehen aus. Browser-Smoke Run 1182 läuft noch.
+  als abgeleitet ist ergänzt. Der nachfolgende PR-Head bestätigte den Fix:
+  Quality Gate Run 1968 und Browser-Smoke Run 1183 waren auf `829f218` grün.
 - 28.11.2026: F01 abgenommen nach tatsächlichen erfolgreichen GitHub-Actions-Läufen
   auf PR-Head `cc81314df011c9e62b10b6a86d5e435d74210008`: Quality Gate Run 1966
   (`46114558950`) und Career Browser Restart Run 1181 (`46114558937`). Beide
