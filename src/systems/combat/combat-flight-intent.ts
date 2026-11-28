@@ -237,7 +237,7 @@ export function chooseCombatFlightIntent(
   }
   if (deliberateRam) {
     delete ship.flightPass;
-    const destination = ramFlankTarget(ship, enemy);
+    const destination = ramFlankTarget(ship, enemy, deltaSeconds);
     return {
       kind: 'ram',
       destination,

@@ -326,6 +326,17 @@ Treffer/Rammquote, Dauer des Kreisflugs, Kollisionen mit großen Hindernissen,
 Zeit in Waffenreichweite, Waffennutzung, Flucht und Entererfolg.
 Unbeabsichtigte Balanceänderungen separat ausweisen.
 
+F05-Zwischenschritt vom 28.11.2026: Ein Ramm-Anflug, der acht Sekunden lang
+außerhalb der Nahkontaktzone bleibt, gibt seinen Impact-Lock auf, wechselt die
+Anflugseite und erhält drei Sekunden zum Neu-Ausrichten. Dadurch bleibt die
+vorhandene Flugphysik unverändert; der Schiffsaktor besitzt nur kurzlebigen
+Manöverzustand. `combat-ai-ram-boost-activation.test.cjs` prüft Abbruch,
+Seitenwechsel und Neu-Ausrichtung; der historische PvP-Trace sowie die
+Angriffspassagen- und Hindernisregressionen bleiben Teil des grünen Quick-Gates.
+F05 bleibt offen: integrierte Messungen für beidseitiges Rammen, tatsächliche
+Rammquote, Hindernis-/Abbruch-/Wiederholungsfälle und vorhandene Taktiken fehlen
+noch als gemeinsamer Abnahmenachweis.
+
 ### F06 – Gemeinsame Schiffs-, Crew- und Systemparameter
 
 - [ ] F06 Gemeinsame Schiffs- und Systemparameter
@@ -510,8 +521,24 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 - F04 ci: PR-Head `a3983b833e5492a5cadf2f68e518513b0a6c8b85`; Sojourn Quality Gate Run 1974 (`46146017092`) und Career browser restart smoke Run 1189 (`46146017121`) erfolgreich. Persistenzprüfung, alle Tests, Drei-Tage-Wirtschaftssmoke, Build und Save-/Browser-Neustart/Weiterlaufen bestanden.
 - F04 loc: gegenüber F04-Basis `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`: 438 `src/`-Zeilen hinzugefügt, 225 entfernt, netto +213. Gemeinsame Route-Geometrie und Salvage-Arbeitspositionen ersetzen getrennte Pfade; der begrenzte Patrol-Algorithmus bleibt aus Performancegründen.
 - F04 parity: der historische #400 Replay-Trace bleibt auf allen drei Seeds exakt; dichte Asteroidenkämpfe behalten Angriffspassagen. Identische Combat-/Zivilgeometrie, bewegte Hindernisse, blockierte Ziele, Verkehr, Ausfahrt und Distress-Salvage sind durch Produktionspfad- und Regressionstests abgedeckt. Neue Geometrie führt keine Save-Autorität ein.
+- F05 code (in progress): `combat-ram-targeting.ts` beendet einen festgefahrenen Impact-Anflug nach acht Sekunden ohne Nahkontakt, löst den Intercept-Lock, wechselt die Flankenseite und lässt den Kurs drei Sekunden neu ausrichten. Es werden keine zweite Rammphysik und keine Balanceparameter eingeführt.
+- F05 test: `tests/combat/combat-ai-ram-boost-activation.test.cjs` deckt stagnierenden Anflug, Lock-Abbruch, Seitenwechsel und Neu-Ausrichtung ab. `npm run check:quick` bestand lokal mit 411/411 Tests, einschließlich des exakten historischen PvP-Replay-Hashes; `npm run build` bestand. Der bestehende Vite-Chunkgrößenhinweis bleibt.
+- F05 open: integrierte Abnahmeszenarien für beidseitiges Rammen, Treffer-/Rammquote, bewegtes Ziel, große Hindernisse, Abbruch/Retry sowie Vergleich von Waffenreichweite/-nutzung, Flucht und Entern; daher bleibt F05 unabgenommen.
 
 ## Arbeitslog und Übergabe an neue Chats
+
+- 28.11.2026: F05 begonnen. Audit von `combat-flight-intent.ts`,
+  `combat-ram-targeting.ts`, `combat-route-steering.ts` und
+  `strategic-combat-movement.ts`: bestehende Waffen-/Flucht-/Minen-/Traktor-/
+  Boardingpfade und historische PvP-Replays bleiben erhalten. Der direkte
+  Ramm-Intercept hatte keinen Abbruch bei blockiertem oder verfehltem Anflug;
+  ein achtsekündiger Nahkontakt-Timeout mit Flankenwechsel und kurzer
+  Neu-Ausrichtung ergänzt. Tests für den Retry und das vollständige
+  `npm run check:quick` (411/411), Format, Lint, Typecheck,
+  Dependency-/Persistenzprüfung und Build bestanden. F05 bleibt offen bis zu
+  integrierten beidseitigen Ramm-/Hindernisreplays und den dokumentierten
+  Kampfmetriken. Nächster Schritt: F05-Szenariomatrix messen, alle Taktiken und
+  Auswirkungen bewerten, dann das Paket abnehmen.
 
 - 28.11.2026: F04-Audit und Implementierung auf Basis der F03-Abnahme
   `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`. PvP-Flankenversuch und zivile

@@ -3,6 +3,9 @@ import type { CombatPoint, MutableCombatant } from './strategic-combat-types';
 
 const ORBIT_TURN_RATE = 0.3;
 const ORBIT_MIN_SPEED = 30;
+const RAM_IMPACT_RETRY_SECONDS = 8;
+const RAM_RETRY_COOLDOWN_SECONDS = 3;
+const RAM_RETRY_DISTANCE = 160;
 
 /**
  * Estimate a near-future interception window from target velocity and the
@@ -49,37 +52,93 @@ function ramPredictedPosition(enemy: MutableCombatant, seconds: number): CombatP
   };
 }
 
+function shouldIntercept(enemy: MutableCombatant): boolean {
+  return (
+    isSecurityDrone(enemy.setup?.id) ||
+    (Math.hypot(enemy.velocity.x, enemy.velocity.y) >= ORBIT_MIN_SPEED &&
+      Math.abs(enemy.turnRateRadiansPerSecond ?? 0) >= ORBIT_TURN_RATE)
+  );
+}
+
+function advanceRamApproach(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  range: number,
+  sideX: number,
+  sideY: number,
+  deltaSeconds: number
+): void {
+  if (!ship.ramApproach) {
+    const dx = ship.position.x - enemy.position.x;
+    const dy = ship.position.y - enemy.position.y;
+    const side = dx * sideX + dy * sideY < 0 ? -1 : 1;
+    ship.ramApproach = { side, phase: 'flank', flankDirection: { x: sideX, y: sideY } };
+  }
+  const approach = ship.ramApproach;
+  if (approach.phase === 'impact') advanceRamImpact(approach, range, sideX, sideY, deltaSeconds);
+  advanceRetryCooldown(approach, deltaSeconds);
+  if (approach.retryCooldownSeconds === undefined && shouldIntercept(enemy)) {
+    // Latch interception mode so the maneuver cannot flip between
+    // broadside staging and interception during each direction change.
+    approach.intercept = true;
+  }
+}
+
+function advanceRamImpact(
+  approach: NonNullable<MutableCombatant['ramApproach']>,
+  range: number,
+  sideX: number,
+  sideY: number,
+  deltaSeconds: number
+): void {
+  approach.impactElapsedSeconds = (approach.impactElapsedSeconds ?? 0) + deltaSeconds;
+  if (approach.impactElapsedSeconds < RAM_IMPACT_RETRY_SECONDS || range <= RAM_RETRY_DISTANCE) {
+    return;
+  }
+  // A blocked or missed charge must release its direct-intercept lock and
+  // re-stage from the opposite side instead of chasing forever.
+  approach.phase = 'flank';
+  approach.side = approach.side === 1 ? -1 : 1;
+  approach.flankDirection = { x: sideX, y: sideY };
+  approach.intercept = false;
+  approach.impactElapsedSeconds = 0;
+  approach.retryCooldownSeconds = RAM_RETRY_COOLDOWN_SECONDS;
+}
+
+function advanceRetryCooldown(
+  approach: NonNullable<MutableCombatant['ramApproach']>,
+  deltaSeconds: number
+): void {
+  if (approach.retryCooldownSeconds === undefined) return;
+  approach.retryCooldownSeconds = Math.max(0, approach.retryCooldownSeconds - deltaSeconds);
+  if (approach.retryCooldownSeconds === 0) delete approach.retryCooldownSeconds;
+}
+
 /**
  * One persistent approach choice. Slow targets permit a deliberate flank;
  * circling targets require a velocity-led interception, not pursuit of a
  * broadside waypoint that rotates away on every simulation frame.
  */
-export function ramFlankTarget(ship: MutableCombatant, enemy: MutableCombatant): CombatPoint {
+export function ramFlankTarget(
+  ship: MutableCombatant,
+  enemy: MutableCombatant,
+  deltaSeconds: number
+): CombatPoint {
   if (!Number.isFinite(enemy.headingRadians)) return enemy.position;
   const sideX = -Math.sin(enemy.headingRadians);
   const sideY = Math.cos(enemy.headingRadians);
   const relativeX = ship.position.x - enemy.position.x;
   const relativeY = ship.position.y - enemy.position.y;
-  if (!ship.ramApproach) {
-    const side = relativeX * sideX + relativeY * sideY < 0 ? -1 : 1;
-    ship.ramApproach = { side, phase: 'flank', flankDirection: { x: sideX, y: sideY } };
-  }
-  const approach = ship.ramApproach;
-  const targetSpeed = Math.hypot(enemy.velocity.x, enemy.velocity.y);
-  if (
-    isSecurityDrone(enemy.setup?.id) ||
-    (targetSpeed >= ORBIT_MIN_SPEED &&
-      Math.abs(enemy.turnRateRadiansPerSecond ?? 0) >= ORBIT_TURN_RATE)
-  ) {
-    // Latch interception mode so the maneuver cannot flip between
-    // broadside staging and interception during each direction change.
-    approach.intercept = true;
-  }
-
   const range = Math.hypot(relativeX, relativeY);
+  advanceRamApproach(ship, enemy, range, sideX, sideY, deltaSeconds);
+  const approach = ship.ramApproach!;
+
   const predicted = ramPredictedPosition(enemy, ramInterceptSeconds(ship, enemy));
   if (approach.intercept) {
-    if (range < 470) approach.phase = 'impact';
+    if (range < 470 && approach.phase !== 'impact') {
+      approach.phase = 'impact';
+      approach.impactElapsedSeconds = 0;
+    }
     return predicted;
   }
 
@@ -96,6 +155,7 @@ export function ramFlankTarget(ship: MutableCombatant, enemy: MutableCombatant):
     Math.abs(alongBow) < 100
   ) {
     approach.phase = 'impact';
+    approach.impactElapsedSeconds = 0;
   }
   if (approach.phase === 'impact') return predicted;
   return {

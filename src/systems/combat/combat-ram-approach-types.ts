@@ -4,4 +4,6 @@ export interface RamApproachState {
   phase: 'flank' | 'impact';
   flankDirection?: { x: number; y: number };
   intercept?: boolean;
+  impactElapsedSeconds?: number;
+  retryCooldownSeconds?: number;
 }
