@@ -396,13 +396,15 @@ ausstehender Branch-CI nicht abgenommen. Kein Paket abgeschlossen.
   Tests verifizieren den Combat→Local-Space-Rundlauf, Checkpoint-Parität,
   parallele Duelle und Alt-Save-Migration. `npm run check:quick` lief mit 405
   Tests und null Fehlern; `npm run build` lief erfolgreich. Vite meldete die
-  bestehende Warnung zum 1,2-MB-JavaScript-Bundle. Branch bleibt
-  `refactor/unified-field-flight-physics`, HEAD `d3954f3`; keine Commits, kein
-  Push, kein Main-Merge. Produktionsquellstand im Arbeitsbaum gegenüber HEAD
-  (einschließlich neuer Dateien): 851 hinzugefügt, 390 entfernt, netto +461
-  Zeilen. Dieser Zuwachs ist die gemeinsame Zustands-/Save-Migration und
-  extrahierte Helfer; kein Paketabschluss. Noch ausstehend ist die tatsächliche
-  Branch-CI nach Commit/Push. Für F03 bleibt die Massenregel offen: `ShipDefinition`
+  bestehende Warnung zum 1,2-MB-JavaScript-Bundle. Commit `3b4d5908` liegt auf
+  `refactor/unified-field-flight-physics`. Der Push an `origin` wurde von der
+  automatischen Prüfregel abgelehnt, weil er Projektquellcode an das nicht
+  verifizierte GitHub-Remote übertragen würde; deshalb gibt es für diesen
+  Commit noch keine Branch-CI. Main wurde nicht verändert.
+  Produktionsquellstand dieses Commits gegenüber seinem Branch-Parent: 851
+  hinzugefügt, 390 entfernt, netto +461 Zeilen. Dieser Zuwachs ist die
+  gemeinsame Zustands-/Save-Migration und extrahierte Helfer; kein
+  Paketabschluss. Für F03 bleibt die Massenregel offen: `ShipDefinition`
   hat keine Hull-Masse und Collision-`pushWeight` ist kein bestätigtes Maß;
   keine Masse oder Rotationsinertie erfunden.
 - 27.11.2026: F01 in Bearbeitung, noch nicht abgenommen. `PhysicalShipState`
@@ -443,8 +445,9 @@ ausstehender Branch-CI nicht abgenommen. Kein Paket abgeschlossen.
 - 27.11.2026: PR #408 gemergt; Main 6babc77 geprüft. PR #409 ist ein
   separater Audit-PR, nicht Produktionsbasis. Sicherungsbranch vorhanden.
 - Historische Referenz #400 identifiziert; erste statische Vergleiche erfolgt.
-- Nächster Schritt: F01 auf Branch-CI ausführen und deren Ergebnis dokumentieren;
-  danach erst F02 beginnen.
+- Nächster Schritt: Zustimmung zum Push dieses Commits auf genau diesen Branch
+  einholen, Branch-CI ausführen und deren Ergebnis dokumentieren; danach erst
+  F02 beginnen.
 - Bei jedem Arbeitsstand ergänzen: Datum, Commit/PR, Paket, konkret geänderte
   Dateien/Funktionen, entfernte Pfade, offene Aufrufer, neue/entfernte src-Zeilen,
   tatsächlich gelaufene Tests, CI-Ergebnis, Risiken und nächster Schritt.
@@ -457,3 +460,4 @@ Weiterhin gelten `docs/ARCHITECTURE.md`, `docs/COMBAT_AI_TARGET_ARCHITECTURE.md`
 `docs/CAREER_PERSISTENCE.md`, `docs/SOJOURN_FEATURE_PARITY.md` und AGENTS.md.
 Bei Konflikten zwischen alter Feature-Parität und diesem Auftrag die
 konkrete Differenz dokumentieren, nicht verdeckt alte Unterschiede bewahren.
+
