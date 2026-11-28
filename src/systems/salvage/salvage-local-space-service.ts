@@ -1,5 +1,6 @@
 import type { SalvageLocalSpaceService, SalvageRuntimeOptions } from './salvage-local-space-types';
 import type { ManeuveringShipControls } from '../../core/physical-ship-state';
+import { shipFlightBounds } from '../../core/ship-flight-physics';
 export type { SalvageLocalSpaceService } from './salvage-local-space-types';
 import {
   clampPoint,
@@ -364,7 +365,9 @@ class SalvageLocalSpaceRuntime implements SalvageLocalSpaceService {
         obstacles: fieldTrafficObstacles(this.options.field, 'player'),
         solids: () => salvageTrafficSolids(this.options.field),
         clearance: Math.max(32, (this.options.shipLengthMeters ?? 70) * 0.46),
-      }
+      },
+      this.options.flightPerformance,
+      shipFlightBounds(this.options.field.width, this.options.field.height)
     );
     this.routeIndex = result.nextIndex;
     if (!result.completed) return;

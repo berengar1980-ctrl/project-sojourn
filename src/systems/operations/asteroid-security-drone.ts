@@ -2,6 +2,7 @@ import { clampedSegmentProjection } from '../../core/field-geometry';
 import type { SectorNpcState } from '../../core/npc-types';
 import { edgePoint } from '../npcs/npc-mining-targets';
 import { DRONE_SCAN_RADIUS, DRONE_PATROL_SPEED } from '../../core/security-drone';
+import { shipFlightBounds } from '../../core/ship-flight-physics';
 import {
   moveFieldShip,
   type FieldRouteObstacle,
@@ -267,7 +268,13 @@ export class AsteroidSecurityDrone implements PhysicalShipState {
         Math.max(0, Math.min(dt, 0.25)),
         obstacles,
         40,
-        'patrol'
+        'patrol',
+        {
+          combatSpeed: DRONE_PATROL_SPEED,
+          turnRateRadiansPerSecond: 0.72,
+          accelerationMetersPerSecond2: 28,
+        },
+        shipFlightBounds(this.width, this.height)
       );
       if (arrived && !pursuitTarget)
         this.nextWaypoint = (this.nextWaypoint + 1) % this.patrol.length;

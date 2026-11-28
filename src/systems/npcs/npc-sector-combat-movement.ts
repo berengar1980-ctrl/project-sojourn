@@ -1,9 +1,13 @@
 import type { SectorNpcState } from '../../core/npc-types';
 import type { NpcCombatMovementMode, NpcCombatTargetKind } from '../../core/npc-types';
 import { ensurePhysicalShipVelocity } from '../../core/physical-ship-state';
+import {
+  applyShipVelocityCommand,
+  shipFlightBounds,
+  turnShipTowardHeading,
+} from '../../core/ship-flight-physics';
 import type { WorldMap, WorldPoint } from '../../core/world-types';
 import { npcOperationalSpeed } from './npc-upgrade-service';
-import { turnToward } from './npc-sector-routing';
 import { fuelForDistance } from '../../core/fuel-pricing';
 
 const COMBAT_TURN_RATE = 1.15;
@@ -59,30 +63,20 @@ export function advanceNpcCombatMovement(
   if (Math.hypot(dx, dy) <= 0.001) return;
 
   const desiredHeading = Math.atan2(dy, dx);
-  movement.headingRadians = turnToward(
-    movement.headingRadians,
-    desiredHeading,
-    COMBAT_TURN_RATE * deltaSeconds
-  );
+  turnShipTowardHeading(movement, desiredHeading, COMBAT_TURN_RATE, deltaSeconds);
   const baseSpeed = npcOperationalSpeed(npc);
   const targetSpeed = baseSpeed * (away ? 1.05 : 1.08);
   const acceleration = Math.max(15, baseSpeed * 0.85);
-  const speed = Math.min(targetSpeed, movement.speed + acceleration * deltaSeconds);
-  movement.velocity = {
-    x: Math.cos(movement.headingRadians) * speed,
-    y: Math.sin(movement.headingRadians) * speed,
-  };
-  const moved = speed * deltaSeconds;
-  movement.position = {
-    x: Math.max(
-      0,
-      Math.min(world.width, movement.position.x + Math.cos(movement.headingRadians) * moved)
-    ),
-    y: Math.max(
-      0,
-      Math.min(world.height, movement.position.y + Math.sin(movement.headingRadians) * moved)
-    ),
-  };
+  const start = { ...movement.position };
+  applyShipVelocityCommand(movement, {
+    direction: { x: Math.cos(movement.headingRadians), y: Math.sin(movement.headingRadians) },
+    targetSpeed,
+    acceleration,
+    deltaSeconds,
+    maxSpeed: targetSpeed,
+    bounds: shipFlightBounds(world.width, world.height),
+  });
+  const moved = Math.hypot(movement.position.x - start.x, movement.position.y - start.y);
   npc.fuel = Math.max(0, npc.fuel - fuelForDistance(moved, npc.fuelUse));
 }
 

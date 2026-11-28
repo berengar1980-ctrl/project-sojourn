@@ -24,11 +24,7 @@ import { createSalvageSpaceViewModel } from '../features/salvage/salvage-space-v
 import type { NpcLocalSalvageService } from '../systems/npcs/npc-local-salvage-service';
 import { createSalvageLocalSpaceService, generateSalvageField } from '../systems/salvage';
 import { grantDistressSalvageRights } from '../systems/salvage/distress-salvage-rights';
-import {
-  resolveShipLocalCruiseSpeed,
-  engineSpeedMultiplier,
-  resolveShipRuntimeSetup,
-} from '../systems/ships';
+import { resolveShipCombatMovementStats, resolveShipRuntimeSetup } from '../systems/ships';
 import { createSalvageSpacePanel, type SalvageSpacePanel } from '../ui/salvage/salvage-space-panel';
 import { salvageNpcShips, salvagePirateShips } from './game-controller-salvage-npc-view';
 import {
@@ -351,6 +347,11 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
     generateSalvageField(options.location.id, options.seed, options.location.dangerLevel);
   if (!hasNpcSalvageRuntime(field)) options.wreckClaims.restoreField(field);
   if (options.sectorEvent) options.economy.prepareEventField?.(field);
+  const flightPerformance = resolveShipCombatMovementStats(
+    options.ship,
+    runtime.installed,
+    runtime.stationSkills.piloting
+  );
   const service = createSalvageLocalSpaceService({
     field,
     setup: runtime.salvage,
@@ -367,13 +368,8 @@ export function createSalvageScene(options: SalvageSceneOptions): SalvageSceneCo
         null
       );
     },
-    approachSpeed: resolveShipLocalCruiseSpeed(
-      options.ship,
-      runtime.installed,
-      runtime.stationSkills.piloting
-    ),
-    turnRateMultiplier:
-      engineSpeedMultiplier(runtime.installed) * runtime.crewEffects.piloting.turnRateMultiplier,
+    approachSpeed: flightPerformance.combatSpeed,
+    flightPerformance,
     hardpoints: options.ship.sprite.hardpoints,
     shipLengthMeters: options.ship.nominalLengthMeters,
   });

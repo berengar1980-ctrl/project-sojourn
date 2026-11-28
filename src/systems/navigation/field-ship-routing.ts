@@ -1,5 +1,13 @@
 import type { WorldPoint } from '../../core/world-types';
 import type { PhysicalShipState } from '../../core/physical-ship-state';
+import { ensurePhysicalShipVelocity } from '../../core/physical-ship-state';
+import {
+  applyShipVelocityCommand,
+  flightAngleDelta,
+  turnShipTowardHeading,
+  type ShipFlightBounds,
+  type ShipFlightPerformance,
+} from '../../core/ship-flight-physics';
 import { measurePerformance } from '../../core/performance-diagnostics';
 import { clampedSegmentProjection, distance } from '../../core/field-geometry';
 import { planPointRoute } from '../local-space/local-space-navigation';
@@ -109,7 +117,8 @@ export function fieldRouteTarget(
     // A close route corner must be completed before recomputing it. Otherwise
     // drifting asteroid clearance halos force a new 5-10 m detour each tick
     // and a miner can circle forever without reaching its work target.
-    const establishedCorner = distance(ship.position, nextWaypoint) <= 24;
+    const establishedCorner =
+      distance(ship.position, nextWaypoint) <= Math.max(32, Math.min(80, ship.speed * 2.5));
     if (
       !establishedCorner &&
       planning.some((obstacle) => blocked(ship.position, nextWaypoint, obstacle, clearance))
@@ -140,8 +149,11 @@ export function moveFieldShip(
   dt: number,
   obstacles: readonly FieldRouteObstacle[],
   clearance: number,
-  mode: 'grid' | 'patrol' = 'grid'
+  mode: 'grid' | 'patrol' = 'grid',
+  performance?: ShipFlightPerformance,
+  bounds?: ShipFlightBounds
 ): boolean {
+  ensurePhysicalShipVelocity(ship);
   beginTrafficLeg(ship, target);
   const escape = trafficEscapeWaypoint(ship, obstacles, clearance);
   const waypoint =
@@ -151,45 +163,132 @@ export function moveFieldShip(
     noteTrafficProgress(ship, dt, true);
     return false;
   }
-  const dx = waypoint.x - ship.position.x;
-  const dy = waypoint.y - ship.position.y;
-  const remaining = Math.hypot(dx, dy);
-  const step = Math.max(0, speed) * Math.max(0, dt);
-  const arrives = remaining <= Math.max(2, step);
-  const next = arrives
-    ? { ...waypoint }
-    : {
-        x: ship.position.x + (dx / remaining) * step,
-        y: ship.position.y + (dy / remaining) * step,
-      };
-  if (!trafficStepClear(ship.position, next, dt, obstacles, clearance, ship)) {
+  const route = ship.routeState;
+  const finalWaypoint = Boolean(!escape && route && route.index === route.points.length - 1);
+  const start = { ...ship.position };
+  const command = fieldFlightCommand(
+    ship,
+    waypoint,
+    speed,
+    dt,
+    finalWaypoint,
+    Boolean(escape),
+    performance
+  );
+  applyShipVelocityCommand(ship, {
+    direction: command.direction,
+    targetSpeed: command.targetSpeed,
+    acceleration: command.acceleration,
+    deltaSeconds: dt,
+    ...(escape || (finalWaypoint && Math.abs(command.headingError) > 0.35)
+      ? { accelerationMultiplier: 0.4 }
+      : {}),
+    maxSpeed: performance?.combatSpeed ?? Math.max(0, speed),
+    ...(bounds ? { bounds } : {}),
+  });
+  if (!fieldTrafficStepClear(start, ship.position, command, dt, obstacles, clearance, ship)) {
+    ship.position = start;
     ship.velocity = { x: 0, y: 0 };
     noteTrafficProgress(ship, dt, true);
     return false;
   }
-  ship.headingRadians = Math.atan2(dy, dx);
-  if (arrives) {
-    ship.position = { ...waypoint };
-    ship.velocity = { x: 0, y: 0 };
-    if (escape) {
-      delete ship.routeState;
-      noteTrafficProgress(ship, dt, false);
-      return false;
-    }
-    const route = ship.routeState!;
-    route.index += 1;
-    if (route.index >= route.points.length) {
-      delete ship.routeState;
-      endTrafficLeg(ship);
-      return distance(ship.position, target) < 2;
-    }
-    return false;
-  }
-  ship.position = next;
-  ship.velocity = {
-    x: Math.cos(ship.headingRadians) * speed,
-    y: Math.sin(ship.headingRadians) * speed,
-  };
+  const waypointDistance = distance(ship.position, waypoint);
+  const arrives = finalWaypoint
+    ? waypointDistance <= 4 && Math.hypot(ship.velocity.x, ship.velocity.y) <= 5
+    : waypointDistance <= Math.max(32, Math.min(80, Math.max(0, speed) * 2.5));
+  if (arrives) return finishFieldWaypoint(ship, waypoint, target, finalWaypoint, escape, dt);
   noteTrafficProgress(ship, dt, false);
   return false;
+}
+
+interface FieldFlightCommand {
+  readonly direction: WorldPoint;
+  readonly targetSpeed: number;
+  readonly acceleration: number;
+  readonly headingError: number;
+}
+
+function fieldFlightCommand(
+  ship: FieldRouteShip,
+  waypoint: WorldPoint,
+  speed: number,
+  dt: number,
+  finalWaypoint: boolean,
+  escape: boolean,
+  performance?: ShipFlightPerformance
+): FieldFlightCommand {
+  const dx = waypoint.x - ship.position.x;
+  const dy = waypoint.y - ship.position.y;
+  const remaining = Math.hypot(dx, dy);
+  const desiredHeading = Math.atan2(dy, dx);
+  const headingError = flightAngleDelta(ship.headingRadians, desiredHeading);
+  const turnRate = performance?.turnRateRadiansPerSecond ?? 1.15;
+  turnShipTowardHeading(ship, desiredHeading, turnRate, Math.max(0, dt));
+  const alignment = Math.max(0.25, Math.cos(Math.min(Math.PI / 2, Math.abs(headingError))));
+  const acceleration = performance?.accelerationMetersPerSecond2 ?? 30;
+  const toward = remaining > 0 ? { x: dx / remaining, y: dy / remaining } : { x: 0, y: 0 };
+  const closingSpeed = Math.max(0, ship.velocity.x * toward.x + ship.velocity.y * toward.y);
+  const braking =
+    finalWaypoint &&
+    closingSpeed > 0.2 &&
+    remaining <= (closingSpeed * closingSpeed) / (2 * acceleration * 0.4) + 2;
+  const targetSpeed = finalWaypoint
+    ? braking
+      ? 0
+      : Math.min(Math.max(0, speed), Math.sqrt(2 * acceleration * 0.4 * remaining))
+    : Math.max(0, speed) * alignment;
+  return {
+    direction: braking
+      ? { x: 0, y: 0 }
+      : finalWaypoint || escape
+        ? toward
+        : { x: Math.cos(ship.headingRadians), y: Math.sin(ship.headingRadians) },
+    targetSpeed,
+    acceleration,
+    headingError,
+  };
+}
+
+function fieldTrafficStepClear(
+  start: WorldPoint,
+  next: WorldPoint,
+  command: FieldFlightCommand,
+  dt: number,
+  obstacles: readonly FieldRouteObstacle[],
+  clearance: number,
+  ship: FieldRouteShip
+): boolean {
+  const intendedNext = {
+    x: start.x + command.direction.x * command.targetSpeed * dt,
+    y: start.y + command.direction.y * command.targetSpeed * dt,
+  };
+  return (
+    trafficStepClear(start, next, dt, obstacles, clearance, ship) &&
+    trafficStepClear(start, intendedNext, dt, obstacles, clearance, ship)
+  );
+}
+
+function finishFieldWaypoint(
+  ship: FieldRouteShip,
+  waypoint: WorldPoint,
+  target: WorldPoint,
+  finalWaypoint: boolean,
+  escape: WorldPoint | null | undefined,
+  dt: number
+): boolean {
+  if (escape) {
+    delete ship.routeState;
+    noteTrafficProgress(ship, dt, false);
+    return false;
+  }
+  if (finalWaypoint) {
+    ship.position = { ...waypoint };
+    ship.velocity = { x: 0, y: 0 };
+  }
+  const route = ship.routeState!;
+  route.index += 1;
+  if (route.index < route.points.length) return false;
+  delete ship.routeState;
+  endTrafficLeg(ship);
+  return distance(ship.position, target) < 2 && Math.hypot(ship.velocity.x, ship.velocity.y) <= 2;
 }

@@ -44,6 +44,7 @@ const controller = readModuleSource(root, 'src/app/game-controller.ts');
 const starController = readModuleSource(root, 'src/app/game-controller-star-map.ts');
 const localActions = readModuleSource(root, 'src/app/game-controller-local-actions.ts');
 const miningController = readModuleSource(root, 'src/app/game-controller-mining.ts');
+const shipStats = readModuleSource(root, 'src/systems/ships/ship-stats.ts');
 const shieldService = fs.readFileSync(
   path.join(root, 'src/systems/shields/shield-service.ts'),
   'utf8'
@@ -197,15 +198,15 @@ assert(
 );
 const miningApproachSection = service.slice(
   service.indexOf('private finishApproachFacing'),
-  service.indexOf('private updateShortRangeScan')
+  service.indexOf('private updateMining')
 );
 assert(
   !miningApproachSection.includes("asteroid.scanLevel = 'analyzed'"),
   'starting mining must not reveal unknown asteroid resources'
 );
 assert(
-  service.includes("asteroid.scanLevel = 'analyzed'") &&
-    service.includes('for (const deposit of asteroid.deposits) deposit.identified = true'),
+  scanClock.includes("asteroid.scanLevel = 'analyzed'") &&
+    scanClock.includes('for (const deposit of asteroid.deposits) deposit.identified = true'),
   'close scan must reveal all asteroid resources'
 );
 assert(
@@ -290,11 +291,13 @@ assert(
   'idle attitude correction must drive RCS turn commands'
 );
 assert(
-  miningController.includes('resolveShipLocalCruiseSpeed(') &&
+  miningController.includes('resolveShipCombatMovementStats(') &&
+    miningController.includes('flightPerformance') &&
     miningController.includes('runtime.stationSkills.piloting') &&
-    miningController.includes('engineSpeedMultiplier(runtime.installed)') &&
-    miningController.includes('runtime.crewEffects.piloting.turnRateMultiplier'),
-  'local-space navigation must apply fitted drive and real crew speed/RCS modifiers'
+    shipStats.includes('engineSpeedMultiplier(installed)') &&
+    shipStats.includes('pilotingTravelSpeedMultiplier(pilotingSkill)') &&
+    shipStats.includes('pilotingTurnRateMultiplier(pilotingSkill)'),
+  'local-space navigation must use the shared combat movement profile with fitted drive and crew effects'
 );
 assert(
   service.includes('miningHoldOffset'),
@@ -305,11 +308,13 @@ assert(
   'mining formation must move its desired point with the target asteroid'
 );
 assert(
-  miningFormation.includes('localShipForwardSpeed(ship)'),
+  miningFormation.includes('forwardError * 0.11') && miningFormation.includes('Math.max(-3.2'),
   'mining formation must follow or back away along the ship axis'
 );
 assert(
-  service.includes('updateMiningFormation'),
+  service.includes('advanceFieldMiningFormation(') &&
+    miningFormation.includes('advanceFieldMiningFormation') &&
+    miningFormation.includes('applyShipVelocityCommand(ship'),
   'mining must actively maintain formation with a drifting target'
 );
 assert(
@@ -385,11 +390,12 @@ assert(autopilot.includes('MAX_TURN_RATE'), 'route following must limit ship tur
 assert(
   autopilot.includes('REVERSE_CORRECTION_DISTANCE') &&
     autopilot.includes('advanceReverseCorrection') &&
-    autopilot.includes('setLocalShipDisplacement(ship, start, deltaSeconds)'),
-  'short final corrections behind the ship must use reverse thrust without turning around'
+    autopilot.includes('applyShipVelocityCommand(ship') &&
+    autopilot.includes('ship.longitudinalThrust = -'),
+  'short final corrections behind the ship must use shared reverse thrust without turning around'
 );
 assert(
-  service.includes('false,\n      true') && service.includes('true,\n      true'),
+  (service.match(/true,\n {6}true/g) ?? []).length === 2,
   'manual navigation and mining approach must allow short reverse corrections'
 );
 assert(service.includes('integrateAsteroids'), 'service must advance rigid asteroid physics');

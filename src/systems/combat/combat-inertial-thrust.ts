@@ -3,7 +3,8 @@ import type {
   StrategicCombatArenaOptions,
   CombatPoint,
 } from './strategic-combat-types';
-import { clamp, EDGE_PADDING } from './strategic-combat-geometry';
+import { applyShipVelocityCommand, shipFlightBounds } from '../../core/ship-flight-physics';
+import { EDGE_PADDING } from './strategic-combat-geometry';
 
 /**
  * Every hull can anchor its maneuver tractor to a massive nearby asteroid to
@@ -49,41 +50,29 @@ export function applyInertialThrust(
 ): void {
   const alignment = Math.max(0.25, Math.cos(Math.min(Math.PI / 2, Math.abs(headingError))));
   const boosted = combatant.boostActive === true;
-  const requested = baseSpeed * targetSpeedFactor * alignment * (boosted ? 1.65 : 1);
-  const targetSpeed = tractorLocked ? Math.min(requested, 25) : requested;
+  const requested = baseSpeed * targetSpeedFactor * alignment;
   const thrust = rcsStrafe ?? {
     x: Math.cos(combatant.headingRadians),
     y: Math.sin(combatant.headingRadians),
   };
-  const dx = thrust.x * targetSpeed - combatant.velocity.x;
-  const dy = thrust.y * targetSpeed - combatant.velocity.y;
-  const change = Math.hypot(dx, dy);
-  const slowing = dx * combatant.velocity.x + dy * combatant.velocity.y < 0;
   const tractorAssist = tractorLocked ? 1 : tractorAccelerationFactor(combatant, thrust, arena);
-  const fraction = Math.min(
-    1,
-    (acceleration *
-      tractorAssist *
-      (boosted ? 1 + 2.5 * Math.min(1, (combatant.boostRampSeconds ?? 0) / 2) : 1) *
-      (rcsStrafe ? 0.4 : 1) *
-      (slowing ? 1.35 : 1) *
-      dt) /
-      Math.max(0.001, change)
-  );
-  combatant.velocity.x += dx * fraction;
-  combatant.velocity.y += dy * fraction;
-  const speed = Math.hypot(combatant.velocity.x, combatant.velocity.y);
-  const limit = tractorLocked ? 25 : baseSpeed * (boosted ? 1.65 : 1.05);
-  if (speed > limit) {
-    combatant.velocity.x *= limit / speed;
-    combatant.velocity.y *= limit / speed;
-  }
-
   const padding = arena.useFieldBounds ? 0 : EDGE_PADDING;
-  const nextX = combatant.position.x + combatant.velocity.x * dt;
-  const nextY = combatant.position.y + combatant.velocity.y * dt;
-  combatant.position.x = clamp(nextX, padding, arena.width - padding);
-  combatant.position.y = clamp(nextY, padding, arena.height - padding);
-  if (nextX !== combatant.position.x) combatant.velocity.x = 0;
-  if (nextY !== combatant.position.y) combatant.velocity.y = 0;
+  applyShipVelocityCommand(combatant, {
+    direction: thrust,
+    acceleration,
+    deltaSeconds: dt,
+    boost: {
+      active: boosted,
+      speedMultiplier: 1.65,
+      accelerationRampMultiplier: 2.5,
+      rampSeconds: combatant.boostRampSeconds ?? 0,
+      rampDurationSeconds: 2,
+    },
+    ...(tractorLocked ? { targetSpeedCap: 25 } : {}),
+    accelerationMultiplier: tractorAssist,
+    ...(rcsStrafe ? { rcsMultiplier: 0.4 } : {}),
+    targetSpeed: requested,
+    maxSpeed: tractorLocked ? 25 : baseSpeed * (boosted ? 1.65 : 1.05),
+    bounds: shipFlightBounds(arena.width, arena.height, padding),
+  });
 }

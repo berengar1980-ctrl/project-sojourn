@@ -10,6 +10,7 @@ import type {
 } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { ManeuveringShipControls } from '../../core/physical-ship-state';
+import { shipFlightBounds } from '../../core/ship-flight-physics';
 import {
   createShieldWorldGeometry,
   resolveAsteroidCollisions,
@@ -27,7 +28,7 @@ import {
   setLocalShipVelocity,
 } from './local-space-ship-velocity';
 import { hasMineableDeposits } from './mining-chunk-service';
-import { advanceMiningFormation } from './local-space-mining-formation';
+import { advanceFieldMiningFormation } from './local-space-mining-formation';
 import { selectedAsteroid } from './local-space-scanning';
 import {
   createIdleStationKeepingState,
@@ -78,7 +79,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
   constructor(private readonly options: LocalSpaceServiceOptions) {
     this.instance = options.instance;
     ensureLocalShipPhysicalState(this.instance.ship);
-    this.scanClock = new LocalSpaceScanClock(options.instance);
+    this.scanClock = new LocalSpaceScanClock(options.instance, options.flightPerformance);
     this.approachSpeed = options.approachSpeed;
     this.turnRateMultiplier = options.turnRateMultiplier ?? 1;
     this.miningEnabled = options.mining?.enabled ?? true;
@@ -300,7 +301,15 @@ class LocalSpaceRuntime implements LocalSpaceService {
     } else if (asteroid && this.miningPhase === 'approaching') {
       this.updateApproach(clamped, asteroid);
     } else if (asteroid && this.miningPhase === 'scanning') {
-      this.updateShortRangeScan(clamped, asteroid);
+      if (
+        this.scanClock.advanceShort(
+          clamped,
+          asteroid,
+          this.idleStationKeeping,
+          this.stationKeepingPosition
+        )
+      )
+        this.finishMining();
     } else if (asteroid && this.miningPhase === 'extracting') {
       this.updateMining(clamped, asteroid);
     }
@@ -382,7 +391,9 @@ class LocalSpaceRuntime implements LocalSpaceService {
       deltaSeconds,
       true,
       true,
-      this.turnRateMultiplier
+      this.turnRateMultiplier,
+      undefined,
+      this.options.flightPerformance
     );
     this.navigationIndex = result.nextIndex;
     if (result.completed) this.finishManualNavigation();
@@ -412,9 +423,11 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.approachIndex,
       this.approachSpeed,
       deltaSeconds,
-      false,
       true,
-      this.turnRateMultiplier
+      true,
+      this.turnRateMultiplier,
+      undefined,
+      this.options.flightPerformance
     );
     this.approachIndex = result.nextIndex;
     if (result.completed) this.finishApproachFacing(deltaSeconds, asteroid);
@@ -423,7 +436,17 @@ class LocalSpaceRuntime implements LocalSpaceService {
   private finishApproachFacing(deltaSeconds: number, asteroid: LocalAsteroid): void {
     const ship = this.instance.ship;
     const turnRateMultiplier = this.turnRateMultiplier;
-    if (!faceAutopilotTarget(ship, asteroid.position, deltaSeconds, turnRateMultiplier)) return;
+    if (
+      !faceAutopilotTarget(
+        ship,
+        asteroid.position,
+        deltaSeconds,
+        turnRateMultiplier,
+        this.options.flightPerformance,
+        shipFlightBounds(this.instance.width, this.instance.height)
+      )
+    )
+      return;
 
     if (this.approachPurpose === 'scan') {
       resetAutopilotMotion(ship);
@@ -447,21 +470,15 @@ class LocalSpaceRuntime implements LocalSpaceService {
     this.miningPhase = 'extracting';
   }
 
-  private updateShortRangeScan(deltaSeconds: number, asteroid: LocalAsteroid): void {
-    if (
-      this.scanClock.advanceShort(
-        deltaSeconds,
-        asteroid,
-        this.idleStationKeeping,
-        this.stationKeepingPosition
-      )
-    ) {
-      this.finishMining();
-    }
-  }
-
   private updateMining(deltaSeconds: number, asteroid: LocalAsteroid): void {
-    this.updateMiningFormation(deltaSeconds, asteroid);
+    advanceFieldMiningFormation(
+      this.instance,
+      asteroid,
+      this.miningHoldOffset,
+      this.shield.radiusX,
+      deltaSeconds,
+      this.options.flightPerformance
+    );
     if (this.miningEvents.pauseExtraction(asteroid, deltaSeconds)) return;
 
     this.miningAccumulator += deltaSeconds;
@@ -473,17 +490,6 @@ class LocalSpaceRuntime implements LocalSpaceService {
     }
 
     if (!hasMineableDeposits(asteroid, selection)) this.finishMining();
-  }
-
-  private updateMiningFormation(deltaSeconds: number, asteroid: LocalAsteroid): void {
-    advanceMiningFormation({
-      ship: this.instance.ship,
-      asteroid,
-      asteroids: this.instance.asteroids,
-      holdOffset: this.miningHoldOffset,
-      shieldRadiusX: this.shield.radiusX,
-      deltaSeconds,
-    });
   }
 }
 

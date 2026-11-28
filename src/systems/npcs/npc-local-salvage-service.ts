@@ -25,12 +25,14 @@ import { seededLocalGate } from '../../core/local-space-exit';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { SalvageWreck } from '../../core/salvage-types';
 import type { WorldPoint } from '../../core/world-types';
+import { shipFlightBounds, turnShipTowardHeading } from '../../core/ship-flight-physics';
 import { createSalvageEventController } from '../salvage/salvage-event-service';
 import { createSalvageFieldService } from '../salvage/salvage-field-service';
 import { ensurePhysicalShipVelocity } from '../../core/physical-ship-state';
 import {
   createLocalNpcPhysicalPose,
   localNpcCruiseSpeed,
+  localNpcFlightPerformance,
   syncLocalNpcWorkerPose,
 } from './npc-local-physical-pose';
 import { resolveNpcSalvageLocalContacts } from './npc-local-salvage-contacts';
@@ -285,16 +287,15 @@ class LocalSalvageService implements NpcLocalSalvageService {
           ),
           ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
         ],
-        65
+        65,
+        'grid',
+        localNpcFlightPerformance(npc, FLIGHT_SPEED),
+        shipFlightBounds(this.options.field.width, this.options.field.height)
       )
     ) {
       ship.phase = 'scanning';
       ship.velocity = { x: 0, y: 0 };
       ship.scanProgress = 0;
-      ship.headingRadians = Math.atan2(
-        wreck.position.y - ship.position.y,
-        wreck.position.x - ship.position.x
-      );
     }
     return;
   };
@@ -308,6 +309,12 @@ class LocalSalvageService implements NpcLocalSalvageService {
       this.beginExit(ship);
       return;
     }
+    turnShipTowardHeading(
+      ship,
+      Math.atan2(wreck.position.y - ship.position.y, wreck.position.x - ship.position.x),
+      localNpcFlightPerformance(npc, FLIGHT_SPEED).turnRateRadiansPerSecond,
+      dt
+    );
     if (!advanceWorkerScan(ship, dt)) return;
     wreck.inspected = true;
     wreck.scanLevel = 'analyzed';
@@ -334,9 +341,11 @@ class LocalSalvageService implements NpcLocalSalvageService {
     }
     ship.velocity = { x: 0, y: 0 };
     ship.salvageActive = true;
-    ship.headingRadians = Math.atan2(
-      wreck.position.y - ship.position.y,
-      wreck.position.x - ship.position.x
+    turnShipTowardHeading(
+      ship,
+      Math.atan2(wreck.position.y - ship.position.y, wreck.position.x - ship.position.x),
+      localNpcFlightPerformance(npc, FLIGHT_SPEED).turnRateRadiansPerSecond,
+      dt
     );
     ship.workAccumulator += dt;
     if (ship.workAccumulator < 0) return;
@@ -423,7 +432,10 @@ class LocalSalvageService implements NpcLocalSalvageService {
           ),
           ...(this.options.getTrafficObstacles?.(npc.id) ?? []),
         ],
-        65
+        65,
+        'grid',
+        localNpcFlightPerformance(npc, FLIGHT_SPEED),
+        shipFlightBounds(this.options.field.width, this.options.field.height)
       )
     ) {
       this.options.depart(npc);

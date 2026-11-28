@@ -13,6 +13,7 @@ import { seededLocalGate } from '../../core/local-space-exit';
 import { cloneCareerJson } from '../persistence/career-save-contract';
 import { stageLocalMinerCheckpoint } from './npc-local-mining-checkpoint';
 import type { LocalAsteroid } from '../../core/local-space-types';
+import { shipFlightBounds } from '../../core/ship-flight-physics';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
 import { createMiningEventController } from '../local-space/mining-event-service';
@@ -20,9 +21,9 @@ import { ensurePhysicalShipVelocity } from '../../core/physical-ship-state';
 import {
   createLocalNpcPhysicalPose,
   localNpcCruiseSpeed,
+  localNpcFlightPerformance,
   syncLocalNpcWorkerPose,
 } from './npc-local-physical-pose';
-
 import { resolveMinerCollisions } from './npc-local-mining-contacts';
 
 import {
@@ -269,16 +270,15 @@ function advanceApproaching(
         localNpcCruiseSpeed(npc, FLIGHT_SPEED),
         dt,
         [...rockBlockers, ...(runtime.options.getTrafficObstacles?.(npc.id) ?? [])],
-        65
+        65,
+        'grid',
+        localNpcFlightPerformance(npc, FLIGHT_SPEED),
+        shipFlightBounds(runtime.options.width, runtime.options.height)
       )
     ) {
       ship.phase = 'scanning';
       ship.velocity = { x: 0, y: 0 };
       ship.scanProgress = 0;
-      ship.headingRadians = Math.atan2(
-        asteroid.position.y - ship.position.y,
-        asteroid.position.x - ship.position.x
-      );
     }
     return;
   }
@@ -331,12 +331,7 @@ function advanceMining(
       if (resolvePendingEvent(runtime, ship, npc, asteroid)) return;
       return;
     }
-    ship.velocity = { x: 0, y: 0 };
     ship.laserActive = true;
-    ship.headingRadians = Math.atan2(
-      asteroid.position.y - ship.position.y,
-      asteroid.position.x - ship.position.x
-    );
     ship.miningAccumulator += dt;
     const cycle = controller?.cycleSeconds(MINING_CYCLE_SECONDS) ?? MINING_CYCLE_SECONDS;
     while (ship.miningAccumulator >= cycle && ship.phase === 'mining') {
@@ -353,7 +348,13 @@ function advanceMiner(
   npc: SectorNpcState,
   dt: number
 ): boolean {
-  holdMinerWorkRange(ship, runtime.options.getAsteroids(), dt);
+  holdMinerWorkRange(
+    ship,
+    runtime.options.getAsteroids(),
+    dt,
+    localNpcFlightPerformance(npc, FLIGHT_SPEED),
+    shipFlightBounds(runtime.options.width, runtime.options.height)
+  );
   if (ship.phase === 'entering' && !assignTarget(runtime, ship, npc)) return false;
   if (ship.phase === 'approaching') {
     advanceApproaching(runtime, ship, npc, dt);
@@ -378,7 +379,10 @@ function advanceMiner(
         ...runtime.options.getAsteroids().filter((rock) => rock.routeBlocking),
         ...(runtime.options.getTrafficObstacles?.(npc.id) ?? []),
       ],
-      65
+      65,
+      'grid',
+      localNpcFlightPerformance(npc, FLIGHT_SPEED),
+      shipFlightBounds(runtime.options.width, runtime.options.height)
     )
   ) {
     runtime.options.depart(npc);

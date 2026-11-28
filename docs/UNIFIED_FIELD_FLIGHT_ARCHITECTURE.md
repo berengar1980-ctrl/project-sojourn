@@ -109,7 +109,7 @@ Abhängigkeiten können gemeinsame kleine Migrationsschritte erfordern.
 
 ### F01 – Physischer Schiffszustand
 
-- [ ] F01 Gemeinsamer physischer Schiffszustand
+- [x] F01 Gemeinsamer physischer Schiffszustand
 
 PvP als Referenz: Position, vollständiger XY-Geschwindigkeitsvektor,
 Ausrichtung, Drehgeschwindigkeit, RCS-/Schubzustand. Geschwindigkeit ist
@@ -342,6 +342,21 @@ der Schreibstellen (AST bzw. gezielte Codeprüfung) gegen eine begründete
 Allowlist einführen; spätestens mit F02/F03 als ausführbarer Architekturtest.
 Die Liste darf keine alten Modusintegratoren dauerhaft freistellen.
 
+F02-Schreibstellenreview: Schiffs-Translation darf nur der gemeinsame
+`src/core/ship-flight-physics.ts`-Integrator ausführen. Gemeinsame
+Velocitieschreibstellen in `local-space-ship-velocity.ts` sind
+Koordinatentransformationen/Reset, keine Integration. Route-Rollback,
+Waypoint-Endzustand, Arbeitsstopp/Tod und Feld-/Combat-Übergänge setzen
+Zustände kontrolliert zurück oder übertragen sie. Kontaktdateien dürfen
+Positionen trennen und Impulse anwenden; sie ersetzen keine Flugsteuerung.
+`tests/architecture/shared-flight-integrator-boundary.test.cjs` durchsucht
+TypeScript-ASTs nach weiterer Positionintegration mit Geschwindigkeit/Tempo und
+Zeitschritt und prüft die zentralen Aufrufer. Seine konkreten Ausnahmen sind
+nur Nicht-Schiff-Körper: geworfene Asteroiden in
+`combat-tractor-asteroid-throw.ts` sowie Miningchunks in
+`mining-chunk-service.ts`; sie bleiben für F03 separat klassifiziert und
+stellen keine Schiffsbewegungs- oder Modusausnahme dar.
+
 ### Produktivcode-Bilanz
 
 Baseline ist Main nach #408. Pro Paket und kumulativ erfassen:
@@ -379,12 +394,56 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 
 ## Nachweisblock
 
-Noch keine Paketnachweise. F01 ist lokal umgesetzt und verifiziert, aber wegen
-ausstehender Branch-CI nicht abgenommen. Kein Paket abgeschlossen.
+- F01 code: `PhysicalShipState` ist der gemeinsame Positions-, Heading- und XY-Geschwindigkeitsvertrag; `ManeuveringShipState` ergänzt Dreh-/Schubzustand. Spieler, Combatants, Feld-NPCs und Drohne nutzen ihn; Übergänge und Restore übernehmen Vektoren vollständig.
+- F01 removed: redundante autoritative Geschwindigkeit sowie lokale NPC-Pose-/Cruise- und Salvage-Kontaktduplikate entfernt; verbleibende `speed`-Werte sind abgeleitete Anzeige-/Datenadapter.
+- F01 test: `tests/persistence/career-combat-runtime.test.cjs` und `tests/persistence/career-npc-checkpoint.test.cjs` prüfen Kampf-/NPC-Checkpoint-Restore; lokale Quick Suite bestand mit 405 Tests.
+- F01 ci: PR-Head `cc81314df011c9e62b10b6a86d5e435d74210008`; GitHub Actions Quality Gate Run 1966 (`46114558950`) und Career Browser Restart Run 1181 (`46114558937`) beide erfolgreich.
+- F01 loc: gegen Baseline `6babc77e520d5c30f49f6876fc325dd110a7d02a`: 851 additions, 390 deletions, netto +461 `src/`-Zeilen. Zuwachs kommt aus dem gemeinsamen Zustandsvertrag und staged Save-/NPC-Migration; die alten skalaren Speicherstellen werden entfernt.
+- F01 parity: PvP-/Feldwechsel und Save/Load übertragen XY-Geschwindigkeit, Heading und Bewegungszustand; historische skalare Checkpoints werden migriert. Feature-Parity-Review vom 28.11.2026 bestätigt keine Änderung am Status der 241 historischen Feature-IDs; die lokale Vergleichssuite und beide PR-Head-Workflows sind grün.
 
 ## Arbeitslog und Übergabe an neue Chats
 
-- 28.11.2026: F01 bleibt offen. Gemeinsamer `PhysicalShipState` enthält
+- 28.11.2026: F02 in Arbeit auf `refactor/unified-field-flight-physics`, Basis
+  `cc81314df011c9e62b10b6a86d5e435d74210008`; kein Merge nach Main. Der
+  gemeinsame `src/core/ship-flight-physics.ts`-Integrator besitzt jetzt
+  Beschleunigungsantwort, Brems-/Gegenschub, Boost-Rampe, RCS-Multiplikator,
+  Sollgeschwindigkeitslimit, Drehung, Drift und Feldgrenzen. PvP-1vs1 nutzt ihn
+  mit unveränderter Operationsreihenfolge; ziviler Local-Space-Autopilot,
+  Bergungs-/Mining-Anflug, Stationshaltung, lokale Miner/Berger/Piraten,
+  kampagnenweite NPC-Kampfverfolgung (`npc-sector-combat-movement.ts`),
+  Patrouillendrohne und NPC-Arbeitsanflug verwenden dieselben Kernfunktionen.
+  Routen-/Taktikentscheidungen bleiben Auftragsadapter und besitzen keine
+  eigene Integrationsschleife. `shipFlightBounds` vereinheitlicht Grenzen.
+  `field-ship-routing.ts` wurde in Flugkommando, Verkehrsprüfung und
+  Wegpunktabschluss zerlegt; zusätzliche Flight-/Availability-Adapter wurden
+  aus zu großen Services extrahiert. Der historische 1vs1-Trace blieb exakt
+  gleich; die neue Produktionspfad-Gegenprobe vergleicht Position, XY-Tempo,
+  Heading und Drehgeschwindigkeit für Beschleunigen, Drehung, Bremsen und
+  Grenzen. Ein gezielter Kommandotest prüft Boost-Rampe, Traktorlimit, RCS,
+  Stop und Drift. `npm run format:check`, `npm run lint`, `npm run typecheck`,
+  `npm run deps:check`, `npm run persistence:check` sowie Quick Suite (407/407)
+  und Build bestanden, bevor der zusätzliche Sektor-NPC-/Mining-Arbeitspositions-
+  pfad migriert wurde; diese Änderungen werden erneut verifiziert.
+  `campaign-npc-flight-parity.test.cjs` vergleicht Kampagnenverfolgung/Flucht
+  direkt mit dem PvP-Steuerungspfad. `shared-flight-integrator-boundary.test.cjs`
+  fügt einen TypeScript-AST-Audit mit drei begründeten Nicht-Schiff-Ausnahmen
+  hinzu. Nach Entfernung der sofortigen Mining-/Salvage-Zielausrichtung nutzen
+  auch zivile Arbeitsdrehungen dieselbe Drehbegrenzung. Der abschließende lokale
+  Gate-Lauf bestand: Format, Lint, Typecheck, Dependency-Architektur,
+  Persistenzprüfung, Quick Suite (409/409) und Build. Die alte PvP-Replay-Prüfung
+  bleibt exakt; Produktionspfadvergleiche prüfen Beschleunigen, Drehen, Bremsen,
+  Grenzen, Kampagnen-Verfolgung/Flucht sowie RCS-Anzeige/Rückwärtskorrektur;
+  Befehlsprüfungen decken Boost-Rampe, Traktorassistenz/-limit, Stop und Drift ab.
+  `git diff --check` ist sauber. Die Produktivcode-Bilanz gegen den Branchstand
+  vor F02 beträgt 828 hinzugefügte, 440 entfernte und netto 388 `src/`-Zeilen;
+  die 169-zeilige gemeinsame Physik steht zusätzlichen Extraktionen und der
+  Entfernung redundanter Flughelfer gegenüber. F02 bleibt offen: GitHub-Actions
+  müssen auf dem tatsächlichen aktualisierten PR-Head erfolgreich sein; erst
+  dann folgen die sechs F02-Nachweiszeilen und die Abnahme.
+- 28.11.2026: F01 abgenommen nach tatsächlichen erfolgreichen GitHub-Actions-Läufen
+  auf PR-Head `cc81314df011c9e62b10b6a86d5e435d74210008`: Quality Gate Run 1966
+  (`46114558950`) und Career Browser Restart Run 1181 (`46114558937`). Beide
+  Workflows sind grün. Der gemeinsame `PhysicalShipState` enthält
   Position, Heading, XY-Geschwindigkeit und Dreh-/Schubzustand. `speed` ist
   überall abgeleitet; lokale Spieleranzeige nutzt die signierte
   Vorwärtsprojektion, Kampfsnapshot und NPC-Reisewert die Vektormagnitude.

@@ -7,6 +7,12 @@ import { steerCombatRoute } from './combat-route-steering';
 export { mineDetection, avoidDetectedMine } from './combat-route-steering';
 import { updateStandardCombatBoost } from './combat-standard-boost';
 import { applyInertialThrust } from './combat-inertial-thrust';
+import {
+  advanceShipDrift,
+  flightAngleDelta,
+  shipFlightBounds,
+  turnShipTowardHeading,
+} from '../../core/ship-flight-physics';
 import { preferredRange } from './combat-tactic-choice';
 export { updateAiTactic } from './combat-tactic-choice';
 
@@ -19,11 +25,9 @@ import type {
 } from './strategic-combat-types';
 
 import {
-  clamp,
   distance,
   EDGE_PADDING,
   normalize,
-  wrapAngle,
   DEFAULT_TURN_RATE,
   DEFAULT_ACCELERATION,
 } from './strategic-combat-geometry';
@@ -109,7 +113,7 @@ function forwardWeaponSteering(
   return toward;
 }
 
-function performCombatThrust(
+export function performCombatThrust(
   combatant: MutableCombatant,
   enemy: MutableCombatant,
   deltaSeconds: number,
@@ -119,12 +123,9 @@ function performCombatThrust(
   strafeDirection?: CombatPoint
 ): void {
   const desiredHeading = Math.atan2(headingDirection.y, headingDirection.x);
-  const headingError = wrapAngle(desiredHeading - combatant.headingRadians);
+  const headingError = flightAngleDelta(combatant.headingRadians, desiredHeading);
   const maxTurn = Math.max(0.25, combatant.setup.turnRateRadiansPerSecond ?? DEFAULT_TURN_RATE);
-  const turn = clamp(headingError, -maxTurn * deltaSeconds, maxTurn * deltaSeconds);
-  combatant.headingRadians = wrapAngle(combatant.headingRadians + turn);
-  combatant.turnRateRadiansPerSecond = deltaSeconds > 0 ? turn / deltaSeconds : 0;
-  combatant.angularThrust = clamp(headingError / Math.max(0.1, maxTurn), -1, 1);
+  turnShipTowardHeading(combatant, desiredHeading, maxTurn, deltaSeconds);
 
   const baseSpeed = Math.max(65, combatant.setup.combatSpeed ?? 120);
   const acceleration = Math.max(
@@ -134,16 +135,7 @@ function performCombatThrust(
   if (combatant.subsystems.engine <= 0) {
     const padding = arena.useFieldBounds ? 0 : EDGE_PADDING;
     // With no main engine the ship keeps drifting; only RCS can turn its bow.
-    combatant.position.x = clamp(
-      combatant.position.x + combatant.velocity.x * deltaSeconds,
-      padding,
-      arena.width - padding
-    );
-    combatant.position.y = clamp(
-      combatant.position.y + combatant.velocity.y * deltaSeconds,
-      padding,
-      arena.height - padding
-    );
+    advanceShipDrift(combatant, deltaSeconds, shipFlightBounds(arena.width, arena.height, padding));
     resolveArenaObstacles(combatant, arena);
     return;
   }
@@ -271,7 +263,10 @@ export function moveCombatant(
   });
   const headingDirection = posture.heading;
   // RCS corrects the escape velocity before the hull completes its turn.
-  const headingError = wrapAngle(Math.atan2(direction.y, direction.x) - combatant.headingRadians);
+  const headingError = flightAngleDelta(
+    combatant.headingRadians,
+    Math.atan2(direction.y, direction.x)
+  );
   const escapeStrafe = combatant.tactic === 'flee' && Math.abs(headingError) > 0.65;
   updateStandardCombatBoost(
     combatant,

@@ -1,5 +1,6 @@
 import type { LocalAsteroid, LocalSpaceInstance } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
+import { shipFlightBounds } from '../../core/ship-flight-physics';
 import { advanceAutopilotRoute } from './local-space-autopilot';
 import {
   fieldTrafficObstacles,
@@ -27,15 +28,27 @@ export class LocalSpaceAutopilotHazards {
   ) {}
 
   advanceRoute(...args: Parameters<typeof advanceAutopilotRoute>) {
-    const [ship, route, index, speed, dt, brake, reverse, turnRate] = args;
-    return advanceAutopilotRoute(ship, route, index, speed, dt, brake, reverse, turnRate, {
-      obstacles: this.getTraffic(),
-      solids: () =>
-        [...this.instance.asteroids, ...this.additionalObstacles()].filter(
-          (rock) => rock.routeBlocking
-        ),
-      clearance: Math.max(this.shield.radiusX, this.shield.radiusY),
-    });
+    const [ship, route, index, speed, dt, brake, reverse, turnRate, , performance, bounds] = args;
+    return advanceAutopilotRoute(
+      ship,
+      route,
+      index,
+      speed,
+      dt,
+      brake,
+      reverse,
+      turnRate,
+      {
+        obstacles: this.getTraffic(),
+        solids: () =>
+          [...this.instance.asteroids, ...this.additionalObstacles()].filter(
+            (rock) => rock.routeBlocking
+          ),
+        clearance: Math.max(this.shield.radiusX, this.shield.radiusY),
+      },
+      performance,
+      bounds ?? shipFlightBounds(this.instance.width, this.instance.height)
+    );
   }
 
   reset(): void {

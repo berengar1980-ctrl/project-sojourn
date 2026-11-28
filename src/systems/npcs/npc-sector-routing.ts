@@ -218,19 +218,6 @@ export function pirateHuntDestination(
   return best.id;
 }
 
-function angleDelta(current: number, target: number): number {
-  let delta = target - current;
-  while (delta > Math.PI) delta -= Math.PI * 2;
-  while (delta < -Math.PI) delta += Math.PI * 2;
-  return delta;
-}
-
-export function turnToward(current: number, target: number, maximumDelta: number): number {
-  const delta = angleDelta(current, target);
-  if (Math.abs(delta) <= maximumDelta) return target;
-  return current + Math.sign(delta) * maximumDelta;
-}
-
 export function nearestLocation(world: WorldMap, position: WorldPoint): string | null {
   return (
     world.locations

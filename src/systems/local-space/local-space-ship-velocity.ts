@@ -67,18 +67,6 @@ export function setLocalShipComponents(
   };
 }
 
-export function setLocalShipDisplacement(
-  ship: LocalShipState,
-  start: WorldPoint,
-  deltaSeconds: number
-): void {
-  if (deltaSeconds <= 0) return;
-  ship.velocity = {
-    x: (ship.position.x - start.x) / deltaSeconds,
-    y: (ship.position.y - start.y) / deltaSeconds,
-  };
-}
-
 export function clearLocalShipVelocity(ship: LocalShipState): void {
   ensureLocalShipPhysicalState(ship);
   ship.velocity = { x: 0, y: 0 };

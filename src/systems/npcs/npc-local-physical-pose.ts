@@ -2,14 +2,28 @@ import type { ManeuveringShipControls, PhysicalShipState } from '../../core/phys
 import { velocityFromHeading } from '../../core/physical-ship-state';
 import type { SectorNpcState } from '../../core/npc-types';
 import type { WorldPoint } from '../../core/world-types';
-import { getShipDefinition, resolveShipLocalCruiseSpeed } from '../ships';
+import type { ShipFlightPerformance } from '../../core/ship-flight-physics';
+import { getShipDefinition, resolveShipCombatMovementStats } from '../ships';
 import { ensureNpcInstalledComponents } from './npc-upgrade-service';
 
 export type LocalNpcPhysicalPose = PhysicalShipState & { readonly speed: number };
 
-export function localNpcCruiseSpeed(npc: SectorNpcState, fallback: number): number {
+export function localNpcFlightPerformance(
+  npc: SectorNpcState,
+  fallback: number
+): ShipFlightPerformance {
   const ship = getShipDefinition(npc.shipId);
-  return ship ? resolveShipLocalCruiseSpeed(ship, ensureNpcInstalledComponents(npc)) : fallback;
+  return ship
+    ? resolveShipCombatMovementStats(ship, ensureNpcInstalledComponents(npc))
+    : {
+        combatSpeed: fallback,
+        turnRateRadiansPerSecond: 1.15,
+        accelerationMetersPerSecond2: 30,
+      };
+}
+
+export function localNpcCruiseSpeed(npc: SectorNpcState, fallback: number): number {
+  return localNpcFlightPerformance(npc, fallback).combatSpeed;
 }
 
 export function createLocalNpcPhysicalPose(

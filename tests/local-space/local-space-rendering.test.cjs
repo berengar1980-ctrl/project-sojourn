@@ -241,7 +241,9 @@ assert(
 );
 assert(maneuverSelection.includes('shouldBurst'), 'small RCS corrections must fire in bursts');
 assert(
-  stationKeeping.includes('Math.max(-0.8, Math.min(0.8, lateralVelocity))'),
+  stationKeeping.includes('((seed % 2001) / 2000 - 0.5) * 0.68') &&
+    stationKeeping.includes('maxSpeed: 0.8') &&
+    stationKeeping.includes('applyShipVelocityCommand(ship'),
   'idle station keeping must allow visible low-speed drift before correcting'
 );
 assert(maneuvers.includes('rgba(213, 244, 255'), 'RCS exhaust must use a white-blue core');

@@ -47,7 +47,8 @@ const saved = ship.routeState;
 assert(saved);
 assert.equal(moveFieldShip(ship, target, 100, 0.1, [], 10), false);
 assert.equal(ship.routeState, saved, 'yielding must retain the existing route');
-assert.deepEqual(ship.position, next);
+assert.ok(Math.abs(ship.position.x - 0.3) < 1e-8, 'field route must use the shared acceleration');
+assert.deepEqual(ship.velocity, { x: 3, y: 0 });
 
 const player = { position: { ...start }, headingRadians: 0, speed: 0 };
 const route = [target];
