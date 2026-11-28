@@ -238,7 +238,7 @@ Regressionstests geprüft.
 
 ### F04 – Gemeinsame Navigation
 
-- [ ] F04 Gemeinsame Navigation und Hindernisvermeidung
+- [x] F04 Gemeinsame Navigation und Hindernisvermeidung
 
 PvP `combat-asteroid-routing.ts` / `combat-route-steering.ts` als bevorzugte
 Grundlage für den schnellen Flankenversuch; vorhandene zivile Gittersuche in
@@ -262,7 +262,7 @@ Ausfahrt, kleine Trümmer ohne Detour, große Hindernisse sicher umfliegen.
 Kein Durchreichen einer erwiesenermaßen blockierten Endroute; weniger
 ungewollte Großkörperkontakte ohne Verschlechterung von Flugleistung.
 
-F04-Audit und Implementierung, 28.11.2026 (Abnahme offen): Die PvP-Zwei-
+F04-Audit und Implementierung, 28.11.2026 (abgenommen): Die PvP-Zwei-
 Flanken-/10-Hop-Suche ist jetzt der gemeinsame schnelle erste Versuch in
 `local-space-navigation.ts`; komplexe Felder fallen auf dessen gemeinsame
 44-m-A*-Suche zurück. Combat behält persistente taktische Routenbindung,
@@ -297,15 +297,15 @@ Typecheck, Dependency- und Persistenzprüfung sowie 411/411 Tests. `npm run
 build` bestanden; Vite meldet weiterhin die bestehende Chunk-Warnung für das
 1,22-MB-JavaScript-Bundle. Nach der Aktualisierung dieses Arbeitsnachweises
 bestanden `npm run format:check`, `git diff --check` und der
-Architektur-Dokumentationstest. Der F04-Code liegt auf PR #410 als Commit
-`5858593e`. Quality Gate Run 1973 bestand Format, Lint, Typecheck und
-Dependency-Check, scheiterte aber an der fehlenden Persistenzklassifizierung
-für `local-space-route-flanks.ts`; Tests, Wirtschaftssmoke und Build wurden
-deshalb übersprungen. Career-Browser-Restart Run 1188 war erfolgreich. Die
-fehlende `derived`-Einstufung und der Persistenz-Auswirkungsvermerk sind
-ergänzt; `npm run persistence:check` besteht lokal. Der Korrekturcommit ist
-erst lokal erstellt, der CI-Neustart steht noch aus. F04 bleibt bis zur
-Branch-CI und finalen Abnahme offen; kein Merge nach Main.
+Architektur-Dokumentationstest. Die erste CI-Runde fand die fehlende
+Persistenzklassifizierung für `local-space-route-flanks.ts`; die Einstufung
+als `derived` und der Persistenz-Auswirkungsvermerk sind ergänzt. Auf PR #410
+bestand der korrigierte Stand `a3983b83` Quality Gate Run 1974 mit Format,
+Lint, TypeScript, Dependency- und Persistenzprüfung, 411/411 Tests,
+Drei-Tage-Wirtschaftssmoke und Produktionsbuild. Career-Browser-Restart Run
+1189 bestand ebenfalls. Damit sind die F04-Abnahmepfade lokal und in CI grün;
+F04 ist abgenommen. Der Build enthält weiterhin die bekannte Vite-Warnung
+zum 1,22-MB-JavaScript-Bundle. Kein Merge nach Main.
 
 ### F05 – Kampftaktik und Manöver
 
@@ -504,6 +504,12 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 - F03 ci: PR-Head `e3346c047b44fe8daf9bdd605bf321ea2ea552fd`; GitHub Actions Sojourn Quality Gate Run 1971 (`46129168075`) und Career browser restart smoke Run 1186 (`46129168068`) beide erfolgreich. Der Quality Gate enthielt Format, Lint, Typecheck, Dependency- und Persistenzprüfung, alle Projekttests, integrierten Drei-Tage-Wirtschaftssmoke und Produktionsbuild; der Browser-Smoke prüfte Save, Neuladen und Fortsetzen.
 - F03 loc: gegen F03-Basis `11cb5c94410218fdd73f81acbb672afc02de2aea`: 575 hinzugefügte, 394 entfernte und netto 181 `src/`-Zeilen. Das neue gemeinsame Kontakt-/Massenmodell ersetzt mehrere separate Kick-, Reibungs- und Trennungswege; die Nettozeilen bilden die nun modeübergreifenden Adapter und Erhaltungsprüfungen ab.
 - F03 parity: PvP-1vs1, Fleet-/Combat-Asteroiden und zivile Feldkontakte verwenden dieselben metrischen Körperdaten und denselben Kontaktkern. Der historische PvP-1vs1-Replay-Hash bleibt exakt. Der Produktionspfadvergleich bestätigt identische Ergebnisse für denselben Feldkontakt; vorhandene Schild-, Drohnen-, Schiff-, Wrack-, Ramm-, Navigations- und Checkpoint-Regressionsprüfungen blieben grün. Keine neue Schadensauslösung beim Moduswechsel.
+- F04 code: `planFlankWaypoint`, `fastFlankRoute`, `planPointRoute` und `routeSegmentClear` teilen die Route- und Hindernisgeometrie. Combat, Feldschiffe, Verkehr und Salvage verwenden gemeinsame Routenplanung; Taktik, Vorfahrt, Ausfahrt und Arbeitsabstand bleiben Aufrufer-Policies.
+- F04 removed: die eigenständigen Combat-Flanken-/Blocker-Geometrien und `src/systems/salvage/distress-navigation.ts` wurden entfernt. Die begrenzte Patrol-Sichtgraph-Suche bleibt als dokumentierte Performance-Ausnahme; zivile Alarm-/Zeit-bis-Kreuzung-Policies bleiben erhalten.
+- F04 test: `tests/navigation/unified-flight-route-parity.test.cjs`, `tests/combat/combat-combined-battle-replay.test.cjs`, `tests/combat/combat-dense-asteroid-interception.test.cjs`, `tests/navigation/field-traffic-stress.test.cjs` und `tests/salvage/distress-operational-fixes.test.cjs`; GitHub-Testsuite bestand mit 411/411.
+- F04 ci: PR-Head `a3983b833e5492a5cadf2f68e518513b0a6c8b85`; Sojourn Quality Gate Run 1974 (`46146017092`) und Career browser restart smoke Run 1189 (`46146017121`) erfolgreich. Persistenzprüfung, alle Tests, Drei-Tage-Wirtschaftssmoke, Build und Save-/Browser-Neustart/Weiterlaufen bestanden.
+- F04 loc: gegenüber F04-Basis `39bb82fc8a3b417b010f77a2b2a0b4d46b655894`: 438 `src/`-Zeilen hinzugefügt, 225 entfernt, netto +213. Gemeinsame Route-Geometrie und Salvage-Arbeitspositionen ersetzen getrennte Pfade; der begrenzte Patrol-Algorithmus bleibt aus Performancegründen.
+- F04 parity: der historische #400 Replay-Trace bleibt auf allen drei Seeds exakt; dichte Asteroidenkämpfe behalten Angriffspassagen. Identische Combat-/Zivilgeometrie, bewegte Hindernisse, blockierte Ziele, Verkehr, Ausfahrt und Distress-Salvage sind durch Produktionspfad- und Regressionstests abgedeckt. Neue Geometrie führt keine Save-Autorität ein.
 
 ## Arbeitslog und Übergabe an neue Chats
 
@@ -543,6 +549,13 @@ Verhaltenstests und Architektur-Tests sind zwingend.
   `npm run persistence:check` besteht lokal. Der Korrekturstand ist lokal
   committed, CI für ihn steht noch aus. F04 bleibt bis zum grünen Quality Gate
   offen; kein Merge nach Main.
+- 28.11.2026: F04-Korrektur auf PR-Head `a3983b833e5492a5cadf2f68e518513b0a6c8b85`
+  durch GitHub Actions abgenommen. Sojourn Quality Gate Run 1974 bestand
+  Format, Lint, TypeScript, Dependency- und Persistenzprüfung, 411/411 Tests,
+  den integrierten Drei-Tage-Wirtschaftssmoke und den Produktionsbuild;
+  Career browser restart smoke Run 1189 bestand Save, Browser-Neustart und
+  Fortsetzen. F04 ist abgenommen und die Checkliste markiert. Es gibt weiterhin
+  keinen Merge nach Main.
 - 28.11.2026: F03 auf `refactor/unified-field-flight-physics` umgesetzt und
   nach lokaler Abnahme sowie erfolgreichen GitHub Actions auf PR-Head
   `e3346c047b44fe8daf9bdd605bf321ea2ea552fd` abgenommen. Feld-/Combat-
