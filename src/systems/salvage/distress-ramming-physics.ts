@@ -1,4 +1,6 @@
 import type { WorldPoint } from '../../core/world-types';
+import { circularContactMass } from '../../core/ship-contact-mass';
+import { resolveContactImpulse } from '../../core/contact-impulse';
 
 export interface DistressRammingState {
   readonly velocity: WorldPoint;
@@ -49,9 +51,23 @@ export function advanceDistressRamming(
   const colliding =
     separation < playerRadius + wreckRadius && closingSpeed > 2 && state.cooldown <= 0;
   if (colliding) {
-    const impulse = Math.min(300, Math.max(22, closingSpeed * 0.48));
-    velocity.x += nx * impulse;
-    velocity.y += ny * impulse;
+    const playerBody = {
+      position: { ...player },
+      velocity: playerVelocity,
+      mass: circularContactMass(playerRadius),
+    };
+    const wreckBody = {
+      position,
+      velocity,
+      mass: circularContactMass(wreckRadius),
+    };
+    const requestedRelativeChange = Math.min(300, Math.max(22, closingSpeed * 0.48));
+    resolveContactImpulse(
+      playerBody,
+      wreckBody,
+      { x: nx, y: ny },
+      -closingSpeed + requestedRelativeChange
+    );
     position.x = player.x + nx * (playerRadius + wreckRadius + 2);
     position.y = player.y + ny * (playerRadius + wreckRadius + 2);
   }

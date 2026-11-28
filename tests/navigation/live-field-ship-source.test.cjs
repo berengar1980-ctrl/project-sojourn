@@ -11,7 +11,12 @@ const { collectLiveFieldShips, bindLiveFieldShips, liveFieldBystanders } =
     [trafficPath]: traffic,
   });
 const field = { width: 1200, height: 900 };
-const pose = { position: { x: 100, y: 200 }, headingRadians: 0, speed: 30 };
+const pose = {
+  position: { x: 100, y: 200 },
+  velocity: { x: 0, y: 0 },
+  headingRadians: 0,
+  speed: 30,
+};
 const npc = { id: 'worker', hullHp: 100, shipId: 'miner-80m-variant-01', locationId: 'field' };
 const roster = new Map([
   [npc.id, npc],
@@ -66,7 +71,8 @@ const claim = (first, second) => {
 resolveCombatBystanderContacts(fighter, [current], undefined, claim);
 assert(fighter.position.x < 295);
 assert(pose.position.x > 300, 'contact moves the original field pose');
-assert.equal(fighter.speed, pose.speed, 'normal closing motion is canceled');
+assert(fighter.velocity.x < 80, 'the combatant loses the shared mass-based closing impulse');
+assert(pose.velocity.x > 0, 'the live field ship receives the equal-and-opposite impulse');
 assert.equal(current.position.x, 300, 'published snapshot remains read-only');
 assert.equal(liveFieldBystanders(field)[0].position.x, pose.position.x);
 const after = { ...pose.position };
@@ -77,11 +83,11 @@ resolveCombatBystanderContacts(fighter, [current], undefined, claim);
 assert.deepEqual(pose.position, after);
 assert.deepEqual(fighter.position, beforeRepeat);
 npc.hullHp = 0;
-assert.equal(current.fieldContact.apply({ x: 1, y: 0 }, 10, 5), null);
+assert.equal(current.fieldContact.apply({ x: 1, y: 0 }, 10, { x: 5, y: 0 }), null);
 assert.deepEqual(pose.position, after, 'destroyed or departed bodies cannot be corrected');
 npc.hullHp = 100;
 npc.combatMovement = { mode: 'engaged' };
-assert.equal(current.fieldContact.apply({ x: 1, y: 0 }, 10, 5), null);
+assert.equal(current.fieldContact.apply({ x: 1, y: 0 }, 10, { x: 5, y: 0 }), null);
 assert.equal(liveFieldBystanders(field)[0].fieldContact, undefined);
 assert.deepEqual(pose.position, after, 'combat authority must not be overwritten');
 console.log('PASS shared live field source, reciprocal contact and exclusive pose ownership');

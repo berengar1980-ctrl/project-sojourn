@@ -21,10 +21,10 @@ export function resolveNpcSalvageLocalContacts(
     const npc = byId.get(local.npcId);
     if (local.npcId === combatantId || npc?.combatMovement || (npc?.hullHp ?? 0) <= 0) return [];
     const definition = getShipDefinition(local.shipId);
-    return definition ? [{ id: local.npcId, ship: definition, state: local, pushWeight: 1 }] : [];
+    return definition ? [{ id: local.npcId, ship: definition, state: local }] : [];
   });
   if (playerState && options.playerShip)
-    bodies.unshift({ id: 'player', ship: options.playerShip, state: playerState, pushWeight: 2.4 });
+    bodies.unshift({ id: 'player', ship: options.playerShip, state: playerState });
 
   for (const contact of resolveShipShieldCollisions(bodies)) {
     if (contact.firstId === 'player') {

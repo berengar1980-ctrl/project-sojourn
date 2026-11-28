@@ -18,7 +18,6 @@ const {
   shieldWorldCenter,
   combatHullRadii,
   orientedHullRadius,
-  weightedContactSeparation,
 } = load('src/core/ship-contact-geometry.ts');
 
 assert.equal(distance({ x: 0, y: 0 }, { x: 3, y: 4 }), 5);
@@ -127,6 +126,11 @@ assert.deepEqual(load('src/core/field-geometry.ts').contactAxis(0, 0), {
   normal: { x: 1, y: 0 },
 });
 
-assert.deepEqual(weightedContactSeparation(30, 1, 2), { first: 20, second: 10 });
+const contactImpulse = load('src/core/contact-impulse.ts');
+const firstBody = { position: { x: 0, y: 0 }, velocity: { x: 0, y: 0 }, mass: 1 };
+const secondBody = { position: { x: 30, y: 0 }, velocity: { x: 0, y: 0 }, mass: 2 };
+contactImpulse.separateContactBodies(firstBody, secondBody, { x: 1, y: 0 }, 30);
+assert.deepEqual(firstBody.position, { x: -20, y: 0 });
+assert.deepEqual(secondBody.position, { x: 40, y: 0 });
 
 console.log('PASS shared field geometry and definition-scoped shield cache');

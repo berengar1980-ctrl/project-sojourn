@@ -157,7 +157,7 @@ function resolveSalvageTrafficContacts(
   for (const salvager of options.salvagers) {
     if (combatants.has(salvager.npcId)) continue;
     const ship = getShipDefinition(salvager.shipId);
-    if (ship) bodies.push({ id: salvager.npcId, ship, state: salvager, pushWeight: 1 });
+    if (ship) bodies.push({ id: salvager.npcId, ship, state: salvager });
   }
   const droneId = 'security-drone:' + options.field.sourceLocationId;
   const droneNpc = options.sectorNpcs.find((npc) => npc.id === droneId && npc.hullHp > 0);
@@ -169,8 +169,8 @@ function resolveSalvageTrafficContacts(
       state: {
         position: { ...options.drone.position },
         headingRadians: options.drone.headingRadians,
+        velocity: { ...options.drone.velocity },
       },
-      pushWeight: 100000,
     });
   }
   const hits = options.pirates.resolveShipContacts(traffic, bodies, rocks);

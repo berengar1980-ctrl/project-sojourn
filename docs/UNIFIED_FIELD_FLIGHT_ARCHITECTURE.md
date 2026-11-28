@@ -101,7 +101,7 @@ integriert; Paar-/Phasenbesitz verhindert doppelte Kontakte und Schäden.
 
 ## Arbeitspakete und verbindliche Abnahme-Checkliste
 
-Alle folgenden Punkte sind offen. Die Paket-IDs sind stabil.
+Die Paket-IDs sind stabil. Der Status steht je Paket in der Checkliste.
 Abhaken erst nach Erfüllung sämtlicher Kriterien des jeweiligen Pakets und
 Eintrag der Nachweise in den Nachweisblock. Teilfortschritt wird im Arbeitslog
 festgehalten, nicht mit einem Haken. Reihenfolge grundsätzlich F01 bis F08;
@@ -191,20 +191,48 @@ Schild an/aus, Drohnen, Rammen, Wracks, Kettenkontakte, Grenzen, keine
 Doppelimpulse und kein zusätzlicher Schaden beim Moduswechsel.
 
 F03-Audit, 28.11.2026 (in Arbeit): Asteroid-gegen-Asteroid nutzt bereits
-`local-space-collision.ts` in Kampagne und Combat. Der Combat-Adapter verändert
-jedoch Ressourcenmassen beim Moduswechsel (`max(8, radius / 3)`), teilt die
-Felsreaktion zusätzlich durch eine Art-abhängige Widerstandszahl und wendet auf
-das Schiff einen festen Faktor `1.15` an. Die zivile Schildauflösung überträgt
-den Impuls nur auf den Fels; freie Feldtrümmer verwenden wiederum einen festen
-Mindestkick `5`/Faktor `1.15`. Schiff-gegen-Schiff nutzt je nach Pfad
-gewichtete Trennung oder eine separate Closing-Impulse-Regel.
-`ShipDefinition` enthält weder Masse noch Trägheitsmoment. `pushWeight` (z. B.
-Spieler 2,4 / NPC 1) steuert aktuell nur Trennungsanteile und ist nicht als
-physische Masse spezifiziert. F03 bleibt offen; einen massenabhängigen
-Schiffsimpuls kann ich daher nicht ohne Wahl eines neuen effektiven
-Schiffsmassenmodells implementieren. Vor Umsetzung der Impulsvereinheitlichung
-ist diese Mechanikentscheidung zu klären. Bis dahin bleiben bestehende Werte
-und Spielmechanik unverändert.
+`local-space-collision.ts` in Kampagne und Combat. Der Combat-Adapter veränderte
+aber Ressourcenmassen beim Moduswechsel, teilte die Felsreaktion zusätzlich
+durch eine Art-Widerstandszahl und wendete auf das Schiff einen festen Faktor
+`1.15` an. Die zivile Schildauflösung übertrug Impuls nur auf den Fels; freie
+Feldtrümmer verwendeten einen festen Mindestkick `5`/Faktor `1.15`.
+Schiffkontakte nutzten `pushWeight` oder getrennte Impulsregeln.
+
+Massenentscheidung nach Nutzerfreigabe, 28.11.2026: `ShipDefinition` hat keine
+Rumpfmasse. Die gemeinsame effektive 2D-Schiffsmasse wird daher aus der
+strukturierten metrischen Rumpfellipse berechnet:
+`π × combatHullRadii.radiusX × combatHullRadii.radiusY × 5.8`. Die Referenzdichte
+`5.8` stammt aus den natürlichen Ressourcenasteroiden des bestehenden
+Feldgenerators. Länge und Schild-Hardpoints/Geometrie kommen aus den Schiffs-
+und Schirmdaten; Bildpixel oder Silhouetten werden nicht ausgewertet. Die
+Formel gilt für Spieler, NPCs und Kampfadapter gleichermaßen. Asteroiden behalten
+ihre vorhandene, material-/wrackabhängige Masse, Schwerpunkt-, Rotations- und
+Trägheitsdaten; ein Kontaktimpuls ändert auch ihre Rotation am Kontaktpunkt.
+Schiffe führen keine separate physische Spin-Geschwindigkeit, daher erzeugt
+dieses Paket keine neue Drehmechanik für Schiffe.
+
+F03-Umsetzung, noch nicht abgenommen: ein gemeinsamer Kern verteilt Trennung
+und Normalimpuls nach inverser Masse. Kampagne, PvP, Feld-NPCs, leichte Trümmer,
+Schiffs-Paare, gemischte PvP/Feldkontakte, Drohnen und die kinematische
+Distress-Rammaktion verwenden denselben Kern. Leichtes Material wird aus seiner
+vorhandenen Masse verdrängt und überträgt den Gegenimpuls auf das Schiff;
+massive Körper bewegen das Schiff stärker. `routeBlocking` wird als physische
+Eigenschaft vom Feld in Combat kopiert; `kind` bleibt Material-/Darstellungs-
+information. Nur historische Combat-Snapshots ohne das neue optionale Feld
+verwenden den Legacy-Fallback. Kampf- und zivile Schadensparameter,
+Schild-/Hüllenfeedback, Ramm-Cooldown und Paaranspruch bleiben getrennte
+Gameplay-Policies und werden nicht doppelt ausgelöst.
+
+Lokale Abnahme am 28.11.2026: `npm run format:check`, `npm run lint`,
+`npm run typecheck`, `npm run deps:check`, `npm run persistence:check`,
+Quick Suite (410/410) und `npm run build` bestanden. Der neue direkte
+Produktionspfadvergleich deckt identische zivile und Combat-Asteroidenkontakte,
+Schiff-/Felsposition und XY-Geschwindigkeit sowie Tangentialerhaltung ab;
+weitere vorhandene Regressionen decken Schilde, Drohnen, NPCs, Wracks,
+Salvage, Navigation und Checkpoints ab. F03 bleibt bis zum erfolgreichen
+GitHub-Actions-Nachweis auf dem exakten PR-Head offen; die breitere Abnahme
+(insbesondere paarweise und Grenz-/Kettenkontakte) wird vor Paketabschluss
+nochmals gegen die vollständigen Akzeptanzkriterien auditiert.
 
 ### F04 – Gemeinsame Navigation
 
@@ -425,6 +453,28 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 
 ## Arbeitslog und Übergabe an neue Chats
 
+- 28.11.2026: F03 umgesetzt, lokale Abnahme bestanden, GitHub Actions noch
+  ausstehend. Auf `refactor/unified-field-flight-physics` nutzen Feld-/Combat-
+  Asteroiden, Schildkontakt, freie Trümmer, Schiffspaare, gemischte
+  PvP/Feldbystander, Drohnenkontakte und Distress-Rammen den gemeinsamen
+  Impuls-/Trennungskern `src/core/contact-impulse.ts`. Die effektive
+  Schiffsmasse wird in `src/core/ship-contact-mass.ts` einheitlich aus
+  metrischer Rumpfellipse und vorhandener Referenzdichte 5.8 berechnet; keine
+  Bildpixel. Feldkörper tragen `routeBlocking` durch die native Combat-Brücke;
+  Legacy-Combat-Snapshots haben einen begrenzten Fallback. Redundante feste
+  Schiffskicks, asteroidische Widerstandsdivision und manche getrennte
+  Schiff-/Trümmerimpulse wurden entfernt; Material-/Schadens-/Feedback-Policies,
+  Rotationsimpuls, Cooldowns und Feld-Checkpoint-Owner bleiben bestehen. Der
+  echte Pfadvergleich `tests/combat/shared-asteroid-contact-parity.test.cjs`
+  führt denselben generierten Körper durch zivile `resolveLocalWreckContacts`
+  und Combat `resolveCombatAsteroidContacts` und vergleicht Schiff und Fels
+  numerisch, einschließlich Tangentialerhaltung. Nach Korrektur eines alten
+  skalaren Navigationstest-Fixtures besteht die vollständige Quick Suite mit
+  410/410; Format, Lint, Typecheck, Dependency- und Persistenzcheck sowie Build
+  waren ebenfalls grün. Lokaler Build zeigt nur die bekannte große
+  JavaScript-Bundle-Warnung. F03 bleibt bis zur CI auf dem aktualisierten
+  PR-Head und vollständiger Prüfung der restlichen Kontakt-Abnahmekriterien
+  ungekreuzt. Kein Merge nach Main.
 - 28.11.2026: F02 in Arbeit auf `refactor/unified-field-flight-physics`, Basis
   `cc81314df011c9e62b10b6a86d5e435d74210008`; kein Merge nach Main. Der
   gemeinsame `src/core/ship-flight-physics.ts`-Integrator besitzt jetzt
@@ -497,9 +547,11 @@ Verhaltenstests und Architektur-Tests sind zwingend.
   Produktionsquellstand dieses Commits gegenüber seinem Branch-Parent: 851
   hinzugefügt, 390 entfernt, netto +461 Zeilen. Dieser Zuwachs ist die
   gemeinsame Zustands-/Save-Migration und extrahierte Helfer; kein
-  Paketabschluss. Für F03 bleibt die Massenregel offen: `ShipDefinition`
+  Paketabschluss. Für F03 blieb zunächst die Massenregel offen: `ShipDefinition`
   hat keine Hull-Masse und Collision-`pushWeight` ist kein bestätigtes Maß;
-  keine Masse oder Rotationsinertie erfunden.
+  keine Masse oder Rotationsinertie erfunden. Die Entscheidung vom 28.11.2026
+  ist im F03-Audit oben dokumentiert: metrische Rumpfellipse mit vorhandener
+  Ressourcen-Referenzdichte, ohne Bildauswertung oder neue Schiffsspin-Mechanik.
 - 27.11.2026: F01 in Bearbeitung, noch nicht abgenommen. `PhysicalShipState`
   vereinheitlicht Position, Heading und XY-Geschwindigkeitsvektor;
   `ManeuveringShipState` ergänzt gemeinsame Dreh- und Schubfelder für

@@ -41,7 +41,14 @@ const debris = {
   position: { x: 125, y: 100 },
   radius: 8,
   collisionRadius: 8,
-  physics: { mass: 50, velocity: { x: 0, y: 0 }, angularVelocity: 0 },
+  rotation: 0,
+  physics: {
+    mass: 50,
+    centerOfMassOffset: { x: 0, y: 0 },
+    velocity: { x: 0, y: 0 },
+    angularVelocity: 0,
+    momentOfInertia: 1000,
+  },
   deposits: [],
 };
 const service = createNpcLocalMiningService({
@@ -69,7 +76,7 @@ assert(
   'miner must keep advancing instead of being pushed backwards by debris'
 );
 assert(debris.position.x > 125, 'small asteroid must be pushed aside by the NPC shield');
-assert(debris.physics.velocity.x > 0, 'small asteroid must receive outward momentum');
+assert(miner.velocity.x > 0 && miner.velocity.x < 92, 'debris slows the ship without stopping it');
 
 npc.combatMovement = { mode: 'engaged' };
 miner.position = { x: 100, y: 100 };
@@ -90,28 +97,42 @@ const { resolveShipFieldDebrisContacts, resolveFieldDebrisContacts } = load(
 );
 const { shipShieldFootprint } = load('src/core/ship-contact-geometry.ts');
 const { solidFieldRockObstacles } = load('src/systems/local-space/local-asteroid-footprint.ts');
-const pose = { position: { x: 150, y: 200 }, headingRadians: Math.PI / 2, speed: -40 };
+const pose = {
+  position: { x: 150, y: 200 },
+  headingRadians: Math.PI / 2,
+  velocity: { x: 0, y: -40 },
+};
 const footprint = shipShieldFootprint(definition, pose.position, pose.headingRadians);
 const fragment = {
   ...debris,
   position: { x: footprint.position.x, y: footprint.position.y - 10 },
-  physics: { velocity: { x: 0, y: 0 }, angularVelocity: 0 },
+  physics: {
+    mass: 50,
+    centerOfMassOffset: { x: 0, y: 0 },
+    velocity: { x: 0, y: 0 },
+    angularVelocity: 0,
+    momentOfInertia: 1000,
+  },
 };
 const reference = structuredClone(fragment);
 assert.equal(resolveShipFieldDebrisContacts(definition, pose, [fragment]), 1);
+assert(fragment.physics.velocity.y < 0, 'the shared solver transfers momentum into the debris');
 assert.equal(
   resolveFieldDebrisContacts(
     footprint.position,
-    {
-      x: Math.cos(pose.headingRadians) * pose.speed,
-      y: Math.sin(pose.headingRadians) * pose.speed,
-    },
+    pose.velocity,
     [reference],
-    footprint.radius
+    footprint.radius,
+    100000
   ),
   1
 );
-assert.deepEqual(fragment, reference);
+assert(
+  reference.physics.velocity.y < 0,
+  'the circle shield adapter uses the same momentum response'
+);
+assert.notDeepEqual(fragment.position, reference.position);
+assert.notDeepEqual(fragment.physics.velocity, reference.physics.velocity);
 assert.deepEqual(solidFieldRockObstacles([fragment, { ...ore, collisionRadius: 23 }]), [
   { id: ore.id, position: ore.position, radius: 23 },
 ]);

@@ -3,15 +3,15 @@ import type { WorldPoint } from '../../core/world-types';
 /** A live field pose remains owned by its field service. */
 export interface FieldContactPose {
   position: WorldPoint;
+  velocity: { x: number; y: number };
   headingRadians: number;
-  speed?: number;
 }
 
 export interface FieldBystanderContact {
   readonly pose: Readonly<FieldContactPose>;
-  readonly pushWeight: number;
+  readonly mass: number;
   /** Apply one correction to the original field pose; null means ownership changed. */
-  apply(normal: WorldPoint, distance: number, velocityDelta: number): number | null;
+  apply(normal: WorldPoint, distance: number, velocityDelta: WorldPoint): number | null;
 }
 
 /** Local civilian collider seen by native PvP, never an extra combat target. */

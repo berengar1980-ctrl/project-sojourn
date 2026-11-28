@@ -17,6 +17,7 @@ assert(miner && patrol);
 
 const first = {
   position: { x: 500, y: 500 },
+  velocity: { x: 0, y: 0 },
   headingRadians: 0,
   speed: 0,
   turnRateRadiansPerSecond: 0,
@@ -25,6 +26,7 @@ const first = {
 };
 const second = {
   position: { x: 505, y: 500 },
+  velocity: { x: 0, y: 0 },
   headingRadians: Math.PI,
   speed: 0,
   turnRateRadiansPerSecond: 0,
@@ -33,8 +35,8 @@ const second = {
 };
 
 const impact = collisions.resolveShipShieldCollisions([
-  { id: 'player', ship: miner, state: first, pushWeight: 2.4 },
-  { id: 'npc', ship: patrol, state: second, pushWeight: 1 },
+  { id: 'player', ship: miner, state: first },
+  { id: 'npc', ship: patrol, state: second },
 ]);
 
 assert.equal(impact.length, 1, 'overlapping ship shields must collide');
@@ -44,8 +46,8 @@ assert(
 );
 assert.equal(
   collisions.resolveShipShieldCollisions([
-    { id: 'player', ship: miner, state: first, pushWeight: 2.4 },
-    { id: 'npc', ship: patrol, state: second, pushWeight: 1 },
+    { id: 'player', ship: miner, state: first },
+    { id: 'npc', ship: patrol, state: second },
   ]).length,
   0,
   'resolved shield bodies must no longer overlap'

@@ -25,7 +25,8 @@ function findClearCombatSpawn(
     bodies.every(
       (rock) =>
         Math.hypot(point.x - rock.position.x, point.y - rock.position.y) >=
-        rock.radius + (rock.kind === 'resource' ? LARGE_CLEARANCE : SMALL_CLEARANCE)
+        (rock.collisionRadius ?? rock.radius) +
+          (rock.routeBlocking ? LARGE_CLEARANCE : SMALL_CLEARANCE)
     );
   if (clear(preferred)) return { ...preferred };
   let selected: CombatPoint | null = null;

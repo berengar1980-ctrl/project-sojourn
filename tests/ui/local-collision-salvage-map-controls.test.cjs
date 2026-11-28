@@ -34,7 +34,7 @@ assert(
     miningContacts.includes('solidFieldRockObstacles(rocks)') &&
     rockFootprint.includes('filter((rock) => rock.routeBlocking)') &&
     miningContacts.includes('resolveShipFieldDebrisContacts') &&
-    debrisContact.includes('return resolveFieldDebrisContacts('),
+    debrisContact.includes('resolveShieldCollisions('),
   'NPC miners must collide with local asteroids'
 );
 assert(

@@ -289,6 +289,8 @@ export interface CombatVisualAsteroid {
   readonly collisionRadius?: number;
   rotation: number;
   readonly kind: 'resource' | 'debris';
+  /** Physical route classification carried across combat/local-space transitions. */
+  readonly routeBlocking?: boolean;
 }
 
 export interface StrategicCombatObstacle {

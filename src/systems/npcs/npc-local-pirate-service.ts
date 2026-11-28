@@ -449,7 +449,7 @@ export class LocalPirateTraffic {
       const ship = getShipDefinition(npc.shipId);
       if (!ship) continue;
       pirateIds.add(pirate.npcId);
-      pirates.push({ id: pirate.npcId, ship, state: pirate, pushWeight: 1 });
+      pirates.push({ id: pirate.npcId, ship, state: pirate });
     }
     if (pirates.length === 0) return [];
     const impacts = resolveShipShieldCollisions(

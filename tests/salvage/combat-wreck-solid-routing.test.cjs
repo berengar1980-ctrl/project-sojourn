@@ -58,7 +58,8 @@ const impacts = resolveShieldCollisions(
   },
   { x: 20, y: 0 },
   bodies,
-  { centerOffset: { x: 0, y: 0 }, radiusX: 24, radiusY: 18 }
+  { centerOffset: { x: 0, y: 0 }, radiusX: 24, radiusY: 18 },
+  100000
 );
 assert(
   impacts.some((hit) => hit.asteroidId === wreck.id),
@@ -89,7 +90,8 @@ const npc = createCombatant(vessel, 'attacker', { ...field, attackerPosition: st
 npc.velocity = { x: 70, y: 0 };
 resolveCombatAsteroidContacts(npc, { asteroids: [nativeWreck] });
 assert(npc.position.x < start.x, 'combat solver pushes the NPC out of a wreck');
-assert(npc.velocity.x < 0, 'combat wreck physically deflects an approaching NPC');
+assert(npc.velocity.x > 0 && npc.velocity.x < 70, 'wreck mass slows but does not reverse the NPC');
+assert(nativeWreck.velocity.x > 0, 'combat wreck receives the equal-and-opposite momentum');
 const stationary = createCombatant(vessel, 'defender', { ...field, defenderPosition: start });
 nativeWreck.velocity.x = 0;
 resolveCombatAsteroidContacts(stationary, { asteroids: [nativeWreck] });

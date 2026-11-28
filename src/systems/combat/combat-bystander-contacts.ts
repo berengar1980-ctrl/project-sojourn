@@ -1,6 +1,8 @@
-import { shipContact, type ShipContact } from './combat-ship-contact-geometry';
+import { shipContact } from './combat-ship-contact-geometry';
 import { getShipDefinition } from '../ships';
-import { shipShieldGeometry, weightedContactSeparation } from '../../core/ship-contact-geometry';
+import { shipShieldGeometry } from '../../core/ship-contact-geometry';
+import { resolveContactImpulse, separateContactBodies } from '../../core/contact-impulse';
+import { shipContactMassProperties } from '../../core/ship-contact-mass';
 import type { MutableCombatant } from './strategic-combat-types';
 import type {
   FieldBystanderContact,
@@ -9,39 +11,55 @@ import type {
 
 function separateBystander(
   ship: MutableCombatant,
-  contact: ShipContact,
+  contact: ReturnType<typeof shipContact>,
   field?: FieldBystanderContact
 ): void {
   const { normal } = contact;
   const overlap = contact.required - contact.distance + 0.5;
-  const ownClosing = ship.velocity.x * normal.x + ship.velocity.y * normal.y;
-  let move = overlap;
-  let impulse = Math.max(0, ownClosing);
+  const definition = getShipDefinition(ship.setup.shipId);
+  const firstMass = shipContactMassProperties(
+    ship.setup.nominalLengthMeters ?? definition?.nominalLengthMeters ?? 60,
+    ship.setup.shieldGeometry ?? (definition ? shipShieldGeometry(definition) : undefined)
+  ).mass;
+  const secondMass = field?.mass ?? 1e30;
+  const secondVelocity = field?.pose.velocity ?? { x: 0, y: 0 };
+  const firstBody = {
+    position: { ...ship.position },
+    velocity: { ...ship.velocity },
+    mass: firstMass,
+  };
+  const secondBody = {
+    position: { ...(field?.pose.position ?? ship.position) },
+    velocity: { ...secondVelocity },
+    mass: secondMass,
+  };
+  separateContactBodies(firstBody, secondBody, normal, overlap);
+  const closingSpeed =
+    (firstBody.velocity.x - secondBody.velocity.x) * normal.x +
+    (firstBody.velocity.y - secondBody.velocity.y) * normal.y;
+  if (closingSpeed > 0)
+    resolveContactImpulse(firstBody, secondBody, normal, closingSpeed * (field ? 0.1 : 0));
+
   if (field) {
-    const alongBow =
-      normal.x * Math.cos(field.pose.headingRadians) +
-      normal.y * Math.sin(field.pose.headingRadians);
-    const relativeClosing = Math.max(0, ownClosing - (field.pose.speed ?? 0) * alongBow);
-    const shares = weightedContactSeparation(overlap, 1, field.pushWeight);
-    // Field autopilots store signed forward speed, not arbitrary lateral
-    // velocity. Account for that degree of freedom in the normal impulse.
-    const normalImpulse = relativeClosing / (1 + (alongBow * alongBow) / field.pushWeight);
-    const applied = field.apply(normal, shares.second, normalImpulse / field.pushWeight);
+    const distance =
+      (secondBody.position.x - field.pose.position.x) * normal.x +
+      (secondBody.position.y - field.pose.position.y) * normal.y;
+    const applied = field.apply(normal, distance, {
+      x: secondBody.velocity.x - secondVelocity.x,
+      y: secondBody.velocity.y - secondVelocity.y,
+    });
     if (applied === null) return;
-    move -= applied;
-    impulse = normalImpulse;
+    firstBody.position.x = ship.position.x - normal.x * (overlap - applied);
+    firstBody.position.y = ship.position.y - normal.y * (overlap - applied);
   }
-  ship.position.x -= normal.x * move;
-  ship.position.y -= normal.y * move;
-  if (impulse > 0) {
-    ship.velocity.x -= normal.x * impulse;
-    ship.velocity.y -= normal.y * impulse;
-  }
+
+  ship.position.x = firstBody.position.x;
+  ship.position.y = firstBody.position.y;
+  ship.velocity.x = firstBody.velocity.x;
+  ship.velocity.y = firstBody.velocity.y;
 }
 
-/** Mixed contacts use the field's live correction handle, never a second integration.
- * Unbound bystanders retain the existing read-only collider behavior.
- */
+/** Mixed contacts use the field's live correction handle; static bystanders stay immovable. */
 export function resolveCombatBystanderContacts(
   combatant: MutableCombatant,
   bystanders: readonly StrategicCombatBystander[],

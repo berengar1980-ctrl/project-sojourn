@@ -81,16 +81,3 @@ export function shipShieldFootprint(
     radius: Math.max(geometry.radiusX, geometry.radiusY),
   };
 }
-
-/** Same weighted normal separation for shields and mixed ship contacts. */
-export function weightedContactSeparation(
-  overlap: number,
-  firstWeight: number,
-  secondWeight: number
-): { readonly first: number; readonly second: number } {
-  const total = firstWeight + secondWeight;
-  return {
-    first: overlap * (secondWeight / total),
-    second: overlap * (firstWeight / total),
-  };
-}

@@ -5,6 +5,7 @@ import {
   type ShieldCollisionImpact,
   type ShieldWorldGeometry,
 } from './local-space-collision';
+import { shipContactMassProperties } from '../../core/ship-contact-mass';
 
 /** Shared shield solver for ordinary asteroids and independently simulated salvage wrecks. */
 export function resolveLocalWreckContacts(
@@ -13,13 +14,16 @@ export function resolveLocalWreckContacts(
   asteroids: readonly LocalAsteroid[],
   additional: readonly LocalAsteroid[],
   shield: ShieldWorldGeometry,
+  nominalLengthMeters: number,
   onContact?: () => void
 ): ShieldCollisionImpact[] {
+  const { mass } = shipContactMassProperties(nominalLengthMeters, shield);
   const hits = resolveShieldCollisions(
     ship,
     velocity,
     additional.length ? [...asteroids, ...additional] : asteroids,
-    shield
+    shield,
+    mass
   );
   if (
     additional.length &&

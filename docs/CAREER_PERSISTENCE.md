@@ -1648,6 +1648,17 @@ Geschwindigkeitsvektor bleiben den vorhandenen Checkpoint-Eigentümern zugeordne
 Der NPC-Salvage-Kontaktadapter delegiert an die bestehenden Schild- und
 Bergungskontaktlöser und besitzt ebenfalls keinen zusätzlichen Save-Zustand.
 
+### Gemeinsame Kontaktphysik (F03, in Arbeit)
+
+Schiffs-Kontaktmasse wird aus vorhandener nominaler Länge und Shield-Hardpoints
+abgeleitet; sie ist kein zusätzlich gespeicherter Wert. Asteroiden- und
+Wrackmasse, Drift und Rotation bleiben bei den bereits checkpointeten
+Feld-/Bergungsbesitzern. Combat-Feldkörper übernehmen `routeBlocking` aus diesem
+Feldzustand; das optionale Feld ist eine Ableitung für den flüchtigen Combat-
+Snapshot. Historische Snapshots ohne dieses Feld bleiben über den bisherigen
+Kategoriefallback lesbar. Es entsteht keine zweite Save-Autorität und kein neues
+Career-Save-Feld.
+
 ### Gemeinsame Flugphysik (F02)
 
 Die neuen NPC-Piraten-Helfer werten vorhandene Sektor-NPC- und Drohnenwerte aus:

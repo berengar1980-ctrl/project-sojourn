@@ -185,7 +185,7 @@
     },
     "src/systems/operations/security-drone-solid-contact.ts": {
       "mode": "derived",
-      "reason": "Pure shield-circle separation against the currently visible route-blocking rocks and ship footprints; no independent saved state."
+      "reason": "Stateless mass-aware drone contact against current route-blocking rocks and kinematic ship footprints; positions and velocities remain owned by the field, drone and ship authorities."
     },
     "src/systems/operations/security-drone-debris-contact.ts": {
       "mode": "derived",

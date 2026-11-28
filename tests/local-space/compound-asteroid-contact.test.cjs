@@ -89,7 +89,7 @@ const ship = {
   angularThrust: 0,
   lateralThrust: 0,
 };
-resolveShieldCollisions(ship, { x: 40, y: 0 }, [moved], shield);
+resolveShieldCollisions(ship, { x: 40, y: 0 }, [moved], shield, 100000);
 assert(Number.isFinite(moved.position.x), 'compound shield response remains finite');
 
 const combat = nativeCombatAsteroids({

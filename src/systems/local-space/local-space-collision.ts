@@ -2,7 +2,13 @@ import type { LocalAsteroid, LocalShipState } from '../../core/local-space-types
 import { rotatePoint as rotate } from '../../core/field-geometry';
 import { shieldWorldCenter, type ShieldWorldGeometry } from '../../core/ship-contact-geometry';
 import type { WorldPoint } from '../../core/world-types';
-import { applyImpulseAtPoint, pointVelocity, rotationalMassTerm } from './local-space-physics';
+import {
+  applyAngularImpulseAtPoint,
+  applyImpulseAtPoint,
+  pointVelocity,
+  rotationalMassTerm,
+} from './local-space-physics';
+import { resolveContactImpulse, separateContactBodies } from '../../core/contact-impulse';
 import { localAsteroidContactRadius } from './local-asteroid-footprint';
 import { compoundContact, rockContactBody, shieldContactBody } from '../../core/compound-contact';
 
@@ -56,106 +62,120 @@ function shieldEnergyBoost(impactSpeed: number, asteroid: LocalAsteroid): number
 }
 
 export function resolveShieldCollisions(
-  ship: LocalShipState,
+  ship: Pick<LocalShipState, 'position' | 'headingRadians'>,
   shipVelocity: WorldPoint,
   asteroids: readonly LocalAsteroid[],
-  shield: ShieldWorldGeometry
+  shield: ShieldWorldGeometry,
+  shipMass: number
 ): ShieldCollisionImpact[] {
   const center = shieldWorldCenter(ship.position, ship.headingRadians, shield);
   const impacts: ShieldCollisionImpact[] = [];
 
   for (const asteroid of asteroids) {
-    const relative = {
-      x: asteroid.position.x - center.x,
-      y: asteroid.position.y - center.y,
-    };
-    const contactRadius = localAsteroidContactRadius(asteroid);
-    const maximumDistance = contactRadius + Math.max(shield.radiusX, shield.radiusY);
-    if (relative.x * relative.x + relative.y * relative.y > maximumDistance * maximumDistance)
-      continue;
-    const local = rotate(relative, -ship.headingRadians);
-    const contact =
-      asteroid.contactGeometry === 'silhouette'
-        ? compoundContact(
-            shieldContactBody(center, ship.headingRadians, shield.radiusX, shield.radiusY),
-            rockContactBody(asteroid)
-          )
-        : null;
-    if (asteroid.contactGeometry === 'silhouette' && !contact) continue;
-    const separationLocal = contact
-      ? rotate(
-          {
-            x: contact.normal.x * (contact.depth + 0.5),
-            y: contact.normal.y * (contact.depth + 0.5),
-          },
-          -ship.headingRadians
-        )
-      : separationVector(local, contactRadius, shield);
-    if (separationLocal.x === 0 && separationLocal.y === 0) continue;
-
-    const separationWorld = rotate(separationLocal, ship.headingRadians);
-    const normal = contact?.normal ?? normalized(separationWorld);
-    asteroid.position = {
-      x: asteroid.position.x + separationWorld.x,
-      y: asteroid.position.y + separationWorld.y,
-    };
-
-    const contactPoint = contact?.point ?? {
-      x: asteroid.position.x - normal.x * contactRadius,
-      y: asteroid.position.y - normal.y * asteroid.radius,
-    };
-    const localContact = rotate(
-      { x: contactPoint.x - center.x, y: contactPoint.y - center.y },
-      -ship.headingRadians
-    );
-    const surfaceMetric =
-      Math.hypot(localContact.x / shield.radiusX, localContact.y / shield.radiusY) || 1;
-    const surfaceAnchor = {
-      x: localContact.x / (surfaceMetric * shield.radiusX),
-      y: localContact.y / (surfaceMetric * shield.radiusY),
-    };
-    const velocityAtContact = pointVelocity(asteroid, contactPoint);
-    const relativeVelocity = {
-      x: velocityAtContact.x - shipVelocity.x,
-      y: velocityAtContact.y - shipVelocity.y,
-    };
-    const normalVelocity = dot(relativeVelocity, normal);
-    const impactSpeed = Math.max(0, -normalVelocity);
-
-    if (impactSpeed > 0.01) {
-      impacts.push({
-        asteroidId: asteroid.id,
-        point: contactPoint,
-        normal,
-        surfaceAnchor,
-        mass: asteroid.physics.mass,
-        impactSpeed,
-        kineticEnergy: 0.5 * asteroid.physics.mass * impactSpeed * impactSpeed,
-      });
-    }
-
-    asteroid.position = {
-      x: asteroid.position.x + normal.x * 2,
-      y: asteroid.position.y + normal.y * 2,
-    };
-
-    if (impactSpeed > 0.01) {
-      const shipNormalVelocity = dot(shipVelocity, normal);
-      const outwardVelocity = dot(velocityAtContact, normal);
-      const targetRelativeOutwardSpeed =
-        impactSpeed * shieldRestitution(asteroid) + shieldEnergyBoost(impactSpeed, asteroid);
-      const targetWorldOutwardSpeed = shipNormalVelocity + targetRelativeOutwardSpeed;
-      const requiredDelta = Math.max(0, targetWorldOutwardSpeed - outwardVelocity);
-      const impulseMagnitude = requiredDelta * asteroid.physics.mass;
-      applyImpulseAtPoint(
-        asteroid,
-        { x: normal.x * impulseMagnitude, y: normal.y * impulseMagnitude },
-        contactPoint
-      );
-    }
+    const impact = resolveShieldContact(ship, shipVelocity, asteroid, shield, shipMass, center);
+    if (impact) impacts.push(impact);
   }
 
   return impacts;
+}
+
+function resolveShieldContact(
+  ship: Pick<LocalShipState, 'position' | 'headingRadians'>,
+  shipVelocity: WorldPoint,
+  asteroid: LocalAsteroid,
+  shield: ShieldWorldGeometry,
+  shipMass: number,
+  center: WorldPoint
+): ShieldCollisionImpact | null {
+  const relative = { x: asteroid.position.x - center.x, y: asteroid.position.y - center.y };
+  const contactRadius = localAsteroidContactRadius(asteroid);
+  const maximumDistance = contactRadius + Math.max(shield.radiusX, shield.radiusY);
+  if (relative.x * relative.x + relative.y * relative.y > maximumDistance * maximumDistance)
+    return null;
+  const local = rotate(relative, -ship.headingRadians);
+  const contact =
+    asteroid.contactGeometry === 'silhouette'
+      ? compoundContact(
+          shieldContactBody(center, ship.headingRadians, shield.radiusX, shield.radiusY),
+          rockContactBody(asteroid)
+        )
+      : null;
+  if (asteroid.contactGeometry === 'silhouette' && !contact) return null;
+  const separationLocal = contact
+    ? rotate(
+        {
+          x: contact.normal.x * (contact.depth + 0.5),
+          y: contact.normal.y * (contact.depth + 0.5),
+        },
+        -ship.headingRadians
+      )
+    : separationVector(local, contactRadius, shield);
+  if (separationLocal.x === 0 && separationLocal.y === 0) return null;
+
+  const separationWorld = rotate(separationLocal, ship.headingRadians);
+  const normal = contact?.normal ?? normalized(separationWorld);
+  const originalAsteroidPosition = { ...asteroid.position };
+  const contactPoint = contact?.point ?? {
+    x: originalAsteroidPosition.x - normal.x * contactRadius,
+    y: originalAsteroidPosition.y - normal.y * contactRadius,
+  };
+  const localContact = rotate(
+    { x: contactPoint.x - center.x, y: contactPoint.y - center.y },
+    -ship.headingRadians
+  );
+  const surfaceMetric =
+    Math.hypot(localContact.x / shield.radiusX, localContact.y / shield.radiusY) || 1;
+  const surfaceAnchor = {
+    x: localContact.x / (surfaceMetric * shield.radiusX),
+    y: localContact.y / (surfaceMetric * shield.radiusY),
+  };
+  const velocityAtContact = pointVelocity(asteroid, contactPoint);
+  const relativeVelocity = {
+    x: velocityAtContact.x - shipVelocity.x,
+    y: velocityAtContact.y - shipVelocity.y,
+  };
+  const impactSpeed = Math.max(0, -dot(relativeVelocity, normal));
+  const impact =
+    impactSpeed > 0.01
+      ? {
+          asteroidId: asteroid.id,
+          point: contactPoint,
+          normal,
+          surfaceAnchor,
+          mass: asteroid.physics.mass,
+          impactSpeed,
+          kineticEnergy: 0.5 * asteroid.physics.mass * impactSpeed * impactSpeed,
+        }
+      : null;
+
+  const penetration = contact
+    ? contact.depth + 2.5
+    : Math.hypot(separationWorld.x, separationWorld.y) + 2;
+  const shipBody = { position: ship.position, velocity: shipVelocity, mass: shipMass };
+  const asteroidBody = {
+    position: asteroid.position,
+    velocity: asteroid.physics.velocity,
+    mass: asteroid.physics.mass,
+  };
+  separateContactBodies(shipBody, asteroidBody, normal, penetration);
+
+  if (impactSpeed > 0.01) {
+    const targetRelativeOutwardSpeed =
+      impactSpeed * shieldRestitution(asteroid) + shieldEnergyBoost(impactSpeed, asteroid);
+    const impulseMagnitude = resolveContactImpulse(
+      shipBody,
+      asteroidBody,
+      normal,
+      targetRelativeOutwardSpeed,
+      rotationalMassTerm(asteroid, contactPoint, normal)
+    );
+    applyAngularImpulseAtPoint(
+      asteroid,
+      { x: normal.x * impulseMagnitude, y: normal.y * impulseMagnitude },
+      contactPoint
+    );
+  }
+  return impact;
 }
 
 function collisionNormal(a: LocalAsteroid, b: LocalAsteroid): WorldPoint {

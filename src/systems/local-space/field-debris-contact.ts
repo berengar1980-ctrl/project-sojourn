@@ -1,55 +1,61 @@
 import type { LocalAsteroid } from '../../core/local-space-types';
 import type { WorldPoint } from '../../core/world-types';
 import type { ShipDefinition } from '../../core/ship-types';
-import { contactAxis, contactCandidate, rotatePoint } from '../../core/field-geometry';
-import { shipShieldFootprint } from '../../core/ship-contact-geometry';
-import { localAsteroidContactRadius } from './local-asteroid-footprint';
+import { shipShieldGeometry } from '../../core/ship-contact-geometry';
+import { shipContactMassProperties } from '../../core/ship-contact-mass';
+import { resolveShieldCollisions } from './local-space-collision';
 
-/** Shared light-debris response for noncombat field traffic.
- * Large route-blocking rocks remain solid obstacles; small drifting fragments
- * receive an outward impulse instead of pinning a ship against its own route.
- */
+function resolvedDebrisCount(asteroids: readonly LocalAsteroid[], resolve: () => void): number {
+  const before = new Map(
+    asteroids.map((rock) => [rock.id, { x: rock.position.x, y: rock.position.y }])
+  );
+  resolve();
+  return asteroids.filter((rock) => {
+    const original = before.get(rock.id);
+    return (
+      original && Math.hypot(rock.position.x - original.x, rock.position.y - original.y) > 0.001
+    );
+  }).length;
+}
+
+/** Small, non-blocking debris uses the same mass-aware shield contact as combat rocks. */
 export function resolveFieldDebrisContacts(
   position: WorldPoint,
   velocity: WorldPoint,
   asteroids: readonly LocalAsteroid[],
-  shieldRadius: number
+  shieldRadius: number,
+  shipMass: number
 ): number {
-  let contacts = 0;
-  for (const rock of asteroids) {
-    if (rock.kind !== 'debris' || rock.routeBlocking || !rock.physics) continue;
-    const radius = Math.max(0, shieldRadius) + localAsteroidContactRadius(rock);
-    const dx = rock.position.x - position.x;
-    const dy = rock.position.y - position.y;
-    if (!contactCandidate(dx, dy, radius)) continue;
-    const { distance, normal } = contactAxis(dx, dy);
-    if (distance >= radius) continue;
-    const { x: nx, y: ny } = normal;
-    const penetration = radius - distance + 0.5;
-    rock.position = {
-      x: rock.position.x + nx * penetration,
-      y: rock.position.y + ny * penetration,
-    };
-    const relative =
-      (velocity.x - rock.physics.velocity.x) * nx + (velocity.y - rock.physics.velocity.y) * ny;
-    const kick = Math.max(5, relative * 1.15);
-    rock.physics.velocity = {
-      x: rock.physics.velocity.x + nx * kick,
-      y: rock.physics.velocity.y + ny * kick,
-    };
-    rock.physics.angularVelocity += (nx - ny) * Math.min(1.8, kick * 0.008);
-    contacts++;
-  }
-  return contacts;
+  const debris = asteroids.filter((rock) => rock.kind === 'debris' && !rock.routeBlocking);
+  return resolvedDebrisCount(debris, () =>
+    resolveShieldCollisions(
+      { position, headingRadians: 0 },
+      velocity,
+      debris,
+      {
+        centerOffset: { x: 0, y: 0 },
+        radiusX: Math.max(0, shieldRadius),
+        radiusY: Math.max(0, shieldRadius),
+      },
+      shipMass
+    )
+  );
 }
 
-/** Use the same definition-scoped shield footprint for all free-flying ships. */
+/** Use metric ship geometry and the live XY velocity for every field ship. */
 export function resolveShipFieldDebrisContacts(
   ship: ShipDefinition,
-  pose: { readonly position: WorldPoint; readonly headingRadians: number; readonly speed: number },
+  pose: {
+    readonly position: WorldPoint;
+    readonly headingRadians: number;
+    readonly velocity: WorldPoint;
+  },
   rocks: readonly LocalAsteroid[]
 ): number {
-  const footprint = shipShieldFootprint(ship, pose.position, pose.headingRadians);
-  const velocity = rotatePoint({ x: pose.speed, y: 0 }, pose.headingRadians);
-  return resolveFieldDebrisContacts(footprint.position, velocity, rocks, footprint.radius);
+  const geometry = shipShieldGeometry(ship);
+  const mass = shipContactMassProperties(ship.nominalLengthMeters, geometry).mass;
+  const debris = rocks.filter((rock) => rock.kind === 'debris' && !rock.routeBlocking);
+  return resolvedDebrisCount(debris, () =>
+    resolveShieldCollisions(pose, pose.velocity, debris, geometry, mass)
+  );
 }

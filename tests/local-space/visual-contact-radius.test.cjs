@@ -41,14 +41,21 @@ function createTestRock() {
 }
 const ghost = createTestRock();
 const drawGap = (ghost.radius + ghost.collisionRadius) / 2;
-const distantHits = resolveShieldCollisions(ship(500 - 30 - drawGap), speed, [ghost], shield);
+const distantHits = resolveShieldCollisions(
+  ship(500 - 30 - drawGap),
+  speed,
+  [ghost],
+  shield,
+  100000
+);
 assert.equal(distantHits.length, 0, 'shield cannot hit the invisible draw-envelope margin');
 const solid = createTestRock();
 const impact = resolveShieldCollisions(
   ship(500 - 30 - solid.collisionRadius * 0.35),
   speed,
   [solid],
-  shield
+  shield,
+  100000
 );
 assert.equal(impact.length, 1, 'physical rock core still rebounds from ship shield');
 

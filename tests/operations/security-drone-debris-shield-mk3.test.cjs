@@ -24,7 +24,13 @@ const rock = {
   radius: 8,
   collisionRadius: 8,
   rotation: 0,
-  physics: { velocity: { x: 0, y: 0 }, angularVelocity: 0 },
+  physics: {
+    mass: 1000,
+    centerOfMassOffset: { x: 0, y: 0 },
+    velocity: { x: 0, y: 0 },
+    angularVelocity: 0,
+    momentOfInertia: 1000,
+  },
 };
 const count = resolveSecurityDroneDebrisContacts({ x: 100, y: 100 }, { x: 90, y: 0 }, [rock]);
 assert.equal(count, 1, 'Tiny nonblocking rock must collide with a drone shield');
@@ -45,7 +51,13 @@ const touching = {
   ...rock,
   id: 'other-debris',
   position: { x: patrol.position.x + 10, y: patrol.position.y },
-  physics: { velocity: { x: 0, y: 0 }, angularVelocity: 0 },
+  physics: {
+    mass: 1000,
+    centerOfMassOffset: { x: 0, y: 0 },
+    velocity: { x: 0, y: 0 },
+    angularVelocity: 0,
+    momentOfInertia: 1000,
+  },
 };
 patrol.tick(0.08, [touching], [], []);
 assert(patrol.snapshot().shieldContactSeconds > 0, 'Collision makes the shield briefly flash');

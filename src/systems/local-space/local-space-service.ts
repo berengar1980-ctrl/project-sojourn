@@ -320,6 +320,7 @@ class LocalSpaceRuntime implements LocalSpaceService {
       this.instance.asteroids,
       this.options.additionalObstacles?.() ?? [],
       this.shield,
+      this.options.nominalLengthMeters,
       this.options.onAdditionalObstacleContact
     );
     for (const collision of collisions) this.shipSystems.applyCollision(collision);

@@ -44,7 +44,7 @@ for (const seed of [11, 106, 173, 1001, 4242]) {
       assert.deepEqual(snapshot[side].position, arena[side + 'Position']);
     }
     assert.equal(snapshot.arena.asteroids.length, arena.asteroids.length);
-    const cover = arena.asteroids.filter((body) => body.kind === 'resource');
+    const cover = arena.asteroids.filter((body) => body.routeBlocking);
     assert.deepEqual(
       arena.obstacles.map((obstacle) => obstacle.id),
       cover.map((body) => body.id)

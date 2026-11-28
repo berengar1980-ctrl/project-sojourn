@@ -475,8 +475,8 @@ assert(
   'asteroid shield damage must derive from mass and normal impact speed'
 );
 assert(
-  collision.includes('targetWorldOutwardSpeed = shipNormalVelocity + targetRelativeOutwardSpeed'),
-  'shield rebound must include the moving ship velocity frame'
+  collision.includes('resolveContactImpulse('),
+  'shield rebound must resolve relative velocity in the shared contact frame'
 );
 assert(
   collision.includes('impactSpeed * shieldRestitution(asteroid)') &&

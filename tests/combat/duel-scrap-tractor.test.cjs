@@ -19,8 +19,8 @@ const { nativeCombatAsteroids } = loadStandaloneTypeScriptModule(
 );
 const scrapPresetSource = readModuleSource(root, 'src/systems/combat/field-combat-arena.ts');
 assert(
-  scrapPresetSource.includes("asteroid.kind === 'resource'"),
-  'PvP obstacle and weapon-cover classification must match the asteroid map resource rule'
+  scrapPresetSource.includes('.filter((asteroid) => asteroid.routeBlocking)'),
+  'PvP obstacle classification must use the field body routeBlocking property'
 );
 
 for (const seed of [1, 53, 415, 9001]) {
@@ -36,8 +36,9 @@ for (const seed of [1, 53, 415, 9001]) {
     assert.equal(physical.length, map.asteroids.length);
     assert(physical.some((rock) => rock.kind === 'debris' && !rock.routeBlocking));
     assert(
-      physical.every((rock) =>
-        rock.kind === 'resource' ? rock.routeBlocking : !rock.routeBlocking
+      physical.every(
+        (rock) =>
+          rock.routeBlocking === map.asteroids.find((entry) => entry.id === rock.id).routeBlocking
       )
     );
     assert(
@@ -45,7 +46,7 @@ for (const seed of [1, 53, 415, 9001]) {
         map.asteroids.some(
           (rock) =>
             rock.id === obstacle.id &&
-            rock.kind === 'resource' &&
+            rock.routeBlocking &&
             (rock.collisionRadius ?? rock.radius) === obstacle.radius
         )
       )

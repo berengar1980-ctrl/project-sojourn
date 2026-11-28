@@ -240,7 +240,7 @@ function tickSalvageTraffic(
     playerPosition: combat?.attacker.position ?? service.getSnapshot().ship.position,
     playerRadius: Math.max(18, options.ship.nominalLengthMeters * 0.35),
     ...(!combat && {
-      playerBody: { id: 'player', ship: options.ship, state: playerBody, pushWeight: 2.4 },
+      playerBody: { id: 'player', ship: options.ship, state: playerBody },
     }),
     ...(options.onFreighterExit && { onFreighterExit: options.onFreighterExit }),
     dt: deltaSeconds,

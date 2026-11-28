@@ -1,5 +1,18 @@
 import type { MutableCombatant } from './strategic-combat-types';
 import { shipContact } from './combat-ship-contact-geometry';
+import { resolveContactImpulse, separateContactBodies } from '../../core/contact-impulse';
+import { shipContactMassProperties } from '../../core/ship-contact-mass';
+import { getShipDefinition } from '../ships';
+import { shipShieldGeometry } from '../../core/ship-contact-geometry';
+
+function combatShipMass(combatant: MutableCombatant): number {
+  const definition = getShipDefinition(combatant.setup.shipId);
+  const nominalLength =
+    combatant.setup.nominalLengthMeters ?? definition?.nominalLengthMeters ?? 60;
+  const geometry =
+    combatant.setup.shieldGeometry ?? (definition ? shipShieldGeometry(definition) : undefined);
+  return shipContactMassProperties(nominalLength, geometry).mass;
+}
 
 export function resolveCombatantCollision(
   first: MutableCombatant,
@@ -9,22 +22,22 @@ export function resolveCombatantCollision(
   const { distance, required, normal } = shipContact(first, second);
   if (distance >= required || claim?.(first.setup.id, second.setup.id) === false) return false;
   const overlap = required - distance + 0.01;
-  first.position.x -= normal.x * overlap * 0.5;
-  first.position.y -= normal.y * overlap * 0.5;
-  second.position.x += normal.x * overlap * 0.5;
-  second.position.y += normal.y * overlap * 0.5;
-  // Resolve only the closing component along the hull-contact normal.
-  // Multiplying both complete velocity vectors by 0.6 every frame erased
-  // tangential motion and made an escaping ship stick to its pursuer.
-  const relativeX = first.velocity.x - second.velocity.x;
-  const relativeY = first.velocity.y - second.velocity.y;
-  const closingSpeed = relativeX * normal.x + relativeY * normal.y;
+  const firstBody = {
+    position: first.position,
+    velocity: first.velocity,
+    mass: combatShipMass(first),
+  };
+  const secondBody = {
+    position: second.position,
+    velocity: second.velocity,
+    mass: combatShipMass(second),
+  };
+  separateContactBodies(firstBody, secondBody, normal, overlap);
+  const closingSpeed =
+    (first.velocity.x - second.velocity.x) * normal.x +
+    (first.velocity.y - second.velocity.y) * normal.y;
   if (closingSpeed > 0) {
-    const impulse = closingSpeed * 0.55;
-    first.velocity.x -= normal.x * impulse;
-    first.velocity.y -= normal.y * impulse;
-    second.velocity.x += normal.x * impulse;
-    second.velocity.y += normal.y * impulse;
+    resolveContactImpulse(firstBody, secondBody, normal, closingSpeed * 0.1);
   }
   return true;
 }

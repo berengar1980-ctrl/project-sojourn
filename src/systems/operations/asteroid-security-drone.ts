@@ -201,13 +201,16 @@ export class AsteroidSecurityDrone implements PhysicalShipState {
     if (!this.operational) return [];
     this.advancePatrolMovement(dt, asteroids, nearbyShips, pursuitTarget);
     this.shieldContactSeconds = Math.max(0, this.shieldContactSeconds - Math.max(0, dt));
-    const solid = resolveSecurityDroneSolidContacts(this.position, asteroids, nearbyShips, {
-      width: this.width,
-      height: this.height,
-    });
+    const solid = resolveSecurityDroneSolidContacts(
+      this.position,
+      this.velocity,
+      asteroids,
+      nearbyShips,
+      { width: this.width, height: this.height }
+    );
     if (solid.contacts > 0) {
       this.position = solid.position;
-      this.velocity = { x: 0, y: 0 };
+      this.velocity = solid.velocity;
       delete this.routeState;
       this.shieldContactSeconds = 0.4;
     }

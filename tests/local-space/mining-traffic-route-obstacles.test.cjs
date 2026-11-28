@@ -25,7 +25,7 @@ const ship = {
 const obstacle = shipTrafficObstacle('miner', ship, {
   position: { x: 500, y: 400 },
   headingRadians: Math.PI / 2,
-  speed: -20,
+  velocity: { x: 0, y: -20 },
 });
 assert.equal(obstacle.radius, 60);
 assert.equal(obstacle.position.y, 410);

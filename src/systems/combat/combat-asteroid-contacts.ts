@@ -1,61 +1,11 @@
-import { usesNaturalCombatContour } from './combat-visible-collider';
 import { applyShieldHit } from '../shields/shield-service';
 import { resolveShieldCollisions } from '../local-space/local-space-collision';
 import { nativeCombatAsteroids } from './combat-asteroid-motion';
-import { compoundContact, rockContactBody, shieldContactBody } from '../../core/compound-contact';
-import { combatShieldHeading, directionalHullDamage } from './strategic-combat-damage';
+import { directionalHullDamage } from './strategic-combat-damage';
 import type { MutableCombatant, StrategicCombatArenaOptions } from './strategic-combat-types';
-
-function separateShipFromRock(
-  ship: MutableCombatant,
-  rock: NonNullable<StrategicCombatArenaOptions['asteroids']>[number],
-  geometry: MutableCombatant['setup']['shieldGeometry']
-): void {
-  // Resolve penetration using the shield's directional ellipse, not its
-  // largest axis as a circle. The old circle pushed ships away visibly
-  // before their narrow-side shield had reached the asteroid.
-  const heading = combatShieldHeading(ship);
-  const cos = Math.cos(heading);
-  const sin = Math.sin(heading);
-  const offset = geometry?.centerOffset ?? { x: 0, y: 0 };
-  const shieldX = ship.position.x + offset.x * cos - offset.y * sin;
-  const shieldY = ship.position.y + offset.x * sin + offset.y * cos;
-  const dx = rock.position.x - shieldX;
-  const dy = rock.position.y - shieldY;
-  if (usesNaturalCombatContour(rock)) {
-    const hit = compoundContact(
-      shieldContactBody(
-        { x: shieldX, y: shieldY },
-        heading,
-        geometry?.radiusX ?? 30,
-        geometry?.radiusY ?? 20
-      ),
-      rockContactBody({
-        id: rock.id,
-        kind: rock.kind,
-        radius: rock.radius,
-        collisionRadius: rock.collisionRadius,
-        rotation: rock.rotation,
-        position: rock.position,
-        contactGeometry: 'silhouette',
-      })
-    );
-    if (hit) {
-      ship.position.x -= hit.normal.x * (hit.depth + 0.5);
-      ship.position.y -= hit.normal.y * (hit.depth + 0.5);
-    }
-    return;
-  }
-  const length = Math.max(0.001, Math.hypot(dx, dy));
-  const localX = (dx * cos + dy * sin) / length;
-  const localY = (-dx * sin + dy * cos) / length;
-  const rx = Math.max(1, geometry?.radiusX ?? 30);
-  const ry = Math.max(1, geometry?.radiusY ?? 20);
-  const shieldExtent = 1 / Math.hypot(localX / rx, localY / ry);
-  const penetration = Math.max(0, (rock.collisionRadius ?? rock.radius) + shieldExtent - length);
-  ship.position.x -= (dx / length) * penetration;
-  ship.position.y -= (dy / length) * penetration;
-}
+import { shipContactMassProperties } from '../../core/ship-contact-mass';
+import { getShipDefinition } from '../ships';
+import { shipShieldGeometry } from '../../core/ship-contact-geometry';
 
 export function resolveCombatAsteroidContacts(
   ship: MutableCombatant,
@@ -63,66 +13,36 @@ export function resolveCombatAsteroidContacts(
 ): void {
   if (!arena.asteroids?.length) return;
   const geometry = ship.setup.shieldGeometry;
+  const definition = getShipDefinition(ship.setup.shipId);
+  const shield = geometry ?? (definition ? shipShieldGeometry(definition) : undefined);
   const native = nativeCombatAsteroids(arena);
-  const previous = native.map((body) => ({
-    ...body.position,
-    velocity: { ...body.physics.velocity },
-  }));
   const hits = resolveShieldCollisions(
-    {
-      position: ship.position,
-      velocity: ship.velocity,
-      headingRadians: combatShieldHeading(ship),
-      get speed() {
-        return (
-          Math.cos(this.headingRadians) * this.velocity.x +
-          Math.sin(this.headingRadians) * this.velocity.y
-        );
-      },
-      turnRateRadiansPerSecond: ship.turnRateRadiansPerSecond,
-      angularThrust: ship.angularThrust,
-      lateralThrust: 0,
-      longitudinalThrust: 0,
-    },
+    ship,
     ship.velocity,
     native,
     {
-      centerOffset: geometry?.centerOffset ?? { x: 0, y: 0 },
-      radiusX: geometry?.radiusX ?? 30,
-      radiusY: geometry?.radiusY ?? 20,
-    }
+      centerOffset: shield?.centerOffset ?? { x: 0, y: 0 },
+      radiusX: shield?.radiusX ?? 30,
+      radiusY: shield?.radiusY ?? 20,
+    },
+    shipContactMassProperties(
+      ship.setup.nominalLengthMeters ?? definition?.nominalLengthMeters ?? 60,
+      shield
+    ).mass
   );
-  const impactVelocities = new Map<string, { x: number; y: number }>();
-  // The shared solver moves the rock. Separate the ship as well, including at rest.
   native.forEach((body, index) => {
     const visual = arena.asteroids![index]!;
-    // A ship cannot teleport a massive rock out of its way: limit impulse response
-    // and penetration correction. Small debris retains its original solver behavior.
-    const original = previous[index]!;
-    const resistance = visual.kind === 'resource' ? Math.max(12, visual.radius / 2) : 1;
-    visual.position.x = original.x + (body.position.x - original.x) / resistance;
-    visual.position.y = original.y + (body.position.y - original.y) / resistance;
+    visual.position.x = body.position.x;
+    visual.position.y = body.position.y;
     const velocity = visual.velocity as { x: number; y: number };
-    velocity.x = original.velocity.x + (body.physics.velocity.x - original.velocity.x) / resistance;
-    velocity.y = original.velocity.y + (body.physics.velocity.y - original.velocity.y) / resistance;
-    if (body.position.x !== original.x || body.position.y !== original.y) {
-      impactVelocities.set(visual.id, original.velocity);
-      if (visual.kind === 'resource' || hits.some((hit) => hit.asteroidId === visual.id))
-        separateShipFromRock(ship, visual, geometry);
+    velocity.x = body.physics.velocity.x;
+    velocity.y = body.physics.velocity.y;
+    if (visual.physics) {
+      visual.physics.velocity = { ...body.physics.velocity };
+      visual.physics.angularVelocity = body.physics.angularVelocity;
     }
   });
   for (const hit of hits) {
-    // The shared campaign solver pushes the asteroid but never updates the ship.
-    // Resolve the equal-and-opposite ship response before applying damage.
-    const impactVelocity = impactVelocities.get(hit.asteroidId);
-    const approach =
-      (ship.velocity.x - (impactVelocity?.x ?? 0)) * hit.normal.x +
-      (ship.velocity.y - (impactVelocity?.y ?? 0)) * hit.normal.y;
-    if (approach > 0) {
-      const impulse = approach * 1.15;
-      ship.velocity.x -= hit.normal.x * impulse;
-      ship.velocity.y -= hit.normal.y * impulse;
-    }
     const damage =
       Math.min(14, Math.max(0, hit.impactSpeed - 7) * 0.22) /
       Math.max(0.1, geometry?.modifier ?? 1);
