@@ -536,6 +536,25 @@ Verhaltenstests und Architektur-Tests sind zwingend.
 
 ## Arbeitslog und Übergabe an neue Chats
 
+- 28.11.2026: F06 gemeinsames Schiffs-Kampfprofil umgesetzt. Player-, NPC- und
+  Duell-Setup delegieren Rumpf-/Komponentenwerte, Crew-Kampfwerte, Bewegung,
+  Sensoren, Energie, Traktor und Panzerung jetzt an
+  `resolveShipCombatProfile` in `src/systems/ships/ship-combat-profile.ts`.
+  Die separate NPC-Aggressionsabbildung und die Security-Drohnen-Schild-/Armor-
+  Policies bleiben explizit erhalten. Engineering-Schildstärke wird nun auch
+  im Standalone-Duell mit demselben Crew-Effekt berechnet wie in der Kampagne;
+  das beseitigt die bisherige Setup-Abweichung bei identischer Crew. Der
+  Combat-Damage-Kern und Career-Checkpoint führen Treffer, Überlauf,
+  Subsystemausfälle sowie Schild-/Hüllenzustand bereits gemeinsam fort; lokale
+  Schildregeneration bleibt eine eigene Zeit-/Betriebsregel und wird hier nicht
+  balanceverändert. `tests/combat/combat-campaign-duel-parity.test.cjs` prüft
+  alle drei gemeinsamen Setup-Aufrufer; Kampagnen-Preset-Tests vergleichen
+  PvP und FleetCombat, `unified-native-world-handoff` und
+  `career-combat-runtime` decken Fortsetzung/Checkpoint ab. Lokal bestanden:
+  `npm run check:quick` (412/412), `npm run build`, gezielte PvP-/Fleet-Parität.
+  Build meldet nur den bekannten Vite-Chunkgrößenhinweis. PR-Head-CI für diesen
+  Stand steht noch aus; F06 bleibt bis zu dessen erfolgreichem Abschluss offen.
+
 - 28.11.2026: F05-Audit und Replay-Implementierung. Audit von `combat-flight-intent.ts`,
   `combat-ram-targeting.ts`, `combat-route-steering.ts` und
   `strategic-combat-movement.ts`: bestehende Waffen-/Flucht-/Minen-/Traktor-/

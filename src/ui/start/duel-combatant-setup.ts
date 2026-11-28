@@ -2,28 +2,9 @@ import {
   combatEquippedWeapons,
   combatWeaponMounts,
 } from '../../systems/combat/combat-loadout-mounts';
-import {
-  resolveShipCombatMovementStats,
-  resolveShipArmorProtection,
-  componentHullBonus,
-  componentShieldBonus,
-  calculateShipModeEnergy,
-  combatSensorStats,
-  shipCombatTractorRange,
-  shipHasIndustrialTractor,
-  shipHullMaxHp,
-  shipShieldMaxHp,
-  type ShipDefinition,
-} from '../../systems/ships';
+import { resolveShipCombatProfile, type ShipDefinition } from '../../systems/ships';
 import { createCombatShieldGeometry, type StrategicCombatantSetup } from '../../systems/combat';
 import { crewDefinitionById } from '../../data/crew/crew-definitions';
-import {
-  pilotingDodgeChance,
-  sensorWeaponHitChanceBonus,
-  weaponDamageMultiplier,
-  weaponCriticalChance,
-  weaponCycleTimeMultiplier,
-} from '../../systems/crew/crew-skill-effects';
 import { SHIP_MINE_CATALOG } from '../../data/combat/ship-mines';
 
 import { campaignCombatPreset, campaignPresetIsDrone } from './campaign-combat-preset';
@@ -83,37 +64,43 @@ export function duelCombatant(
   const mounts = combatWeaponMounts(ship, equipped);
   const crew = crewDefinitionById(draft.crewId);
   const installed = duelInstalledComponents(draft);
-  const power = calculateShipModeEnergy(installed);
-  const armor = resolveShipArmorProtection(installed);
-  const pilotSkill = crew?.skills.piloting ?? 50;
-  const weaponSkill = crew?.skills.weapons ?? 50;
-  const sensorSkill = crew?.skills.sensors ?? 50;
+  const profile = resolveShipCombatProfile(ship, installed, {
+    piloting: crew?.skills.piloting ?? 50,
+    sensors: crew?.skills.sensors ?? 50,
+    weapons: crew?.skills.weapons ?? 50,
+    engineering: crew?.skills.engineering ?? 50,
+  });
   return {
     id: 'duelist-' + index,
     name: 'Spieler ' + (index + 1) + ' · ' + ship.name,
     shipId: ship.id,
     nominalLengthMeters: ship.nominalLengthMeters,
-    shieldHp: shipShieldMaxHp(ship) + componentShieldBonus(installed),
+    shieldHp: profile.shieldMaxHp,
     shieldGeometry: createCombatShieldGeometry(points, ship.nominalLengthMeters),
-    hullHp: shipHullMaxHp(ship, componentHullBonus(installed)),
-    ...(armor ? { armor } : {}),
+    hullHp: profile.hullMaxHp,
+    ...(profile.armor ? { armor: profile.armor } : {}),
     weapons: equipped.map((entry) => entry.component),
     mines: draft.mines.flatMap((id) => {
       const mine = SHIP_MINE_CATALOG.find((entry) => entry.id === id);
       return mine ? [mine] : [];
     }),
     weaponMounts: mounts,
-    hitChance: 0.68 + sensorWeaponHitChanceBonus(sensorSkill),
-    dodgeChance: pilotingDodgeChance(pilotSkill),
-    damageMultiplier: weaponDamageMultiplier(weaponSkill),
-    criticalChance: weaponCriticalChance(weaponSkill),
-    cycleTimeMultiplier: weaponCycleTimeMultiplier(weaponSkill),
+    hitChance: profile.hitChance,
+    dodgeChance: profile.dodgeChance,
+    damageMultiplier: profile.damageMultiplier,
+    criticalChance: profile.criticalChance,
+    cycleTimeMultiplier: profile.cycleTimeMultiplier,
     preferredTactic: 'fight',
-    ...resolveShipCombatMovementStats(ship, installed),
-    tractorRangeMeters: shipCombatTractorRange(installed),
-    power,
-    ...combatSensorStats(installed, sensorSkill),
-    tractorCanManipulateObjects: shipHasIndustrialTractor(ship),
+    combatSpeed: profile.combatSpeed,
+    turnRateRadiansPerSecond: profile.turnRateRadiansPerSecond,
+    accelerationMetersPerSecond2: profile.accelerationMetersPerSecond2,
+    tractorRangeMeters: profile.tractorRangeMeters,
+    power: profile.power,
+    sensorTier: profile.sensorTier,
+    sensorCrewSkill: profile.sensorCrewSkill,
+    sensorRangeMeters: profile.sensorRangeMeters,
+    sensorRangeMultiplier: profile.sensorRangeMultiplier,
+    tractorCanManipulateObjects: profile.tractorCanManipulateObjects,
     aiControlled: true,
     aiAggression: 90,
   };

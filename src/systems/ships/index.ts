@@ -44,6 +44,7 @@ export {
 } from './ship-loadout-service';
 export { createShipyardResearchService } from './shipyard-research-service';
 export { resolveShipRuntimeSetup } from './ship-runtime';
+export { resolveShipCombatProfile } from './ship-combat-profile';
 export {
   calculateStationSkill,
   crewInjuryFactor,

@@ -114,7 +114,16 @@ assert(npcMining.includes('localNpcCruiseSpeed(npc, FLIGHT_SPEED)'));
 assert(npcSalvage.includes('localNpcCruiseSpeed(npc, FLIGHT_SPEED)'));
 assert(npcLocalPose.includes('resolveShipCombatMovementStats'));
 assert(npcLocalPose.includes('ensureNpcInstalledComponents(npc)'));
-assert(read('src/app/game-controller-combat.ts').includes('hitChance: 0.68 +'));
+const combatProfile = read('src/systems/ships/ship-combat-profile.ts');
+assert(combatProfile.includes('crewSkillEffects('));
+assert(combatProfile.includes('effects.sensors.weaponHitChanceBonus'));
+for (const setupFile of [
+  'src/app/game-controller-combat.ts',
+  'src/systems/combat/npc-combatant-setup.ts',
+  'src/ui/start/duel-combatant-setup.ts',
+]) {
+  assert(read(setupFile).includes('resolveShipCombatProfile('), setupFile);
+}
 const shared = 'combatEquippedWeapons';
 for (const setupFile of [
   'src/ui/start/duel-combatant-setup.ts',
